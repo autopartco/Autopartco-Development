@@ -10,6 +10,10 @@
 **/coverage/
 **/.vite/
 
+# Graphify generated cache (keep graph.json and manifest.json versioned)
+graphify-out/cache/
+graphify-out/.graphify_analysis.json
+
 .idea/
 .vscode/
 .DS_Store
