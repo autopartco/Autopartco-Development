@@ -7,7 +7,6 @@
 **/dist/
 **/build/
 **/target/
-**/bin/
 **/coverage/
 **/.vite/
 
