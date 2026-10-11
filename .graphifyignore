@@ -3,6 +3,7 @@ node_modules/
 dist/
 build/
 target/
+bin/
 coverage/
 .next/
 .vite/
