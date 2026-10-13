@@ -1,7 +1,9 @@
 package com.autopartco.backend.core.identity;
 
+import java.util.Locale;
 import java.util.UUID;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -9,22 +11,32 @@ import com.autopartco.backend.core.identity.internal.Account;
 import com.autopartco.backend.core.identity.internal.AccountRepository;
 import com.autopartco.backend.core.identity.internal.AccountType;
 import com.autopartco.backend.core.identity.internal.AccountTypeRepository;
+import com.autopartco.backend.core.identity.internal.Person;
+import com.autopartco.backend.core.identity.internal.PersonRepository;
 import com.autopartco.backend.core.identity.internal.RegistrationService;
+import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
+import com.autopartco.backend.shared.persistence.State;
+import com.autopartco.backend.shared.persistence.StateRepository;
 
 import lombok.AllArgsConstructor;
 
 /**
- * Alta y cambios de tipo de cuenta pedidos por otros módulos (registro de vendedor, alta de almacén).
+ * Alta y cambios de tipo o estado de cuenta pedidos por otros módulos (registro de vendedor, alta de almacén,
+ * aceptación de invitaciones de colaborador).
  */
 @Service
 @AllArgsConstructor
 public class AccountProvisioning {
     private static final String STORE_MANAGER_TYPE = "STORE_MANAGER";
+    private static final String ACTIVE_STATE = "ACTIVE";
 
     private final RegistrationService registrationService;
     private final AccountRepository accountRepository;
     private final AccountTypeRepository accountTypeRepository;
+    private final PersonRepository personRepository;
+    private final StateRepository stateRepository;
+    private final PasswordEncoder passwordEncoder;
 
     /** Crea persona y cuenta pendientes sin enviar el correo de verificación. */
     @Transactional
@@ -47,5 +59,63 @@ public class AccountProvisioning {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new NotFoundException("ACCOUNT_NOT_FOUND", "No se encontró la cuenta."));
         account.setAccountType(storeManager);
+    }
+
+    /**
+     * Crea la persona y una cuenta {@code STORE_MANAGER} ya activa para un colaborador que acepta una invitación
+     * (el correo quedó verificado al recibir el enlace). La contraseña se guarda con el {@link PasswordEncoder}.
+     *
+     * @throws ConflictException {@code IDENTIFICATION_ALREADY_EXISTS} si la identificación ya está registrada
+     */
+    @Transactional
+    public AccountRef createInvitedAccount(String email, InvitedAccountDetails details) {
+        String identification = details.identification().trim();
+        if (personRepository.existsByIdentification(identification)) {
+            throw new ConflictException(
+                    "IDENTIFICATION_ALREADY_EXISTS",
+                    "Ya existe una persona registrada con esta identificación."
+            );
+        }
+        AccountType accountType = accountTypeRepository.findByCode(STORE_MANAGER_TYPE)
+                .orElseThrow(() -> new NotFoundException(
+                        "ACCOUNT_TYPE_NOT_FOUND",
+                        "No existe el tipo de cuenta de vendedor."
+                ));
+        Person person = personRepository.save(Person.builder()
+                .name(details.name().trim())
+                .surname(details.surname().trim())
+                .identification(identification)
+                .dateBirth(details.dateBirth())
+                .numberPhone(details.numberPhone().trim())
+                .build());
+        Account account = Account.builder()
+                .person(person)
+                .email(normalizeEmail(email))
+                .password(passwordEncoder.encode(details.password()))
+                .accountType(accountType)
+                .state(findState(ACTIVE_STATE))
+                .configuration(java.util.Map.of())
+                .build();
+        return AccountLookup.toRef(accountRepository.save(account));
+    }
+
+    /** Pasa la cuenta al estado {@code ACTIVE} dentro de la transacción del llamador. */
+    @Transactional
+    public void activate(UUID accountId) {
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() -> new NotFoundException("ACCOUNT_NOT_FOUND", "No se encontró la cuenta."));
+        account.setState(findState(ACTIVE_STATE));
+    }
+
+    private State findState(String code) {
+        return stateRepository.findByCode(code)
+                .orElseThrow(() -> new NotFoundException(
+                        "STATE_NOT_FOUND",
+                        "No está configurado el estado " + code + "."
+                ));
+    }
+
+    private String normalizeEmail(String email) {
+        return email.trim().toLowerCase(Locale.ROOT);
     }
 }

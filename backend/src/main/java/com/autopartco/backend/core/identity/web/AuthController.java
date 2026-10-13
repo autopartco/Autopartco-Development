@@ -27,8 +27,8 @@ import lombok.AllArgsConstructor;
 
 /**
  * Flujo sin sesión y gestión del token: registro, login, refresh, logout, verificación, desbloqueo y
- * recuperación de contraseña. El registro de vendedor ({@code /auth/register/seller}) vive temporalmente en
- * {@code seller.controller.SellerRegistrationController} hasta la fase 6.
+ * recuperación de contraseña. El registro de vendedor está en {@code storesuite.onboarding}
+ * ({@code POST /store-applications}).
  */
 @RestController
 @RequestMapping(ApiPaths.BASE + "/auth")

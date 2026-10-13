@@ -38,7 +38,21 @@ public class AccountLookup {
         return accountRepository.findById(accountId).map(AccountLookup::toRef);
     }
 
-    private static AccountRef toRef(Account account) {
+    @Transactional(readOnly = true)
+    public boolean existsByEmail(String email) {
+        return accountRepository.existsByEmailIgnoreCase(email);
+    }
+
+    /**
+     * Busca la cuenta por correo (sin distinguir mayúsculas) y bloquea su fila ({@code SELECT ... FOR UPDATE})
+     * hasta el final de la transacción del llamador.
+     */
+    @Transactional
+    public Optional<AccountRef> lockByEmail(String email) {
+        return accountRepository.findByEmailIgnoreCaseForUpdate(email).map(AccountLookup::toRef);
+    }
+
+    static AccountRef toRef(Account account) {
         return new AccountRef(
                 account.getId(),
                 account.getPerson().getId(),

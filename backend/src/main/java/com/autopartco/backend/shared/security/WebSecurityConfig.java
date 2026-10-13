@@ -40,7 +40,7 @@ public class WebSecurityConfig {
         public final static String LOGIN_URL_MATCHER = ApiPaths.BASE + "/auth/login";
         public final static String REFRESH_URL_MATCHER = ApiPaths.BASE + "/auth/refresh";
         public final static String REGISTER_URL_MATCHER = ApiPaths.BASE + "/auth/register";
-        public final static String SELLER_REGISTER_URL_MATCHER = ApiPaths.BASE + "/auth/register/seller";
+        public final static String SELLER_REGISTER_URL_MATCHER = ApiPaths.BASE + "/store-applications";
         public final static String VERIFY_EMAIL_URL_MATCHER = ApiPaths.BASE + "/auth/verify-email";
         public final static String REQUEST_UNLOCK_URL_MATCHER = ApiPaths.BASE + "/auth/unlock/request";
         public final static String UNLOCK_URL_MATCHER = ApiPaths.BASE + "/auth/unlock";
@@ -49,7 +49,7 @@ public class WebSecurityConfig {
         public final static String PASSWORD_RECOVERY_RESET_URL_MATCHER =
                 ApiPaths.BASE + "/auth/password-recovery/reset";
         public final static String LOG_OUT_MATCHER = ApiPaths.BASE + "/auth/logout";
-        public final static String SELLER_SETUP_MATCHER = ApiPaths.BASE + "/seller-applications/setup";
+        public final static String SELLER_SETUP_MATCHER = ApiPaths.BASE + "/store-applications/setup";
         public final static String SELLER_PLANS_MATCHER = ApiPaths.BASE + "/plans";
         public final static String SELLER_BRAND_MATCHER = ApiPaths.BASE + "/seller-applications/stores/*/brand/*";
         public final static String WOMPI_WEBHOOK_MATCHER = ApiPaths.BASE + "/webhooks/wompi";
@@ -93,11 +93,11 @@ public class WebSecurityConfig {
                                 .requestMatchers(HttpMethod.POST, WOMPI_WEBHOOK_MATCHER).permitAll()
                                 .requestMatchers(
                                         HttpMethod.GET,
-                                        ApiPaths.BASE + "/seller-dashboard/invitations/preview")
+                                        ApiPaths.BASE + "/staff-invitations/preview")
                                         .permitAll()
                                 .requestMatchers(
                                         HttpMethod.POST,
-                                        ApiPaths.BASE + "/seller-dashboard/invitations/accept")
+                                        ApiPaths.BASE + "/staff-invitations/accept")
                                         .permitAll()
                                 .requestMatchers(HttpMethod.GET, SELLER_PLANS_MATCHER).permitAll()
                                 .requestMatchers(HttpMethod.GET, SELLER_BRAND_MATCHER).permitAll()
