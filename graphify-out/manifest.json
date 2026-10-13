@@ -1,16 +1,4 @@
 {
-  "backend/bin/.vscode/launch.json": {
-    "mtime": 1789678148.749,
-    "seen": 1791721188.4447877,
-    "ast_hash": "8cf56e67b12ac7de1a272571fb8b2647",
-    "semantic_hash": "8cf56e67b12ac7de1a272571fb8b2647"
-  },
-  "backend/bin/.vscode/settings.json": {
-    "mtime": 1789831961.107,
-    "seen": 1791721188.4447963,
-    "ast_hash": "f90fcc640f46a00fa16f1bd901b81660",
-    "semantic_hash": "f90fcc640f46a00fa16f1bd901b81660"
-  },
   "backend/bin/mvnw": {
     "mtime": 1791005356.781,
     "seen": 1791721188.4448,
@@ -1366,5 +1354,113 @@
     "seen": 1791721188.4451277,
     "ast_hash": "9d9a3b8a2ab9ac337d76538704fce21d",
     "semantic_hash": "9d9a3b8a2ab9ac337d76538704fce21d"
+  },
+  "backend/bin/docs/api/conventions.md": {
+    "mtime": 1791005356.776,
+    "seen": 1791873478.6429338,
+    "ast_hash": "c9f7fd3c3a8b2c147c43216f22b7cbed",
+    "semantic_hash": ""
+  },
+  "backend/bin/docs/api/error-handling.md": {
+    "mtime": 1791005356.777,
+    "seen": 1791873478.6429398,
+    "ast_hash": "f2da1af1903977b68eea858990c7c3a6",
+    "semantic_hash": ""
+  },
+  "backend/bin/docs/backend/auth-registration.md": {
+    "mtime": 1791005356.779,
+    "seen": 1791873478.642943,
+    "ast_hash": "82af0c9ff93191a7c3d9025220383a2a",
+    "semantic_hash": ""
+  },
+  "backend/bin/docs/backend/security.md": {
+    "mtime": 1791005356.78,
+    "seen": 1791873478.6429462,
+    "ast_hash": "a210eef942828ffc8aab9f8faa759818",
+    "semantic_hash": ""
+  },
+  "backend/bin/docs/git-github-workflow.md": {
+    "mtime": 1791005356.781,
+    "seen": 1791873478.642949,
+    "ast_hash": "8fa8f56b8c5508beb1956d539ec54940",
+    "semantic_hash": ""
+  },
+  "backend/bin/src/main/resources/application.yaml": {
+    "mtime": 1791005356.921,
+    "seen": 1791873478.6429524,
+    "ast_hash": "bab293e5bc949c7e6b7ec5e365e506cd",
+    "semantic_hash": ""
+  },
+  "backend/src/main/resources/application-dev.yaml": {
+    "mtime": 1791292209.1668506,
+    "seen": 1791873478.642956,
+    "ast_hash": "3da20a3050b4458039e59dd9bd94c087",
+    "semantic_hash": ""
+  },
+  "backend/src/main/resources/application.yaml": {
+    "mtime": 1791350083.55796,
+    "seen": 1791873478.6429586,
+    "ast_hash": "e55bcac6026471d81c2f6a98c1d4cb9e",
+    "semantic_hash": ""
+  },
+  "docs/AUTOPARTCO_AGENT_CONTEXT.md": {
+    "mtime": 1791718220.6706748,
+    "seen": 1791873478.6429615,
+    "ast_hash": "6f2dc7e00c8aa6de7c2ece61a824a0bd",
+    "semantic_hash": ""
+  },
+  "docs/AUTOPARTCO_PREDEVELOPMENT_RUNBOOK.md": {
+    "mtime": 1791716956.5244722,
+    "seen": 1791873478.642964,
+    "ast_hash": "71d91a6dc60dd689d85eb250694f09c4",
+    "semantic_hash": ""
+  },
+  "docs/AUTOPARTCO_PREP_TASKS.md": {
+    "mtime": 1791716960.6577837,
+    "seen": 1791873478.642966,
+    "ast_hash": "d171e312990a176ae07dc5b78121253a",
+    "semantic_hash": ""
+  },
+  "docs/AUTOPARTCO_PRODUCT_BLUEPRINT.md": {
+    "mtime": 1791718207.7585475,
+    "seen": 1791873478.6429687,
+    "ast_hash": "865860b6d692ce1100c920f4728f7861",
+    "semantic_hash": ""
+  },
+  "docs/api/conventions.md": {
+    "mtime": 1791005356.7763228,
+    "seen": 1791873478.6429713,
+    "ast_hash": "c9f7fd3c3a8b2c147c43216f22b7cbed",
+    "semantic_hash": ""
+  },
+  "docs/api/error-handling.md": {
+    "mtime": 1791243016.94604,
+    "seen": 1791873478.6429737,
+    "ast_hash": "5d5d952e1b12f8f874c6e45a64ec3e56",
+    "semantic_hash": ""
+  },
+  "docs/backend/auth-registration.md": {
+    "mtime": 1791350240.4257445,
+    "seen": 1791873478.6429763,
+    "ast_hash": "2963735f72a26aaaf55cef686ae1985f",
+    "semantic_hash": ""
+  },
+  "docs/backend/product-images.md": {
+    "mtime": 1791281291.7241814,
+    "seen": 1791873478.6429782,
+    "ast_hash": "d149bd7392762348133b587a408939a3",
+    "semantic_hash": ""
+  },
+  "docs/backend/security.md": {
+    "mtime": 1791291238.2970886,
+    "seen": 1791873478.6429806,
+    "ast_hash": "d3b0d10a09c700cae9fa23c2b6c76517",
+    "semantic_hash": ""
+  },
+  "docs/backend/seller-onboarding-and-plans.md": {
+    "mtime": 1791328157.902471,
+    "seen": 1791873478.6429827,
+    "ast_hash": "6560843dab8b2cdf48bfb4b41cd88864",
+    "semantic_hash": ""
   }
 }
