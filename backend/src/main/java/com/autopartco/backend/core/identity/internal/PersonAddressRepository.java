@@ -11,15 +11,43 @@ import org.springframework.data.repository.query.Param;
 
 
 public interface PersonAddressRepository extends JpaRepository<PersonAddress, UUID> {
-    List<PersonAddress> findByPerson_IdOrderByIsDefaultDescCreatedAtDesc(UUID personId);
+    @Query("""
+            SELECT address FROM PersonAddress address
+            WHERE address.person.id = :personId
+            ORDER BY address.isDefault DESC, address.createdAt DESC
+            """)
+    List<PersonAddress> findAllOfPerson(@Param("personId") UUID personId);
 
     Optional<PersonAddress> findByIdAndPerson_Id(UUID id, UUID personId);
 
-    Optional<PersonAddress> findFirstByPerson_IdAndIsDefaultTrueOrderByCreatedAtDesc(UUID personId);
+    @Query("""
+            SELECT address FROM PersonAddress address
+            WHERE address.person.id = :personId
+              AND address.isDefault = true
+            ORDER BY address.createdAt DESC
+            LIMIT 1
+            """)
+    Optional<PersonAddress> findDefaultOf(@Param("personId") UUID personId);
 
-    Optional<PersonAddress> findFirstByPerson_IdOrderByCreatedAtDesc(UUID personId);
+    @Query("""
+            SELECT address FROM PersonAddress address
+            WHERE address.person.id = :personId
+            ORDER BY address.createdAt DESC
+            LIMIT 1
+            """)
+    Optional<PersonAddress> findLatestOf(@Param("personId") UUID personId);
 
-    Optional<PersonAddress> findFirstByPerson_IdAndIdNotOrderByCreatedAtDesc(UUID personId, UUID id);
+    @Query("""
+            SELECT address FROM PersonAddress address
+            WHERE address.person.id = :personId
+              AND address.id <> :addressId
+            ORDER BY address.createdAt DESC
+            LIMIT 1
+            """)
+    Optional<PersonAddress> findLatestOtherThan(
+            @Param("personId") UUID personId,
+            @Param("addressId") UUID addressId
+    );
 
     @Modifying
     @Query("UPDATE PersonAddress address SET address.isDefault = false "

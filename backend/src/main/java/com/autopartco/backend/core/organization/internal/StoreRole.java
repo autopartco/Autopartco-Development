@@ -1,5 +1,7 @@
 package com.autopartco.backend.core.organization.internal;
 
+import java.util.Set;
+
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -47,5 +49,5 @@ public class StoreRole extends BaseEntity {
             joinColumns = @JoinColumn(name = "role_id"),
             inverseJoinColumns = @JoinColumn(name = "permission_id")
     )
-    private java.util.Set<StorePermission> permissions;
+    private Set<StorePermission> permissions;
 }

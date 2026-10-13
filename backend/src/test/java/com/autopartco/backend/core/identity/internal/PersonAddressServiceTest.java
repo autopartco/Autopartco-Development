@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -39,10 +40,10 @@ class PersonAddressServiceTest {
         person.setId(UUID.randomUUID());
         Account account = new Account();
         account.setPerson(person);
-        when(accountRepository.findByEmailIgnoreCaseForUpdate("ana@example.com"))
+        when(accountRepository.lockByEmail("ana@example.com"))
                 .thenReturn(Optional.of(account));
-        when(addressRepository.findByPerson_IdOrderByIsDefaultDescCreatedAtDesc(person.getId()))
-                .thenReturn(java.util.List.of());
+        when(addressRepository.findAllOfPerson(person.getId()))
+                .thenReturn(List.of());
         when(locationRepository.save(any(Location.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
         when(addressRepository.save(any()))

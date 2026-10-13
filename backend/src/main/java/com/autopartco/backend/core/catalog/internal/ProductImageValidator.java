@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.util.Iterator;
 import java.util.Locale;
 
@@ -130,7 +131,7 @@ public class ProductImageValidator {
     }
 
     private void validateWebp(byte[] content) {
-        String chunkType = new String(content, 12, 4, java.nio.charset.StandardCharsets.US_ASCII);
+        String chunkType = new String(content, 12, 4, StandardCharsets.US_ASCII);
         long chunkLength = unsignedInt32(content, 16);
         if (chunkLength > content.length - 20L) {
             throw invalidImage();

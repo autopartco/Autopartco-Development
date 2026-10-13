@@ -19,6 +19,7 @@ import com.autopartco.backend.core.organization.LegalType;
 import com.autopartco.backend.core.organization.StoreApplications;
 import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.NotFoundException;
+import com.autopartco.backend.shared.persistence.StateCodes;
 
 import lombok.AllArgsConstructor;
 
@@ -80,7 +81,7 @@ public class SubmitStoreApplication {
     ) {
         validateDocuments(request.legalType(), documents);
         AccountRef account = accountLookup.requireByEmail(email.trim());
-        if (!"ACTIVE".equals(account.stateCode())) {
+        if (!StateCodes.ACTIVE.equals(account.stateCode())) {
             throw new BadRequestException("SELLER_EMAIL_NOT_VERIFIED", "Verifica tu correo antes de solicitar ser vendedor.");
         }
         if (!"CUSTOMER".equals(account.accountTypeCode())) {

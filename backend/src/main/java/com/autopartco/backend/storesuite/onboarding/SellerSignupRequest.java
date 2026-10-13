@@ -1,5 +1,7 @@
 package com.autopartco.backend.storesuite.onboarding;
 
+import java.util.UUID;
+
 import com.autopartco.backend.core.identity.RegisterRequest;
 
 import com.autopartco.backend.core.organization.StoreRegistrationRequest;
@@ -19,6 +21,6 @@ public record SellerSignupRequest(
         @NotNull(message = "El tipo de persona es obligatorio.")
         LegalType legalType,
 
-        java.util.UUID planId
+        UUID planId
 ) {
 }

@@ -49,7 +49,7 @@ public class AccountLookup {
      */
     @Transactional
     public Optional<AccountRef> lockByEmail(String email) {
-        return accountRepository.findByEmailIgnoreCaseForUpdate(email).map(AccountLookup::toRef);
+        return accountRepository.lockByEmail(email).map(AccountLookup::toRef);
     }
 
     static AccountRef toRef(Account account) {

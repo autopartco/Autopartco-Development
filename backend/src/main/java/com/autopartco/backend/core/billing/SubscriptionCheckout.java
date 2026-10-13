@@ -4,6 +4,7 @@ import static com.autopartco.backend.core.billing.internal.wompi.WompiHashing.sh
 
 import java.util.UUID;
 
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
@@ -53,7 +54,7 @@ public class SubscriptionCheckout {
                 .filter(applicantEmail -> applicantEmail.equalsIgnoreCase(email))
                 .isPresent();
         if (!applicantMatches) {
-            throw new org.springframework.security.access.AccessDeniedException(
+            throw new AccessDeniedException(
                     "La solicitud no pertenece a la cuenta autenticada."
             );
         }

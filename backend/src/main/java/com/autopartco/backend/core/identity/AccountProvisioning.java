@@ -1,6 +1,7 @@
 package com.autopartco.backend.core.identity;
 
 import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,6 +18,7 @@ import com.autopartco.backend.core.identity.internal.RegistrationService;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.shared.persistence.State;
+import com.autopartco.backend.shared.persistence.StateCodes;
 import com.autopartco.backend.shared.persistence.StateRepository;
 
 import lombok.AllArgsConstructor;
@@ -29,7 +31,6 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class AccountProvisioning {
     private static final String STORE_MANAGER_TYPE = "STORE_MANAGER";
-    private static final String ACTIVE_STATE = "ACTIVE";
 
     private final RegistrationService registrationService;
     private final AccountRepository accountRepository;
@@ -93,8 +94,8 @@ public class AccountProvisioning {
                 .email(normalizeEmail(email))
                 .password(passwordEncoder.encode(details.password()))
                 .accountType(accountType)
-                .state(findState(ACTIVE_STATE))
-                .configuration(java.util.Map.of())
+                .state(findState(StateCodes.ACTIVE))
+                .configuration(Map.of())
                 .build();
         return AccountLookup.toRef(accountRepository.save(account));
     }
@@ -104,7 +105,7 @@ public class AccountProvisioning {
     public void activate(UUID accountId) {
         Account account = accountRepository.findById(accountId)
                 .orElseThrow(() -> new NotFoundException("ACCOUNT_NOT_FOUND", "No se encontró la cuenta."));
-        account.setState(findState(ACTIVE_STATE));
+        account.setState(findState(StateCodes.ACTIVE));
     }
 
     private State findState(String code) {

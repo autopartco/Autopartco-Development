@@ -20,6 +20,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -67,7 +68,7 @@ class StaffInvitationsTest {
                 Set.of(StorePermissionCodes.STORE_READ)
         );
 
-        var captor = org.mockito.ArgumentCaptor.forClass(StaffInvitation.class);
+        var captor = ArgumentCaptor.forClass(StaffInvitation.class);
         verify(invitationRepository).save(captor.capture());
         StaffInvitation saved = captor.getValue();
         assertEquals(43, issued.rawToken().length());
@@ -82,7 +83,7 @@ class StaffInvitationsTest {
     void renewReplacesTheTokenHashAndExtendsFromTheGivenInstant() throws Exception {
         StaffInvitation invitation = invitation(LocalDateTime.now().minusDays(1));
         invitation.setTokenHash("previous-hash");
-        when(invitationRepository.findByIdAndStore_Id(invitation.getId(), store.getId()))
+        when(invitationRepository.findInStore(store.getId(), invitation.getId()))
                 .thenReturn(Optional.of(invitation));
         when(invitationRepository.save(invitation)).thenReturn(invitation);
         LocalDateTime now = LocalDateTime.now();
@@ -99,8 +100,8 @@ class StaffInvitationsTest {
         StaffInvitation invitation = invitation(LocalDateTime.now().plusDays(1));
         invitation.setAcceptedAt(LocalDateTime.now().minusMinutes(5));
         when(invitationRepository.findByTokenHash(sha256(token))).thenReturn(Optional.of(invitation));
-        when(storeRepository.findByIdForUpdate(store.getId())).thenReturn(Optional.of(store));
-        when(invitationRepository.findByTokenHashForUpdate(sha256(token))).thenReturn(Optional.of(invitation));
+        when(storeRepository.lockById(store.getId())).thenReturn(Optional.of(store));
+        when(invitationRepository.lockByTokenHash(sha256(token))).thenReturn(Optional.of(invitation));
 
         BadRequestException exception = assertThrows(
                 BadRequestException.class,

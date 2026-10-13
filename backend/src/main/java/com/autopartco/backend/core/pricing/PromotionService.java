@@ -27,7 +27,7 @@ public class PromotionService {
 
     @Transactional(readOnly = true)
     public List<PromotionResponse> listForStore(UUID storeId) {
-        return promotionRepository.findByScopeAndStoreIdOrderByCreatedAtDesc(PromotionScope.STORE, storeId)
+        return promotionRepository.findStorePromotions(storeId)
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -46,8 +46,7 @@ public class PromotionService {
 
     @Transactional
     public PromotionResponse updateForStore(UUID storeId, UUID promotionId, PromotionUpsertRequest request) {
-        Promotion promotion = promotionRepository.findByIdAndScopeAndStoreId(
-                        promotionId, PromotionScope.STORE, storeId)
+        Promotion promotion = promotionRepository.findStorePromotion(storeId, promotionId)
                 .orElseThrow(PromotionService::notFound);
         validateTarget(request, PromotionScope.STORE, storeId);
         applyRequest(promotion, request, storeId);
@@ -56,15 +55,14 @@ public class PromotionService {
 
     @Transactional
     public void deleteForStore(UUID storeId, UUID promotionId) {
-        Promotion promotion = promotionRepository.findByIdAndScopeAndStoreId(
-                        promotionId, PromotionScope.STORE, storeId)
+        Promotion promotion = promotionRepository.findStorePromotion(storeId, promotionId)
                 .orElseThrow(PromotionService::notFound);
         promotionRepository.delete(promotion);
     }
 
     @Transactional(readOnly = true)
     public List<PromotionResponse> listForPlatform() {
-        return promotionRepository.findByScopeAndStoreIdIsNullOrderByCreatedAtDesc(PromotionScope.PLATFORM)
+        return promotionRepository.findPlatformPromotions()
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -83,8 +81,7 @@ public class PromotionService {
 
     @Transactional
     public PromotionResponse updateForPlatform(UUID promotionId, PromotionUpsertRequest request) {
-        Promotion promotion = promotionRepository.findByIdAndScopeAndStoreIdIsNull(
-                        promotionId, PromotionScope.PLATFORM)
+        Promotion promotion = promotionRepository.findPlatformPromotion(promotionId)
                 .orElseThrow(PromotionService::notFound);
         validateTarget(request, PromotionScope.PLATFORM, null);
         applyRequest(
@@ -97,8 +94,7 @@ public class PromotionService {
 
     @Transactional
     public void deleteForPlatform(UUID promotionId) {
-        Promotion promotion = promotionRepository.findByIdAndScopeAndStoreIdIsNull(
-                        promotionId, PromotionScope.PLATFORM)
+        Promotion promotion = promotionRepository.findPlatformPromotion(promotionId)
                 .orElseThrow(PromotionService::notFound);
         promotionRepository.delete(promotion);
     }

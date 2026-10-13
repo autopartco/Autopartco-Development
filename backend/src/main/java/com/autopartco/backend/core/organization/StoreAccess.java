@@ -48,11 +48,8 @@ public class StoreAccess {
     }
 
     private boolean applicationAllowsAccess(UUID storeId) {
-        return !applicationRepository.existsByStore_Id(storeId)
-                || applicationRepository.existsByStore_IdAndStatus(
-                        storeId,
-                        StoreApplicationStatus.ACTIVE
-                );
+        return !applicationRepository.existsForStore(storeId)
+                || applicationRepository.isActive(storeId);
     }
 
     private AccountRef findAccount(String email) {

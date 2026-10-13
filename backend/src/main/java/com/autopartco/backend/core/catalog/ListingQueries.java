@@ -201,7 +201,7 @@ public class ListingQueries {
                 .flatMap(product -> product.getCompatibilityIds().stream())
                 .collect(Collectors.toSet()));
         Map<UUID, List<ProductImageResponse>> imagesByProduct = productImageRepository
-                .findByProduct_IdInOrderByProduct_IdAscDisplayOrderAscCreatedAtAsc(productIds)
+                .findAllOfProducts(productIds)
                 .stream()
                 .collect(Collectors.groupingBy(
                         image -> image.getProduct().getId(),

@@ -12,6 +12,7 @@ import com.autopartco.backend.core.organization.StaffInvitationView;
 import com.autopartco.backend.core.organization.StaffInvitations;
 import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.ConflictException;
+import com.autopartco.backend.shared.persistence.StateCodes;
 
 import lombok.AllArgsConstructor;
 
@@ -23,8 +24,6 @@ import lombok.AllArgsConstructor;
 @Service
 @AllArgsConstructor
 public class AcceptStaffInvitation {
-    private static final String ACTIVE_STATE = "ACTIVE";
-    private static final String LOCKED_STATE = "LOCKED";
 
     private final StaffInvitations staffInvitations;
     private final StaffSeats staffSeats;
@@ -42,13 +41,13 @@ public class AcceptStaffInvitation {
                         invitation.email(),
                         requireDetails(request.account())
                 ));
-        if (LOCKED_STATE.equals(account.stateCode())) {
+        if (StateCodes.LOCKED.equals(account.stateCode())) {
             throw new ConflictException(
                     "SELLER_COLLABORATOR_ACCOUNT_LOCKED",
                     "La cuenta está bloqueada y no puede aceptar invitaciones."
             );
         }
-        if (!ACTIVE_STATE.equals(account.stateCode())) {
+        if (!StateCodes.ACTIVE.equals(account.stateCode())) {
             accountProvisioning.activate(account.accountId());
         }
         staffDirectory.addCollaborator(invitation.storeId(), account.personId(), invitation.roleId());

@@ -1,21 +1,13 @@
 package com.autopartco.backend.core.identity.internal;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.HexFormat;
+import com.autopartco.backend.shared.security.TokenHashing;
 
+/** Hash con el que se guarda el refresh token en {@code account_sessions.refresh_token_hash}. */
 public final class RefreshTokenHash {
     private RefreshTokenHash() {
     }
 
     public static String of(String rawToken) {
-        try {
-            byte[] digest = MessageDigest.getInstance("SHA-256")
-                    .digest(rawToken.getBytes(StandardCharsets.UTF_8));
-            return HexFormat.of().formatHex(digest);
-        } catch (NoSuchAlgorithmException exception) {
-            throw new IllegalStateException("SHA-256 is not available.", exception);
-        }
+        return TokenHashing.sha256Hex(rawToken);
     }
 }

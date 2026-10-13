@@ -12,6 +12,7 @@ import com.autopartco.backend.core.identity.PreparedRegistration;
 import com.autopartco.backend.core.identity.RegisterResponse;
 import com.autopartco.backend.core.audit.AuditService;
 import com.autopartco.backend.core.notification.EmailService;
+import com.autopartco.backend.shared.persistence.StateCodes;
 import com.autopartco.backend.shared.persistence.StateRepository;
 import com.autopartco.backend.shared.persistence.State;
 import com.autopartco.backend.shared.config.AppProperties;
@@ -24,7 +25,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class RegistrationService {
     private static final String DEFAULT_ACCOUNT_TYPE = "CUSTOMER";
-    private static final String REGISTRATION_STATE = "PENDING";
+    private static final String REGISTRATION_STATE = StateCodes.PENDING;
 
     private final AccountRepository accountRepository;
     private final PersonRepository personRepository;

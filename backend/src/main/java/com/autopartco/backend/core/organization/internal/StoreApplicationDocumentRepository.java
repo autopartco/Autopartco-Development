@@ -11,7 +11,12 @@ import org.springframework.data.repository.query.Param;
 
 public interface StoreApplicationDocumentRepository
         extends JpaRepository<StoreApplicationDocument, UUID> {
-    List<StoreApplicationDocument> findByApplication_IdOrderByDocumentType(UUID applicationId);
+    @Query("""
+            select document from StoreApplicationDocument document
+            where document.application.id = :applicationId
+            order by document.documentType asc
+            """)
+    List<StoreApplicationDocument> findAllOfApplication(@Param("applicationId") UUID applicationId);
 
     @Query("""
             select document from StoreApplicationDocument document

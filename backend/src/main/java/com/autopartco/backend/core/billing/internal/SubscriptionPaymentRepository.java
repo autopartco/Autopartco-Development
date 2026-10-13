@@ -21,5 +21,5 @@ public interface SubscriptionPaymentRepository extends JpaRepository<Subscriptio
     @Query("select payment from SubscriptionPayment payment "
             + "join StoreSubscription application on application.id = payment.storeApplicationId "
             + "where payment.reference = :reference")
-    Optional<SubscriptionPayment> findByReferenceForUpdate(@Param("reference") String reference);
+    Optional<SubscriptionPayment> lockByReference(@Param("reference") String reference);
 }

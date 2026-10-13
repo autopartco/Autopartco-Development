@@ -5,9 +5,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 public interface PlanRepository extends JpaRepository<Plan, UUID> {
-    List<Plan> findByEnabledTrueOrderByMonthlyPriceCopAsc();
+    @Query("select plan from Plan plan where plan.enabled = true order by plan.monthlyPriceCop asc")
+    List<Plan> findEnabledByPrice();
 
     Optional<Plan> findByCodeIgnoreCase(String code);
 

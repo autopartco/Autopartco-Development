@@ -38,7 +38,7 @@ class StoreAccessTest {
     void returnsPermissionCodesForTheAuthenticatedPersonAndStore() {
         UUID personId = UUID.randomUUID();
         UUID storeId = UUID.randomUUID();
-        when(applicationRepository.existsByStore_Id(storeId)).thenReturn(false);
+        when(applicationRepository.existsForStore(storeId)).thenReturn(false);
         AccountRef account = account(personId);
         when(accountLookup.findByEmail("ana@example.com"))
                 .thenReturn(Optional.of(account));
@@ -55,7 +55,7 @@ class StoreAccessTest {
     void rejectsActionsWithoutTheRequestedStorePermission() {
         UUID personId = UUID.randomUUID();
         UUID storeId = UUID.randomUUID();
-        when(applicationRepository.existsByStore_Id(storeId)).thenReturn(false);
+        when(applicationRepository.existsForStore(storeId)).thenReturn(false);
         AccountRef account = account(personId);
         when(accountLookup.findByEmail("ana@example.com"))
                 .thenReturn(Optional.of(account));

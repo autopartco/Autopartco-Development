@@ -11,7 +11,8 @@ import org.springframework.data.repository.query.Param;
 
 public interface BranchRepository extends JpaRepository<Branch, UUID> {
 
-    long countByStore_IdAndState_Code(UUID storeId, String stateCode);
+    @Query("select count(b) from Branch b where b.store.id = :storeId and b.state.code = 'ACTIVE'")
+    long countActiveInStore(@Param("storeId") UUID storeId);
 
     @Query("select b from Branch b where b.store.id = :storeId order by b.name")
     List<Branch> findAllInStore(@Param("storeId") UUID storeId);

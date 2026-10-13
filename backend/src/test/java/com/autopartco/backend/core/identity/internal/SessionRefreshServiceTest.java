@@ -2,6 +2,7 @@ package com.autopartco.backend.core.identity.internal;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -33,17 +34,17 @@ class SessionRefreshServiceTest {
     @Test
     void rotatesTokenHashAndReturnsNewTokenPairForSameSession() {
         UUID sessionId = UUID.randomUUID();
-        Account account = org.mockito.Mockito.mock(Account.class);
+        Account account = mock(Account.class);
         State activeState = new State();
         activeState.setCode("ACTIVE");
         when(account.getState()).thenReturn(activeState);
 
-        AccountSession session = org.mockito.Mockito.mock(AccountSession.class);
+        AccountSession session = mock(AccountSession.class);
         when(session.getRevokedAt()).thenReturn(null);
         when(session.getExpiredAt()).thenReturn(LocalDateTime.now().plusDays(1));
         when(session.getAccount()).thenReturn(account);
         when(session.getId()).thenReturn(sessionId);
-        when(sessionRepository.findByRefreshTokenHashForUpdate(RefreshTokenHash.of("old-token")))
+        when(sessionRepository.lockByRefreshTokenHash(RefreshTokenHash.of("old-token")))
                 .thenReturn(Optional.of(session));
 
         LoginResponse response = new LoginResponse("new-access", "new-refresh", "Bearer", 300);
@@ -59,10 +60,10 @@ class SessionRefreshServiceTest {
 
     @Test
     void rejectsExpiredRefreshTokens() {
-        AccountSession session = org.mockito.Mockito.mock(AccountSession.class);
+        AccountSession session = mock(AccountSession.class);
         when(session.getRevokedAt()).thenReturn(null);
         when(session.getExpiredAt()).thenReturn(LocalDateTime.now().minusSeconds(1));
-        when(sessionRepository.findByRefreshTokenHashForUpdate(RefreshTokenHash.of("old-token")))
+        when(sessionRepository.lockByRefreshTokenHash(RefreshTokenHash.of("old-token")))
                 .thenReturn(Optional.of(session));
 
         assertThrows(UnauthorizedException.class, () -> sessionRefreshService.refresh("old-token"));

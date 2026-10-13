@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Propagation;
 
+import com.autopartco.backend.shared.persistence.StateCodes;
 import com.autopartco.backend.shared.persistence.StateRepository;
 import com.autopartco.backend.shared.persistence.State;
 import com.autopartco.backend.shared.error.NotFoundException;
@@ -14,8 +15,6 @@ import lombok.AllArgsConstructor;
 @Service
 @AllArgsConstructor
 public class AccountStatusService {
-    public static final String ACTIVE = "ACTIVE";
-    public static final String LOCKED = "LOCKED";
 
     private final AccountRepository accountRepository;
     private final StateRepository stateRepository;
@@ -23,7 +22,7 @@ public class AccountStatusService {
 
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public Account lock(Account account, String ipAddress, int failedAttempts) {
-        account.setState(findState(LOCKED));
+        account.setState(findState(StateCodes.LOCKED));
         Account savedAccount = accountRepository.save(account);
         auditService.recordAccountLocked(savedAccount.getId(), savedAccount.getEmail(), ipAddress, failedAttempts, savedAccount.getState().getCode());
         return savedAccount;
@@ -31,14 +30,14 @@ public class AccountStatusService {
 
     @Transactional
     public Account activate(Account account) {
-        account.setState(findState(ACTIVE));
+        account.setState(findState(StateCodes.ACTIVE));
         Account savedAccount = accountRepository.save(account);
         auditService.recordAccountUnlocked(savedAccount.getId(), savedAccount.getEmail(), savedAccount.getState().getCode());
         return savedAccount;
     }
 
     public boolean isLocked(Account account) {
-        return account.getState() != null && LOCKED.equals(account.getState().getCode());
+        return account.getState() != null && StateCodes.LOCKED.equals(account.getState().getCode());
     }
 
     private State findState(String code) {

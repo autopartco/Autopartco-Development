@@ -27,7 +27,7 @@ public class PersonAddressService {
     @Transactional(readOnly = true)
     public List<PersonAddressResponse> list(String email) {
         Account account = findAccount(email);
-        return addressRepository.findByPerson_IdOrderByIsDefaultDescCreatedAtDesc(account.getPerson().getId())
+        return addressRepository.findAllOfPerson(account.getPerson().getId())
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -38,7 +38,7 @@ public class PersonAddressService {
         Account account = lockAccount(email);
         UUID personId = account.getPerson().getId();
         boolean makeDefault = request.isDefault()
-                || addressRepository.findByPerson_IdOrderByIsDefaultDescCreatedAtDesc(personId).isEmpty();
+                || addressRepository.findAllOfPerson(personId).isEmpty();
         if (makeDefault) {
             addressRepository.clearDefaultForPerson(personId);
         }
@@ -62,7 +62,7 @@ public class PersonAddressService {
             addressRepository.clearDefaultForPerson(account.getPerson().getId());
         } else if (wasDefault) {
             addressRepository.clearDefaultForPerson(account.getPerson().getId());
-            var nextDefault = addressRepository.findFirstByPerson_IdAndIdNotOrderByCreatedAtDesc(
+            var nextDefault = addressRepository.findLatestOtherThan(
                     account.getPerson().getId(),
                     addressId
             );
@@ -89,7 +89,7 @@ public class PersonAddressService {
 
         if (wasDefault) {
             addressRepository.clearDefaultForPerson(personId);
-            addressRepository.findFirstByPerson_IdOrderByCreatedAtDesc(personId)
+            addressRepository.findLatestOf(personId)
                     .ifPresent(nextDefault -> nextDefault.setDefault(true));
         }
     }
@@ -103,7 +103,7 @@ public class PersonAddressService {
     }
 
     private Account lockAccount(String email) {
-        return accountRepository.findByEmailIgnoreCaseForUpdate(normalizeEmail(email))
+        return accountRepository.lockByEmail(normalizeEmail(email))
                 .orElseThrow(() -> new NotFoundException(
                         "ACCOUNT_NOT_FOUND",
                         "No se encontró la cuenta autenticada."

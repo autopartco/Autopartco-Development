@@ -1,12 +1,7 @@
 package com.autopartco.backend.core.organization;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +25,9 @@ import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.shared.persistence.State;
+import com.autopartco.backend.shared.persistence.StateCodes;
 import com.autopartco.backend.shared.persistence.StateRepository;
+import com.autopartco.backend.shared.security.TokenHashing;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,8 +40,6 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor
 @Slf4j
 public class StoreApplications {
-    private static final String ACTIVE_STATE = "ACTIVE";
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final StoreApplicationRepository applicationRepository;
     private final StoreApplicationDocumentRepository documentRepository;
@@ -206,7 +201,7 @@ public class StoreApplications {
      */
     @Transactional
     public Reviewed review(UUID applicationId, String reviewerEmail, StoreApplicationReviewRequest request) {
-        StoreApplication application = applicationRepository.findByIdForUpdate(applicationId)
+        StoreApplication application = applicationRepository.lockById(applicationId)
                 .orElseThrow(() -> new NotFoundException(
                         "SELLER_APPLICATION_NOT_FOUND",
                         "No se encontró la solicitud de vendedor."
@@ -227,8 +222,8 @@ public class StoreApplications {
             return new Reviewed(toView(application, applicant), applicant.email(), applicant.givenName(), null);
         }
 
-        String rawToken = newOnboardingToken();
-        application.setOnboardingTokenHash(hash(rawToken));
+        String rawToken = TokenHashing.newToken();
+        application.setOnboardingTokenHash(TokenHashing.sha256Hex(rawToken));
         application.setOnboardingTokenExpiresAt(LocalDateTime.now().plusHours(48));
         application.setStatus(StoreApplicationStatus.CONFIGURATION_PENDING);
         return new Reviewed(toView(application, applicant), applicant.email(), applicant.givenName(), rawToken);
@@ -251,7 +246,7 @@ public class StoreApplications {
                     "El enlace de configuración venció o ya fue utilizado."
             );
         }
-        if (!ACTIVE_STATE.equals(requireApplicant(application).stateCode())) {
+        if (!StateCodes.ACTIVE.equals(requireApplicant(application).stateCode())) {
             throw new ConflictException(
                     "SELLER_EMAIL_NOT_VERIFIED",
                     "Verifica tu correo antes de terminar la configuración del almacén."
@@ -348,7 +343,7 @@ public class StoreApplications {
         if (rawToken == null || rawToken.isBlank()) {
             throw new BadRequestException("SELLER_SETUP_TOKEN_INVALID", "El enlace de configuración no es válido.");
         }
-        return applicationRepository.findByOnboardingTokenHashForUpdate(hash(rawToken))
+        return applicationRepository.lockByOnboardingToken(TokenHashing.sha256Hex(rawToken))
                 .orElseThrow(() -> new BadRequestException(
                         "SELLER_SETUP_TOKEN_INVALID",
                         "El enlace de configuración no es válido."
@@ -356,7 +351,7 @@ public class StoreApplications {
     }
 
     private State activeStoreState() {
-        return stateRepository.findByCode(ACTIVE_STATE)
+        return stateRepository.findByCode(StateCodes.ACTIVE)
                 .orElseThrow(() -> new NotFoundException(
                         "STORE_ACTIVE_STATE_NOT_FOUND",
                         "No está configurado el estado activo para los almacenes."
@@ -365,7 +360,7 @@ public class StoreApplications {
 
     private StoreApplicationView toView(StoreApplication application, AccountRef applicant) {
         List<StoreApplicationView.Document> documents =
-                documentRepository.findByApplication_IdOrderByDocumentType(application.getId())
+                documentRepository.findAllOfApplication(application.getId())
                         .stream()
                         .map(document -> new StoreApplicationView.Document(
                                 document.getId(),
@@ -401,20 +396,4 @@ public class StoreApplications {
         return cleaned.isEmpty() ? null : cleaned;
     }
 
-    private String newOnboardingToken() {
-        byte[] bytes = new byte[32];
-        SECURE_RANDOM.nextBytes(bytes);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-    }
-
-    private String hash(String value) {
-        try {
-            return java.util.HexFormat.of().formatHex(
-                    MessageDigest.getInstance("SHA-256")
-                            .digest(value.getBytes(StandardCharsets.UTF_8))
-            );
-        } catch (NoSuchAlgorithmException exception) {
-            throw new IllegalStateException("SHA-256 is unavailable.", exception);
-        }
-    }
 }

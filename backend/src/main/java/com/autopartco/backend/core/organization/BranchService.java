@@ -16,6 +16,7 @@ import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.shared.location.Location;
 import com.autopartco.backend.shared.location.LocationRepository;
 import com.autopartco.backend.shared.persistence.State;
+import com.autopartco.backend.shared.persistence.StateCodes;
 import com.autopartco.backend.shared.persistence.StateRepository;
 
 import lombok.AllArgsConstructor;
@@ -27,8 +28,6 @@ import lombok.AllArgsConstructor;
 @Service
 @AllArgsConstructor
 public class BranchService {
-    private static final String ACTIVE = "ACTIVE";
-    private static final String INACTIVE = "INACTIVE";
 
     private final BranchRepository branchRepository;
     private final LocationRepository locationRepository;
@@ -49,7 +48,7 @@ public class BranchService {
             throw new ConflictException("BRANCH_NAME_ALREADY_EXISTS", "Ya existe una sucursal con este nombre.");
         }
 
-        State active = findState(ACTIVE);
+        State active = findState(StateCodes.ACTIVE);
         Location location = locationRepository.save(toLocation(request.location()));
         Branch branch = Branch.builder()
                 .store(store)
@@ -88,19 +87,19 @@ public class BranchService {
     public void deactivate(UUID storeId, UUID branchId) {
         requireStore(storeId);
         Branch branch = findBranch(storeId, branchId);
-        branch.setState(findState(INACTIVE));
+        branch.setState(findState(StateCodes.INACTIVE));
     }
 
     @Transactional(readOnly = true)
     public long countActive(UUID storeId) {
-        return branchRepository.countByStore_IdAndState_Code(storeId, ACTIVE);
+        return branchRepository.countActiveInStore(storeId);
     }
 
     /** Exige una sucursal del almacén en estado {@code ACTIVE}; si no existe o no está activa, {@code BRANCH_NOT_FOUND}. */
     @Transactional(readOnly = true)
     public void requireActiveInStore(UUID storeId, UUID branchId) {
         Branch branch = findBranch(storeId, branchId);
-        if (!ACTIVE.equals(branch.getState().getCode())) {
+        if (!StateCodes.ACTIVE.equals(branch.getState().getCode())) {
             throw new NotFoundException("BRANCH_NOT_FOUND", "No se encontró la sucursal activa.");
         }
     }

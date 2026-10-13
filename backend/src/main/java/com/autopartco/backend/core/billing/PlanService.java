@@ -24,7 +24,7 @@ public class PlanService {
 
     @Transactional(readOnly = true)
     public List<PlanResponse> publicPlans() {
-        return repository.findByEnabledTrueOrderByMonthlyPriceCopAsc()
+        return repository.findEnabledByPrice()
                 .stream()
                 .map(this::toResponse)
                 .toList();
@@ -112,7 +112,7 @@ public class PlanService {
     }
 
     Plan recommendedPlan() {
-        return repository.findByEnabledTrueOrderByMonthlyPriceCopAsc().stream()
+        return repository.findEnabledByPrice().stream()
                 .filter(Plan::isRecommended)
                 .findFirst()
                 .orElseGet(this::trialPlan);
@@ -138,7 +138,7 @@ public class PlanService {
             applyDefaultEntitlements(plan, code);
         }
         if (request.recommended()) {
-            repository.findByEnabledTrueOrderByMonthlyPriceCopAsc().stream()
+            repository.findEnabledByPrice().stream()
                     .filter(Plan::isRecommended)
                     .filter(existing -> !existing.getId().equals(plan.getId()))
                     .forEach(existing -> existing.setRecommended(false));

@@ -27,20 +27,26 @@ public interface StoreApplicationRepository extends JpaRepository<StoreApplicati
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select application from StoreApplication application where application.id = :id")
-    Optional<StoreApplication> findByIdForUpdate(@Param("id") UUID id);
+    Optional<StoreApplication> lockById(@Param("id") UUID id);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select application from StoreApplication application "
             + "where application.onboardingTokenHash = :tokenHash")
-    Optional<StoreApplication> findByOnboardingTokenHashForUpdate(@Param("tokenHash") String tokenHash);
+    Optional<StoreApplication> lockByOnboardingToken(@Param("tokenHash") String tokenHash);
 
     @Query("select application from StoreApplication application "
             + "join fetch application.store where application.store.id = :storeId")
     Optional<StoreApplication> findByStoreId(@Param("storeId") UUID storeId);
 
-    boolean existsByStore_Id(UUID storeId);
+    @Query("select case when count(application) > 0 then true else false end "
+            + "from StoreApplication application where application.store.id = :storeId")
+    boolean existsForStore(@Param("storeId") UUID storeId);
 
-    boolean existsByStore_IdAndStatus(UUID storeId, StoreApplicationStatus status);
+    /** La literal de enum en JPQL debe ir calificada por especificación (JPA 4.6.1). */
+    @Query("select case when count(application) > 0 then true else false end "
+            + "from StoreApplication application where application.store.id = :storeId "
+            + "and application.status = com.autopartco.backend.core.organization.StoreApplicationStatus.ACTIVE")
+    boolean isActive(@Param("storeId") UUID storeId);
 
     boolean existsByApplicantAccountIdAndStatusIn(UUID applicantAccountId, Collection<StoreApplicationStatus> statuses);
 

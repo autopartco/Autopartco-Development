@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
@@ -137,7 +138,7 @@ public class SupabaseStorageService {
         return properties.url().replaceAll("/+$", "");
     }
 
-    private void addAuthentication(org.springframework.http.HttpHeaders headers) {
+    private void addAuthentication(HttpHeaders headers) {
         headers.set("apikey", properties.serviceKey());
         headers.setBearerAuth(properties.serviceKey());
     }

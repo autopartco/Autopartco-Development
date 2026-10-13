@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.autopartco.backend.core.organization.StoreApplicationStatus;
 import com.autopartco.backend.shared.error.NotFoundException;
+import com.autopartco.backend.shared.persistence.StateCodes;
 
 import lombok.AllArgsConstructor;
 
@@ -19,7 +20,6 @@ import lombok.AllArgsConstructor;
 @Component
 @AllArgsConstructor
 public class PublishedStoreAssets {
-    private static final String ACTIVE_STATE = "ACTIVE";
 
     private final StoreApplicationRepository applicationRepository;
 
@@ -31,7 +31,7 @@ public class PublishedStoreAssets {
             throw new NotFoundException("STORE_NOT_FOUND", "No se encontró el almacén publicado.");
         }
         Store store = application.getStore();
-        if (!ACTIVE_STATE.equals(store.getState().getCode())) {
+        if (!StateCodes.ACTIVE.equals(store.getState().getCode())) {
             throw new NotFoundException("STORE_NOT_FOUND", "No se encontró el almacén publicado.");
         }
         String path = switch (assetType) {

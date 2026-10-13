@@ -2,6 +2,7 @@ package com.autopartco.backend.core.billing.internal.wompi;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
+import java.util.Locale;
 
 import org.springframework.stereotype.Component;
 
@@ -44,7 +45,7 @@ public class WompiSignatureVerifier {
         signedValues.append(timestamp.isValueNode() ? timestamp.asText() : timestamp.toString())
                 .append(wompiProperties.eventsSecret());
         byte[] expected = WompiHashing.sha256(signedValues.toString()).getBytes(StandardCharsets.US_ASCII);
-        byte[] received = checksum.toLowerCase(java.util.Locale.ROOT).getBytes(StandardCharsets.US_ASCII);
+        byte[] received = checksum.toLowerCase(Locale.ROOT).getBytes(StandardCharsets.US_ASCII);
         if (!MessageDigest.isEqual(expected, received)) {
             throw new BadRequestException("WOMPI_SIGNATURE_INVALID", "La firma del evento no es válida.");
         }

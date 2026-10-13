@@ -1,5 +1,7 @@
 package com.autopartco.backend.core.organization.internal;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,11 +11,18 @@ import org.springframework.data.repository.query.Param;
 
 public interface CollaboratorRepository extends JpaRepository<Collaborator, UUID> {
 
-    long countByStore_IdAndState_Code(UUID storeId, String stateCode);
+    @Query("select count(c) from Collaborator c where c.store.id = :storeId and c.state.code = 'ACTIVE'")
+    long countActiveInStore(@Param("storeId") UUID storeId);
 
-    boolean existsByPersonIdAndStore_Id(UUID personId, UUID storeId);
+    @Query("""
+            select case when count(c) > 0 then true else false end
+            from Collaborator c
+            where c.personId = :personId
+              and c.store.id = :storeId
+            """)
+    boolean existsInStore(@Param("personId") UUID personId, @Param("storeId") UUID storeId);
 
-    java.util.Optional<Collaborator> findByIdAndStore_Id(UUID id, UUID storeId);
+    Optional<Collaborator> findByIdAndStore_Id(UUID id, UUID storeId);
 
     @Query("""
             select case when count(c) > 0 then true else false end
@@ -36,7 +45,7 @@ public interface CollaboratorRepository extends JpaRepository<Collaborator, UUID
               AND collaborator.state.code = 'ACTIVE'
             ORDER BY permission.code
             """)
-    java.util.List<String> findPermissionCodes(
+    List<String> findPermissionCodes(
             @Param("personId") UUID personId,
             @Param("storeId") UUID storeId
     );

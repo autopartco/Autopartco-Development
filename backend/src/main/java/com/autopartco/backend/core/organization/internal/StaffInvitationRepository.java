@@ -15,21 +15,52 @@ import jakarta.persistence.LockModeType;
 
 public interface StaffInvitationRepository
         extends JpaRepository<StaffInvitation, UUID> {
-    Optional<StaffInvitation> findByStore_IdAndEmailIgnoreCaseAndAcceptedAtIsNullAndRevokedAtIsNull(
-            UUID storeId,
-            String email
+    @Query("""
+            SELECT invitation
+            FROM StaffInvitation invitation
+            WHERE invitation.store.id = :storeId
+              AND upper(invitation.email) = upper(:email)
+              AND invitation.acceptedAt IS NULL
+              AND invitation.revokedAt IS NULL
+            """)
+    Optional<StaffInvitation> findPendingByEmail(
+            @Param("storeId") UUID storeId,
+            @Param("email") String email
     );
 
-    List<StaffInvitation> findByStore_IdAndAcceptedAtIsNullAndRevokedAtIsNullOrderByCreatedAtDesc(
-            UUID storeId
+    @Query("""
+            SELECT invitation
+            FROM StaffInvitation invitation
+            WHERE invitation.store.id = :storeId
+              AND invitation.acceptedAt IS NULL
+              AND invitation.revokedAt IS NULL
+            ORDER BY invitation.createdAt DESC
+            """)
+    List<StaffInvitation> findPendingInStore(@Param("storeId") UUID storeId);
+
+    @Query("""
+            SELECT count(invitation)
+            FROM StaffInvitation invitation
+            WHERE invitation.store.id = :storeId
+              AND invitation.acceptedAt IS NULL
+              AND invitation.revokedAt IS NULL
+              AND invitation.expiresAt > :now
+            """)
+    long countPendingInStore(
+            @Param("storeId") UUID storeId,
+            @Param("now") LocalDateTime now
     );
 
-    long countByStore_IdAndAcceptedAtIsNullAndRevokedAtIsNullAndExpiresAtAfter(
-            UUID storeId,
-            LocalDateTime now
+    @Query("""
+            SELECT invitation
+            FROM StaffInvitation invitation
+            WHERE invitation.store.id = :storeId
+              AND invitation.id = :id
+            """)
+    Optional<StaffInvitation> findInStore(
+            @Param("storeId") UUID storeId,
+            @Param("id") UUID id
     );
-
-    Optional<StaffInvitation> findByIdAndStore_Id(UUID id, UUID storeId);
 
     Optional<StaffInvitation> findByTokenHash(String tokenHash);
 
@@ -39,7 +70,7 @@ public interface StaffInvitationRepository
             FROM StaffInvitation invitation
             WHERE invitation.tokenHash = :tokenHash
             """)
-    Optional<StaffInvitation> findByTokenHashForUpdate(
+    Optional<StaffInvitation> lockByTokenHash(
             @Param("tokenHash") String tokenHash
     );
 }

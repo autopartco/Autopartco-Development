@@ -1,6 +1,7 @@
 package com.autopartco.backend.core.organization.internal;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -14,7 +15,7 @@ import jakarta.persistence.LockModeType;
 public interface StoreRepository extends JpaRepository<Store, UUID> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select store from Store store where store.id = :id")
-    java.util.Optional<Store> findByIdForUpdate(@Param("id") UUID id);
+    Optional<Store> lockById(@Param("id") UUID id);
 
     @Query("select case when count(s) > 0 then true else false end from Store s "
         + "where lower(s.businessName) = lower(:name)")

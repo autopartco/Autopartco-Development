@@ -3,7 +3,9 @@ package com.autopartco.backend.core.organization;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -19,6 +21,7 @@ import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.shared.persistence.State;
+import com.autopartco.backend.shared.persistence.StateCodes;
 import com.autopartco.backend.shared.persistence.StateRepository;
 
 import lombok.AllArgsConstructor;
@@ -32,7 +35,6 @@ import lombok.AllArgsConstructor;
 @Service
 @AllArgsConstructor
 public class StaffDirectory {
-    private static final String ACTIVE_STATE = "ACTIVE";
     private static final Set<String> ASSIGNABLE_PERMISSIONS = Set.of(
             StorePermissionCodes.STORE_READ,
             StorePermissionCodes.BRANCH_READ,
@@ -63,7 +65,7 @@ public class StaffDirectory {
 
     @Transactional(readOnly = true)
     public long countActive(UUID storeId) {
-        return collaboratorRepository.countByStore_IdAndState_Code(storeId, ACTIVE_STATE);
+        return collaboratorRepository.countActiveInStore(storeId);
     }
 
     @Transactional(readOnly = true)
@@ -126,7 +128,7 @@ public class StaffDirectory {
     public Set<String> requireAssignable(List<String> requestedCodes) {
         Set<String> normalized = requestedCodes.stream()
                 .map(code -> code.trim().toUpperCase(Locale.ROOT))
-                .collect(java.util.stream.Collectors.toCollection(java.util.TreeSet::new));
+                .collect(Collectors.toCollection(TreeSet::new));
         if (normalized.isEmpty() || !ASSIGNABLE_PERMISSIONS.containsAll(normalized)) {
             throw new BadRequestException(
                     "SELLER_COLLABORATOR_PERMISSION_INVALID",
@@ -145,7 +147,7 @@ public class StaffDirectory {
 
     @Transactional(readOnly = true)
     public boolean isMember(UUID personId, UUID storeId) {
-        return collaboratorRepository.existsByPersonIdAndStore_Id(personId, storeId);
+        return collaboratorRepository.existsInStore(personId, storeId);
     }
 
     /**
@@ -155,7 +157,7 @@ public class StaffDirectory {
      */
     @Transactional
     public void addCollaborator(UUID storeId, UUID personId, UUID roleId) {
-        if (collaboratorRepository.existsByPersonIdAndStore_Id(personId, storeId)) {
+        if (collaboratorRepository.existsInStore(personId, storeId)) {
             throw new ConflictException(
                     "SELLER_COLLABORATOR_ALREADY_EXISTS",
                     "Esta cuenta ya es colaboradora del almacén."
@@ -165,7 +167,7 @@ public class StaffDirectory {
                 .personId(personId)
                 // El almacén y el rol ya están cargados (y el almacén bloqueado) en la transacción del llamador.
                 .store(storeRepository.getReferenceById(storeId))
-                .state(findState(ACTIVE_STATE))
+                .state(findState(StateCodes.ACTIVE))
                 .roles(Set.of(roleRepository.getReferenceById(roleId)))
                 .build());
     }

@@ -19,7 +19,7 @@ public class AccountSessionService {
 
     @Transactional
     public AccountSession create(
-            java.util.UUID sessionId,
+            UUID sessionId,
             Account account,
             String refreshToken,
             String ipAddress,
@@ -70,7 +70,7 @@ public class AccountSessionService {
 
     @Transactional
     public void revokeByRefreshToken(String refreshToken, String accountEmail) {
-        repository.findByRefreshTokenHashForUpdate(RefreshTokenHash.of(refreshToken))
+        repository.lockByRefreshTokenHash(RefreshTokenHash.of(refreshToken))
                 .filter(session -> session.getAccount().getEmail().equalsIgnoreCase(accountEmail))
                 .ifPresent(session -> {
                     session.setRevokedAt(LocalDateTime.now());
@@ -80,7 +80,7 @@ public class AccountSessionService {
 
     @Transactional
     public void revokeOthersByRefreshToken(String currentRefreshToken, String accountEmail) {
-        repository.findByRefreshTokenHashForUpdate(RefreshTokenHash.of(currentRefreshToken))
+        repository.lockByRefreshTokenHash(RefreshTokenHash.of(currentRefreshToken))
                 .filter(currentSession -> currentSession.getAccount().getEmail().equalsIgnoreCase(accountEmail))
                 .ifPresent(currentSession -> repository
                         .findNonRevokedByAccountId(currentSession.getAccount().getId())

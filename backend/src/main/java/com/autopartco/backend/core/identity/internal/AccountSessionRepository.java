@@ -72,5 +72,5 @@ public interface AccountSessionRepository extends JpaRepository<AccountSession, 
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT session FROM AccountSession session WHERE session.refreshTokenHash = :tokenHash")
-    Optional<AccountSession> findByRefreshTokenHashForUpdate(@Param("tokenHash") String tokenHash);
+    Optional<AccountSession> lockByRefreshTokenHash(@Param("tokenHash") String tokenHash);
 }

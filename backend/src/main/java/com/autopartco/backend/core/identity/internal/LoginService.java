@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.autopartco.backend.core.identity.web.LoginRequest;
 import com.autopartco.backend.core.identity.LoginResponse;
 import com.autopartco.backend.shared.error.UnauthorizedException;
+import com.autopartco.backend.shared.persistence.StateCodes;
 
 import lombok.AllArgsConstructor;
 
@@ -33,7 +34,7 @@ public class LoginService {
         }
 
         if (account.getState() == null
-                || !AccountStatusService.ACTIVE.equals(account.getState().getCode())) {
+                || !StateCodes.ACTIVE.equals(account.getState().getCode())) {
             throw invalidCredentials();
         }
 

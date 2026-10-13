@@ -1,10 +1,6 @@
 package com.autopartco.backend.core.organization;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.SecureRandom;
 import java.time.LocalDateTime;
-import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -24,6 +20,7 @@ import com.autopartco.backend.core.organization.internal.StoreRoleRepository;
 import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
+import com.autopartco.backend.shared.security.TokenHashing;
 
 import lombok.AllArgsConstructor;
 
@@ -36,7 +33,6 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class StaffInvitations {
     private static final int INVITATION_VALID_DAYS = 7;
-    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final StaffInvitationRepository invitationRepository;
     private final StoreRepository storeRepository;
@@ -51,7 +47,7 @@ public class StaffInvitations {
     @Transactional(readOnly = true)
     public List<StaffInvitationView> listOpen(UUID storeId) {
         return invitationRepository
-                .findByStore_IdAndAcceptedAtIsNullAndRevokedAtIsNullOrderByCreatedAtDesc(storeId)
+                .findPendingInStore(storeId)
                 .stream()
                 .map(this::toView)
                 .toList();
@@ -61,7 +57,7 @@ public class StaffInvitations {
     @Transactional(readOnly = true)
     public long countPending(UUID storeId) {
         return invitationRepository
-                .countByStore_IdAndAcceptedAtIsNullAndRevokedAtIsNullAndExpiresAtAfter(
+                .countPendingInStore(
                         storeId,
                         LocalDateTime.now()
                 );
@@ -71,7 +67,7 @@ public class StaffInvitations {
     @Transactional(readOnly = true)
     public void requireNoneOpenFor(UUID storeId, String normalizedEmail) {
         if (invitationRepository
-                .findByStore_IdAndEmailIgnoreCaseAndAcceptedAtIsNullAndRevokedAtIsNull(storeId, normalizedEmail)
+                .findPendingByEmail(storeId, normalizedEmail)
                 .isPresent()) {
             throw new ConflictException(
                     "SELLER_COLLABORATOR_INVITATION_PENDING",
@@ -94,7 +90,7 @@ public class StaffInvitations {
     ) {
         Store store = storeRepository.getReferenceById(storeId);
         List<StorePermission> permissions = permissionRepository.findByCodeIn(permissionCodes);
-        String rawToken = newToken();
+        String rawToken = TokenHashing.newToken();
         LocalDateTime expiresAt = LocalDateTime.now().plusDays(INVITATION_VALID_DAYS);
         StoreRole role = roleRepository.save(StoreRole.builder()
                 .store(store)
@@ -107,7 +103,7 @@ public class StaffInvitations {
                 .invitedByAccountId(invitedByAccountId)
                 .role(role)
                 .email(normalizedEmail)
-                .tokenHash(hash(rawToken))
+                .tokenHash(TokenHashing.sha256Hex(rawToken))
                 .expiresAt(expiresAt)
                 .build());
         return new Issued(toView(invitation), rawToken);
@@ -135,8 +131,8 @@ public class StaffInvitations {
     @Transactional
     public Issued renew(UUID storeId, UUID invitationId, LocalDateTime now) {
         StaffInvitation invitation = findInStore(storeId, invitationId);
-        String rawToken = newToken();
-        invitation.setTokenHash(hash(rawToken));
+        String rawToken = TokenHashing.newToken();
+        invitation.setTokenHash(TokenHashing.sha256Hex(rawToken));
         invitation.setExpiresAt(now.plusDays(INVITATION_VALID_DAYS));
         return new Issued(toView(invitationRepository.save(invitation)), rawToken);
     }
@@ -168,7 +164,7 @@ public class StaffInvitations {
         if (rawToken == null || rawToken.isBlank()) {
             throw invitationNotFound();
         }
-        StaffInvitation invitation = invitationRepository.findByTokenHash(hash(rawToken))
+        StaffInvitation invitation = invitationRepository.findByTokenHash(TokenHashing.sha256Hex(rawToken))
                 .orElseThrow(() -> invitationNotFound());
         validatePendingInvitation(invitation);
         return toView(invitation);
@@ -180,12 +176,12 @@ public class StaffInvitations {
      */
     @Transactional
     public StaffInvitationView lockPendingByToken(String rawToken) {
-        String tokenHash = hash(rawToken);
+        String tokenHash = TokenHashing.sha256Hex(rawToken);
         StaffInvitation initial = invitationRepository.findByTokenHash(tokenHash)
                 .orElseThrow(() -> invitationNotFound());
-        storeRepository.findByIdForUpdate(initial.getStore().getId())
+        storeRepository.lockById(initial.getStore().getId())
                 .orElseThrow(() -> new NotFoundException("STORE_NOT_FOUND", "No se encontró el almacén."));
-        StaffInvitation invitation = invitationRepository.findByTokenHashForUpdate(tokenHash)
+        StaffInvitation invitation = invitationRepository.lockByTokenHash(tokenHash)
                 .orElseThrow(() -> invitationNotFound());
         validatePendingInvitation(invitation);
         return toView(invitation);
@@ -202,7 +198,7 @@ public class StaffInvitations {
     }
 
     private StaffInvitation findInStore(UUID storeId, UUID invitationId) {
-        return invitationRepository.findByIdAndStore_Id(invitationId, storeId)
+        return invitationRepository.findInStore(storeId, invitationId)
                 .orElseThrow(() -> invitationNotFound());
     }
 
@@ -242,22 +238,6 @@ public class StaffInvitations {
                 .map(StorePermission::getCode)
                 .sorted()
                 .toList();
-    }
-
-    private String newToken() {
-        byte[] bytes = new byte[32];
-        SECURE_RANDOM.nextBytes(bytes);
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
-    }
-
-    private String hash(String token) {
-        try {
-            byte[] digest = MessageDigest.getInstance("SHA-256")
-                    .digest(token.getBytes(StandardCharsets.UTF_8));
-            return java.util.HexFormat.of().formatHex(digest);
-        } catch (java.security.NoSuchAlgorithmException exception) {
-            throw new IllegalStateException("SHA-256 is not available.", exception);
-        }
     }
 
     private NotFoundException invitationNotFound() {

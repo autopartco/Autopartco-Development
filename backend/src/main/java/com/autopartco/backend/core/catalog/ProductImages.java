@@ -57,7 +57,7 @@ public class ProductImages {
         }
 
         List<ProductImage> existing = productImageRepository
-                .findByProduct_IdOrderByDisplayOrderAscCreatedAtAsc(productId);
+                .findAllOfProduct(productId);
         if (existing.size() + files.size() > MAX_IMAGES_PER_PRODUCT) {
             throw new BadRequestException(
                     "PRODUCT_IMAGE_LIMIT_REACHED",
@@ -112,7 +112,7 @@ public class ProductImages {
     ) {
         lockOwned(storeId, productId);
         List<ProductImage> images = productImageRepository
-                .findByProduct_IdOrderByDisplayOrderAscCreatedAtAsc(productId);
+                .findAllOfProduct(productId);
         if (imageIds == null
                 || imageIds.size() != images.size()
                 || new HashSet<>(imageIds).size() != imageIds.size()) {
@@ -174,7 +174,7 @@ public class ProductImages {
     ) {
         lockOwned(storeId, productId);
         List<ProductImage> images = productImageRepository
-                .findByProduct_IdOrderByDisplayOrderAscCreatedAtAsc(productId);
+                .findAllOfProduct(productId);
         ProductImage image = images.stream()
                 .filter(candidate -> candidate.getId().equals(imageId))
                 .findFirst()
@@ -215,7 +215,7 @@ public class ProductImages {
     @Transactional
     public void deleteAllForProduct(UUID productId) {
         List<ProductImage> images = productImageRepository
-                .findByProduct_IdOrderByDisplayOrderAscCreatedAtAsc(productId);
+                .findAllOfProduct(productId);
         List<ImageBackup> backups = images.stream()
                 .map(image -> new ImageBackup(image.getStoragePath(), storageService.download(image.getStoragePath()),
                         new AtomicBoolean()))
@@ -233,7 +233,7 @@ public class ProductImages {
     }
 
     private Product lockOwned(UUID storeId, UUID productId) {
-        return productRepository.findOwnedForUpdate(storeId, productId)
+        return productRepository.lockOwned(storeId, productId)
                 .orElseThrow(() -> new NotFoundException("PRODUCT_NOT_FOUND", "No se encontró el repuesto."));
     }
 

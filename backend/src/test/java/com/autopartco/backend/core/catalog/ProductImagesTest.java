@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -69,7 +70,7 @@ class ProductImagesTest {
                 storageService
         );
         // Cada operación bloquea el producto acotado por almacén (antes, ProductService#getOwnedProductForUpdate).
-        when(productRepository.findOwnedForUpdate(STORE_ID, PRODUCT_ID)).thenReturn(Optional.of(product));
+        when(productRepository.lockOwned(STORE_ID, PRODUCT_ID)).thenReturn(Optional.of(product));
     }
 
     @AfterEach
@@ -82,7 +83,7 @@ class ProductImagesTest {
 
     @Test
     void firstImageInBatchBecomesMainAndLaterImagesReceiveOrder() {
-        when(productImageRepository.findByProduct_IdOrderByDisplayOrderAscCreatedAtAsc(PRODUCT_ID))
+        when(productImageRepository.findAllOfProduct(PRODUCT_ID))
                 .thenReturn(List.of());
         when(productImageRepository.findMaxDisplayOrder(PRODUCT_ID)).thenReturn(-1);
         when(productImageRepository.saveAndFlush(any(ProductImage.class)))
@@ -105,7 +106,7 @@ class ProductImagesTest {
         );
 
         ArgumentCaptor<ProductImage> imageCaptor = ArgumentCaptor.forClass(ProductImage.class);
-        verify(productImageRepository, org.mockito.Mockito.times(2)).saveAndFlush(imageCaptor.capture());
+        verify(productImageRepository, times(2)).saveAndFlush(imageCaptor.capture());
         List<ProductImage> saved = imageCaptor.getAllValues();
 
         assertEquals(2, response.size());
@@ -115,7 +116,7 @@ class ProductImagesTest {
         assertEquals(false, saved.get(1).isMain());
         assertEquals(0, saved.get(0).getDisplayOrder());
         assertEquals(1, saved.get(1).getDisplayOrder());
-        verify(storageService, org.mockito.Mockito.times(2))
+        verify(storageService, times(2))
                 .upload(anyString(), any(byte[].class), eq("image/png"), eq(false));
     }
 
@@ -125,7 +126,7 @@ class ProductImagesTest {
         for (int index = 0; index < 10; index++) {
             existing.add(ProductImage.builder().id(UUID.randomUUID()).build());
         }
-        when(productImageRepository.findByProduct_IdOrderByDisplayOrderAscCreatedAtAsc(PRODUCT_ID))
+        when(productImageRepository.findAllOfProduct(PRODUCT_ID))
                 .thenReturn(existing);
 
         assertThrows(BadRequestException.class, () -> service.upload(
@@ -137,7 +138,7 @@ class ProductImagesTest {
 
     @Test
     void removesUploadedObjectIfTheDatabaseTransactionRollsBack() {
-        when(productImageRepository.findByProduct_IdOrderByDisplayOrderAscCreatedAtAsc(PRODUCT_ID))
+        when(productImageRepository.findAllOfProduct(PRODUCT_ID))
                 .thenReturn(List.of());
         doThrow(new StorageException("storage unavailable"))
                 .when(storageService).upload(anyString(), any(byte[].class), anyString(), eq(false));
@@ -173,7 +174,7 @@ class ProductImagesTest {
                 .isMain(false)
                 .displayOrder(1)
                 .build();
-        when(productImageRepository.findByProduct_IdOrderByDisplayOrderAscCreatedAtAsc(PRODUCT_ID))
+        when(productImageRepository.findAllOfProduct(PRODUCT_ID))
                 .thenReturn(List.of(main, next));
         when(storageService.download(main.getStoragePath()))
                 .thenReturn(new SupabaseStorageService.StoredObject(new byte[] {1}, "image/png"));

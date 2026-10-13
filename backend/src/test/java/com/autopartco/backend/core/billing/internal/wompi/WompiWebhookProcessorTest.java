@@ -72,7 +72,7 @@ class WompiWebhookProcessorTest {
                 """);
 
         assertThrows(BadRequestException.class, () -> paymentService.processWebhook(payload));
-        verify(paymentRepository, never()).findByReferenceForUpdate("APC-1");
+        verify(paymentRepository, never()).lockByReference("APC-1");
     }
 
     @Test
@@ -99,7 +99,7 @@ class WompiWebhookProcessorTest {
                 """.formatted(checksum));
 
         assertThrows(NotFoundException.class, () -> paymentService.processWebhook(payload));
-        verify(paymentRepository).findByReferenceForUpdate("APC-1");
+        verify(paymentRepository).lockByReference("APC-1");
     }
 
     @Test
@@ -121,7 +121,7 @@ class WompiWebhookProcessorTest {
                 .id(applicationId)
                 .trialEndsAt(trialEndsAt)
                 .build();
-        when(paymentRepository.findByReferenceForUpdate("APC-1")).thenReturn(Optional.of(payment));
+        when(paymentRepository.lockByReference("APC-1")).thenReturn(Optional.of(payment));
         when(paymentRepository.existsByProviderTransactionId("transaction-1")).thenReturn(false);
         when(applicationRepository.lockById(applicationId)).thenReturn(Optional.of(subscription));
 
@@ -145,7 +145,7 @@ class WompiWebhookProcessorTest {
                 .status("APPROVED")
                 .providerTransactionId("transaction-1")
                 .build();
-        when(paymentRepository.findByReferenceForUpdate("APC-1")).thenReturn(Optional.of(payment));
+        when(paymentRepository.lockByReference("APC-1")).thenReturn(Optional.of(payment));
 
         paymentService.processWebhook(signedEvent("APPROVED", 10000));
 
@@ -163,7 +163,7 @@ class WompiWebhookProcessorTest {
                 .currency("COP")
                 .status("PENDING")
                 .build();
-        when(paymentRepository.findByReferenceForUpdate("APC-1")).thenReturn(Optional.of(payment));
+        when(paymentRepository.lockByReference("APC-1")).thenReturn(Optional.of(payment));
 
         BadRequestException error = assertThrows(
                 BadRequestException.class,

@@ -35,7 +35,7 @@ public class WompiWebhookProcessor {
         String reference = requiredText(transaction, "reference");
         String providerId = requiredText(transaction, "id");
         String status = requiredText(transaction, "status");
-        SubscriptionPayment payment = paymentRepository.findByReferenceForUpdate(reference)
+        SubscriptionPayment payment = paymentRepository.lockByReference(reference)
                 .orElseThrow(() -> new NotFoundException(
                         "SELLER_PAYMENT_NOT_FOUND",
                         "No se encontró el pago asociado a la referencia."

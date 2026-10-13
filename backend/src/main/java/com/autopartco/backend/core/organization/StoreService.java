@@ -21,6 +21,7 @@ import com.autopartco.backend.core.organization.internal.StoreRole;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.shared.persistence.State;
+import com.autopartco.backend.shared.persistence.StateCodes;
 import com.autopartco.backend.shared.persistence.StateRepository;
 
 import lombok.AllArgsConstructor;
@@ -32,8 +33,6 @@ import lombok.AllArgsConstructor;
 @Service
 @AllArgsConstructor
 public class StoreService {
-    private static final String PENDING_STATE = "PENDING";
-    private static final String ACTIVE_STATE = "ACTIVE";
     private static final String OWNER_ROLE = "OWNER";
 
     private final StoreRepository storeRepository;
@@ -58,7 +57,7 @@ public class StoreService {
             throw new ConflictException("STORE_EMAIL_ALREADY_EXISTS", "Ya existe un almacén con este correo.");
         }
 
-        State pendingState = stateRepository.findByCode(PENDING_STATE)
+        State pendingState = stateRepository.findByCode(StateCodes.PENDING)
                 .orElseThrow(() -> new NotFoundException(
                         "STORE_PENDING_STATE_NOT_FOUND",
                         "No está configurado el estado pendiente para los almacenes."
@@ -68,7 +67,7 @@ public class StoreService {
                         "STORE_OWNER_ACCOUNT_NOT_FOUND",
                         "No se encontró la cuenta autenticada."
                 ));
-        State activeState = stateRepository.findByCode(ACTIVE_STATE)
+        State activeState = stateRepository.findByCode(StateCodes.ACTIVE)
                 .orElseThrow(() -> new NotFoundException(
                         "STORE_COLLABORATOR_STATE_NOT_FOUND",
                         "No está configurado el estado activo para los colaboradores."
@@ -161,7 +160,7 @@ public class StoreService {
     /** Bloquea la fila del almacén ({@code SELECT ... FOR UPDATE}) hasta el final de la transacción del llamador. */
     @Transactional
     public void lockForUpdate(UUID storeId) {
-        storeRepository.findByIdForUpdate(storeId)
+        storeRepository.lockById(storeId)
                 .orElseThrow(() -> new NotFoundException("STORE_NOT_FOUND", "No se encontró el almacén."));
     }
 

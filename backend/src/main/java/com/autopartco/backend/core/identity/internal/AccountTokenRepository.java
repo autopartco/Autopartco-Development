@@ -15,7 +15,7 @@ public interface AccountTokenRepository extends JpaRepository<AccountToken, UUID
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select token from AccountToken token where token.token = :token and token.purpose = :purpose")
-    Optional<AccountToken> findByTokenAndPurposeForUpdate(
+    Optional<AccountToken> lockByTokenAndPurpose(
             @Param("token") String token,
             @Param("purpose") String purpose
     );

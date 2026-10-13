@@ -131,7 +131,7 @@ public class EmailVerificationTokenService {
         }
 
         AccountToken accountToken = accountTokenRepository
-            .findByTokenAndPurposeForUpdate(hash(rawToken.trim()), PURPOSE_PASSWORD_RECOVERY)
+            .lockByTokenAndPurpose(hash(rawToken.trim()), PURPOSE_PASSWORD_RECOVERY)
                 .orElseThrow(() -> new BadRequestException(
                         "INVALID_PASSWORD_RECOVERY_TOKEN",
                         "El token de recuperación no es válido."

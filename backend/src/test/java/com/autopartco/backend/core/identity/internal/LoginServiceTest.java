@@ -3,6 +3,7 @@ package com.autopartco.backend.core.identity.internal;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -88,7 +89,7 @@ class LoginServiceTest {
     }
 
     private Account activeAccount(UUID accountId) {
-        Account account = org.mockito.Mockito.mock(Account.class);
+        Account account = mock(Account.class);
         State activeState = new State();
         activeState.setCode("ACTIVE");
         when(account.getId()).thenReturn(accountId);

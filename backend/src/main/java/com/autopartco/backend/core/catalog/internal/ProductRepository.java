@@ -23,7 +23,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from Product p where p.id = :id and p.storeId = :storeId")
-    Optional<Product> findOwnedForUpdate(@Param("storeId") UUID storeId, @Param("id") UUID id);
+    Optional<Product> lockOwned(@Param("storeId") UUID storeId, @Param("id") UUID id);
 
     /** Carga los productos de un listado con su estado y sus IDs de compatibilidad (sin N+1). */
     @Query("select distinct p from Product p join fetch p.state left join fetch p.compatibilityIds where p.id in :ids")

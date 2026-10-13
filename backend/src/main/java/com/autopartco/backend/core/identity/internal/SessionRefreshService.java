@@ -6,6 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.autopartco.backend.core.identity.LoginResponse;
 import com.autopartco.backend.shared.error.UnauthorizedException;
+import com.autopartco.backend.shared.persistence.StateCodes;
 
 import lombok.AllArgsConstructor;
 
@@ -18,7 +19,7 @@ public class SessionRefreshService {
     @Transactional(noRollbackFor = UnauthorizedException.class)
     public LoginResponse refresh(String rawRefreshToken) {
         String tokenHash = RefreshTokenHash.of(rawRefreshToken.trim());
-        AccountSession session = sessionRepository.findByRefreshTokenHashForUpdate(tokenHash)
+        AccountSession session = sessionRepository.lockByRefreshTokenHash(tokenHash)
                 .orElseThrow(this::invalidRefreshToken);
 
         LocalDateTime now = LocalDateTime.now();
@@ -27,7 +28,7 @@ public class SessionRefreshService {
         }
 
         if (session.getAccount().getState() == null
-                || !AccountStatusService.ACTIVE.equals(session.getAccount().getState().getCode())) {
+                || !StateCodes.ACTIVE.equals(session.getAccount().getState().getCode())) {
             session.setRevokedAt(now);
             throw invalidRefreshToken();
         }

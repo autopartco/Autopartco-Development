@@ -4,6 +4,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.autopartco.backend.core.identity.web.VerifyEmailResponse;
+import com.autopartco.backend.shared.persistence.StateCodes;
 import com.autopartco.backend.shared.persistence.StateRepository;
 import com.autopartco.backend.core.audit.AuditService;
 import com.autopartco.backend.shared.persistence.State;
@@ -14,7 +15,7 @@ import lombok.AllArgsConstructor;
 @Service
 @AllArgsConstructor
 public class EmailVerificationService {
-    private static final String VERIFIED_STATE = "ACTIVE";
+    private static final String VERIFIED_STATE = StateCodes.ACTIVE;
 
     private final AccountRepository accountRepository;
     private final StateRepository stateRepository;

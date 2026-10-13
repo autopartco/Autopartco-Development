@@ -13,11 +13,19 @@ import org.springframework.data.repository.query.Param;
 
 public interface ProductImageRepository extends JpaRepository<ProductImage, UUID> {
 
-    List<ProductImage> findByProduct_IdOrderByDisplayOrderAscCreatedAtAsc(UUID productId);
+    @Query("""
+            select i from ProductImage i
+            where i.product.id = :productId
+            order by i.displayOrder asc, i.createdAt asc
+            """)
+    List<ProductImage> findAllOfProduct(@Param("productId") UUID productId);
 
-    List<ProductImage> findByProduct_IdInOrderByProduct_IdAscDisplayOrderAscCreatedAtAsc(
-            Collection<UUID> productIds
-    );
+    @Query("""
+            select i from ProductImage i
+            where i.product.id in :productIds
+            order by i.product.id asc, i.displayOrder asc, i.createdAt asc
+            """)
+    List<ProductImage> findAllOfProducts(@Param("productIds") Collection<UUID> productIds);
 
     Optional<ProductImage> findByIdAndProduct_Id(UUID imageId, UUID productId);
 

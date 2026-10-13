@@ -21,6 +21,7 @@ import com.autopartco.backend.core.vehicle.CompatibilityService;
 import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.shared.persistence.State;
+import com.autopartco.backend.shared.persistence.StateCodes;
 import com.autopartco.backend.shared.persistence.StateRepository;
 
 import lombok.AllArgsConstructor;
@@ -32,8 +33,6 @@ import lombok.AllArgsConstructor;
 @Service
 @AllArgsConstructor
 public class ProductCatalog {
-    private static final String ACTIVE = "ACTIVE";
-    private static final String INACTIVE = "INACTIVE";
 
     private final ProductRepository productRepository;
     private final ManufacturerRepository manufacturerRepository;
@@ -56,7 +55,7 @@ public class ProductCatalog {
                 .description(request.description().trim())
                 .manufacturer(findManufacturer(request.manufacturerId()))
                 .category(findCategory(request.categoryId()))
-                .state(findState(ACTIVE))
+                .state(findState(StateCodes.ACTIVE))
                 .attributes(normalizeAttributes(request.attributes()))
                 .compatibilityIds(requireCompatibilities(request.compatibilityIds()))
                 .build();
@@ -94,13 +93,13 @@ public class ProductCatalog {
     @Transactional
     public void setPublished(UUID storeId, UUID productId, boolean published) {
         Product product = productRepository.findOwned(storeId, productId).orElseThrow(ProductCatalog::productNotFound);
-        product.setState(findState(published ? ACTIVE : INACTIVE));
+        product.setState(findState(published ? StateCodes.ACTIVE : StateCodes.INACTIVE));
     }
 
     /** Bloquea ({@code FOR UPDATE}) el producto del almacén; si no existe, {@code PRODUCT_NOT_FOUND}. */
     @Transactional
     public void requireOwnedForUpdate(UUID storeId, UUID productId) {
-        productRepository.findOwnedForUpdate(storeId, productId).orElseThrow(ProductCatalog::productNotFound);
+        productRepository.lockOwned(storeId, productId).orElseThrow(ProductCatalog::productNotFound);
     }
 
     /**
@@ -109,7 +108,7 @@ public class ProductCatalog {
      */
     @Transactional
     public void delete(UUID storeId, UUID productId) {
-        Product product = productRepository.findOwnedForUpdate(storeId, productId)
+        Product product = productRepository.lockOwned(storeId, productId)
                 .orElseThrow(ProductCatalog::productNotFound);
         productImages.deleteAllForProduct(productId);
         stockService.removeAllForProduct(productId);

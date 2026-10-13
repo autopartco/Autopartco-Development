@@ -133,7 +133,7 @@ class ListingQueriesTest {
                 .thenReturn((List) rows);
         when(productRepository.findAllWithDetails(anyCollection())).thenReturn(List.of(alpha, zeta));
         when(compatibilityService.existingAmong(anyCollection())).thenReturn(Set.of(liveCompatibility));
-        when(productImageRepository.findByProduct_IdInOrderByProduct_IdAscDisplayOrderAscCreatedAtAsc(anyCollection()))
+        when(productImageRepository.findAllOfProducts(anyCollection()))
                 .thenReturn(List.of());
         when(promotionRepository.findActiveAt(any())).thenReturn(List.of());
 
@@ -178,7 +178,7 @@ class ListingQueriesTest {
                         product.getId(), branchId, STORE_ID, "Norte", new BigDecimal("80.00"), 2)));
         when(productRepository.findAllWithDetails(anyCollection())).thenReturn(List.of(product));
         when(compatibilityService.existingAmong(anyCollection())).thenReturn(Set.of());
-        when(productImageRepository.findByProduct_IdInOrderByProduct_IdAscDisplayOrderAscCreatedAtAsc(anyCollection()))
+        when(productImageRepository.findAllOfProducts(anyCollection()))
                 .thenReturn(List.of());
         when(promotionRepository.findActiveAt(any())).thenReturn(List.of(
                 Promotion.builder()
