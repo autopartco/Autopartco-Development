@@ -1,26 +1,26 @@
 # Graph Report - Autopartco-dev  (2026-10-13)
 
 ## Corpus Check
-- 435 files · ~162,019 words
+- 467 files · ~165,841 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 176 file(s) not represented in the graph (top: .class 161, (none) 4, .properties 3)
 
 ## Summary
-- 2854 nodes · 8331 edges · 215 communities (116 shown, 99 thin omitted)
-- Extraction: 88% EXTRACTED · 12% INFERRED · 0% AMBIGUOUS · INFERRED: 995 edges (avg confidence: 0.89)
+- 3011 nodes · 8768 edges · 237 communities (135 shown, 102 thin omitted)
+- Extraction: 88% EXTRACTED · 12% INFERRED · 0% AMBIGUOUS · INFERRED: 1019 edges (avg confidence: 0.89)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `93c25cc7`
+- Built from commit: `42842f6b`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
 ## Community Hubs (Navigation)
-- lombok.AllArgsConstructor
-- org.springframework.data.jpa.repository.Query
+- lombok.Getter
+- uuid
 - package.json
 - LoginResponse
-- 5.3 `product`
+- size
 - 5.4 `seller`
 - SellerCollaboratorService
 - SQL Code Review
@@ -29,14 +29,14 @@
 - ListingQueriesTest.java
 - 7. Fases de migración
 - server.cjs
-- BranchResponse
+- BranchService
 - bash
 - interface-design/SKILL.md
 - PersonAddressService
-- SellerCollaboratorService.java
-- SellerApplicationController.java
+- MasterDataService
+- .completeSetup
 - BackendApplicationTests
-- ConflictException
+- SellerCollaboratorService.java
 - 5.1 Raíz, `common`, `config`, `exception`, `storage`, `test`
 - ApiError
 - compilerOptions
@@ -45,11 +45,11 @@
 - PromotionResponse
 - org.springframework.web.bind.annotation.GetMapping
 - ProductCatalog
-- AccountSessionService
+- org.springframework.transaction.annotation.Transactional
 - 4. Estructura objetivo y reglas de dependencia
 - Convenciones de API Backend - Autopartco
-- MeController
-- uuid
+- .verify
+- MeNotificationController
 - delegate.mjs
 - 4.6 API pública de cada dominio (contrato para el constructor)
 - Visual Companion Guide
@@ -58,27 +58,27 @@
 - AUTOPARTCO_PREDEVELOPMENT_RUNBOOK.md
 - 5. Re-render Optimization
 - AUTOPARTCO — Definición integral del producto y plan de desarrollo
-- ForbiddenHandler.java
+- org.springframework.stereotype.Component
 - Seguridad del Backend
 - Manejo centralizado de errores de API
 - Manejo centralizado de errores de API
 - Seguridad del Backend
 - SQL Performance Optimization Assistant
-- SubscriptionCheckout.java
+- AccountRepository
 - com.autopartco:backend
 - com.autopartco:backend
 - Guía de trabajo con Git y GitHub
 - 7. JavaScript Performance
 - Quick Reference
 - 15. Skills y herramientas para agentes de IA
-- LoginAttemptService
+- .findByEmailIgnoreCase
 - agent-guard.mjs
 - compilerOptions
 - 17. Hoja de ruta y entregables
 - Registro y verificacion de correo
 - 5. Marketplace para compradores
 - Registro y verificacion de correo
-- org.junit.jupiter.api.Test
+- SellerDashboardServiceTest
 - Autopartco — Backlog de preparación (antes del desarrollo funcional)
 - 6. Portal comercial para almacenes
 - models.mjs
@@ -90,11 +90,11 @@
 - 9. Pagos de demostración y Wompi sandbox
 - Imágenes de productos
 - 6. Rendering Performance
-- org.springframework.data.jpa.repository.JpaRepository
-- Diseño: backend de Autopartco como monolito modular
+- PromotionService
+- .dashboard
 - 4. Tipos de cuenta, organizaciones y permisos
 - 5.2 `auth`
-- org.springframework.stereotype.Service
+- lombok.AllArgsConstructor
 - Spring Boot Best Practices
 - 3. Server-Side Performance
 - Brainstorming
@@ -107,23 +107,23 @@
 - 1. Eliminating Waterfalls
 - 2. Bundle Size Optimization
 - React Best Practices
-- ProductImageValidator.java
-- StoreResponse
+- ProductImages
+- StoreRepository
 - 8. Advanced Patterns
 - bench.mjs
-- org.springframework.transaction.annotation.Transactional
+- ProductOptionsResponse
 - .opencode/agents/database.md
 - async-cheap-condition-before-await.md
 - Prefer Statically Analyzable Paths
 - server-hoist-static-io.md
 - .claude/agents/arquitecto.md
 - .claude/agents/frontend.md
-- SellerRegistrationService.java
+- RegistrationService
 - .opencode/agents/arquitecto.md
 - .opencode/agents/frontend.md
 - orquestador.md
 - start-server.sh
-- ProductImages.java
+- CompatibilityOptionView
 - builder-check-prompt.md
 - advanced-effect-event-deps.md
 - advanced-event-handler-refs.md
@@ -192,93 +192,110 @@
 - _template.md
 - publish-backlog.mjs
 - Autopartco — Contexto base para agentes de IA
-- StoreFileStorageTest
+- SupabaseStorageProperties
 - 20. Métricas de éxito del producto
 - Modelos de OpenCode para delegar
 - 8. Suscripciones, planes y monetización
 - code.md
 - docs.md
 - research.md
-- ListingQueriesTest
+- org.junit.jupiter.api.Test
 - _common.md
 - text.md
 - redactor.md
 - Assessment: Security Validator (Red Team Edition)
 - 11. Analítica y predicción: qué medir antes de entrenar
-- .findByEmailIgnoreCase
-- WompiWebhookProcessor.java
+- components.json
+- .processWebhook
 - .oxlintrc.json
-- ListingQueries
+- Promotion
 - 12. Modelo de datos objetivo
 - BackendApplication
-- .verify
-- PriceCalculator
+- SupabaseStorageService
+- 5.3 `product`
 - React + TypeScript + Vite
 - ProductImageRepository
 - ListingQueries.java
-- SellerRegistrationService
-- EmailVerificationTokenService
+- org.springframework.web.multipart.MultipartFile
+- cn
 - tsconfig.json
-- PromotionDiscountType
+- pagination.tsx
+- StoreSubscriptionRepository
 - PromotionTargetType
+- dependencies
+- Registro y planes para vendedores
+- PromotionTargets
+- ProductImages.java
 - .opencode/agents/backend.md
+- StoreApplicationStatus
+- SellerOrderResponse
+- StoreFileStorage
+- react
+- breadcrumb.tsx
+- sheet.tsx
+- select.tsx
+- SellerCollaboratorResponse
+- Diseño: backend de Autopartco como monolito modular
+- devDependencies
+- SellerApplicationResponse
+- Plan: refactorización modular del backend
+- scripts
+- ref_node_path
+- PromotionAttributeOperator
+- SellerPermissionOption
 
 ## God Nodes (most connected - your core abstractions)
 1. `5.4 `seller`` - 74 edges
 2. `BaseEntity` - 64 edges
 3. `5.2 `auth`` - 57 edges
 4. `Account` - 55 edges
-5. `State` - 49 edges
-6. `ConflictException` - 48 edges
-7. `SellerCollaboratorService` - 47 edges
-8. `4.6 API pública de cada dominio (contrato para el constructor)` - 47 edges
-9. `NotFoundException` - 46 edges
-10. `StoreAccess` - 43 edges
+5. `StoreAccess` - 55 edges
+6. `StoreService` - 51 edges
+7. `State` - 49 edges
+8. `ConflictException` - 48 edges
+9. `4.6 API pública de cada dominio (contrato para el constructor)` - 48 edges
+10. `SellerCollaboratorService` - 47 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Fase 1: audit y notification` --references--> `SellerDashboardService`  [INFERRED]
   docs/architecture/2026-10-13-backend-modular-architecture-plan.md → backend/src/main/java/com/autopartco/backend/seller/service/SellerDashboardService.java
 - `Lista de revisión` --references--> `WebSecurityConfig`  [INFERRED]
   .claude/agents/qa-seguridad.md → backend/src/main/java/com/autopartco/backend/shared/security/WebSecurityConfig.java
-- `CORS` --references--> `WebSecurityConfig`  [INFERRED]
-  docs/backend/security.md → backend/src/main/java/com/autopartco/backend/shared/security/WebSecurityConfig.java
 - `Lista de revisión` --references--> `WebSecurityConfig`  [INFERRED]
   .opencode/agents/qa-seguridad.md → backend/src/main/java/com/autopartco/backend/shared/security/WebSecurityConfig.java
+- `Reglas para todas las fases` --references--> `BackendApplicationTests`  [INFERRED]
+  docs/architecture/2026-10-13-backend-modular-architecture-plan.md → backend/src/test/java/com/autopartco/backend/BackendApplicationTests.java
 - `5.1 Raíz, `common`, `config`, `exception`, `storage`, `test`` --references--> `BackendApplication`  [INFERRED]
   docs/architecture/2026-10-13-backend-modular-architecture-design.md → backend/src/main/java/com/autopartco/backend/BackendApplication.java
 
 ## Import Cycles
 - None detected.
 
-## Communities (215 total, 99 thin omitted)
+## Communities (237 total, 102 thin omitted)
 
-### Community 0 - "lombok.AllArgsConstructor"
-Cohesion: 0.11
+### Community 0 - "lombok.Getter"
+Cohesion: 0.09
 Nodes (34): AuditLog, Plan, StoreSubscription, SubscriptionPayment, Category, Manufacturer, Product, ProductImage (+26 more)
 
-### Community 1 - "org.springframework.data.jpa.repository.Query"
-Cohesion: 0.15
-Nodes (4): StoreSubscriptionRepository, CategoryRepository, ManufacturerRepository, ProductRepository
+### Community 1 - "uuid"
+Cohesion: 0.08
+Nodes (4): AccountSessionResponse, InventoryRepository, BranchRepository, CompatibilityRepository
 
 ### Community 2 - "package.json"
-Cohesion: 0.06
-Nodes (30): dependencies, react, react-dom, devDependencies, oxlint, @types/node, @types/react, @types/react-dom (+22 more)
+Cohesion: 0.11
+Nodes (17): name, private, type, version, @fontsource-variable/geist, motion, next-themes, oxlint (+9 more)
 
 ### Community 3 - "LoginResponse"
-Cohesion: 0.20
-Nodes (8): AuthTokenService, TokenPair, LoginService, SessionRefreshService, LoginResponse, SessionIssuer, RefreshTokenRequest, UnauthorizedException
-
-### Community 4 - "5.3 `product`"
-Cohesion: 0.06
-Nodes (9): CategoryRequest, CategoryResponse, ManufacturerRequest, ManufacturerResponse, MasterDataService, ProductUpdateRequest, ProfileUpdateRequest, MasterDataController (+1 more)
+Cohesion: 0.12
+Nodes (8): AccountSessionRepository, TokenPair, RefreshTokenHash, LoginResponse, RefreshTokenRequest, RefreshTokenHashTest, SessionRefreshServiceTest, 5.6 Pruebas (`src/test`)
 
 ### Community 5 - "5.4 `seller`"
-Cohesion: 0.11
-Nodes (18): SellerDashboardController, SellerCollaboratorInvitationResponse, SellerCollaboratorInviteRequest, SellerCollaboratorResponse, DeliveryAddress, Event, Item, SellerOrderResponse (+10 more)
+Cohesion: 0.22
+Nodes (7): SellerDashboardController, SellerOrderStatusRequest, SellerShipmentCreateRequest, SellerShipmentStatusRequest, SellerDashboardService, ShipmentRow, 5.4 `seller`
 
 ### Community 6 - "SellerCollaboratorService"
-Cohesion: 0.06
-Nodes (21): StaffInvitationRepository, AccountDetails, SellerCollaboratorAcceptRequest, Accepted, InvitationPreview, Member, SellerCollaboratorService, 1. Intención y motivo (+13 more)
+Cohesion: 0.10
+Nodes (11): AccountTypeRepository, PersonRepository, CollaboratorRepository, StorePermissionRepository, StoreRoleRepository, AccountDetails, SellerCollaboratorAcceptRequest, SellerCollaboratorInvitationResponse (+3 more)
 
 ### Community 7 - "SQL Code Review"
 Cohesion: 0.06
@@ -289,12 +306,12 @@ Cohesion: 0.04
 Nodes (47): 10. Ordenamiento, 11.1 Fecha y hora, 11.2 Fecha sin hora, 11. Formato de fechas, 12. Identificadores, 13. Validación de DTO, 14. Eliminación lógica, 15. Autenticación (+39 more)
 
 ### Community 9 - "PlanService"
-Cohesion: 0.16
+Cohesion: 0.17
 Nodes (5): PlanRepository, PlanRequest, PlanResponse, PlanService, PlanAdminController
 
 ### Community 10 - "ListingQueriesTest.java"
-Cohesion: 0.16
-Nodes (4): AccountSessionServiceTest, PersonAddressServiceTest, SessionRefreshServiceTest, StoreAccessTest
+Cohesion: 0.15
+Nodes (3): UnauthorizedException, AccountSessionServiceTest, PersonAddressServiceTest
 
 ### Community 11 - "7. Fases de migración"
 Cohesion: 0.12
@@ -304,9 +321,9 @@ Nodes (4): ModularityTests, GeneratedKeyPair, 7. Fases de migración, Fase 0: ba
 Cohesion: 0.05
 Nodes (57): bootstrapPage(), brandMarkup(), broadcast(), browserLauncherForPlatform(), chmodOwnerOnly(), clients, companionUrl(), computeAcceptKey() (+49 more)
 
-### Community 13 - "BranchResponse"
-Cohesion: 0.11
-Nodes (6): BranchCreateRequest, BranchLocationRequest, BranchLocationResponse, BranchResponse, BranchUpdateRequest, BranchRepository
+### Community 13 - "BranchService"
+Cohesion: 0.21
+Nodes (9): BranchCreateRequest, BranchLocationRequest, BranchLocationResponse, BranchResponse, BranchService, BranchUpdateRequest, LocationRepository, UpdateBranch (+1 more)
 
 ### Community 14 - "bash"
 Cohesion: 0.04
@@ -314,31 +331,27 @@ Nodes (47): agent, explore, plan, *BackendApplicationTests*, Get-ChildItem*, Get
 
 ### Community 15 - "interface-design/SKILL.md"
 Cohesion: 0.06
-Nodes (35): After Completing a Task, Avoid, Before Writing Each Component, Build flow, Color Lives Somewhere, Commands, Communication, Controls: native → primitive → hand-roll (+27 more)
+Nodes (32): After Completing a Task, Avoid, Before Writing Each Component, Build flow, Color Lives Somewhere, Commands, Communication, Craft Foundations (+24 more)
 
 ### Community 16 - "PersonAddressService"
-Cohesion: 0.16
-Nodes (7): PersonAddressRepository, PersonAddressService, AddressLocationRequest, PersonAddressRequest, PersonAddressResponse, LocationRepository, 9.2 Consultas a renombrar
+Cohesion: 0.13
+Nodes (7): PersonAddressRepository, PersonAddressService, AddressLocationRequest, PersonAddressRequest, PersonAddressResponse, StaffInvitationRepository, 9.2 Consultas a renombrar
 
-### Community 17 - "SellerCollaboratorService.java"
-Cohesion: 0.11
-Nodes (7): AccountUnlockService, EmailService, AppProperties, EmailVerification, PasswordRecovery, Tokens, BadRequestException
-
-### Community 18 - "SellerApplicationController.java"
-Cohesion: 0.11
-Nodes (7): Subscriptions, SellerApplicationController, Document, SellerApplicationResponse, SellerApplicationReviewRequest, SellerSetupResponse, SellerApplicationService
+### Community 17 - "MasterDataService"
+Cohesion: 0.13
+Nodes (7): CategoryRequest, CategoryResponse, CategoryRepository, ManufacturerRepository, ManufacturerRequest, ManufacturerResponse, MasterDataService
 
 ### Community 19 - "BackendApplicationTests"
-Cohesion: 0.06
-Nodes (18): Agentes especializados (OpenCode y Claude Code), graphify, BackendApplicationTests, Alcance de edición (lo aplica un hook), Pruebas y base de datos (importante), Requiere autorización, Formato del informe, Lista de revisión (+10 more)
+Cohesion: 0.08
+Nodes (14): Agentes especializados (OpenCode y Claude Code), graphify, BackendApplicationTests, Alcance de edición (lo aplica un hook), Pruebas y base de datos (importante), Requiere autorización, Formato del informe, Lista de revisión (+6 more)
 
-### Community 20 - "ConflictException"
-Cohesion: 0.09
-Nodes (12): AuditService, AccountStatusService, EmailVerificationService, StoreApplicationStatus, ACTIVE, CONFIGURATION_PENDING, PENDING_REVIEW, REJECTED (+4 more)
+### Community 20 - "SellerCollaboratorService.java"
+Cohesion: 0.12
+Nodes (4): BadRequestException, ConflictException, NotFoundException, StateRepository
 
 ### Community 21 - "5.1 Raíz, `common`, `config`, `exception`, `storage`, `test`"
-Cohesion: 0.10
-Nodes (9): BillingConfig, WompiProperties, JacksonConfig, CorsConfig, RsaKeyConfig, RsaKeyProperties, SupabaseStorageConfig, 5.1 Raíz, `common`, `config`, `exception`, `storage`, `test` (+1 more)
+Cohesion: 0.15
+Nodes (6): BillingConfig, WompiProperties, JacksonConfig, CorsConfig, SupabaseStorageConfig, 5.1 Raíz, `common`, `config`, `exception`, `storage`, `test`
 
 ### Community 22 - "ApiError"
 Cohesion: 0.21
@@ -346,27 +359,31 @@ Nodes (6): ApiError, ErrorResponse, GlobalExceptionHandler, GlobalExceptionHandl
 
 ### Community 23 - "compilerOptions"
 Cohesion: 0.10
-Nodes (19): compilerOptions, allowArbitraryExtensions, allowImportingTsExtensions, erasableSyntaxOnly, jsx, lib, module, moduleDetection (+11 more)
+Nodes (20): compilerOptions, allowArbitraryExtensions, allowImportingTsExtensions, erasableSyntaxOnly, jsx, lib, module, moduleDetection (+12 more)
+
+### Community 24 - "WebSecurityConfig.java"
+Cohesion: 0.09
+Nodes (5): WebSecurityConfig, 14. Decisiones del usuario y del orquestador (2026-10-13), 3. Restricciones, 6. Mapeo de rutas, CORS
 
 ### Community 25 - "ProductImageValidator"
-Cohesion: 0.19
-Nodes (10): ProductImageValidator, ValidatedImage, Fase 1: audit y notification, Fase 2: identity, Fase 4b: endpoints de catálogo, Fase 5: order, Fase 6: resto de storesuite y operations, Fase 7: legibilidad (+2 more)
+Cohesion: 0.10
+Nodes (10): ProductImageValidator, ValidatedImage, PayloadTooLargeException, ProductImageValidatorTest, Fase 1: audit y notification, Fase 4b: endpoints de catálogo, Fase 6: resto de storesuite y operations, Fase 7: legibilidad (+2 more)
 
 ### Community 26 - "PromotionResponse"
-Cohesion: 0.10
-Nodes (9): PromotionResponse, PromotionScope, PLATFORM, STORE, PromotionService, PromotionTargets, TargetProduct, PromotionUpsertRequest (+1 more)
+Cohesion: 0.25
+Nodes (3): PromotionResponse, PromotionUpsertRequest, PlatformPromotionController
 
 ### Community 27 - "org.springframework.web.bind.annotation.GetMapping"
-Cohesion: 0.20
-Nodes (6): CheckoutResponse, WompiWebhookController, StoreBrowseController, ApiPaths, PlanCatalogController, SubscriptionController
+Cohesion: 0.13
+Nodes (10): CheckoutResponse, WompiWebhookController, StoreBrowseController, SellerApplicationController, SellerRegistrationController, SellerApplicationReviewRequest, SellerCollaboratorInviteRequest, ApiPaths (+2 more)
 
 ### Community 28 - "ProductCatalog"
-Cohesion: 0.14
-Nodes (4): ProductCatalog, ProductResponse, StockService, ProductService
+Cohesion: 0.10
+Nodes (9): ProductRepository, ListingQueries, ListingRow, ProductCatalog, CompatibilityOption, ProductResponse, CompatibilityOption, CompatibilityService (+1 more)
 
-### Community 29 - "AccountSessionService"
-Cohesion: 0.14
-Nodes (4): AccountSessionRepository, AccountSessionService, RefreshTokenHash, LogoutRequest
+### Community 29 - "org.springframework.transaction.annotation.Transactional"
+Cohesion: 0.10
+Nodes (5): AccountSessionService, SessionIssuer, StockService, NotificationService, StoreStatusResponse
 
 ### Community 30 - "4. Estructura objetivo y reglas de dependencia"
 Cohesion: 0.20
@@ -376,16 +393,16 @@ Nodes (6): AutopartcoModuleDetection, 4.1 Disposición interna de cada dominio d
 Cohesion: 0.04
 Nodes (47): 10. Ordenamiento, 11.1 Fecha y hora, 11.2 Fecha sin hora, 11. Formato de fechas, 12. Identificadores, 13. Validación de DTO, 14. Eliminación lógica, 15. Autenticación (+39 more)
 
-### Community 32 - "MeController"
-Cohesion: 0.42
-Nodes (3): ProfileService, MeController, ProfileResponse
+### Community 32 - ".verify"
+Cohesion: 0.20
+Nodes (4): ProfileService, ProfileResponse, VerifyEmailResponse, ProfileServiceTest
 
 ### Community 34 - "delegate.mjs"
 Cohesion: 0.08
 Nodes (21): agent, attempts, diffArg, dir, dirtyBefore, docs, headAfter, headBefore (+13 more)
 
 ### Community 35 - "4.6 API pública de cada dominio (contrato para el constructor)"
-Cohesion: 0.17
+Cohesion: 0.16
 Nodes (10): Access, Capacity, BRANCHES, PRODUCTS, USERS, PlanEntitlements, Usage, SubscriptionAccess (+2 more)
 
 ### Community 36 - "Visual Companion Guide"
@@ -393,8 +410,8 @@ Cohesion: 0.10
 Nodes (19): Browser Events Format, Cards (visual designs), Cleaning Up, CSS Classes Available, Design Tips, File Naming, How It Works, Mock elements (wireframe building blocks) (+11 more)
 
 ### Community 37 - "org.springframework.security.core.Authentication"
-Cohesion: 0.10
-Nodes (8): ProductCreateRequest, ProductImageOrderRequest, ProductImageResponse, ProductPublicationRequest, MeNotificationController, ProductController, PromotionController, ProductImageService
+Cohesion: 0.09
+Nodes (9): ProductCreateRequest, ProductUpdateRequest, LogoutRequest, MeController, CatalogAdminController, BranchController, StoreProductController, StoreProductImageController (+1 more)
 
 ### Community 38 - "13. Arquitectura técnica"
 Cohesion: 0.33
@@ -412,9 +429,13 @@ Nodes (16): 5.10 Subscribe to Derived State, 5.11 Use Functional setState Update
 Cohesion: 0.11
 Nodes (18): 18. Definición de MVP comercial, 19. Criterios globales de aceptación, 1. Definición ejecutiva, 21. Gobernanza del desarrollo con agentes, 22. Estado conocido del repositorio y límites de la auditoría, 23.1 Decisiones recomendadas por defecto para cerrar el MVP, 23. Decisiones por cerrar antes de comprometer el alcance comercial, 24. Recursos de referencia (+10 more)
 
+### Community 42 - "org.springframework.stereotype.Component"
+Cohesion: 0.19
+Nodes (4): SessionMapper, TokenMapper, ForbiddenHandler, UnauthorizedEntryPoint
+
 ### Community 43 - "Seguridad del Backend"
 Cohesion: 0.11
-Nodes (18): Bloqueo por intentos fallidos, Configuracion de correo, CORS, Direcciones propias, Endpoints publicos actuales, Operaciones de almacenes, Passwords, Perfil propio (+10 more)
+Nodes (17): Bloqueo por intentos fallidos, Configuracion de correo, Direcciones propias, Endpoints publicos actuales, Operaciones de almacenes, Passwords, Perfil propio, Permisos por almacen (+9 more)
 
 ### Community 46 - "Manejo centralizado de errores de API"
 Cohesion: 0.12
@@ -432,9 +453,9 @@ Nodes (15): Bloqueo por intentos fallidos, Configuracion de correo, CORS, Endpoi
 Cohesion: 0.07
 Nodes (28): Aggregation Optimization, Batch Operations, 🎯 Core Optimization Areas, Data Types and Schema, 📈 Database-Agnostic Optimization, Index Design Principles, 🛠️ Index Management, Index Strategy (+20 more)
 
-### Community 50 - "SubscriptionCheckout.java"
-Cohesion: 0.13
-Nodes (3): AccountLookup, AccountRef, CollaboratorRepository
+### Community 50 - "AccountRepository"
+Cohesion: 0.12
+Nodes (10): AccountLookup, AccountProvisioning, AccountRef, AccountRepository, StoreApplicationDocumentRepository, StoreApplicationRepository, SellerApplicationService, SellerRegistrationService (+2 more)
 
 ### Community 53 - "Guía de trabajo con Git y GitHub"
 Cohesion: 0.13
@@ -452,12 +473,12 @@ Nodes (14): 1. Eliminating Waterfalls (CRITICAL), 2. Bundle Size Optimization (C
 Cohesion: 0.15
 Nodes (13): 15.1 Diseño: conjunto recomendado, 15.2 Código, planificación y depuración, 15.3 Backend, datos y calidad, 15.4 IA, evaluaciones e integraciones, 15.5 Política de selección de skills, 15.6 Orquestación de agentes, 15. Skills y herramientas para agentes de IA, A. UI/UX Pro Max — skill principal de inteligencia de diseño (+5 more)
 
-### Community 58 - "LoginAttemptService"
-Cohesion: 0.22
-Nodes (3): LoginAttemptMapper, LoginAttemptRepository, LoginAttemptService
+### Community 58 - ".findByEmailIgnoreCase"
+Cohesion: 0.15
+Nodes (5): LoginAttemptMapper, LoginAttemptRepository, LoginAttemptService, LoginRequest, LoginAttemptServiceTest
 
 ### Community 59 - "agent-guard.mjs"
-Cohesion: 0.19
+Cohesion: 0.21
 Nodes (12): ALWAYS_ALLOW_EXCEPTIONS, ALWAYS_DENY, ask(), BASH_DENY, block(), checkBash(), checkPath(), globToRegExp() (+4 more)
 
 ### Community 60 - "compilerOptions"
@@ -480,9 +501,9 @@ Nodes (9): 5.1 Inicio y descubrimiento, 5.2 Búsqueda, 5.3 Resultados vacíos y 
 Cohesion: 0.22
 Nodes (8): Auditoria, Endpoint de registro, Endpoint de verificacion, Flujo, Registro y verificacion de correo, Tokens de cuenta, Variables de entorno, Índice
 
-### Community 65 - "org.junit.jupiter.api.Test"
-Cohesion: 0.09
-Nodes (10): PersonRepository, StorePermissionRepository, ProductImageValidatorTest, LoginAttemptServiceTest, LoginServiceTest, ProfileServiceTest, RefreshTokenHashTest, SellerCollaboratorServiceTest (+2 more)
+### Community 65 - "SellerDashboardServiceTest"
+Cohesion: 0.29
+Nodes (3): SellerOrderSummaryResponse, SellerDashboardServiceTest, Fase 5: order
 
 ### Community 66 - "Autopartco — Backlog de preparación (antes del desarrollo funcional)"
 Cohesion: 0.25
@@ -494,7 +515,7 @@ Nodes (8): 6.1 Registro y verificación, 6.2 Panel inicial, 6.3 Catálogo y publ
 
 ### Community 68 - "models.mjs"
 Cohesion: 0.17
-Nodes (10): arg(), findCli(), cli, current, dir, index, known, models (+2 more)
+Nodes (10): findCli(), readModels(), cli, current, dir, index, known, models (+2 more)
 
 ### Community 69 - "10. Funciones de inteligencia artificial"
 Cohesion: 0.29
@@ -528,21 +549,25 @@ Nodes (4): Configuración, Endpoints, Imágenes de productos, Inicialización y 
 Cohesion: 0.17
 Nodes (12): 6.10 Use React DOM Resource Hints, 6.11 Use useTransition Over Manual Loading States, 6.1 Animate SVG Wrapper Instead of SVG Element, 6.2 CSS content-visibility for Long Lists, 6.3 Hoist Static JSX Elements, 6.4 Optimize SVG Precision, 6.5 Prevent Hydration Mismatch Without Flickering, 6.6 Suppress Expected Hydration Mismatches (+4 more)
 
-### Community 79 - "Diseño: backend de Autopartco como monolito modular"
-Cohesion: 0.12
-Nodes (16): SalesSummary, SellerDashboardResponse, Usage, Alcance de edición (lo aplica un hook), Estado actual (verifícalo antes de actuar), Método, Reglas, 10. Contratos que no cambian (+8 more)
+### Community 78 - "PromotionService"
+Cohesion: 0.16
+Nodes (8): PromotionService, CreateStorePromotion, DeleteStorePromotion, ListStorePromotions, StorePromotionAccess, StorePromotionController, UpdateStorePromotion, StorePromotionUseCasesTest
+
+### Community 79 - ".dashboard"
+Cohesion: 0.21
+Nodes (8): SalesSummary, SellerDashboardResponse, Usage, Alcance de edición (lo aplica un hook), Estado actual (verifícalo antes de actuar), Método, Reglas, 11.2 Brechas
 
 ### Community 80 - "4. Tipos de cuenta, organizaciones y permisos"
 Cohesion: 0.50
 Nodes (4): 4.1 Roles propuestos, 4.2 Organización y sucursales, 4.3 Seguridad de cuentas, 4. Tipos de cuenta, organizaciones y permisos
 
 ### Community 81 - "5.2 `auth`"
-Cohesion: 0.21
-Nodes (8): PasswordRecoveryService, AuthController, PasswordRecoveryRequest, PasswordRecoveryResponse, PasswordResetRequest, UnlockAccountRequest, UnlockAccountResponse, 5.2 `auth`
+Cohesion: 0.06
+Nodes (24): AuditService, AuditLogMapper, AuditLogRepository, AccountStatusService, AccountUnlockService, AuthTokenService, EmailVerificationService, EmailVerificationTokenService (+16 more)
 
-### Community 82 - "org.springframework.stereotype.Service"
-Cohesion: 0.19
-Nodes (15): BranchService, StoreAccess, StorePermissionCodes, StoreService, StoreStatusResponse, BranchController, CreateBranch, DeactivateBranch (+7 more)
+### Community 82 - "lombok.AllArgsConstructor"
+Cohesion: 0.17
+Nodes (17): Subscriptions, PublishedStoreAssets, StoreAccess, StoreFiles, StorePermissionCodes, StoreService, CreateBranch, DeactivateBranch (+9 more)
 
 ### Community 83 - "Spring Boot Best Practices"
 Cohesion: 0.18
@@ -592,6 +617,10 @@ Nodes (7): 2.1 Avoid Barrel File Imports, 2.2 Conditional Module Loading, 2.3 De
 Cohesion: 0.33
 Nodes (5): Creating a New Rule, Getting Started, React Best Practices, Rule File Structure, Structure
 
+### Community 95 - "ProductImages"
+Cohesion: 0.19
+Nodes (4): ProductImageMapper, ProductImageResponse, ProductImages, ManageProductImages
+
 ### Community 97 - "8. Advanced Patterns"
 Cohesion: 0.40
 Nodes (5): 8.1 Do Not Put Effect Events in Dependency Arrays, 8.2 Initialize App Once, Not Per Mount, 8.3 Store Event Handlers in Refs, 8.4 useEffectEvent for Stable Callback Refs, 8. Advanced Patterns
@@ -600,9 +629,9 @@ Nodes (5): 8.1 Do Not Put Effect Events in Dependency Arrays, 8.2 Initialize App
 Cohesion: 0.13
 Nodes (17): cli, dir, index, jobs, parallel, probes, provider, results (+9 more)
 
-### Community 99 - "org.springframework.transaction.annotation.Transactional"
-Cohesion: 0.11
-Nodes (7): CatalogPromotionTargets, CategoryOption, CompatibilityOption, ManufacturerOption, ProductOptionsResponse, NotificationResponse, NotificationService
+### Community 99 - "ProductOptionsResponse"
+Cohesion: 0.31
+Nodes (3): CategoryOption, ManufacturerOption, ProductOptionsResponse
 
 ### Community 100 - ".opencode/agents/database.md"
 Cohesion: 0.40
@@ -620,9 +649,9 @@ Nodes (3): Límites, Método, Qué produces
 Cohesion: 0.50
 Nodes (3): Alcance de edición (lo aplica un hook), Método, Reglas del stack
 
-### Community 106 - "SellerRegistrationService.java"
-Cohesion: 0.13
-Nodes (12): AccountProvisioning, AccountRepository, AccountTypeRepository, AuthResponseMapper, RegistrationService, PreparedRegistration, RegisterResponse, StoreApplicationDocumentRepository (+4 more)
+### Community 106 - "RegistrationService"
+Cohesion: 0.20
+Nodes (6): AccountMapper, AuthResponseMapper, RegistrationService, PreparedRegistration, RegisterRequest, RegisterResponse
 
 ### Community 107 - ".opencode/agents/arquitecto.md"
 Cohesion: 0.50
@@ -636,10 +665,6 @@ Nodes (3): Alcance de edición, Método, Reglas del stack
 Cohesion: 0.50
 Nodes (3): Delegación, Reglas para evitar conflictos, Requiere autorización explícita del usuario
 
-### Community 111 - "ProductImages.java"
-Cohesion: 0.12
-Nodes (4): CompatibilityOption, CompatibilityService, CompatibilityOptionView, CompatibilityRepository
-
 ### Community 180 - "publish-backlog.mjs"
 Cohesion: 0.14
 Nodes (12): act(), apply, backlog, byKey, createIssue(), milestoneTitle, [owner], pause() (+4 more)
@@ -648,9 +673,9 @@ Nodes (12): act(), apply, backlog, byKey, createIssue(), milestoneTitle, [owner]
 Cohesion: 0.15
 Nodes (12): Autopartco — Contexto base para agentes de IA, Definición de terminado, Diseño/UX, Flujo recomendado para cada tarea, Plantilla de tarea, Principios de arquitectura, Prioridades del producto, Qué es el producto (+4 more)
 
-### Community 182 - "StoreFileStorageTest"
-Cohesion: 0.22
-Nodes (3): SupabaseStorageProperties, StoreFileStorageTest, Fase 3a: organization
+### Community 182 - "SupabaseStorageProperties"
+Cohesion: 0.26
+Nodes (3): RsaKeyConfig, RsaKeyProperties, SupabaseStorageProperties
 
 ### Community 183 - "20. Métricas de éxito del producto"
 Cohesion: 0.50
@@ -664,6 +689,10 @@ Nodes (4): Cuándo reevaluar, Cómo reevaluar (≈2–3 min, sin coste), Modelos
 Cohesion: 0.50
 Nodes (4): 8.1 Modelo comercial de referencia, 8.2 Separar cargos, 8.3 Entidades necesarias, 8. Suscripciones, planes y monetización
 
+### Community 190 - "org.junit.jupiter.api.Test"
+Cohesion: 0.10
+Nodes (6): ProductPublicationRequest, ListingQueriesTest, StoreFileStorageTest, StoreAccessTest, StoreProductUseCasesTest, Fase 3a: organization
+
 ### Community 194 - "Assessment: Security Validator (Red Team Edition)"
 Cohesion: 0.29
 Nodes (6): Admin Bootstrapping & Privileges:, Assessment: Security Validator (Red Team Edition), Mandatory Audit Checklist:, Overview, Scoring Criteria, Scoring Criteria (1-5):
@@ -672,69 +701,137 @@ Nodes (6): Admin Bootstrapping & Privileges:, Assessment: Security Validator (Re
 Cohesion: 0.50
 Nodes (4): 11.1 Eventos y métricas de producto, 11.2 Indicadores, 11.3 Evaluación de modelos, 11. Analítica y predicción: qué medir antes de entrenar
 
-### Community 197 - "WompiWebhookProcessor.java"
-Cohesion: 0.13
-Nodes (8): CheckoutRequest, SubscriptionPaymentRepository, WompiHashing, WompiSignatureVerifier, WompiWebhookProcessor, SubscriptionCheckout, WompiWebhookProcessorTest, SubscriptionCheckoutTest
+### Community 196 - "components.json"
+Cohesion: 0.09
+Nodes (21): aliases, components, hooks, lib, ui, utils, iconLibrary, menuAccent (+13 more)
+
+### Community 197 - ".processWebhook"
+Cohesion: 0.26
+Nodes (4): SubscriptionPaymentRepository, WompiSignatureVerifier, WompiWebhookProcessor, WompiWebhookProcessorTest
 
 ### Community 199 - ".oxlintrc.json"
 Cohesion: 0.33
 Nodes (5): plugins, rules, react/only-export-components, react/rules-of-hooks, $schema
 
-### Community 200 - "ListingQueries"
-Cohesion: 0.19
-Nodes (4): ListingQueries, ListingRow, 13. Abierto para el constructor, Fase 4a: vehicle, inventory, pricing y catalog
+### Community 200 - "Promotion"
+Cohesion: 0.35
+Nodes (5): Promotion, PromotionRepository, PromotionScope, PLATFORM, STORE
 
 ### Community 201 - "12. Modelo de datos objetivo"
 Cohesion: 0.22
 Nodes (9): 12.1 Identidad y estructura comercial, 12.2 Catálogo y universo automotriz, 12.3 Inventario y compras, 12.4 Comercio y pagos, 12.5 Integraciones, 12.6 Suscripciones y soporte, 12.7 IA y analítica, 12.8 Reglas de modelado (+1 more)
 
-### Community 204 - ".verify"
-Cohesion: 0.05
-Nodes (15): AuditLogMapper, ProductImageMapper, ImageBackup, ProductImages, SessionMapper, TokenMapper, VerifyEmailResponse, PublishedStoreAssets (+7 more)
-
-### Community 205 - "PriceCalculator"
-Cohesion: 0.23
-Nodes (7): PriceCalculator, PriceQuote, PricingSubject, PromotionAttributeOperator, CONTAINS, EQUALS, PromotionRule
+### Community 205 - "5.3 `product`"
+Cohesion: 0.15
+Nodes (11): PriceCalculator, PriceQuote, PricingSubject, PromotionDiscountType, FIXED_AMOUNT, PERCENTAGE, PromotionRule, PriceCalculatorTest (+3 more)
 
 ### Community 206 - "React + TypeScript + Vite"
 Cohesion: 0.50
 Nodes (3): Expanding the Oxlint configuration, React Compiler, React + TypeScript + Vite
 
-### Community 209 - "SellerRegistrationService"
+### Community 209 - "org.springframework.web.multipart.MultipartFile"
+Cohesion: 0.17
+Nodes (11): ApplicationDocumentType, CERTIFICATE_OF_EXISTENCE, IDENTITY_DOCUMENT, LEGAL_REPRESENTATIVE_ID, RUT, LegalType, LEGAL_ENTITY, NATURAL_PERSON (+3 more)
+
+### Community 210 - "cn"
 Cohesion: 0.12
-Nodes (15): RegisterRequest, ApplicationDocumentType, CERTIFICATE_OF_EXISTENCE, IDENTITY_DOCUMENT, LEGAL_REPRESENTATIVE_ID, RUT, LegalType, LEGAL_ENTITY (+7 more)
+Nodes (4): ScrollArea(), ScrollBar(), @base-ui/react, cn
 
-### Community 210 - "EmailVerificationTokenService"
-Cohesion: 0.22
-Nodes (3): AccountTokenRepository, CreatedEmailVerificationToken, EmailVerificationTokenService
+### Community 211 - "tsconfig.json"
+Cohesion: 0.33
+Nodes (5): compilerOptions, baseUrl, paths, files, references
 
-### Community 212 - "PromotionDiscountType"
-Cohesion: 0.31
-Nodes (4): PromotionDiscountType, FIXED_AMOUNT, PERCENTAGE, PriceCalculatorTest
+### Community 212 - "pagination.tsx"
+Cohesion: 0.15
+Nodes (12): Controls: native → primitive → hand-roll, Styling: system → component → token → utility, Use What Exists, Badge(), badgeVariants, Button(), buttonVariants, PaginationLink() (+4 more)
+
+### Community 213 - "StoreSubscriptionRepository"
+Cohesion: 0.24
+Nodes (5): CheckoutRequest, StoreSubscriptionRepository, WompiHashing, SubscriptionCheckout, SubscriptionCheckoutTest
 
 ### Community 214 - "PromotionTargetType"
 Cohesion: 0.25
 Nodes (7): PromotionTargetType, ALL, ATTRIBUTE, CATEGORY, MANUFACTURER, PRODUCT, STORE
 
+### Community 215 - "dependencies"
+Cohesion: 0.12
+Nodes (16): dependencies, @base-ui/react, class-variance-authority, cn, @fontsource-variable/geist, lucide-react, motion, next-themes (+8 more)
+
+### Community 216 - "Registro y planes para vendedores"
+Cohesion: 0.13
+Nodes (13): Activación y pago, Alcance solicitado, Almacenamiento de archivos, Configuración de integración requerida, Contratos disponibles en backend, Dashboard, ventas y pedidos, Decisiones acordadas, Fases (+5 more)
+
+### Community 217 - "PromotionTargets"
+Cohesion: 0.23
+Nodes (3): CatalogPromotionTargets, PromotionTargets, TargetProduct
+
+### Community 220 - "StoreApplicationStatus"
+Cohesion: 0.19
+Nodes (9): StoreApplicationStatus, ACTIVE, CONFIGURATION_PENDING, PENDING_REVIEW, REJECTED, StoreResponse, SellerApplicationCreatedResponse, SellerRegistrationResponse (+1 more)
+
+### Community 221 - "SellerOrderResponse"
+Cohesion: 0.29
+Nodes (6): DeliveryAddress, Event, Item, SellerOrderResponse, Shipment, SellerOrderBase
+
+### Community 223 - "react"
+Cohesion: 0.22
+Nodes (3): App(), react, react-dom
+
+### Community 225 - "sheet.tsx"
+Cohesion: 0.22
+Nodes (3): SheetContent(), SheetOverlay(), SheetPortal()
+
+### Community 226 - "select.tsx"
+Cohesion: 0.24
+Nodes (3): SelectContent(), SelectScrollDownButton(), SelectScrollUpButton()
+
+### Community 227 - "SellerCollaboratorResponse"
+Cohesion: 0.31
+Nodes (3): InvitationPreview, Member, SellerCollaboratorResponse
+
+### Community 228 - "Diseño: backend de Autopartco como monolito modular"
+Cohesion: 0.22
+Nodes (9): 10. Contratos que no cambian, 11.1 Tablas y su dueño, 11. Brechas de base de datos por módulo (para el agente `database`), 1. Intención y motivo, 2. Objetivos, no-objetivos y anti-objetivos, 5. Mapeo completo de clases, 8. Marcadores por producto (solo `package-info.java`, sin código), 9. Convenciones de nombres y legibilidad (+1 more)
+
+### Community 229 - "devDependencies"
+Cohesion: 0.25
+Nodes (8): devDependencies, oxlint, @types/node, @types/react, @types/react-dom, typescript, vite, @vitejs/plugin-react
+
+### Community 232 - "Plan: refactorización modular del backend"
+Cohesion: 0.40
+Nodes (3): Plan: refactorización modular del backend, Reglas para todas las fases, Resumen
+
+### Community 233 - "scripts"
+Cohesion: 0.40
+Nodes (5): scripts, build, dev, lint, preview
+
+### Community 234 - "ref_node_path"
+Cohesion: 0.40
+Nodes (3): @tailwindcss/vite, vite, @vitejs/plugin-react
+
+### Community 235 - "PromotionAttributeOperator"
+Cohesion: 0.50
+Nodes (3): PromotionAttributeOperator, CONTAINS, EQUALS
+
 ## Knowledge Gaps
-- **847 isolated node(s):** `crypto`, `http`, `fs`, `path`, `OPCODES` (+842 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1110 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **99 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **888 isolated node(s):** `crypto`, `http`, `fs`, `path`, `OPCODES` (+883 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 1194 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **102 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `BackendApplicationTests` connect `BackendApplicationTests` to `org.junit.jupiter.api.Test`, `7. Fases de migración`, `5.1 Raíz, `common`, `config`, `exception`, `storage`, `test``, `ApiError`, `agent-guard.mjs`?**
-  _High betweenness centrality (0.055) - this node is a cross-community bridge._
+- **Why does `BackendApplicationTests` connect `BackendApplicationTests` to `LoginResponse`, `Plan: refactorización modular del backend`, `7. Fases de migración`, `ApiError`, `WebSecurityConfig.java`, `agent-guard.mjs`?**
+  _High betweenness centrality (0.094) - this node is a cross-community bridge._
 - **What connects `crypto`, `http`, `fs` to the rest of the system?**
-  _847 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `lombok.AllArgsConstructor` be split into smaller, more focused modules?**
-  _Cohesion score 0.10916129032258065 - nodes in this community are weakly interconnected._
+  _888 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `lombok.Getter` be split into smaller, more focused modules?**
+  _Cohesion score 0.09253875968992248 - nodes in this community are weakly interconnected._
 - **Why does `4. Ejecutar` connect `agent-guard.mjs` to `Delegar a OpenCode`, `BackendApplicationTests`?**
-  _High betweenness centrality (0.051) - this node is a cross-community bridge._
-- **Should `org.springframework.data.jpa.repository.Query` be split into smaller, more focused modules?**
-  _Cohesion score 0.14717741935483872 - nodes in this community are weakly interconnected._
+  _High betweenness centrality (0.086) - this node is a cross-community bridge._
+- **Should `uuid` be split into smaller, more focused modules?**
+  _Cohesion score 0.08105263157894736 - nodes in this community are weakly interconnected._
 - **Should `package.json` be split into smaller, more focused modules?**
-  _Cohesion score 0.05832147937411095 - nodes in this community are weakly interconnected._
-- **Should `5.3 `product`` be split into smaller, more focused modules?**
-  _Cohesion score 0.05886075949367089 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.10526315789473684 - nodes in this community are weakly interconnected._
+- **Should `LoginResponse` be split into smaller, more focused modules?**
+  _Cohesion score 0.12433862433862433 - nodes in this community are weakly interconnected._
