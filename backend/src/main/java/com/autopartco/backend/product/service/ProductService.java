@@ -40,7 +40,7 @@ import com.autopartco.backend.core.organization.internal.BranchRepository;
 import com.autopartco.backend.core.organization.internal.StoreRepository;
 import com.autopartco.backend.core.organization.StoreAccess;
 import com.autopartco.backend.core.organization.StorePermissionCodes;
-import com.autopartco.backend.seller.service.SellerPlanEntitlementService;
+import com.autopartco.backend.core.billing.PlanEntitlements;
 
 import lombok.AllArgsConstructor;
 
@@ -63,7 +63,7 @@ public class ProductService {
     private final StateRepository stateRepository;
     private final PromotionRepository promotionRepository;
     private final PromotionPricingService promotionPricingService;
-    private final SellerPlanEntitlementService entitlementService;
+    private final PlanEntitlements entitlementService;
 
     @Transactional(readOnly = true)
     public List<ProductResponse> list(UUID storeId, String email) {
@@ -76,7 +76,7 @@ public class ProductService {
         var store = requirePermission(storeId, email, StorePermissionCodes.PRODUCT_CREATE);
         storeRepository.findByIdForUpdate(storeId)
                 .orElseThrow(() -> new NotFoundException("STORE_NOT_FOUND", "No se encontró el almacén."));
-        entitlementService.requireCapacity(storeId, SellerPlanEntitlementService.Capacity.PRODUCTS, 1);
+        entitlementService.requireCapacity(storeId, PlanEntitlements.Capacity.PRODUCTS, 1);
         Branch branch = findBranch(storeId, request.branchId());
         Product product = Product.builder()
                 .store(store)

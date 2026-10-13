@@ -1,4 +1,4 @@
-package com.autopartco.backend.seller.entity;
+package com.autopartco.backend.core.billing.internal;
 
 import java.util.List;
 
@@ -27,7 +27,7 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-public class SellerPlan extends BaseEntity {
+public class Plan extends BaseEntity {
     @Column(nullable = false, unique = true, length = 50)
     private String code;
 

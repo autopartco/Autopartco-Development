@@ -50,9 +50,9 @@ public class WebSecurityConfig {
                 ApiPaths.BASE + "/auth/password-recovery/reset";
         public final static String LOG_OUT_MATCHER = ApiPaths.BASE + "/auth/logout";
         public final static String SELLER_SETUP_MATCHER = ApiPaths.BASE + "/seller-applications/setup";
-        public final static String SELLER_PLANS_MATCHER = ApiPaths.BASE + "/seller-plans";
+        public final static String SELLER_PLANS_MATCHER = ApiPaths.BASE + "/plans";
         public final static String SELLER_BRAND_MATCHER = ApiPaths.BASE + "/seller-applications/stores/*/brand/*";
-        public final static String WOMPI_WEBHOOK_MATCHER = ApiPaths.BASE + "/seller-payments/wompi/webhook";
+        public final static String WOMPI_WEBHOOK_MATCHER = ApiPaths.BASE + "/webhooks/wompi";
         public final static String PUBLISHED_STORES_MATCHER = ApiPaths.BASE + "/stores/published";
         public final static String PUBLISHED_PRODUCTS_MATCHER = ApiPaths.BASE + "/products/published";
         public final static String PRODUCT_DETAIL_MATCHER = ApiPaths.BASE + "/products/*";

@@ -1,5 +1,6 @@
 package com.autopartco.backend.seller.dto;
 
+import com.autopartco.backend.core.billing.PlanResponse;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -9,7 +10,7 @@ public record SellerSetupResponse(
         UUID storeId,
         String status,
         LocalDateTime trialEndsAt,
-        SellerPlanResponse recommendedPlan,
+        PlanResponse recommendedPlan,
         LoginResponse authentication
 ) {
 }

@@ -8,7 +8,6 @@ import org.hibernate.annotations.SQLRestriction;
 
 import com.autopartco.backend.core.organization.LegalType;
 import com.autopartco.backend.core.organization.StoreApplicationStatus;
-import com.autopartco.backend.seller.entity.SellerPlan;
 import com.autopartco.backend.shared.persistence.BaseEntity;
 
 import jakarta.persistence.Column;
@@ -17,7 +16,6 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
@@ -44,13 +42,13 @@ public class StoreApplication extends BaseEntity {
     @JoinColumn(name = "store_id", nullable = false, unique = true)
     private Store store;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "plan_id", nullable = false)
-    private SellerPlan plan;
+    // R1: plan de billing por ID. Solo se fija al insertar (NOT NULL); después lo cambia
+    // billing.internal.StoreSubscription, dueña de las columnas de suscripción (diseño §4.4).
+    @Column(name = "plan_id", nullable = false, insertable = true, updatable = false)
+    private UUID planId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "selected_plan_id", nullable = false)
-    private SellerPlan selectedPlan;
+    @Column(name = "selected_plan_id", nullable = false, insertable = true, updatable = false)
+    private UUID selectedPlanId;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "legal_type", nullable = false, length = 30)
@@ -74,13 +72,4 @@ public class StoreApplication extends BaseEntity {
 
     @Column(name = "configuration_completed_at")
     private LocalDateTime configurationCompletedAt;
-
-    @Column(name = "trial_starts_at")
-    private LocalDateTime trialStartsAt;
-
-    @Column(name = "trial_ends_at")
-    private LocalDateTime trialEndsAt;
-
-    @Column(name = "paid_through")
-    private LocalDateTime paidThrough;
 }

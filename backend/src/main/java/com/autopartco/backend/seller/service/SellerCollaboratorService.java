@@ -37,7 +37,8 @@ import com.autopartco.backend.seller.dto.SellerCollaboratorResponse;
 import com.autopartco.backend.seller.dto.SellerPermissionOption;
 import com.autopartco.backend.core.organization.internal.StaffInvitation;
 import com.autopartco.backend.core.organization.internal.StaffInvitationRepository;
-import com.autopartco.backend.seller.service.SellerPlanEntitlementService.Capacity;
+import com.autopartco.backend.core.billing.PlanEntitlements;
+import com.autopartco.backend.core.billing.PlanEntitlements.Capacity;
 import com.autopartco.backend.core.organization.internal.Collaborator;
 import com.autopartco.backend.core.organization.internal.Store;
 import com.autopartco.backend.core.organization.internal.StorePermission;
@@ -90,7 +91,7 @@ public class SellerCollaboratorService {
     private final StorePermissionRepository permissionRepository;
     private final CollaboratorRepository collaboratorRepository;
     private final StaffInvitationRepository invitationRepository;
-    private final SellerPlanEntitlementService entitlementService;
+    private final PlanEntitlements entitlementService;
     private final StoreAccess storeAccessService;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;

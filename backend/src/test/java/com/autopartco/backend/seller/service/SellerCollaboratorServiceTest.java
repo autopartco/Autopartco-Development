@@ -22,6 +22,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.autopartco.backend.core.billing.PlanEntitlements;
 import com.autopartco.backend.core.identity.internal.AccountRepository;
 import com.autopartco.backend.core.identity.internal.PersonRepository;
 import com.autopartco.backend.shared.persistence.StateRepository;
@@ -61,7 +62,7 @@ class SellerCollaboratorServiceTest {
     @Mock
     private StaffInvitationRepository invitationRepository;
     @Mock
-    private SellerPlanEntitlementService entitlementService;
+    private PlanEntitlements entitlementService;
     @Mock
     private StoreAccess storeAccessService;
     @Mock

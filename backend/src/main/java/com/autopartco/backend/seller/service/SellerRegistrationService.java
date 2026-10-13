@@ -23,16 +23,16 @@ import com.autopartco.backend.core.organization.internal.StoreApplicationDocumen
 import com.autopartco.backend.core.organization.StoreApplicationStatus;
 import com.autopartco.backend.core.organization.ApplicationDocumentType;
 import com.autopartco.backend.core.organization.LegalType;
-import com.autopartco.backend.seller.entity.SellerPlan;
+import com.autopartco.backend.core.billing.PlanResponse;
 import com.autopartco.backend.seller.dto.SellerApplicationCreatedResponse;
 import com.autopartco.backend.seller.dto.SellerApplicationRequest;
 import com.autopartco.backend.core.organization.internal.StoreApplicationDocumentRepository;
 import com.autopartco.backend.core.organization.internal.StoreApplicationRepository;
 import com.autopartco.backend.core.organization.internal.StoreFileStorage;
-import com.autopartco.backend.seller.repository.SellerPlanRepository;
 import com.autopartco.backend.core.organization.internal.Store;
 import com.autopartco.backend.core.organization.internal.StoreRepository;
 import com.autopartco.backend.core.organization.StoreService;
+import com.autopartco.backend.core.billing.PlanService;
 
 import lombok.extern.slf4j.Slf4j;
 import lombok.AllArgsConstructor;
@@ -45,8 +45,7 @@ public class SellerRegistrationService {
     private final StoreService storeService;
     private final AccountRepository accountRepository;
     private final StoreRepository storeRepository;
-    private final SellerPlanRepository planRepository;
-    private final SellerPlanService planService;
+    private final PlanService planService;
     private final StoreApplicationRepository applicationRepository;
     private final StoreApplicationDocumentRepository documentRepository;
     private final StoreFileStorage fileService;
@@ -57,7 +56,7 @@ public class SellerRegistrationService {
             Map<ApplicationDocumentType, MultipartFile> documents
     ) {
         validateDocuments(request.legalType(), documents);
-        SellerPlan plan = resolvePlan(request.planId());
+        PlanResponse plan = planService.requireSelectable(request.planId());
         PreparedRegistration prepared = accountProvisioning.registerSellerAccount(request.account());
         Account account = accountRepository.findByEmailIgnoreCase(prepared.response().email())
                 .orElseThrow(() -> new NotFoundException(
@@ -83,7 +82,7 @@ public class SellerRegistrationService {
                 created.store(),
                 created.application().getId(),
                 created.application().getStatus(),
-                plan.getCode()
+                plan.code()
         );
     }
 
@@ -115,7 +114,7 @@ public class SellerRegistrationService {
                     "Ya tienes una solicitud de vendedor en curso."
             );
         }
-        SellerPlan plan = resolvePlan(request.planId());
+        PlanResponse plan = planService.requireSelectable(request.planId());
         CreatedApplication created = createApplication(
                 account,
                 request.store(),
@@ -127,26 +126,15 @@ public class SellerRegistrationService {
                 created.application().getId(),
                 created.store().id(),
                 created.application().getStatus(),
-                plan.getCode()
+                plan.code()
         );
-    }
-
-    private SellerPlan resolvePlan(java.util.UUID planId) {
-        return planId == null
-                ? planService.trialPlan()
-                : planRepository.findById(planId)
-                        .filter(SellerPlan::isEnabled)
-                        .orElseThrow(() -> new NotFoundException(
-                                "SELLER_PLAN_NOT_FOUND",
-                                "El plan seleccionado no existe o no está disponible."
-                        ));
     }
 
     private CreatedApplication createApplication(
             Account account,
             com.autopartco.backend.core.organization.StoreRegistrationRequest storeRequest,
             LegalType legalType,
-            SellerPlan plan,
+            PlanResponse plan,
             Map<ApplicationDocumentType, MultipartFile> documents
     ) {
         var storeResponse = storeService.register(storeRequest, account.getEmail());
@@ -155,8 +143,8 @@ public class SellerRegistrationService {
         StoreApplication application = applicationRepository.save(StoreApplication.builder()
                 .applicantAccountId(account.getId())
                 .store(store)
-                .plan(plan)
-                .selectedPlan(plan)
+                .planId(plan.id())
+                .selectedPlanId(plan.id())
                 .legalType(legalType)
                 .status(StoreApplicationStatus.PENDING_REVIEW)
                 .build());

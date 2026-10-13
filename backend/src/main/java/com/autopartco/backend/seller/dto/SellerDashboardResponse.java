@@ -1,5 +1,6 @@
 package com.autopartco.backend.seller.dto;
 
+import com.autopartco.backend.core.billing.PlanResponse;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -9,8 +10,8 @@ public record SellerDashboardResponse(
         UUID storeId,
         String storeName,
         String storeStatus,
-        SellerPlanResponse plan,
-        SellerPlanResponse selectedPlan,
+        PlanResponse plan,
+        PlanResponse selectedPlan,
         boolean setupRequired,
         boolean subscriptionExpired,
         LocalDateTime trialEndsAt,

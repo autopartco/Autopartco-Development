@@ -1,4 +1,4 @@
-package com.autopartco.backend.seller.dto;
+package com.autopartco.backend.core.billing;
 
 import java.util.List;
 
@@ -7,7 +7,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
-public record SellerPlanRequest(
+public record PlanRequest(
         @NotBlank @Size(max = 50) String code,
         @NotBlank @Size(max = 120) String name,
         @Size(max = 2000) String description,

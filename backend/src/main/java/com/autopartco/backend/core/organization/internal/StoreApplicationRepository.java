@@ -18,8 +18,6 @@ public interface StoreApplicationRepository extends JpaRepository<StoreApplicati
     @Query("""
             select distinct application from StoreApplication application
             join fetch application.store store
-            join fetch application.plan plan
-            join fetch application.selectedPlan selectedPlan
             where application.status = :status
             order by application.createdAt
             """)
@@ -48,8 +46,6 @@ public interface StoreApplicationRepository extends JpaRepository<StoreApplicati
 
     @Query("select application from StoreApplication application "
             + "join fetch application.store store "
-            + "join fetch application.plan plan "
-            + "join fetch application.selectedPlan selectedPlan "
             + "where application.applicantAccountId = :applicantAccountId "
             + "order by application.createdAt desc")
     List<StoreApplication> findByApplicant(@Param("applicantAccountId") UUID applicantAccountId);

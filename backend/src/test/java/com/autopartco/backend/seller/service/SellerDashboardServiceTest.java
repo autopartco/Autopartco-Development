@@ -17,7 +17,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.AccessDeniedException;
 
+import com.autopartco.backend.core.billing.PlanEntitlements;
 import com.autopartco.backend.core.organization.StoreAccess;
+import com.autopartco.backend.core.organization.internal.StoreApplicationRepository;
 import com.autopartco.backend.core.organization.StorePermissionCodes;
 
 @ExtendWith(MockitoExtension.class)
@@ -29,10 +31,10 @@ class SellerDashboardServiceTest {
     private StoreAccess storeAccessService;
 
     @Mock
-    private SellerPlanEntitlementService entitlementService;
+    private PlanEntitlements entitlementService;
 
     @Mock
-    private SellerPlanService planService;
+    private StoreApplicationRepository applicationRepository;
 
     @InjectMocks
     private SellerDashboardService dashboardService;
@@ -65,7 +67,7 @@ class SellerDashboardServiceTest {
                 AccessDeniedException.class,
                 () -> dashboardService.dashboard(storeId, "user@example.com")
         );
-        verifyNoInteractions(jdbcTemplate, entitlementService, planService);
+        verifyNoInteractions(jdbcTemplate, entitlementService, applicationRepository);
     }
 
     @Test

@@ -1,4 +1,4 @@
-package com.autopartco.backend.seller.controller;
+package com.autopartco.backend.operations.plans;
 
 import java.util.List;
 import java.util.UUID;
@@ -15,48 +15,46 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.autopartco.backend.core.billing.PlanRequest;
+import com.autopartco.backend.core.billing.PlanResponse;
+import com.autopartco.backend.core.billing.PlanService;
 import com.autopartco.backend.shared.web.ApiPaths;
-import com.autopartco.backend.seller.dto.SellerPlanRequest;
-import com.autopartco.backend.seller.dto.SellerPlanResponse;
-import com.autopartco.backend.seller.service.SellerPlanService;
 
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 
+/**
+ * Administración de planes de suscripción (solo root).
+ */
 @RestController
-@RequestMapping(ApiPaths.BASE + "/seller-plans")
+@RequestMapping(ApiPaths.ADMIN + "/plans")
 @AllArgsConstructor
-public class SellerPlanController {
-    private final SellerPlanService planService;
+public class PlanAdminController {
+    private final PlanService planService;
 
     @GetMapping
-    public List<SellerPlanResponse> publicPlans() {
-        return planService.publicPlans();
-    }
-
-    @GetMapping("/admin")
     @PreAuthorize("hasAuthority('ROLE_ROOT')")
-    public List<SellerPlanResponse> allPlans() {
+    public List<PlanResponse> allPlans() {
         return planService.allPlans();
     }
 
-    @PostMapping("/admin")
+    @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasAuthority('ROLE_ROOT')")
-    public SellerPlanResponse create(@Valid @RequestBody SellerPlanRequest request) {
+    public PlanResponse create(@Valid @RequestBody PlanRequest request) {
         return planService.create(request);
     }
 
-    @PutMapping("/admin/{id}")
+    @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_ROOT')")
-    public SellerPlanResponse update(
+    public PlanResponse update(
             @PathVariable UUID id,
-            @Valid @RequestBody SellerPlanRequest request
+            @Valid @RequestBody PlanRequest request
     ) {
         return planService.update(id, request);
     }
 
-    @DeleteMapping("/admin/{id}")
+    @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("hasAuthority('ROLE_ROOT')")
     public void disable(@PathVariable UUID id) {

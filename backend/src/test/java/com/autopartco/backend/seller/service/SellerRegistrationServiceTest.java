@@ -21,7 +21,7 @@ import com.autopartco.backend.core.organization.LegalType;
 import com.autopartco.backend.core.organization.ApplicationDocumentType;
 import com.autopartco.backend.core.identity.internal.AccountRepository;
 import com.autopartco.backend.core.organization.internal.StoreRepository;
-import com.autopartco.backend.seller.repository.SellerPlanRepository;
+import com.autopartco.backend.core.billing.PlanService;
 import com.autopartco.backend.core.organization.internal.StoreApplicationRepository;
 import com.autopartco.backend.core.organization.internal.StoreApplicationDocumentRepository;
 import com.autopartco.backend.core.organization.internal.StoreFileStorage;
@@ -43,10 +43,7 @@ class SellerRegistrationServiceTest {
     private StoreRepository storeRepository;
 
     @Mock
-    private SellerPlanRepository planRepository;
-
-    @Mock
-    private SellerPlanService planService;
+    private PlanService planService;
 
     @Mock
     private StoreApplicationRepository applicationRepository;

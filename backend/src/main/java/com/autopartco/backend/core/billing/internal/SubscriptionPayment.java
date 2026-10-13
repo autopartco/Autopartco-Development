@@ -1,9 +1,10 @@
-package com.autopartco.backend.seller.entity;
+package com.autopartco.backend.core.billing.internal;
+
+import java.util.UUID;
 
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
-import com.autopartco.backend.core.organization.internal.StoreApplication;
 import com.autopartco.backend.shared.persistence.BaseEntity;
 
 import jakarta.persistence.Column;
@@ -27,14 +28,14 @@ import lombok.experimental.SuperBuilder;
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder
-public class SellerPayment extends BaseEntity {
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "application_id", nullable = false)
-    private StoreApplication application;
+public class SubscriptionPayment extends BaseEntity {
+    // R1: la solicitud de almacén (organization) se referencia por ID, en la misma columna application_id.
+    @Column(name = "application_id", nullable = false)
+    private UUID storeApplicationId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "plan_id", nullable = false)
-    private SellerPlan plan;
+    private Plan plan;
 
     @Column(nullable = false, unique = true, length = 100)
     private String reference;

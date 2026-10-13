@@ -29,7 +29,8 @@ import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.seller.dto.SellerApplicationResponse;
 import com.autopartco.backend.seller.dto.SellerApplicationReviewRequest;
-import com.autopartco.backend.seller.dto.SellerPlanResponse;
+import com.autopartco.backend.core.billing.PlanService;
+import com.autopartco.backend.core.billing.Subscriptions;
 import com.autopartco.backend.seller.dto.SellerSetupResponse;
 import com.autopartco.backend.core.organization.internal.StoreApplication;
 import com.autopartco.backend.core.organization.internal.StoreApplicationDocument;
@@ -55,7 +56,8 @@ public class SellerApplicationService {
     private final AccountProvisioning accountProvisioning;
     private final StateRepository stateRepository;
     private final SessionIssuer sessionIssuer;
-    private final SellerPlanService planService;
+    private final PlanService planService;
+    private final Subscriptions subscriptions;
     private final StoreFileStorage fileService;
     private final EmailService emailService;
     private final AppProperties appProperties;
@@ -174,11 +176,9 @@ public class SellerApplicationService {
                 store.setConfiguration(configuration);
             }
             store.setState(activeStoreState());
-            application.setPlan(planService.trialPlan());
             LocalDateTime setupAt = LocalDateTime.now();
+            LocalDateTime trialEndsAt = subscriptions.startTrial(store.getId(), setupAt);
             application.setConfigurationCompletedAt(setupAt);
-            application.setTrialStartsAt(setupAt);
-            application.setTrialEndsAt(application.getTrialStartsAt().plusMonths(1));
             application.setStatus(StoreApplicationStatus.ACTIVE);
             application.setOnboardingTokenHash(null);
             application.setOnboardingTokenExpiresAt(null);
@@ -188,8 +188,8 @@ public class SellerApplicationService {
             return new SellerSetupResponse(
                     store.getId(),
                     application.getStatus().name(),
-                    application.getTrialEndsAt(),
-                    toPlanResponse(planService.recommendedPlan()),
+                    trialEndsAt,
+                    planService.recommended(),
                     tokens
             );
         } catch (RuntimeException exception) {
@@ -270,29 +270,11 @@ public class SellerApplicationService {
                 applicant.email(),
                 application.getLegalType(),
                 application.getStatus(),
-                toPlanResponse(application.getPlan()),
-                toPlanResponse(application.getSelectedPlan()),
+                planService.plan(application.getPlanId()),
+                planService.plan(application.getSelectedPlanId()),
                 documents,
                 application.getReviewNotes(),
                 application.getCreatedAt()
-        );
-    }
-
-    private SellerPlanResponse toPlanResponse(com.autopartco.backend.seller.entity.SellerPlan plan) {
-        return new SellerPlanResponse(
-                plan.getId(),
-                plan.getCode(),
-                plan.getName(),
-                plan.getDescription(),
-                plan.getMonthlyPriceCop(),
-                plan.getCurrency(),
-                List.copyOf(plan.getFeatures()),
-                plan.isRecommended(),
-                plan.isEnabled(),
-                plan.getMaxBranches(),
-                plan.getMaxProducts(),
-                plan.getMaxUsers(),
-                plan.getCapabilities() == null ? List.of() : List.copyOf(plan.getCapabilities())
         );
     }
 

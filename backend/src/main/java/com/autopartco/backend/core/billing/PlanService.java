@@ -1,4 +1,4 @@
-package com.autopartco.backend.seller.service;
+package com.autopartco.backend.core.billing;
 
 import java.util.List;
 import java.util.Locale;
@@ -10,22 +10,20 @@ import org.springframework.transaction.annotation.Transactional;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.shared.error.BadRequestException;
-import com.autopartco.backend.seller.dto.SellerPlanRequest;
-import com.autopartco.backend.seller.dto.SellerPlanResponse;
-import com.autopartco.backend.seller.entity.SellerPlan;
-import com.autopartco.backend.seller.repository.SellerPlanRepository;
+import com.autopartco.backend.core.billing.internal.Plan;
+import com.autopartco.backend.core.billing.internal.PlanRepository;
 
 import lombok.AllArgsConstructor;
 
 @Service
 @AllArgsConstructor
-public class SellerPlanService {
+public class PlanService {
     private static final String TRIAL_CODE = "TRY";
 
-    private final SellerPlanRepository repository;
+    private final PlanRepository repository;
 
     @Transactional(readOnly = true)
-    public List<SellerPlanResponse> publicPlans() {
+    public List<PlanResponse> publicPlans() {
         return repository.findByEnabledTrueOrderByMonthlyPriceCopAsc()
                 .stream()
                 .map(this::toResponse)
@@ -33,24 +31,24 @@ public class SellerPlanService {
     }
 
     @Transactional(readOnly = true)
-    public List<SellerPlanResponse> allPlans() {
+    public List<PlanResponse> allPlans() {
         return repository.findAll().stream().map(this::toResponse).toList();
     }
 
     @Transactional
-    public SellerPlanResponse create(SellerPlanRequest request) {
+    public PlanResponse create(PlanRequest request) {
         String code = normalizeCode(request.code());
         if (repository.existsByCodeIgnoreCase(code)) {
             throw new ConflictException("SELLER_PLAN_CODE_EXISTS", "Ya existe un plan con ese código.");
         }
-        SellerPlan plan = new SellerPlan();
+        Plan plan = new Plan();
         apply(plan, request, code);
         return toResponse(repository.save(plan));
     }
 
     @Transactional
-    public SellerPlanResponse update(UUID id, SellerPlanRequest request) {
-        SellerPlan plan = find(id);
+    public PlanResponse update(UUID id, PlanRequest request) {
+        Plan plan = find(id);
         String code = normalizeCode(request.code());
         if (repository.existsByCodeIgnoreCaseAndIdNot(code, id)) {
             throw new ConflictException("SELLER_PLAN_CODE_EXISTS", "Ya existe un plan con ese código.");
@@ -61,7 +59,7 @@ public class SellerPlanService {
 
     @Transactional
     public void disable(UUID id) {
-        SellerPlan plan = find(id);
+        Plan plan = find(id);
         if (TRIAL_CODE.equalsIgnoreCase(plan.getCode())) {
             throw new ConflictException("TRIAL_PLAN_REQUIRED", "El plan de prueba no se puede desactivar.");
         }
@@ -70,30 +68,57 @@ public class SellerPlanService {
     }
 
     @Transactional(readOnly = true)
-    public SellerPlan find(UUID id) {
+    public PlanResponse plan(UUID id) {
+        return toResponse(find(id));
+    }
+
+    @Transactional(readOnly = true)
+    public PlanResponse trial() {
+        return toResponse(trialPlan());
+    }
+
+    @Transactional(readOnly = true)
+    public PlanResponse recommended() {
+        return toResponse(recommendedPlan());
+    }
+
+    /**
+     * Plan que elige quien solicita un almacén: el indicado si existe y está habilitado; sin plan, el de prueba.
+     */
+    @Transactional(readOnly = true)
+    public PlanResponse requireSelectable(UUID planId) {
+        return toResponse(planId == null
+                ? trialPlan()
+                : repository.findById(planId)
+                        .filter(Plan::isEnabled)
+                        .orElseThrow(() -> new NotFoundException(
+                                "SELLER_PLAN_NOT_FOUND",
+                                "El plan seleccionado no existe o no está disponible."
+                        )));
+    }
+
+    Plan find(UUID id) {
         return repository.findById(id)
                 .orElseThrow(() -> new NotFoundException("SELLER_PLAN_NOT_FOUND", "No se encontró el plan."));
     }
 
-    @Transactional(readOnly = true)
-    public SellerPlan trialPlan() {
+    Plan trialPlan() {
         return repository.findByCodeIgnoreCase(TRIAL_CODE)
-                .filter(SellerPlan::isEnabled)
+                .filter(Plan::isEnabled)
                 .orElseThrow(() -> new NotFoundException(
                         "TRIAL_PLAN_NOT_CONFIGURED",
                         "No está configurado el plan gratuito de prueba."
                 ));
     }
 
-    @Transactional(readOnly = true)
-    public SellerPlan recommendedPlan() {
+    Plan recommendedPlan() {
         return repository.findByEnabledTrueOrderByMonthlyPriceCopAsc().stream()
-                .filter(SellerPlan::isRecommended)
+                .filter(Plan::isRecommended)
                 .findFirst()
                 .orElseGet(this::trialPlan);
     }
 
-    private void apply(SellerPlan plan, SellerPlanRequest request, String code) {
+    private void apply(Plan plan, PlanRequest request, String code) {
         if ("TRY".equalsIgnoreCase(plan.getCode()) && !"TRY".equals(code)) {
             throw new ConflictException("TRIAL_PLAN_CODE_IMMUTABLE", "El código del plan de prueba no se puede cambiar.");
         }
@@ -114,7 +139,7 @@ public class SellerPlanService {
         }
         if (request.recommended()) {
             repository.findByEnabledTrueOrderByMonthlyPriceCopAsc().stream()
-                    .filter(SellerPlan::isRecommended)
+                    .filter(Plan::isRecommended)
                     .filter(existing -> !existing.getId().equals(plan.getId()))
                     .forEach(existing -> existing.setRecommended(false));
         }
@@ -140,7 +165,7 @@ public class SellerPlanService {
         plan.setEnabled(request.enabled());
     }
 
-    private void applyDefaultEntitlements(SellerPlan plan, String code) {
+    private void applyDefaultEntitlements(Plan plan, String code) {
         switch (code) {
             case "TRY", "FREE" -> {
                 plan.setMaxBranches(1);
@@ -180,8 +205,8 @@ public class SellerPlanService {
         return code.trim().toUpperCase(Locale.ROOT);
     }
 
-    public SellerPlanResponse toResponse(SellerPlan plan) {
-        return new SellerPlanResponse(
+    PlanResponse toResponse(Plan plan) {
+        return new PlanResponse(
                 plan.getId(),
                 plan.getCode(),
                 plan.getName(),

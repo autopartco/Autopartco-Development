@@ -1,5 +1,6 @@
 package com.autopartco.backend.seller.dto;
 
+import com.autopartco.backend.core.billing.PlanResponse;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -17,8 +18,8 @@ public record SellerApplicationResponse(
         String applicantEmail,
         LegalType legalType,
         StoreApplicationStatus status,
-        SellerPlanResponse plan,
-        SellerPlanResponse selectedPlan,
+        PlanResponse plan,
+        PlanResponse selectedPlan,
         List<Document> documents,
         String reviewNotes,
         LocalDateTime createdAt

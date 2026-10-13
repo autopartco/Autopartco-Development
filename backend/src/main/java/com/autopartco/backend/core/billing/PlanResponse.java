@@ -1,9 +1,9 @@
-package com.autopartco.backend.seller.dto;
+package com.autopartco.backend.core.billing;
 
 import java.util.List;
 import java.util.UUID;
 
-public record SellerPlanResponse(
+public record PlanResponse(
         UUID id,
         String code,
         String name,

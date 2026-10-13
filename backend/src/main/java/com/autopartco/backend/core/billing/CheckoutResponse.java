@@ -1,6 +1,6 @@
-package com.autopartco.backend.seller.dto;
+package com.autopartco.backend.core.billing;
 
-public record SellerCheckoutResponse(
+public record CheckoutResponse(
         String reference,
         String checkoutUrl,
         long amountInCents,

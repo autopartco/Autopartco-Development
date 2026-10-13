@@ -22,8 +22,10 @@ import com.autopartco.backend.seller.dto.SellerOrderSummaryResponse;
 import com.autopartco.backend.seller.dto.SellerShipmentCreateRequest;
 import com.autopartco.backend.seller.dto.SellerShipmentStatusRequest;
 import com.autopartco.backend.core.organization.internal.StoreApplication;
-import com.autopartco.backend.seller.service.SellerPlanEntitlementService.Access;
-import com.autopartco.backend.seller.service.SellerPlanEntitlementService.Usage;
+import com.autopartco.backend.core.billing.PlanEntitlements;
+import com.autopartco.backend.core.billing.SubscriptionAccess;
+import com.autopartco.backend.core.billing.PlanEntitlements.Usage;
+import com.autopartco.backend.core.organization.internal.StoreApplicationRepository;
 import com.autopartco.backend.core.organization.StoreAccess;
 import com.autopartco.backend.core.organization.StorePermissionCodes;
 
@@ -92,14 +94,18 @@ public class SellerDashboardService {
 
     private final JdbcTemplate jdbcTemplate;
     private final StoreAccess storeAccessService;
-    private final SellerPlanEntitlementService entitlementService;
-    private final SellerPlanService planService;
+    private final PlanEntitlements entitlementService;
+    private final StoreApplicationRepository applicationRepository;
 
     @Transactional(readOnly = true)
     public SellerDashboardResponse dashboard(UUID storeId, String email) {
         storeAccessService.requirePermission(email, storeId, StorePermissionCodes.STORE_READ);
-        Access access = entitlementService.requireAccess(storeId);
-        StoreApplication application = access.application();
+        SubscriptionAccess access = entitlementService.requireAccess(storeId);
+        StoreApplication application = applicationRepository.findByStoreId(storeId)
+                .orElseThrow(() -> new NotFoundException(
+                        "SELLER_APPLICATION_NOT_FOUND",
+                        "No se encontró la suscripción de vendedor para este almacén."
+                ));
         Usage usage = entitlementService.usage(storeId);
         String storeStatus = application.getStore().getState().getCode();
         SellerDashboardResponse.SalesSummary sales = jdbcTemplate.queryForObject("""
@@ -126,15 +132,15 @@ public class SellerDashboardService {
                 storeId,
                 application.getStore().getBusinessName(),
                 storeStatus,
-                planService.toResponse(access.plan()),
-                planService.toResponse(application.getSelectedPlan()),
+                access.plan(),
+                access.selectedPlan(),
                 application.getConfigurationCompletedAt() == null,
                 access.subscriptionExpired(),
-                application.getTrialEndsAt(),
-                application.getPaidThrough(),
-                access.plan().getMaxBranches(),
-                access.plan().getMaxProducts(),
-                access.plan().getMaxUsers(),
+                access.trialEndsAt(),
+                access.paidThrough(),
+                access.plan().maxBranches(),
+                access.plan().maxProducts(),
+                access.plan().maxUsers(),
                 access.capabilities(),
                 new SellerDashboardResponse.Usage(usage.branches(), usage.products(), usage.users()),
                 sales

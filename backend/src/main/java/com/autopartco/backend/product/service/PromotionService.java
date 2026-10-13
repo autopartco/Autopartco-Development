@@ -23,7 +23,7 @@ import com.autopartco.backend.core.organization.internal.Store;
 import com.autopartco.backend.core.organization.internal.StoreRepository;
 import com.autopartco.backend.core.organization.StoreAccess;
 import com.autopartco.backend.core.organization.StorePermissionCodes;
-import com.autopartco.backend.seller.service.SellerPlanEntitlementService;
+import com.autopartco.backend.core.billing.PlanEntitlements;
 
 import lombok.AllArgsConstructor;
 
@@ -36,7 +36,7 @@ public class PromotionService {
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ManufacturerRepository manufacturerRepository;
-    private final SellerPlanEntitlementService entitlementService;
+    private final PlanEntitlements entitlementService;
 
     @Transactional(readOnly = true)
     public List<PromotionResponse> listForStore(UUID storeId, String email) {

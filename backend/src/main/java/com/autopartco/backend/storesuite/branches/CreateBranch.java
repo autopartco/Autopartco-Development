@@ -11,7 +11,7 @@ import com.autopartco.backend.core.organization.BranchService;
 import com.autopartco.backend.core.organization.StoreAccess;
 import com.autopartco.backend.core.organization.StorePermissionCodes;
 import com.autopartco.backend.core.organization.StoreService;
-import com.autopartco.backend.seller.service.SellerPlanEntitlementService;
+import com.autopartco.backend.core.billing.PlanEntitlements;
 
 import lombok.AllArgsConstructor;
 
@@ -24,15 +24,14 @@ import lombok.AllArgsConstructor;
 public class CreateBranch {
     private final StoreAccess storeAccess;
     private final StoreService storeService;
-    // Temporal hasta la fase 3b (billing.PlanEntitlements).
-    private final SellerPlanEntitlementService entitlementService;
+    private final PlanEntitlements planEntitlements;
     private final BranchService branchService;
 
     @Transactional
     public BranchResponse execute(UUID storeId, String email, BranchCreateRequest request) {
         storeAccess.requirePermission(email, storeId, StorePermissionCodes.BRANCH_CREATE);
         storeService.lockForUpdate(storeId);
-        entitlementService.requireCapacity(storeId, SellerPlanEntitlementService.Capacity.BRANCHES, 1);
+        planEntitlements.requireCapacity(storeId, PlanEntitlements.Capacity.BRANCHES, 1);
         return branchService.create(storeId, request);
     }
 }

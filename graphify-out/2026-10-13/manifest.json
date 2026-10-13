@@ -696,9 +696,9 @@
     "semantic_hash": ""
   },
   "skills-lock.json": {
-    "mtime": 1791883683.2939508,
-    "seen": 1791884738.2081583,
-    "ast_hash": "91b0df4bebf159ec46be53e37088a0d4",
+    "mtime": 1791904501.4470983,
+    "seen": 1791904702.027658,
+    "ast_hash": "70157fb8492e57b1845a7d3d96e500b2",
     "semantic_hash": ""
   },
   ".agents/skills/brainstorming/SKILL.md": {
@@ -2415,6 +2415,12 @@
     "mtime": 1791903136.880251,
     "seen": 1791904497.223076,
     "ast_hash": "ff1a8f30fef17524651b2a6e51169eae",
+    "semantic_hash": ""
+  },
+  ".agents/skills/sql-optimization/SKILL.md": {
+    "mtime": 1791904490.408579,
+    "seen": 1791904702.0315604,
+    "ast_hash": "f46b2a73839a0648911062a715ff8240",
     "semantic_hash": ""
   }
 }
