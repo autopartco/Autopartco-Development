@@ -14,10 +14,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.autopartco.backend.core.identity.AccountLookup;
 import com.autopartco.backend.core.billing.internal.wompi.WompiProperties;
 import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.NotFoundException;
-import com.autopartco.backend.seller.repository.SellerApplicationRepository;
+import com.autopartco.backend.core.organization.internal.StoreApplicationRepository;
 import com.autopartco.backend.seller.repository.SellerPaymentRepository;
 import com.autopartco.backend.seller.repository.SellerPlanRepository;
 
@@ -29,10 +30,13 @@ class SellerPaymentServiceTest {
     private SellerPaymentRepository paymentRepository;
 
     @Mock
-    private SellerApplicationRepository applicationRepository;
+    private StoreApplicationRepository applicationRepository;
 
     @Mock
     private SellerPlanRepository planRepository;
+
+    @Mock
+    private AccountLookup accountLookup;
 
     private SellerPaymentService paymentService;
 
@@ -44,7 +48,8 @@ class SellerPaymentServiceTest {
                 paymentRepository,
                 applicationRepository,
                 planRepository,
-                new WompiProperties("", "", EVENTS_SECRET, "", "")
+                new WompiProperties("", "", EVENTS_SECRET, "", ""),
+                accountLookup
         );
 
         var payload = objectMapper.readTree("""
@@ -74,7 +79,8 @@ class SellerPaymentServiceTest {
                 paymentRepository,
                 applicationRepository,
                 planRepository,
-                new WompiProperties("", "", EVENTS_SECRET, "", "")
+                new WompiProperties("", "", EVENTS_SECRET, "", ""),
+                accountLookup
         );
         String checksum = HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(
                 "transaction-1123test-events-secret".getBytes(StandardCharsets.UTF_8)

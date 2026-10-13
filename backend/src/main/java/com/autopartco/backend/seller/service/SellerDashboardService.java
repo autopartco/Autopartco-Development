@@ -21,11 +21,11 @@ import com.autopartco.backend.seller.dto.SellerOrderStatusRequest;
 import com.autopartco.backend.seller.dto.SellerOrderSummaryResponse;
 import com.autopartco.backend.seller.dto.SellerShipmentCreateRequest;
 import com.autopartco.backend.seller.dto.SellerShipmentStatusRequest;
-import com.autopartco.backend.seller.entity.SellerApplication;
+import com.autopartco.backend.core.organization.internal.StoreApplication;
 import com.autopartco.backend.seller.service.SellerPlanEntitlementService.Access;
 import com.autopartco.backend.seller.service.SellerPlanEntitlementService.Usage;
-import com.autopartco.backend.store.service.StoreAccessService;
-import com.autopartco.backend.store.service.StorePermissionCodes;
+import com.autopartco.backend.core.organization.StoreAccess;
+import com.autopartco.backend.core.organization.StorePermissionCodes;
 
 import lombok.AllArgsConstructor;
 
@@ -91,7 +91,7 @@ public class SellerDashboardService {
             """;
 
     private final JdbcTemplate jdbcTemplate;
-    private final StoreAccessService storeAccessService;
+    private final StoreAccess storeAccessService;
     private final SellerPlanEntitlementService entitlementService;
     private final SellerPlanService planService;
 
@@ -99,7 +99,7 @@ public class SellerDashboardService {
     public SellerDashboardResponse dashboard(UUID storeId, String email) {
         storeAccessService.requirePermission(email, storeId, StorePermissionCodes.STORE_READ);
         Access access = entitlementService.requireAccess(storeId);
-        SellerApplication application = access.application();
+        StoreApplication application = access.application();
         Usage usage = entitlementService.usage(storeId);
         String storeStatus = application.getStore().getState().getCode();
         SellerDashboardResponse.SalesSummary sales = jdbcTemplate.queryForObject("""

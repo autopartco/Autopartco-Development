@@ -35,19 +35,19 @@ import com.autopartco.backend.seller.dto.SellerCollaboratorInviteRequest;
 import com.autopartco.backend.seller.dto.SellerCollaboratorInvitationResponse;
 import com.autopartco.backend.seller.dto.SellerCollaboratorResponse;
 import com.autopartco.backend.seller.dto.SellerPermissionOption;
-import com.autopartco.backend.seller.entity.SellerCollaboratorInvitation;
-import com.autopartco.backend.seller.repository.SellerCollaboratorInvitationRepository;
+import com.autopartco.backend.core.organization.internal.StaffInvitation;
+import com.autopartco.backend.core.organization.internal.StaffInvitationRepository;
 import com.autopartco.backend.seller.service.SellerPlanEntitlementService.Capacity;
-import com.autopartco.backend.store.entity.Collaborator;
-import com.autopartco.backend.store.entity.Store;
-import com.autopartco.backend.store.entity.StorePermission;
-import com.autopartco.backend.store.entity.StoreRole;
-import com.autopartco.backend.store.repository.CollaboratorRepository;
-import com.autopartco.backend.store.repository.StorePermissionRepository;
-import com.autopartco.backend.store.repository.StoreRepository;
-import com.autopartco.backend.store.repository.StoreRoleRepository;
-import com.autopartco.backend.store.service.StoreAccessService;
-import com.autopartco.backend.store.service.StorePermissionCodes;
+import com.autopartco.backend.core.organization.internal.Collaborator;
+import com.autopartco.backend.core.organization.internal.Store;
+import com.autopartco.backend.core.organization.internal.StorePermission;
+import com.autopartco.backend.core.organization.internal.StoreRole;
+import com.autopartco.backend.core.organization.internal.CollaboratorRepository;
+import com.autopartco.backend.core.organization.internal.StorePermissionRepository;
+import com.autopartco.backend.core.organization.internal.StoreRepository;
+import com.autopartco.backend.core.organization.internal.StoreRoleRepository;
+import com.autopartco.backend.core.organization.StoreAccess;
+import com.autopartco.backend.core.organization.StorePermissionCodes;
 
 import lombok.AllArgsConstructor;
 
@@ -89,9 +89,9 @@ public class SellerCollaboratorService {
     private final StoreRoleRepository roleRepository;
     private final StorePermissionRepository permissionRepository;
     private final CollaboratorRepository collaboratorRepository;
-    private final SellerCollaboratorInvitationRepository invitationRepository;
+    private final StaffInvitationRepository invitationRepository;
     private final SellerPlanEntitlementService entitlementService;
-    private final StoreAccessService storeAccessService;
+    private final StoreAccess storeAccessService;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final AppProperties appProperties;
@@ -164,7 +164,7 @@ public class SellerCollaboratorService {
         Store store = lockStore(storeId);
         String normalizedEmail = normalizeEmail(request.email());
         if (accountRepository.findByEmailIgnoreCase(normalizedEmail)
-                .map(account -> collaboratorRepository.existsByPerson_IdAndStore_Id(
+                .map(account -> collaboratorRepository.existsByPersonIdAndStore_Id(
                         account.getPerson().getId(),
                         storeId
                 ))
@@ -193,9 +193,9 @@ public class SellerCollaboratorService {
                 .name(request.roleName().trim())
                 .permissions(new HashSet<>(permissions))
                 .build());
-        SellerCollaboratorInvitation invitation = invitationRepository.save(SellerCollaboratorInvitation.builder()
+        StaffInvitation invitation = invitationRepository.save(StaffInvitation.builder()
                 .store(store)
-                .invitedBy(inviter)
+                .invitedByAccountId(inviter.getId())
                 .role(role)
                 .email(normalizedEmail)
                 .tokenHash(hash(rawToken))
@@ -213,7 +213,7 @@ public class SellerCollaboratorService {
     ) {
         storeAccessService.requirePermission(email, storeId, StorePermissionCodes.COLLABORATOR_MANAGE);
         lockStore(storeId);
-        SellerCollaboratorInvitation invitation = invitationRepository.findByIdAndStore_Id(invitationId, storeId)
+        StaffInvitation invitation = invitationRepository.findByIdAndStore_Id(invitationId, storeId)
                 .orElseThrow(() -> invitationNotFound());
         if (invitation.getAcceptedAt() != null || invitation.getRevokedAt() != null) {
             throw new ConflictException(
@@ -234,7 +234,7 @@ public class SellerCollaboratorService {
     public void revoke(UUID storeId, UUID invitationId, String email) {
         storeAccessService.requirePermission(email, storeId, StorePermissionCodes.COLLABORATOR_MANAGE);
         lockStore(storeId);
-        SellerCollaboratorInvitation invitation = invitationRepository.findByIdAndStore_Id(invitationId, storeId)
+        StaffInvitation invitation = invitationRepository.findByIdAndStore_Id(invitationId, storeId)
                 .orElseThrow(() -> invitationNotFound());
         if (invitation.getAcceptedAt() != null) {
             throw new ConflictException(
@@ -251,7 +251,7 @@ public class SellerCollaboratorService {
 
     @Transactional(readOnly = true)
     public SellerCollaboratorResponse.InvitationPreview preview(String rawToken) {
-        SellerCollaboratorInvitation invitation = findPendingInvitation(rawToken);
+        StaffInvitation invitation = findPendingInvitation(rawToken);
         Store store = invitation.getStore();
         boolean accountExists = accountRepository.existsByEmailIgnoreCase(invitation.getEmail());
         return new SellerCollaboratorResponse.InvitationPreview(
@@ -268,10 +268,10 @@ public class SellerCollaboratorService {
     @Transactional
     public SellerCollaboratorResponse.Accepted accept(SellerCollaboratorAcceptRequest request) {
         String tokenHash = hash(request.token());
-        SellerCollaboratorInvitation initial = invitationRepository.findByTokenHash(tokenHash)
+        StaffInvitation initial = invitationRepository.findByTokenHash(tokenHash)
                 .orElseThrow(() -> invitationNotFound());
         Store store = lockStore(initial.getStore().getId());
-        SellerCollaboratorInvitation invitation = invitationRepository.findByTokenHashForUpdate(tokenHash)
+        StaffInvitation invitation = invitationRepository.findByTokenHashForUpdate(tokenHash)
                 .orElseThrow(() -> invitationNotFound());
         validatePendingInvitation(invitation);
         reserveUserCapacity(store.getId(), 0);
@@ -287,14 +287,14 @@ public class SellerCollaboratorService {
         if (!ACTIVE_STATE.equals(account.getState().getCode())) {
             account.setState(findState(ACTIVE_STATE));
         }
-        if (collaboratorRepository.existsByPerson_IdAndStore_Id(account.getPerson().getId(), store.getId())) {
+        if (collaboratorRepository.existsByPersonIdAndStore_Id(account.getPerson().getId(), store.getId())) {
             throw new ConflictException(
                     "SELLER_COLLABORATOR_ALREADY_EXISTS",
                     "Esta cuenta ya es colaboradora del almacén."
             );
         }
         collaboratorRepository.save(Collaborator.builder()
-                .person(account.getPerson())
+                .personId(account.getPerson().getId())
                 .store(store)
                 .state(findState(ACTIVE_STATE))
                 .roles(Set.of(invitation.getRole()))
@@ -346,17 +346,17 @@ public class SellerCollaboratorService {
         return permissions;
     }
 
-    private SellerCollaboratorInvitation findPendingInvitation(String rawToken) {
+    private StaffInvitation findPendingInvitation(String rawToken) {
         if (rawToken == null || rawToken.isBlank()) {
             throw invitationNotFound();
         }
-        SellerCollaboratorInvitation invitation = invitationRepository.findByTokenHash(hash(rawToken))
+        StaffInvitation invitation = invitationRepository.findByTokenHash(hash(rawToken))
                 .orElseThrow(() -> invitationNotFound());
         validatePendingInvitation(invitation);
         return invitation;
     }
 
-    private void validatePendingInvitation(SellerCollaboratorInvitation invitation) {
+    private void validatePendingInvitation(StaffInvitation invitation) {
         if (invitation.getAcceptedAt() != null || invitation.getRevokedAt() != null) {
             throw new BadRequestException(
                     "SELLER_COLLABORATOR_INVITATION_CLOSED",
@@ -411,7 +411,7 @@ public class SellerCollaboratorService {
         return accountRepository.save(account);
     }
 
-    private void sendInvitation(SellerCollaboratorInvitation invitation, String rawToken) {
+    private void sendInvitation(StaffInvitation invitation, String rawToken) {
         String link = UriComponentsBuilder
                 .fromUriString(appProperties.frontendBaseUrl().replaceAll("/+$", ""))
                 .path("/seller/invitation")
@@ -428,7 +428,7 @@ public class SellerCollaboratorService {
     }
 
     private SellerCollaboratorInvitationResponse toInvitationResponse(
-            SellerCollaboratorInvitation invitation
+            StaffInvitation invitation
     ) {
         return new SellerCollaboratorInvitationResponse(
                 invitation.getId(),

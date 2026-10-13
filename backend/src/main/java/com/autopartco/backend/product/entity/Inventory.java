@@ -6,7 +6,7 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import com.autopartco.backend.shared.persistence.BaseEntity;
-import com.autopartco.backend.store.entity.Branch;
+import com.autopartco.backend.core.organization.internal.Branch;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

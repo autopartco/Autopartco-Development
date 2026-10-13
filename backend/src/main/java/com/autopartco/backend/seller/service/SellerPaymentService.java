@@ -14,16 +14,18 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.autopartco.backend.core.billing.internal.wompi.WompiProperties;
+import com.autopartco.backend.core.identity.AccountLookup;
+import com.autopartco.backend.core.identity.AccountRef;
 import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.seller.dto.SellerCheckoutRequest;
 import com.autopartco.backend.seller.dto.SellerCheckoutResponse;
-import com.autopartco.backend.seller.entity.SellerApplication;
-import com.autopartco.backend.seller.entity.SellerApplicationStatus;
+import com.autopartco.backend.core.organization.internal.StoreApplication;
+import com.autopartco.backend.core.organization.StoreApplicationStatus;
 import com.autopartco.backend.seller.entity.SellerPayment;
 import com.autopartco.backend.seller.entity.SellerPlan;
-import com.autopartco.backend.seller.repository.SellerApplicationRepository;
+import com.autopartco.backend.core.organization.internal.StoreApplicationRepository;
 import com.autopartco.backend.seller.repository.SellerPaymentRepository;
 import com.autopartco.backend.seller.repository.SellerPlanRepository;
 
@@ -33,9 +35,10 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class SellerPaymentService {
     private final SellerPaymentRepository paymentRepository;
-    private final SellerApplicationRepository applicationRepository;
+    private final StoreApplicationRepository applicationRepository;
     private final SellerPlanRepository planRepository;
     private final WompiProperties wompiProperties;
+    private final AccountLookup accountLookup;
 
     @Transactional
     public SellerCheckoutResponse createCheckout(
@@ -43,17 +46,21 @@ public class SellerPaymentService {
             String email,
             SellerCheckoutRequest request
     ) {
-        SellerApplication application = applicationRepository.findByIdForUpdate(applicationId)
+        StoreApplication application = applicationRepository.findByIdForUpdate(applicationId)
                 .orElseThrow(() -> new NotFoundException(
                         "SELLER_APPLICATION_NOT_FOUND",
                         "No se encontró la solicitud de vendedor."
                 ));
-        if (!application.getApplicant().getEmail().equalsIgnoreCase(email)) {
+        boolean applicantMatches = accountLookup.findById(application.getApplicantAccountId())
+                .map(AccountRef::email)
+                .filter(applicantEmail -> applicantEmail.equalsIgnoreCase(email))
+                .isPresent();
+        if (!applicantMatches) {
             throw new org.springframework.security.access.AccessDeniedException(
                     "La solicitud no pertenece a la cuenta autenticada."
             );
         }
-        if (application.getStatus() != SellerApplicationStatus.ACTIVE) {
+        if (application.getStatus() != StoreApplicationStatus.ACTIVE) {
             throw new ConflictException("SELLER_APPLICATION_NOT_ACTIVE", "El almacén todavía no está habilitado.");
         }
         SellerPlan plan = planRepository.findById(request.planId())
@@ -160,7 +167,7 @@ public class SellerPaymentService {
             }
             payment.setStatus("APPROVED");
             payment.setProviderTransactionId(providerId);
-            SellerApplication application = applicationRepository.findByIdForUpdate(payment.getApplication().getId())
+            StoreApplication application = applicationRepository.findByIdForUpdate(payment.getApplication().getId())
                     .orElseThrow(() -> new NotFoundException(
                             "SELLER_APPLICATION_NOT_FOUND",
                             "No se encontró la solicitud de vendedor del pago."

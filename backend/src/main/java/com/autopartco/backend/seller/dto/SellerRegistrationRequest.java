@@ -2,8 +2,8 @@ package com.autopartco.backend.seller.dto;
 
 import com.autopartco.backend.core.identity.RegisterRequest;
 
-import com.autopartco.backend.store.dto.StoreRegistrationRequest;
-import com.autopartco.backend.seller.entity.SellerLegalType;
+import com.autopartco.backend.core.organization.StoreRegistrationRequest;
+import com.autopartco.backend.core.organization.LegalType;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 
@@ -17,7 +17,7 @@ public record SellerRegistrationRequest(
         StoreRegistrationRequest store,
 
         @NotNull(message = "El tipo de persona es obligatorio.")
-        SellerLegalType legalType,
+        LegalType legalType,
 
         java.util.UUID planId
 ) {

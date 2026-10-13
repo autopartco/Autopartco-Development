@@ -20,7 +20,7 @@ import com.autopartco.backend.product.entity.PromotionAttributeOperator;
 import com.autopartco.backend.product.entity.PromotionDiscountType;
 import com.autopartco.backend.product.entity.PromotionScope;
 import com.autopartco.backend.product.entity.PromotionTargetType;
-import com.autopartco.backend.store.entity.Store;
+import com.autopartco.backend.core.organization.internal.Store;
 
 class PromotionPricingServiceTest {
     private final PromotionPricingService pricingService = new PromotionPricingService();

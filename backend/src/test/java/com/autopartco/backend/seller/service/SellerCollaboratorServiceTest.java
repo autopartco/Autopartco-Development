@@ -29,14 +29,14 @@ import com.autopartco.backend.core.identity.internal.AccountTypeRepository;
 import com.autopartco.backend.core.notification.EmailService;
 import com.autopartco.backend.shared.config.AppProperties;
 import com.autopartco.backend.shared.error.BadRequestException;
-import com.autopartco.backend.seller.entity.SellerCollaboratorInvitation;
-import com.autopartco.backend.seller.repository.SellerCollaboratorInvitationRepository;
-import com.autopartco.backend.store.repository.CollaboratorRepository;
-import com.autopartco.backend.store.repository.StorePermissionRepository;
-import com.autopartco.backend.store.repository.StoreRepository;
-import com.autopartco.backend.store.repository.StoreRoleRepository;
-import com.autopartco.backend.store.service.StoreAccessService;
-import com.autopartco.backend.store.service.StorePermissionCodes;
+import com.autopartco.backend.core.organization.internal.StaffInvitation;
+import com.autopartco.backend.core.organization.internal.StaffInvitationRepository;
+import com.autopartco.backend.core.organization.internal.CollaboratorRepository;
+import com.autopartco.backend.core.organization.internal.StorePermissionRepository;
+import com.autopartco.backend.core.organization.internal.StoreRepository;
+import com.autopartco.backend.core.organization.internal.StoreRoleRepository;
+import com.autopartco.backend.core.organization.StoreAccess;
+import com.autopartco.backend.core.organization.StorePermissionCodes;
 
 @ExtendWith(MockitoExtension.class)
 class SellerCollaboratorServiceTest {
@@ -59,11 +59,11 @@ class SellerCollaboratorServiceTest {
     @Mock
     private CollaboratorRepository collaboratorRepository;
     @Mock
-    private SellerCollaboratorInvitationRepository invitationRepository;
+    private StaffInvitationRepository invitationRepository;
     @Mock
     private SellerPlanEntitlementService entitlementService;
     @Mock
-    private StoreAccessService storeAccessService;
+    private StoreAccess storeAccessService;
     @Mock
     private PasswordEncoder passwordEncoder;
     @Mock
@@ -112,7 +112,7 @@ class SellerCollaboratorServiceTest {
     void rejectsExpiredInvitationPreviewWithAnActionableError() throws Exception {
         String token = "expired-invitation-token";
         String tokenHash = hash(token);
-        SellerCollaboratorInvitation invitation = new SellerCollaboratorInvitation();
+        StaffInvitation invitation = new StaffInvitation();
         invitation.setExpiresAt(LocalDateTime.now().minusSeconds(1));
         when(invitationRepository.findByTokenHash(tokenHash)).thenReturn(Optional.of(invitation));
 

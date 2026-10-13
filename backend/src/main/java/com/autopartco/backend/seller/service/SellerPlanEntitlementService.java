@@ -11,12 +11,12 @@ import org.springframework.transaction.annotation.Transactional;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.product.repository.ProductRepository;
-import com.autopartco.backend.seller.entity.SellerApplication;
-import com.autopartco.backend.seller.entity.SellerApplicationStatus;
+import com.autopartco.backend.core.organization.internal.StoreApplication;
+import com.autopartco.backend.core.organization.StoreApplicationStatus;
 import com.autopartco.backend.seller.entity.SellerPlan;
-import com.autopartco.backend.seller.repository.SellerApplicationRepository;
-import com.autopartco.backend.store.repository.BranchRepository;
-import com.autopartco.backend.store.repository.CollaboratorRepository;
+import com.autopartco.backend.core.organization.internal.StoreApplicationRepository;
+import com.autopartco.backend.core.organization.BranchService;
+import com.autopartco.backend.core.organization.internal.CollaboratorRepository;
 
 import lombok.AllArgsConstructor;
 
@@ -25,9 +25,9 @@ import lombok.AllArgsConstructor;
 public class SellerPlanEntitlementService {
     private static final String ACTIVE_STATE = "ACTIVE";
 
-    private final SellerApplicationRepository applicationRepository;
+    private final StoreApplicationRepository applicationRepository;
     private final SellerPlanService planService;
-    private final BranchRepository branchRepository;
+    private final BranchService branchService;
     private final ProductRepository productRepository;
     private final CollaboratorRepository collaboratorRepository;
 
@@ -48,7 +48,7 @@ public class SellerPlanEntitlementService {
     @Transactional(readOnly = true)
     public Usage usage(UUID storeId) {
         return new Usage(
-                branchRepository.countByStore_IdAndState_Code(storeId, ACTIVE_STATE),
+                branchService.countActive(storeId),
                 productRepository.countProductsInStore(storeId),
                 collaboratorRepository.countByStore_IdAndState_Code(storeId, ACTIVE_STATE)
         );
@@ -63,7 +63,7 @@ public class SellerPlanEntitlementService {
         Access current = access.get();
         requireNotExpired(current);
         long used = switch (capacity) {
-            case BRANCHES -> branchRepository.countByStore_IdAndState_Code(storeId, ACTIVE_STATE);
+            case BRANCHES -> branchService.countActive(storeId);
             case PRODUCTS -> productRepository.countProductsInStore(storeId);
             case USERS -> collaboratorRepository.countByStore_IdAndState_Code(storeId, ACTIVE_STATE);
         };
@@ -102,8 +102,8 @@ public class SellerPlanEntitlementService {
         accessForStore(storeId).ifPresent(this::requireNotExpired);
     }
 
-    private Access accessFor(SellerApplication application) {
-        if (application.getStatus() != SellerApplicationStatus.ACTIVE) {
+    private Access accessFor(StoreApplication application) {
+        if (application.getStatus() != StoreApplicationStatus.ACTIVE) {
             throw new ConflictException(
                     "SELLER_APPLICATION_NOT_ACTIVE",
                     "El almacén todavía no está habilitado para operar."
@@ -150,7 +150,7 @@ public class SellerPlanEntitlementService {
     }
 
     public record Access(
-            SellerApplication application,
+            StoreApplication application,
             SellerPlan plan,
             boolean subscriptionExpired,
             LocalDateTime validThrough

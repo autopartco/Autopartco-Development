@@ -14,7 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.autopartco.backend.seller.dto.SellerRegistrationRequest;
 import com.autopartco.backend.seller.dto.SellerRegistrationResponse;
-import com.autopartco.backend.seller.entity.SellerDocumentType;
+import com.autopartco.backend.core.organization.ApplicationDocumentType;
 import com.autopartco.backend.seller.service.SellerRegistrationService;
 import com.autopartco.backend.shared.web.ApiPaths;
 
@@ -40,18 +40,18 @@ public class SellerRegistrationController {
             @RequestPart(name = "legalRepresentativeId", required = false) MultipartFile legalRepresentativeId,
             @RequestPart(name = "certificateOfExistence", required = false) MultipartFile certificateOfExistence
     ) {
-        Map<SellerDocumentType, MultipartFile> documents = new EnumMap<>(SellerDocumentType.class);
+        Map<ApplicationDocumentType, MultipartFile> documents = new EnumMap<>(ApplicationDocumentType.class);
         if (identityDocument != null) {
-            documents.put(SellerDocumentType.IDENTITY_DOCUMENT, identityDocument);
+            documents.put(ApplicationDocumentType.IDENTITY_DOCUMENT, identityDocument);
         }
         if (rut != null) {
-            documents.put(SellerDocumentType.RUT, rut);
+            documents.put(ApplicationDocumentType.RUT, rut);
         }
         if (legalRepresentativeId != null) {
-            documents.put(SellerDocumentType.LEGAL_REPRESENTATIVE_ID, legalRepresentativeId);
+            documents.put(ApplicationDocumentType.LEGAL_REPRESENTATIVE_ID, legalRepresentativeId);
         }
         if (certificateOfExistence != null) {
-            documents.put(SellerDocumentType.CERTIFICATE_OF_EXISTENCE, certificateOfExistence);
+            documents.put(ApplicationDocumentType.CERTIFICATE_OF_EXISTENCE, certificateOfExistence);
         }
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(sellerRegistrationService.register(request, documents));

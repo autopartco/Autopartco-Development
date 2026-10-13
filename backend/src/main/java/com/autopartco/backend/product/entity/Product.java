@@ -14,7 +14,7 @@ import org.hibernate.type.SqlTypes;
 
 import com.autopartco.backend.shared.persistence.BaseEntity;
 import com.autopartco.backend.shared.persistence.State;
-import com.autopartco.backend.store.entity.Store;
+import com.autopartco.backend.core.organization.internal.Store;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.OneToMany;

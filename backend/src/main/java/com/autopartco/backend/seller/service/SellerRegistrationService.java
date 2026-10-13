@@ -18,20 +18,21 @@ import com.autopartco.backend.core.identity.internal.AccountRepository;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.NotFoundException;
-import com.autopartco.backend.seller.entity.SellerApplication;
-import com.autopartco.backend.seller.entity.SellerApplicationDocument;
-import com.autopartco.backend.seller.entity.SellerApplicationStatus;
-import com.autopartco.backend.seller.entity.SellerDocumentType;
-import com.autopartco.backend.seller.entity.SellerLegalType;
+import com.autopartco.backend.core.organization.internal.StoreApplication;
+import com.autopartco.backend.core.organization.internal.StoreApplicationDocument;
+import com.autopartco.backend.core.organization.StoreApplicationStatus;
+import com.autopartco.backend.core.organization.ApplicationDocumentType;
+import com.autopartco.backend.core.organization.LegalType;
 import com.autopartco.backend.seller.entity.SellerPlan;
 import com.autopartco.backend.seller.dto.SellerApplicationCreatedResponse;
 import com.autopartco.backend.seller.dto.SellerApplicationRequest;
-import com.autopartco.backend.seller.repository.SellerApplicationDocumentRepository;
-import com.autopartco.backend.seller.repository.SellerApplicationRepository;
+import com.autopartco.backend.core.organization.internal.StoreApplicationDocumentRepository;
+import com.autopartco.backend.core.organization.internal.StoreApplicationRepository;
+import com.autopartco.backend.core.organization.internal.StoreFileStorage;
 import com.autopartco.backend.seller.repository.SellerPlanRepository;
-import com.autopartco.backend.store.entity.Store;
-import com.autopartco.backend.store.repository.StoreRepository;
-import com.autopartco.backend.store.service.StoreService;
+import com.autopartco.backend.core.organization.internal.Store;
+import com.autopartco.backend.core.organization.internal.StoreRepository;
+import com.autopartco.backend.core.organization.StoreService;
 
 import lombok.extern.slf4j.Slf4j;
 import lombok.AllArgsConstructor;
@@ -46,14 +47,14 @@ public class SellerRegistrationService {
     private final StoreRepository storeRepository;
     private final SellerPlanRepository planRepository;
     private final SellerPlanService planService;
-    private final SellerApplicationRepository applicationRepository;
-    private final SellerApplicationDocumentRepository documentRepository;
-    private final SellerFileService fileService;
+    private final StoreApplicationRepository applicationRepository;
+    private final StoreApplicationDocumentRepository documentRepository;
+    private final StoreFileStorage fileService;
 
     @Transactional
     public SellerRegistrationResponse register(
             SellerRegistrationRequest request,
-            Map<SellerDocumentType, MultipartFile> documents
+            Map<ApplicationDocumentType, MultipartFile> documents
     ) {
         validateDocuments(request.legalType(), documents);
         SellerPlan plan = resolvePlan(request.planId());
@@ -89,7 +90,7 @@ public class SellerRegistrationService {
     @Transactional
     public SellerApplicationCreatedResponse applyForExistingCustomer(
             SellerApplicationRequest request,
-            Map<SellerDocumentType, MultipartFile> documents,
+            Map<ApplicationDocumentType, MultipartFile> documents,
             String email
     ) {
         validateDocuments(request.legalType(), documents);
@@ -101,12 +102,12 @@ public class SellerRegistrationService {
         if (!"CUSTOMER".equals(account.getAccountType().getCode())) {
             throw new BadRequestException("SELLER_APPLICATION_CUSTOMER_ONLY", "Solo una cuenta de cliente puede solicitar ser vendedor.");
         }
-        if (applicationRepository.existsByApplicant_IdAndStatusIn(
+        if (applicationRepository.existsByApplicantAccountIdAndStatusIn(
                 account.getId(),
                 List.of(
-                        SellerApplicationStatus.PENDING_REVIEW,
-                        SellerApplicationStatus.CONFIGURATION_PENDING,
-                        SellerApplicationStatus.ACTIVE
+                        StoreApplicationStatus.PENDING_REVIEW,
+                        StoreApplicationStatus.CONFIGURATION_PENDING,
+                        StoreApplicationStatus.ACTIVE
                 )
         )) {
             throw new ConflictException(
@@ -143,33 +144,33 @@ public class SellerRegistrationService {
 
     private CreatedApplication createApplication(
             Account account,
-            com.autopartco.backend.store.dto.StoreRegistrationRequest storeRequest,
-            SellerLegalType legalType,
+            com.autopartco.backend.core.organization.StoreRegistrationRequest storeRequest,
+            LegalType legalType,
             SellerPlan plan,
-            Map<SellerDocumentType, MultipartFile> documents
+            Map<ApplicationDocumentType, MultipartFile> documents
     ) {
         var storeResponse = storeService.register(storeRequest, account.getEmail());
         Store store = storeRepository.findById(storeResponse.id())
                 .orElseThrow(() -> new NotFoundException("STORE_NOT_FOUND", "No se encontró el almacén creado."));
-        SellerApplication application = applicationRepository.save(SellerApplication.builder()
-                .applicant(account)
+        StoreApplication application = applicationRepository.save(StoreApplication.builder()
+                .applicantAccountId(account.getId())
                 .store(store)
                 .plan(plan)
                 .selectedPlan(plan)
                 .legalType(legalType)
-                .status(SellerApplicationStatus.PENDING_REVIEW)
+                .status(StoreApplicationStatus.PENDING_REVIEW)
                 .build());
 
         List<String> uploadedPaths = new java.util.ArrayList<>();
         try {
-            for (Map.Entry<SellerDocumentType, MultipartFile> entry : documents.entrySet()) {
-                SellerFileService.StoredFile file = fileService.uploadDocument(
+            for (Map.Entry<ApplicationDocumentType, MultipartFile> entry : documents.entrySet()) {
+                StoreFileStorage.StoredFile file = fileService.uploadDocument(
                         application.getId(),
                         entry.getKey(),
                         entry.getValue()
                 );
                 uploadedPaths.add(file.path());
-                documentRepository.save(SellerApplicationDocument.builder()
+                documentRepository.save(StoreApplicationDocument.builder()
                         .application(application)
                         .documentType(entry.getKey())
                         .objectPath(file.path())
@@ -186,29 +187,29 @@ public class SellerRegistrationService {
     }
 
     private record CreatedApplication(
-            com.autopartco.backend.store.dto.StoreResponse store,
-            SellerApplication application,
+            com.autopartco.backend.core.organization.StoreResponse store,
+            StoreApplication application,
             List<String> uploadedPaths
     ) {
     }
 
     private void validateDocuments(
-            SellerLegalType legalType,
-            Map<SellerDocumentType, MultipartFile> documents
+            LegalType legalType,
+            Map<ApplicationDocumentType, MultipartFile> documents
     ) {
-        Set<SellerDocumentType> required = legalType == SellerLegalType.NATURAL_PERSON
-                ? EnumSet.of(SellerDocumentType.IDENTITY_DOCUMENT, SellerDocumentType.RUT)
+        Set<ApplicationDocumentType> required = legalType == LegalType.NATURAL_PERSON
+                ? EnumSet.of(ApplicationDocumentType.IDENTITY_DOCUMENT, ApplicationDocumentType.RUT)
                 : EnumSet.of(
-                        SellerDocumentType.RUT,
-                        SellerDocumentType.LEGAL_REPRESENTATIVE_ID,
-                        SellerDocumentType.CERTIFICATE_OF_EXISTENCE
+                        ApplicationDocumentType.RUT,
+                        ApplicationDocumentType.LEGAL_REPRESENTATIVE_ID,
+                        ApplicationDocumentType.CERTIFICATE_OF_EXISTENCE
                 );
         if (documents == null
                 || !documents.keySet().equals(required)
                 || documents.values().stream().anyMatch(file -> file == null || file.isEmpty())) {
             throw new BadRequestException(
                     "SELLER_DOCUMENTS_INCOMPLETE",
-                    legalType == SellerLegalType.NATURAL_PERSON
+                    legalType == LegalType.NATURAL_PERSON
                             ? "Adjunta la cédula y el RUT."
                             : "Adjunta el RUT, el certificado de existencia y representación legal y la cédula del representante."
             );

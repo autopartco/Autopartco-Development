@@ -4,9 +4,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-import com.autopartco.backend.seller.entity.SellerApplicationStatus;
-import com.autopartco.backend.seller.entity.SellerDocumentType;
-import com.autopartco.backend.seller.entity.SellerLegalType;
+import com.autopartco.backend.core.organization.StoreApplicationStatus;
+import com.autopartco.backend.core.organization.ApplicationDocumentType;
+import com.autopartco.backend.core.organization.LegalType;
 
 public record SellerApplicationResponse(
         UUID applicationId,
@@ -15,8 +15,8 @@ public record SellerApplicationResponse(
         String nit,
         String businessEmail,
         String applicantEmail,
-        SellerLegalType legalType,
-        SellerApplicationStatus status,
+        LegalType legalType,
+        StoreApplicationStatus status,
         SellerPlanResponse plan,
         SellerPlanResponse selectedPlan,
         List<Document> documents,
@@ -25,7 +25,7 @@ public record SellerApplicationResponse(
 ) {
     public record Document(
             UUID id,
-            SellerDocumentType type,
+            ApplicationDocumentType type,
             String filename,
             String contentType,
             long sizeBytes

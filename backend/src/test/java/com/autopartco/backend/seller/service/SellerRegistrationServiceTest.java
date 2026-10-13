@@ -16,16 +16,17 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.autopartco.backend.core.identity.AccountProvisioning;
 import com.autopartco.backend.core.identity.RegisterRequest;
 import com.autopartco.backend.seller.dto.SellerRegistrationRequest;
-import com.autopartco.backend.store.dto.StoreRegistrationRequest;
-import com.autopartco.backend.seller.entity.SellerLegalType;
-import com.autopartco.backend.seller.entity.SellerDocumentType;
+import com.autopartco.backend.core.organization.StoreRegistrationRequest;
+import com.autopartco.backend.core.organization.LegalType;
+import com.autopartco.backend.core.organization.ApplicationDocumentType;
 import com.autopartco.backend.core.identity.internal.AccountRepository;
-import com.autopartco.backend.store.repository.StoreRepository;
+import com.autopartco.backend.core.organization.internal.StoreRepository;
 import com.autopartco.backend.seller.repository.SellerPlanRepository;
-import com.autopartco.backend.seller.repository.SellerApplicationRepository;
-import com.autopartco.backend.seller.repository.SellerApplicationDocumentRepository;
+import com.autopartco.backend.core.organization.internal.StoreApplicationRepository;
+import com.autopartco.backend.core.organization.internal.StoreApplicationDocumentRepository;
+import com.autopartco.backend.core.organization.internal.StoreFileStorage;
 import com.autopartco.backend.shared.error.BadRequestException;
-import com.autopartco.backend.store.service.StoreService;
+import com.autopartco.backend.core.organization.StoreService;
 
 @ExtendWith(MockitoExtension.class)
 class SellerRegistrationServiceTest {
@@ -48,13 +49,13 @@ class SellerRegistrationServiceTest {
     private SellerPlanService planService;
 
     @Mock
-    private SellerApplicationRepository applicationRepository;
+    private StoreApplicationRepository applicationRepository;
 
     @Mock
-    private SellerApplicationDocumentRepository documentRepository;
+    private StoreApplicationDocumentRepository documentRepository;
 
     @Mock
-    private SellerFileService fileService;
+    private StoreFileStorage fileService;
 
     @InjectMocks
     private SellerRegistrationService sellerRegistrationService;
@@ -78,13 +79,13 @@ class SellerRegistrationServiceTest {
         var request = new SellerRegistrationRequest(
                 accountRequest,
                 storeRequest,
-                SellerLegalType.NATURAL_PERSON,
+                LegalType.NATURAL_PERSON,
                 null
         );
 
         assertThrows(
                 BadRequestException.class,
-                () -> sellerRegistrationService.register(request, new EnumMap<>(SellerDocumentType.class))
+                () -> sellerRegistrationService.register(request, new EnumMap<>(ApplicationDocumentType.class))
         );
         verify(accountProvisioning, never()).registerSellerAccount(accountRequest);
         verify(storeService, never()).register(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyString());

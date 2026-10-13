@@ -19,10 +19,10 @@ import com.autopartco.backend.product.repository.CategoryRepository;
 import com.autopartco.backend.product.repository.ManufacturerRepository;
 import com.autopartco.backend.product.repository.ProductRepository;
 import com.autopartco.backend.product.repository.PromotionRepository;
-import com.autopartco.backend.store.entity.Store;
-import com.autopartco.backend.store.repository.StoreRepository;
-import com.autopartco.backend.store.service.StoreAccessService;
-import com.autopartco.backend.store.service.StorePermissionCodes;
+import com.autopartco.backend.core.organization.internal.Store;
+import com.autopartco.backend.core.organization.internal.StoreRepository;
+import com.autopartco.backend.core.organization.StoreAccess;
+import com.autopartco.backend.core.organization.StorePermissionCodes;
 import com.autopartco.backend.seller.service.SellerPlanEntitlementService;
 
 import lombok.AllArgsConstructor;
@@ -32,7 +32,7 @@ import lombok.AllArgsConstructor;
 public class PromotionService {
     private final PromotionRepository promotionRepository;
     private final StoreRepository storeRepository;
-    private final StoreAccessService storeAccessService;
+    private final StoreAccess storeAccessService;
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ManufacturerRepository manufacturerRepository;

@@ -25,7 +25,7 @@ import com.autopartco.backend.product.repository.ProductImageRepository;
 import com.autopartco.backend.product.repository.ProductRepository;
 import com.autopartco.backend.shared.storage.SupabaseStorageService;
 import com.autopartco.backend.shared.storage.SupabaseStorageService.StoredObject;
-import com.autopartco.backend.store.service.StorePermissionCodes;
+import com.autopartco.backend.core.organization.StorePermissionCodes;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

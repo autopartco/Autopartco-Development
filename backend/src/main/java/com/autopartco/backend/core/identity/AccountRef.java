@@ -11,6 +11,7 @@ public record AccountRef(
         String email,
         String fullName,
         String stateCode,
-        String accountTypeCode
+        String accountTypeCode,
+        String givenName
 ) {
 }

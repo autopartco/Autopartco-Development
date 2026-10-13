@@ -34,12 +34,12 @@ import com.autopartco.backend.product.repository.ProductRepository;
 import com.autopartco.backend.product.repository.ProductImageRepository;
 import com.autopartco.backend.product.repository.PromotionRepository;
 import com.autopartco.backend.product.mapper.ProductImageMapper;
-import com.autopartco.backend.store.entity.Branch;
-import com.autopartco.backend.store.entity.Store;
-import com.autopartco.backend.store.repository.BranchRepository;
-import com.autopartco.backend.store.repository.StoreRepository;
-import com.autopartco.backend.store.service.StoreAccessService;
-import com.autopartco.backend.store.service.StorePermissionCodes;
+import com.autopartco.backend.core.organization.internal.Branch;
+import com.autopartco.backend.core.organization.internal.Store;
+import com.autopartco.backend.core.organization.internal.BranchRepository;
+import com.autopartco.backend.core.organization.internal.StoreRepository;
+import com.autopartco.backend.core.organization.StoreAccess;
+import com.autopartco.backend.core.organization.StorePermissionCodes;
 import com.autopartco.backend.seller.service.SellerPlanEntitlementService;
 
 import lombok.AllArgsConstructor;
@@ -59,7 +59,7 @@ public class ProductService {
     private final CategoryRepository categoryRepository;
     private final CompatibilityRepository compatibilityRepository;
     private final StoreRepository storeRepository;
-    private final StoreAccessService storeAccessService;
+    private final StoreAccess storeAccessService;
     private final StateRepository stateRepository;
     private final PromotionRepository promotionRepository;
     private final PromotionPricingService promotionPricingService;

@@ -3,6 +3,7 @@ package com.autopartco.backend.seller.entity;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
+import com.autopartco.backend.core.organization.internal.StoreApplication;
 import com.autopartco.backend.shared.persistence.BaseEntity;
 
 import jakarta.persistence.Column;
@@ -29,7 +30,7 @@ import lombok.experimental.SuperBuilder;
 public class SellerPayment extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "application_id", nullable = false)
-    private SellerApplication application;
+    private StoreApplication application;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "plan_id", nullable = false)

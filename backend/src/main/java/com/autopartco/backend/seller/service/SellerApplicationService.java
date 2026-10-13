@@ -16,10 +16,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
 
+import com.autopartco.backend.core.identity.AccountLookup;
 import com.autopartco.backend.core.identity.AccountProvisioning;
+import com.autopartco.backend.core.identity.AccountRef;
 import com.autopartco.backend.core.identity.LoginResponse;
 import com.autopartco.backend.core.identity.SessionIssuer;
-import com.autopartco.backend.core.identity.internal.AccountRepository;
 import com.autopartco.backend.shared.persistence.StateRepository;
 import com.autopartco.backend.core.notification.EmailService;
 import com.autopartco.backend.shared.config.AppProperties;
@@ -30,14 +31,14 @@ import com.autopartco.backend.seller.dto.SellerApplicationResponse;
 import com.autopartco.backend.seller.dto.SellerApplicationReviewRequest;
 import com.autopartco.backend.seller.dto.SellerPlanResponse;
 import com.autopartco.backend.seller.dto.SellerSetupResponse;
-import com.autopartco.backend.seller.entity.SellerApplication;
-import com.autopartco.backend.seller.entity.SellerApplicationDocument;
-import com.autopartco.backend.seller.entity.SellerApplicationStatus;
-import com.autopartco.backend.seller.entity.SellerDocumentType;
-import com.autopartco.backend.seller.repository.SellerApplicationDocumentRepository;
-import com.autopartco.backend.seller.repository.SellerApplicationRepository;
-import com.autopartco.backend.seller.service.SellerFileService.StoredFile;
-import com.autopartco.backend.store.entity.Store;
+import com.autopartco.backend.core.organization.internal.StoreApplication;
+import com.autopartco.backend.core.organization.internal.StoreApplicationDocument;
+import com.autopartco.backend.core.organization.StoreApplicationStatus;
+import com.autopartco.backend.core.organization.internal.StoreApplicationDocumentRepository;
+import com.autopartco.backend.core.organization.internal.StoreApplicationRepository;
+import com.autopartco.backend.core.organization.internal.StoreFileStorage;
+import com.autopartco.backend.core.organization.internal.StoreFileStorage.StoredFile;
+import com.autopartco.backend.core.organization.internal.Store;
 import com.autopartco.backend.shared.persistence.State;
 
 import lombok.AllArgsConstructor;
@@ -48,30 +49,35 @@ public class SellerApplicationService {
     private static final String ACTIVE_STATE = "ACTIVE";
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
-    private final SellerApplicationRepository applicationRepository;
-    private final SellerApplicationDocumentRepository documentRepository;
-    private final AccountRepository accountRepository;
+    private final StoreApplicationRepository applicationRepository;
+    private final StoreApplicationDocumentRepository documentRepository;
+    private final AccountLookup accountLookup;
     private final AccountProvisioning accountProvisioning;
     private final StateRepository stateRepository;
     private final SessionIssuer sessionIssuer;
     private final SellerPlanService planService;
-    private final SellerFileService fileService;
+    private final StoreFileStorage fileService;
     private final EmailService emailService;
     private final AppProperties appProperties;
 
     @Transactional(readOnly = true)
     public List<SellerApplicationResponse> pendingApplications() {
-        return applicationRepository.findAllByStatusWithOwner(SellerApplicationStatus.PENDING_REVIEW)
+        // Como el antiguo join con la cuenta: se omiten las solicitudes cuyo solicitante ya no existe.
+        return applicationRepository.findAllByStatusWithOwner(StoreApplicationStatus.PENDING_REVIEW)
                 .stream()
-                .map(this::toResponse)
+                .flatMap(application -> accountLookup.findById(application.getApplicantAccountId())
+                        .map(applicant -> toResponse(application, applicant))
+                        .stream())
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public List<SellerApplicationResponse> myApplications(String email) {
-        return applicationRepository.findByApplicantEmail(email).stream()
-                .map(this::toResponse)
-                .toList();
+        return accountLookup.findByEmail(email)
+                .map(applicant -> applicationRepository.findByApplicant(applicant.accountId()).stream()
+                        .map(application -> toResponse(application, applicant))
+                        .toList())
+                .orElse(List.of());
     }
 
     @Transactional
@@ -80,29 +86,31 @@ public class SellerApplicationService {
             String reviewerEmail,
             SellerApplicationReviewRequest request
     ) {
-        SellerApplication application = applicationRepository.findByIdForUpdate(applicationId)
+        StoreApplication application = applicationRepository.findByIdForUpdate(applicationId)
                 .orElseThrow(() -> new NotFoundException(
                         "SELLER_APPLICATION_NOT_FOUND",
                         "No se encontró la solicitud de vendedor."
                 ));
-        if (application.getStatus() != SellerApplicationStatus.PENDING_REVIEW) {
+        if (application.getStatus() != StoreApplicationStatus.PENDING_REVIEW) {
             throw new ConflictException(
                     "SELLER_APPLICATION_ALREADY_REVIEWED",
                     "La solicitud ya fue revisada."
             );
         }
         application.setReviewNotes(cleanNotes(request.notes()));
-        application.setReviewedBy(accountRepository.findByEmailIgnoreCase(reviewerEmail)
-                .orElseThrow(() -> new NotFoundException("ACCOUNT_NOT_FOUND", "No se encontró el revisor.")));
+        application.setReviewedByAccountId(accountLookup.findByEmail(reviewerEmail)
+                .orElseThrow(() -> new NotFoundException("ACCOUNT_NOT_FOUND", "No se encontró el revisor."))
+                .accountId());
+        AccountRef applicant = requireApplicant(application);
         if (!request.approved()) {
-            application.setStatus(SellerApplicationStatus.REJECTED);
-            return toResponse(application);
+            application.setStatus(StoreApplicationStatus.REJECTED);
+            return toResponse(application, applicant);
         }
 
         String rawToken = newOnboardingToken();
         application.setOnboardingTokenHash(hash(rawToken));
         application.setOnboardingTokenExpiresAt(LocalDateTime.now().plusHours(48));
-        application.setStatus(SellerApplicationStatus.CONFIGURATION_PENDING);
+        application.setStatus(StoreApplicationStatus.CONFIGURATION_PENDING);
         String setupLink = UriComponentsBuilder
                 .fromUriString(appProperties.frontendBaseUrl().replaceAll("/+$", ""))
                 .path("/seller/setup")
@@ -110,11 +118,11 @@ public class SellerApplicationService {
                 .build()
                 .toUriString();
         emailService.sendSellerOnboarding(
-                application.getApplicant().getEmail(),
-                application.getApplicant().getPerson().getName(),
+                applicant.email(),
+                applicant.givenName(),
                 setupLink
         );
-        return toResponse(application);
+        return toResponse(application, applicant);
     }
 
     @Transactional
@@ -126,8 +134,8 @@ public class SellerApplicationService {
             String ipAddress,
             String userAgent
     ) {
-        SellerApplication application = findByOnboardingToken(rawToken);
-        if (application.getStatus() != SellerApplicationStatus.CONFIGURATION_PENDING
+        StoreApplication application = findByOnboardingToken(rawToken);
+        if (application.getStatus() != StoreApplicationStatus.CONFIGURATION_PENDING
                 || application.getOnboardingTokenExpiresAt() == null
                 || application.getOnboardingTokenExpiresAt().isBefore(LocalDateTime.now())) {
             throw new BadRequestException(
@@ -135,7 +143,7 @@ public class SellerApplicationService {
                     "El enlace de configuración venció o ya fue utilizado."
             );
         }
-        if (!ACTIVE_STATE.equals(application.getApplicant().getState().getCode())) {
+        if (!ACTIVE_STATE.equals(requireApplicant(application).stateCode())) {
             throw new ConflictException(
                     "SELLER_EMAIL_NOT_VERIFIED",
                     "Verifica tu correo antes de terminar la configuración del almacén."
@@ -171,10 +179,10 @@ public class SellerApplicationService {
             application.setConfigurationCompletedAt(setupAt);
             application.setTrialStartsAt(setupAt);
             application.setTrialEndsAt(application.getTrialStartsAt().plusMonths(1));
-            application.setStatus(SellerApplicationStatus.ACTIVE);
+            application.setStatus(StoreApplicationStatus.ACTIVE);
             application.setOnboardingTokenHash(null);
             application.setOnboardingTokenExpiresAt(null);
-            UUID applicantId = application.getApplicant().getId();
+            UUID applicantId = application.getApplicantAccountId();
             accountProvisioning.promoteToStoreManager(applicantId);
             LoginResponse tokens = sessionIssuer.issue(applicantId, ipAddress, userAgent);
             return new SellerSetupResponse(
@@ -192,42 +200,36 @@ public class SellerApplicationService {
     }
 
     @Transactional(readOnly = true)
-    public SellerApplicationDocument requireDocument(
+    public StoreApplicationDocument requireDocument(
             UUID applicationId,
             UUID documentId,
             String email,
             boolean root
     ) {
-        SellerApplicationDocument document = documentRepository.findWithApplicationById(documentId)
+        StoreApplicationDocument document = documentRepository.findWithApplicationById(documentId)
                 .orElseThrow(() -> new NotFoundException(
                         "SELLER_DOCUMENT_NOT_FOUND",
                         "No se encontró el documento."
                 ));
-        SellerApplication application = document.getApplication();
+        StoreApplication application = document.getApplication();
         if (!application.getId().equals(applicationId)) {
             throw new NotFoundException("SELLER_DOCUMENT_NOT_FOUND", "No se encontró el documento.");
         }
-        if (!root && !application.getApplicant().getEmail().equalsIgnoreCase(email)) {
+        if (!root && !requireApplicant(application).email().equalsIgnoreCase(email)) {
             throw new AccessDeniedException("No tienes acceso a este documento.");
         }
         return document;
     }
 
-    @Transactional(readOnly = true)
-    public Store requirePublicStore(UUID storeId) {
-        SellerApplication application = applicationRepository.findByStoreId(storeId)
-                .orElseThrow(() -> new NotFoundException("STORE_NOT_FOUND", "No se encontró el almacén."));
-        if (application.getStatus() != SellerApplicationStatus.ACTIVE) {
-            throw new NotFoundException("STORE_NOT_FOUND", "No se encontró el almacén publicado.");
-        }
-        Store store = application.getStore();
-        if (!ACTIVE_STATE.equals(store.getState().getCode())) {
-            throw new NotFoundException("STORE_NOT_FOUND", "No se encontró el almacén publicado.");
-        }
-        return store;
+    private AccountRef requireApplicant(StoreApplication application) {
+        return accountLookup.findById(application.getApplicantAccountId())
+                .orElseThrow(() -> new NotFoundException(
+                        "ACCOUNT_NOT_FOUND",
+                        "No se encontró la cuenta del solicitante."
+                ));
     }
 
-    private SellerApplication findByOnboardingToken(String rawToken) {
+    private StoreApplication findByOnboardingToken(String rawToken) {
         if (rawToken == null || rawToken.isBlank()) {
             throw new BadRequestException("SELLER_SETUP_TOKEN_INVALID", "El enlace de configuración no es válido.");
         }
@@ -246,7 +248,7 @@ public class SellerApplicationService {
                 ));
     }
 
-    private SellerApplicationResponse toResponse(SellerApplication application) {
+    private SellerApplicationResponse toResponse(StoreApplication application, AccountRef applicant) {
         List<SellerApplicationResponse.Document> documents =
                 documentRepository.findByApplication_IdOrderByDocumentType(application.getId())
                         .stream()
@@ -265,7 +267,7 @@ public class SellerApplicationService {
                 store.getBusinessName(),
                 store.getNit(),
                 store.getBusinessEmail(),
-                application.getApplicant().getEmail(),
+                applicant.email(),
                 application.getLegalType(),
                 application.getStatus(),
                 toPlanResponse(application.getPlan()),

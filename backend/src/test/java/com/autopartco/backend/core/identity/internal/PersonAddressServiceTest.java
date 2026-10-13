@@ -16,8 +16,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.autopartco.backend.core.identity.web.AddressLocationRequest;
 import com.autopartco.backend.core.identity.web.PersonAddressRequest;
-import com.autopartco.backend.store.entity.Location;
-import com.autopartco.backend.store.repository.LocationRepository;
+import com.autopartco.backend.shared.location.Location;
+import com.autopartco.backend.shared.location.LocationRepository;
 
 @ExtendWith(MockitoExtension.class)
 class PersonAddressServiceTest {

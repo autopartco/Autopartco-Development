@@ -45,7 +45,8 @@ public class AccountLookup {
                 account.getEmail(),
                 account.getPerson().getName() + " " + account.getPerson().getSurname(),
                 account.getState() == null ? null : account.getState().getCode(),
-                account.getAccountType().getCode()
+                account.getAccountType().getCode(),
+                account.getPerson().getName()
         );
     }
 }

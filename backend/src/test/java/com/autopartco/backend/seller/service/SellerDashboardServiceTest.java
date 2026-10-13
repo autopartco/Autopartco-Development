@@ -17,8 +17,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.AccessDeniedException;
 
-import com.autopartco.backend.store.service.StoreAccessService;
-import com.autopartco.backend.store.service.StorePermissionCodes;
+import com.autopartco.backend.core.organization.StoreAccess;
+import com.autopartco.backend.core.organization.StorePermissionCodes;
 
 @ExtendWith(MockitoExtension.class)
 class SellerDashboardServiceTest {
@@ -26,7 +26,7 @@ class SellerDashboardServiceTest {
     private JdbcTemplate jdbcTemplate;
 
     @Mock
-    private StoreAccessService storeAccessService;
+    private StoreAccess storeAccessService;
 
     @Mock
     private SellerPlanEntitlementService entitlementService;

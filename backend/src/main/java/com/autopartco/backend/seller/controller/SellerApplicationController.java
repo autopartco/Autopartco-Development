@@ -28,12 +28,11 @@ import com.autopartco.backend.seller.dto.SellerApplicationCreatedResponse;
 import com.autopartco.backend.seller.dto.SellerApplicationRequest;
 import com.autopartco.backend.seller.dto.SellerApplicationReviewRequest;
 import com.autopartco.backend.seller.dto.SellerSetupResponse;
-import com.autopartco.backend.seller.entity.SellerApplicationDocument;
+import com.autopartco.backend.core.organization.internal.StoreApplicationDocument;
 import com.autopartco.backend.seller.service.SellerApplicationService;
-import com.autopartco.backend.seller.service.SellerFileService;
+import com.autopartco.backend.core.organization.internal.StoreFileStorage;
 import com.autopartco.backend.seller.service.SellerRegistrationService;
-import com.autopartco.backend.seller.entity.SellerDocumentType;
-import com.autopartco.backend.store.entity.Store;
+import com.autopartco.backend.core.organization.ApplicationDocumentType;
 
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -43,7 +42,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class SellerApplicationController {
     private final SellerApplicationService applicationService;
-    private final SellerFileService fileService;
+    private final StoreFileStorage fileService;
     private final SellerRegistrationService sellerRegistrationService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -55,19 +54,19 @@ public class SellerApplicationController {
             @RequestPart(name = "certificateOfExistence", required = false) MultipartFile certificateOfExistence,
             Authentication authentication
     ) {
-        java.util.Map<SellerDocumentType, MultipartFile> documents =
-                new java.util.EnumMap<>(SellerDocumentType.class);
+        java.util.Map<ApplicationDocumentType, MultipartFile> documents =
+                new java.util.EnumMap<>(ApplicationDocumentType.class);
         if (identityDocument != null) {
-            documents.put(SellerDocumentType.IDENTITY_DOCUMENT, identityDocument);
+            documents.put(ApplicationDocumentType.IDENTITY_DOCUMENT, identityDocument);
         }
         if (rut != null) {
-            documents.put(SellerDocumentType.RUT, rut);
+            documents.put(ApplicationDocumentType.RUT, rut);
         }
         if (legalRepresentativeId != null) {
-            documents.put(SellerDocumentType.LEGAL_REPRESENTATIVE_ID, legalRepresentativeId);
+            documents.put(ApplicationDocumentType.LEGAL_REPRESENTATIVE_ID, legalRepresentativeId);
         }
         if (certificateOfExistence != null) {
-            documents.put(SellerDocumentType.CERTIFICATE_OF_EXISTENCE, certificateOfExistence);
+            documents.put(ApplicationDocumentType.CERTIFICATE_OF_EXISTENCE, certificateOfExistence);
         }
         return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED)
                 .body(sellerRegistrationService.applyForExistingCustomer(
@@ -107,7 +106,7 @@ public class SellerApplicationController {
         boolean root = authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .anyMatch("ROLE_ROOT"::equals);
-        SellerApplicationDocument document =
+        StoreApplicationDocument document =
                 applicationService.requireDocument(applicationId, documentId, authentication.getName(), root);
         var stored = fileService.download(document.getObjectPath());
         return ResponseEntity.ok()
@@ -135,26 +134,5 @@ public class SellerApplicationController {
                 request.getRemoteAddr(),
                 request.getHeader("User-Agent") == null ? "" : request.getHeader("User-Agent")
         );
-    }
-
-    @GetMapping("/stores/{storeId}/brand/{assetType}")
-    public ResponseEntity<byte[]> publicBrandAsset(
-            @PathVariable UUID storeId,
-            @PathVariable String assetType
-    ) {
-        Store store = applicationService.requirePublicStore(storeId);
-        String path = switch (assetType) {
-            case "logo" -> store.getLogoPath();
-            case "banner" -> store.getBannerPath();
-            default -> null;
-        };
-        if (path == null) {
-            return ResponseEntity.notFound().build();
-        }
-        var stored = fileService.download(path);
-        return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(stored.contentType()))
-                .header(HttpHeaders.CACHE_CONTROL, "public, max-age=300")
-                .body(stored.content());
     }
 }

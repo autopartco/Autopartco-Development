@@ -28,7 +28,7 @@ import jakarta.persistence.Entity;
  * {@code verify()} completo en la fase 8.</p>
  */
 class ModularityTests {
-    private static final Pattern MIGRATED = Pattern.compile("Module '(core\\.audit|core\\.notification|core\\.identity)'");
+    private static final Pattern MIGRATED = Pattern.compile("Module '(core\\.audit|core\\.notification|core\\.identity|core\\.organization|storesuite|marketplace)'");
     private static final Pattern LEGACY = Pattern.compile("com\\.autopartco\\.backend\\.(auth|seller|store|product)\\.");
 
     private static final String BASE_PACKAGE = "com.autopartco.backend";

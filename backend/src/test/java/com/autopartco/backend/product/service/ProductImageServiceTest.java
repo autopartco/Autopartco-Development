@@ -35,7 +35,7 @@ import com.autopartco.backend.product.mapper.ProductImageMapper;
 import com.autopartco.backend.product.repository.InventoryRepository;
 import com.autopartco.backend.product.repository.ProductImageRepository;
 import com.autopartco.backend.product.repository.ProductRepository;
-import com.autopartco.backend.store.service.StorePermissionCodes;
+import com.autopartco.backend.core.organization.StorePermissionCodes;
 import com.autopartco.backend.shared.storage.SupabaseStorageService;
 
 @ExtendWith(MockitoExtension.class)
