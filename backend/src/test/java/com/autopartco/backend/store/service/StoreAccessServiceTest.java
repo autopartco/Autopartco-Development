@@ -15,16 +15,15 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
 
-import com.autopartco.backend.auth.entity.Account;
-import com.autopartco.backend.auth.entity.Person;
-import com.autopartco.backend.auth.repository.AccountRepository;
+import com.autopartco.backend.core.identity.AccountLookup;
+import com.autopartco.backend.core.identity.AccountRef;
 import com.autopartco.backend.store.repository.CollaboratorRepository;
 import com.autopartco.backend.seller.repository.SellerApplicationRepository;
 
 @ExtendWith(MockitoExtension.class)
 class StoreAccessServiceTest {
     @Mock
-    private AccountRepository accountRepository;
+    private AccountLookup accountLookup;
 
     @Mock
     private CollaboratorRepository collaboratorRepository;
@@ -40,8 +39,8 @@ class StoreAccessServiceTest {
         UUID personId = UUID.randomUUID();
         UUID storeId = UUID.randomUUID();
         when(sellerApplicationRepository.existsByStore_Id(storeId)).thenReturn(false);
-        Account account = account(personId);
-        when(accountRepository.findByEmailIgnoreCase("ana@example.com"))
+        AccountRef account = account(personId);
+        when(accountLookup.findByEmail("ana@example.com"))
                 .thenReturn(Optional.of(account));
         when(collaboratorRepository.findPermissionCodes(personId, storeId))
                 .thenReturn(List.of("BRANCH_READ", "PRODUCT_READ"));
@@ -57,8 +56,8 @@ class StoreAccessServiceTest {
         UUID personId = UUID.randomUUID();
         UUID storeId = UUID.randomUUID();
         when(sellerApplicationRepository.existsByStore_Id(storeId)).thenReturn(false);
-        Account account = account(personId);
-        when(accountRepository.findByEmailIgnoreCase("ana@example.com"))
+        AccountRef account = account(personId);
+        when(accountLookup.findByEmail("ana@example.com"))
                 .thenReturn(Optional.of(account));
         when(collaboratorRepository.hasPermission(personId, storeId, "PRODUCT_DELETE"))
                 .thenReturn(false);
@@ -69,11 +68,7 @@ class StoreAccessServiceTest {
         );
     }
 
-    private Account account(UUID personId) {
-        Person person = new Person();
-        person.setId(personId);
-        Account account = new Account();
-        account.setPerson(person);
-        return account;
+    private AccountRef account(UUID personId) {
+        return new AccountRef(UUID.randomUUID(), personId, "ana@example.com", "Ana Pérez", "ACTIVE", "CUSTOMER");
     }
 }

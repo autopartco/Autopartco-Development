@@ -16,12 +16,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import com.autopartco.backend.auth.entity.AccountType;
-import com.autopartco.backend.auth.repository.AccountRepository;
-import com.autopartco.backend.auth.repository.StateRepository;
-import com.autopartco.backend.auth.repository.TypeAccountRepository;
-import com.autopartco.backend.auth.service.AccountSessionService;
-import com.autopartco.backend.auth.service.AuthTokenService;
+import com.autopartco.backend.core.identity.AccountProvisioning;
+import com.autopartco.backend.core.identity.LoginResponse;
+import com.autopartco.backend.core.identity.SessionIssuer;
+import com.autopartco.backend.core.identity.internal.AccountRepository;
+import com.autopartco.backend.shared.persistence.StateRepository;
 import com.autopartco.backend.core.notification.EmailService;
 import com.autopartco.backend.shared.config.AppProperties;
 import com.autopartco.backend.shared.error.BadRequestException;
@@ -47,16 +46,14 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class SellerApplicationService {
     private static final String ACTIVE_STATE = "ACTIVE";
-    private static final String STORE_MANAGER_TYPE = "STORE_MANAGER";
     private static final SecureRandom SECURE_RANDOM = new SecureRandom();
 
     private final SellerApplicationRepository applicationRepository;
     private final SellerApplicationDocumentRepository documentRepository;
     private final AccountRepository accountRepository;
-    private final TypeAccountRepository accountTypeRepository;
+    private final AccountProvisioning accountProvisioning;
     private final StateRepository stateRepository;
-    private final AuthTokenService authTokenService;
-    private final AccountSessionService accountSessionService;
+    private final SessionIssuer sessionIssuer;
     private final SellerPlanService planService;
     private final SellerFileService fileService;
     private final EmailService emailService;
@@ -177,27 +174,15 @@ public class SellerApplicationService {
             application.setStatus(SellerApplicationStatus.ACTIVE);
             application.setOnboardingTokenHash(null);
             application.setOnboardingTokenExpiresAt(null);
-            AccountType storeManager = accountTypeRepository.findByCode(STORE_MANAGER_TYPE)
-                    .orElseThrow(() -> new NotFoundException(
-                            "ACCOUNT_TYPE_NOT_FOUND",
-                            "No existe el tipo de cuenta de vendedor."
-                    ));
-            application.getApplicant().setAccountType(storeManager);
-            AuthTokenService.TokenPair tokens = authTokenService.issue(application.getApplicant());
-            accountSessionService.create(
-                    tokens.sessionId(),
-                    application.getApplicant(),
-                    tokens.response().refreshToken(),
-                    ipAddress,
-                    userAgent,
-                    tokens.refreshExpiresAt()
-            );
+            UUID applicantId = application.getApplicant().getId();
+            accountProvisioning.promoteToStoreManager(applicantId);
+            LoginResponse tokens = sessionIssuer.issue(applicantId, ipAddress, userAgent);
             return new SellerSetupResponse(
                     store.getId(),
                     application.getStatus().name(),
                     application.getTrialEndsAt(),
                     toPlanResponse(planService.recommendedPlan()),
-                    tokens.response()
+                    tokens
             );
         } catch (RuntimeException exception) {
             cleanup(newLogoPath, exception);

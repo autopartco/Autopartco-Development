@@ -31,7 +31,7 @@ import com.autopartco.backend.seller.dto.SellerSetupResponse;
 import com.autopartco.backend.seller.entity.SellerApplicationDocument;
 import com.autopartco.backend.seller.service.SellerApplicationService;
 import com.autopartco.backend.seller.service.SellerFileService;
-import com.autopartco.backend.auth.service.SellerRegistrationService;
+import com.autopartco.backend.seller.service.SellerRegistrationService;
 import com.autopartco.backend.seller.entity.SellerDocumentType;
 import com.autopartco.backend.store.entity.Store;
 

@@ -8,7 +8,8 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.autopartco.backend.auth.repository.AccountRepository;
+import com.autopartco.backend.core.identity.AccountLookup;
+import com.autopartco.backend.core.identity.AccountRef;
 import com.autopartco.backend.store.repository.CollaboratorRepository;
 import com.autopartco.backend.seller.entity.SellerApplicationStatus;
 import com.autopartco.backend.seller.repository.SellerApplicationRepository;
@@ -18,7 +19,7 @@ import lombok.AllArgsConstructor;
 @Service
 @AllArgsConstructor
 public class StoreAccessService {
-    private final AccountRepository accountRepository;
+    private final AccountLookup accountLookup;
     private final CollaboratorRepository collaboratorRepository;
     private final SellerApplicationRepository sellerApplicationRepository;
 
@@ -28,14 +29,14 @@ public class StoreAccessService {
             return List.of();
         }
         var account = findAccount(email);
-        return collaboratorRepository.findPermissionCodes(account.getPerson().getId(), storeId);
+        return collaboratorRepository.findPermissionCodes(account.personId(), storeId);
     }
 
     @Transactional(readOnly = true)
     public void requirePermission(String email, UUID storeId, String permissionCode) {
         var account = findAccount(email);
         if (!applicationAllowsAccess(storeId) || !collaboratorRepository.hasPermission(
-                account.getPerson().getId(),
+                account.personId(),
                 storeId,
                 permissionCode
         )) {
@@ -51,8 +52,8 @@ public class StoreAccessService {
                 );
     }
 
-    private com.autopartco.backend.auth.entity.Account findAccount(String email) {
-        return accountRepository.findByEmailIgnoreCase(email.trim().toLowerCase(Locale.ROOT))
+    private AccountRef findAccount(String email) {
+        return accountLookup.findByEmail(email.trim().toLowerCase(Locale.ROOT))
                 .orElseThrow(() -> new AccessDeniedException("Authenticated account was not found."));
     }
 }

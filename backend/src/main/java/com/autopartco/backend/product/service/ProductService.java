@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.autopartco.backend.auth.repository.StateRepository;
+import com.autopartco.backend.shared.persistence.StateRepository;
 import com.autopartco.backend.shared.persistence.State;
 import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.NotFoundException;

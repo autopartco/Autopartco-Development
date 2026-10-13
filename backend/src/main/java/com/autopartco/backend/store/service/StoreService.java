@@ -9,8 +9,8 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.autopartco.backend.auth.repository.AccountRepository;
-import com.autopartco.backend.auth.repository.StateRepository;
+import com.autopartco.backend.core.identity.internal.AccountRepository;
+import com.autopartco.backend.shared.persistence.StateRepository;
 import com.autopartco.backend.shared.persistence.State;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;

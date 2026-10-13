@@ -22,10 +22,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import com.autopartco.backend.auth.repository.AccountRepository;
-import com.autopartco.backend.auth.repository.PersonRepository;
-import com.autopartco.backend.auth.repository.StateRepository;
-import com.autopartco.backend.auth.repository.TypeAccountRepository;
+import com.autopartco.backend.core.identity.internal.AccountRepository;
+import com.autopartco.backend.core.identity.internal.PersonRepository;
+import com.autopartco.backend.shared.persistence.StateRepository;
+import com.autopartco.backend.core.identity.internal.AccountTypeRepository;
 import com.autopartco.backend.core.notification.EmailService;
 import com.autopartco.backend.shared.config.AppProperties;
 import com.autopartco.backend.shared.error.BadRequestException;
@@ -49,7 +49,7 @@ class SellerCollaboratorServiceTest {
     @Mock
     private StateRepository stateRepository;
     @Mock
-    private TypeAccountRepository accountTypeRepository;
+    private AccountTypeRepository accountTypeRepository;
     @Mock
     private StoreRepository storeRepository;
     @Mock

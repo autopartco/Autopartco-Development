@@ -35,342 +35,6 @@
     "ast_hash": "88a3d994003b52e4e53056e493a98102",
     "semantic_hash": ""
   },
-  "backend/src/main/java/com/autopartco/backend/auth/controller/AuthController.java": {
-    "mtime": 1791897591.2311172,
-    "seen": 1791898107.9871626,
-    "ast_hash": "13cb148f3635900874c29294bcad2d72",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/dto/AccountSessionResponse.java": {
-    "mtime": 1791897591.233119,
-    "seen": 1791898107.9871671,
-    "ast_hash": "528fc699aa34d37ee028b5753d7574f8",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/dto/AddressLocationRequest.java": {
-    "mtime": 1791897591.235113,
-    "seen": 1791898107.987171,
-    "ast_hash": "4fbeb3f00011c2fd796e71b156acfaf9",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/dto/LoginRequest.java": {
-    "mtime": 1791897591.2361152,
-    "seen": 1791898107.9871745,
-    "ast_hash": "52d7bec2fd4d45381a03a8efc7add125",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/dto/LoginResponse.java": {
-    "mtime": 1791897591.2386644,
-    "seen": 1791898107.987177,
-    "ast_hash": "19e23a27397710485bcfa2d91231b8ab",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/dto/LogoutRequest.java": {
-    "mtime": 1791897591.2406678,
-    "seen": 1791898107.9871798,
-    "ast_hash": "0e6fce63e3b4e338d0b54986bbe9f58f",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/dto/PasswordRecoveryRequest.java": {
-    "mtime": 1791897591.2419984,
-    "seen": 1791898107.9871829,
-    "ast_hash": "17e21d630c6343bbc1cd64b4736da3b3",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/dto/PasswordRecoveryResponse.java": {
-    "mtime": 1791897591.2440553,
-    "seen": 1791898107.9871857,
-    "ast_hash": "94663f308288d44ca24fcab938b6a1fb",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/dto/PasswordResetRequest.java": {
-    "mtime": 1791897591.2460601,
-    "seen": 1791898107.987189,
-    "ast_hash": "fa20597df95e0519361b0247a03012d4",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/dto/PersonAddressRequest.java": {
-    "mtime": 1791897591.2480578,
-    "seen": 1791898107.9871922,
-    "ast_hash": "62e270faf1a886838a911a5978f17be4",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/dto/PersonAddressResponse.java": {
-    "mtime": 1791897591.2500691,
-    "seen": 1791898107.9871945,
-    "ast_hash": "eb7508bf2fd04fb719b4fbd01f58b190",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/dto/ProfileResponse.java": {
-    "mtime": 1791897591.2516108,
-    "seen": 1791898107.9871974,
-    "ast_hash": "788dd8a0a9283d3d6ded5682a7cb4bfc",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/dto/ProfileUpdateRequest.java": {
-    "mtime": 1791897591.2541316,
-    "seen": 1791898107.9872,
-    "ast_hash": "169e1aef888fd8ee66165168e38763b4",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/dto/RefreshTokenRequest.java": {
-    "mtime": 1791897591.2555215,
-    "seen": 1791898107.9872034,
-    "ast_hash": "22e76cd7a712dde8717e89c1a897ca66",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/dto/RegisterRequest.java": {
-    "mtime": 1791897591.2575455,
-    "seen": 1791898107.9872065,
-    "ast_hash": "936a7ccf6525111cbd5d1747bf49994f",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/dto/RegisterResponse.java": {
-    "mtime": 1791897591.2590666,
-    "seen": 1791898107.9872086,
-    "ast_hash": "c5fba45b2433b4e1c443ae17459c507e",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/dto/SellerRegistrationRequest.java": {
-    "mtime": 1791897591.2619078,
-    "seen": 1791898107.9872115,
-    "ast_hash": "843759f1bfbb8a68f4fc4d5d3f665c89",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/dto/SellerRegistrationResponse.java": {
-    "mtime": 1791897591.2639086,
-    "seen": 1791898107.9872148,
-    "ast_hash": "5ee453e53c80c57ff85f217d90e43fdd",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/dto/UnlockAccountRequest.java": {
-    "mtime": 1791897591.2649014,
-    "seen": 1791898107.9872172,
-    "ast_hash": "2cc3ec14d9987ee88581106e55f37e42",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/dto/UnlockAccountResponse.java": {
-    "mtime": 1791897591.2674174,
-    "seen": 1791898107.9872203,
-    "ast_hash": "172f0bb02471cb8b99660d526fcf5a37",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/dto/VerifyEmailResponse.java": {
-    "mtime": 1791897591.268449,
-    "seen": 1791898107.9872227,
-    "ast_hash": "1335fea65b6e3ed24d79ca64f1bddf8d",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/entity/Account.java": {
-    "mtime": 1791897591.2704837,
-    "seen": 1791898107.9872248,
-    "ast_hash": "28dfd571cabee3e9c5802afa38882b8b",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/entity/AccountSession.java": {
-    "mtime": 1791897591.2729971,
-    "seen": 1791898107.9872277,
-    "ast_hash": "8dfd6afacccbd917323d96156fa0f1dc",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/entity/AccountToken.java": {
-    "mtime": 1791897591.2740016,
-    "seen": 1791898107.9872296,
-    "ast_hash": "69d6fa2c064588b15cf2a537a869e8e4",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/entity/AccountType.java": {
-    "mtime": 1791897591.2760026,
-    "seen": 1791898107.9872322,
-    "ast_hash": "56fefe7948be6e06935d121bae1100d5",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/entity/LoginAttempt.java": {
-    "mtime": 1791897591.277999,
-    "seen": 1791898107.9872355,
-    "ast_hash": "66ed7a43f85a87ca7336bb38d2d6c998",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/entity/Person.java": {
-    "mtime": 1791897591.2800028,
-    "seen": 1791898107.9872386,
-    "ast_hash": "b573c61f70f4fd34114975b02fc8a9db",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/entity/PersonAddress.java": {
-    "mtime": 1791897591.2833097,
-    "seen": 1791898107.9872415,
-    "ast_hash": "77e181b6bda94731f8292150422994fe",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/mapper/AccountMapper.java": {
-    "mtime": 1791897591.285888,
-    "seen": 1791898107.9872434,
-    "ast_hash": "e148c2040f8c2aa790c1f8f697da8187",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/mapper/AuthResponseMapper.java": {
-    "mtime": 1791897591.2888849,
-    "seen": 1791898107.9872508,
-    "ast_hash": "e114cf8635595e5f1f617cbc3b2aa7cd",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/mapper/LoginAttemptMapper.java": {
-    "mtime": 1791897591.2914858,
-    "seen": 1791898107.9872534,
-    "ast_hash": "170ccab26a0aa2b26f7f48194a6e1d21",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/mapper/SessionMapper.java": {
-    "mtime": 1791897591.2925103,
-    "seen": 1791898107.9872563,
-    "ast_hash": "aa826da6cf572f8ce0693e4293d23c4c",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/mapper/TokenMapper.java": {
-    "mtime": 1791897591.2947414,
-    "seen": 1791898107.9872587,
-    "ast_hash": "e425eb4c315c35498ab4e3f930a82b0c",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/repository/AccountRepository.java": {
-    "mtime": 1791897591.2971568,
-    "seen": 1791898107.9872613,
-    "ast_hash": "561bc4321f4ba5190469233517141c1e",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/repository/AccountSessionRepository.java": {
-    "mtime": 1791897591.2991385,
-    "seen": 1791898107.9872637,
-    "ast_hash": "41fd1b859e3d2ca4c420f6c42c0ebc4b",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/repository/AccountTokenRepository.java": {
-    "mtime": 1791897591.3011599,
-    "seen": 1791898107.987266,
-    "ast_hash": "8622554b558d2f98e1799296d64415cd",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/repository/LoginAttemptRepository.java": {
-    "mtime": 1791897591.3031836,
-    "seen": 1791898107.9872708,
-    "ast_hash": "180afd16a6a6a2d065430c762fa19870",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/repository/PersonAddressRepository.java": {
-    "mtime": 1791897591.3041768,
-    "seen": 1791898107.9872735,
-    "ast_hash": "b20bce16a6559f56dd4e9ba19c41e045",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/repository/PersonRepository.java": {
-    "mtime": 1791897591.3061826,
-    "seen": 1791898107.9872766,
-    "ast_hash": "60bf5fb12c86b22f546ad2f8baff8be3",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/repository/StateRepository.java": {
-    "mtime": 1791897591.3073573,
-    "seen": 1791898107.987279,
-    "ast_hash": "ce0b8147e8d7e57cbe842bd1abbec215",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/repository/TypeAccountRepository.java": {
-    "mtime": 1791897591.3086202,
-    "seen": 1791898107.9872823,
-    "ast_hash": "a91b0722daa0c8f0af369d11ec32d048",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/service/AccountSessionService.java": {
-    "mtime": 1791897591.3096435,
-    "seen": 1791898107.9872844,
-    "ast_hash": "db0b6e941e1bb9442c750787440e95ac",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/service/AccountStatusService.java": {
-    "mtime": 1791898468.2678795,
-    "seen": 1791898591.9917517,
-    "ast_hash": "35d5f6febe15da5208a914a9a325b417",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/service/AccountUnlockService.java": {
-    "mtime": 1791898482.7761152,
-    "seen": 1791898591.9917572,
-    "ast_hash": "4e64f8ebb78f033ffd9d5048e3d4cdfe",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/service/AuthTokenService.java": {
-    "mtime": 1791897591.319439,
-    "seen": 1791898107.9872942,
-    "ast_hash": "b714422d4ed9c787f8f33ec4d9f9577c",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/service/EmailVerificationService.java": {
-    "mtime": 1791898472.818953,
-    "seen": 1791898591.992066,
-    "ast_hash": "2a809b4b15b2d8460ea124955a02b39a",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/service/EmailVerificationTokenService.java": {
-    "mtime": 1791897591.326382,
-    "seen": 1791898107.9873023,
-    "ast_hash": "33cc5f32716c9fb5dca7eb4899e92236",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/service/LoginAttemptService.java": {
-    "mtime": 1791897591.3293805,
-    "seen": 1791898107.987305,
-    "ast_hash": "a9d9fa830ee5ad6c3e23f3fb71c5ba7f",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/service/LoginService.java": {
-    "mtime": 1791897591.3323867,
-    "seen": 1791898107.9873075,
-    "ast_hash": "4e22e6365f0679f98029ae1ad62e8130",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/service/PasswordRecoveryService.java": {
-    "mtime": 1791898495.4023716,
-    "seen": 1791898591.9930613,
-    "ast_hash": "78615737f460cd89c8814ec712ec4658",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/service/PersonAddressService.java": {
-    "mtime": 1791897591.336403,
-    "seen": 1791898107.9873128,
-    "ast_hash": "5ca4c9bb6eb0936e3684ff98af39a805",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/service/ProfileService.java": {
-    "mtime": 1791897591.3384042,
-    "seen": 1791898107.9873152,
-    "ast_hash": "dd9070e7cfc323445b5762b8e13720ef",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/service/RefreshTokenHash.java": {
-    "mtime": 1791897591.3394022,
-    "seen": 1791898107.9873183,
-    "ast_hash": "70680f1a1cfcea42efcec2010518cd76",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/service/RegistrationService.java": {
-    "mtime": 1791898478.171261,
-    "seen": 1791898591.9940603,
-    "ast_hash": "bbe4d949345ad16a97f67a6f3ee353fb",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/service/SellerRegistrationService.java": {
-    "mtime": 1791897591.345398,
-    "seen": 1791898107.9873254,
-    "ast_hash": "cf088ead4b41dd3daf62357540049c4f",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/auth/service/SessionRefreshService.java": {
-    "mtime": 1791897591.3478003,
-    "seen": 1791898107.9873285,
-    "ast_hash": "fbd8fd704e1c943342d7cff8baa8de74",
-    "semantic_hash": ""
-  },
   "backend/src/main/java/com/autopartco/backend/product/controller/MasterDataController.java": {
     "mtime": 1791897591.3799317,
     "seen": 1791898107.9873798,
@@ -606,9 +270,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/product/service/ProductService.java": {
-    "mtime": 1791897591.459697,
-    "seen": 1791898107.98751,
-    "ast_hash": "2bb70a3790aeebe7e90de692cb6f1135",
+    "mtime": 1791901646.6854963,
+    "seen": 1791901946.7139575,
+    "ast_hash": "dd8462157c1d08c087aea8f4cb14b05d",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/product/service/PromotionPricingService.java": {
@@ -624,267 +288,267 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/controller/SellerApplicationController.java": {
-    "mtime": 1791897591.4660854,
-    "seen": 1791898107.9875178,
-    "ast_hash": "c3f73b9bc2f553acb2506ca5e7499ec2",
+    "mtime": 1791901646.77419,
+    "seen": 1791901946.7145238,
+    "ast_hash": "14c9bcb1ca498512a1fcb9de5be88790",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/controller/SellerDashboardController.java": {
-    "mtime": 1791899142.6035826,
-    "seen": 1791899300.9684966,
-    "ast_hash": "b00098df39ac53d99b1fbdb2800399bc",
+    "mtime": 1791900960.6458635,
+    "seen": 1791901603.1203678,
+    "ast_hash": "b4ae235d1a8d1855dd157d079a4c040b",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/controller/SellerPaymentController.java": {
-    "mtime": 1791897591.4720395,
-    "seen": 1791898107.988534,
-    "ast_hash": "0d2aea91c8114af1174c031567b9443b",
+    "mtime": 1791900961.2621093,
+    "seen": 1791901603.12037,
+    "ast_hash": "d6db8e478b6f610edfa7e4e2017e69f7",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/controller/SellerPlanController.java": {
-    "mtime": 1791897591.4730422,
-    "seen": 1791898107.9885476,
-    "ast_hash": "c935f39045be8566b64e8236a92e1134",
+    "mtime": 1791900962.3465955,
+    "seen": 1791901603.1203723,
+    "ast_hash": "b4ade076c58c7b85461d687b5492994d",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/dto/SellerApplicationCreatedResponse.java": {
-    "mtime": 1791897591.4750597,
-    "seen": 1791898107.9885516,
-    "ast_hash": "930bde0922c6ead25a23d3b713504ea6",
+    "mtime": 1791900964.5386415,
+    "seen": 1791901603.1203773,
+    "ast_hash": "f9995e6a4406694b10cd79d8202f8069",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/dto/SellerApplicationRequest.java": {
-    "mtime": 1791897591.4765751,
-    "seen": 1791898107.988555,
-    "ast_hash": "8f295184df9e6ce8e240fe5bdddf6832",
+    "mtime": 1791900966.8643568,
+    "seen": 1791901603.1203792,
+    "ast_hash": "9b46d623bbdb008485992e4edf24c9b3",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/dto/SellerApplicationResponse.java": {
-    "mtime": 1791897591.4789295,
-    "seen": 1791898107.9885585,
-    "ast_hash": "fbfe10993457593806ab23f2141f862e",
+    "mtime": 1791900968.2400181,
+    "seen": 1791901603.1203809,
+    "ast_hash": "2c6561a5218178c2afcc49c3896563fa",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/dto/SellerApplicationReviewRequest.java": {
-    "mtime": 1791897591.4809272,
-    "seen": 1791898107.9885607,
-    "ast_hash": "fbcea4321d5e7a4e63834da2d6dc3e36",
+    "mtime": 1791900969.8329012,
+    "seen": 1791901603.1203828,
+    "ast_hash": "5238ee6be0c4c8200b6bcf039aac3897",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/dto/SellerCheckoutRequest.java": {
-    "mtime": 1791897591.4819283,
-    "seen": 1791898107.9885643,
-    "ast_hash": "1e92e8f929e0ad927ee5725854c9f69f",
+    "mtime": 1791900971.0959792,
+    "seen": 1791901603.1203852,
+    "ast_hash": "c3b45805d698b6ddbb5b35980e9145f2",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/dto/SellerCheckoutResponse.java": {
-    "mtime": 1791897591.4839308,
-    "seen": 1791898107.9885666,
-    "ast_hash": "d2335c837a3546312054ccd7dfcbac0b",
+    "mtime": 1791900972.4460795,
+    "seen": 1791901603.120387,
+    "ast_hash": "e3e4d39fef739e91e4b3864e5bf7e717",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/dto/SellerCollaboratorAcceptRequest.java": {
-    "mtime": 1791897591.4849274,
-    "seen": 1791898107.9885695,
-    "ast_hash": "8df54034f31771c4907aa91b9f233b23",
+    "mtime": 1791900973.7495525,
+    "seen": 1791901603.1203885,
+    "ast_hash": "5397a2dc9d8c8608b11564a50918cefe",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/dto/SellerCollaboratorInvitationResponse.java": {
-    "mtime": 1791897591.486935,
-    "seen": 1791898107.9885721,
-    "ast_hash": "a99a3cb8d6d26d85343dd2c82e1a426b",
+    "mtime": 1791900975.2443142,
+    "seen": 1791901603.1203904,
+    "ast_hash": "fb9195c41facde7b3809ed8691c1cde3",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/dto/SellerCollaboratorInviteRequest.java": {
-    "mtime": 1791897591.4884582,
-    "seen": 1791898107.9885774,
-    "ast_hash": "78eeee1283358a903acc55114a74d676",
+    "mtime": 1791900976.3472388,
+    "seen": 1791901603.120393,
+    "ast_hash": "951f4e604d83c550b657dfdd65545d8c",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/dto/SellerCollaboratorResponse.java": {
-    "mtime": 1791897591.4904811,
-    "seen": 1791898107.9885807,
-    "ast_hash": "382e3d2052cb5103d0a009bc17f77e29",
+    "mtime": 1791900977.3988338,
+    "seen": 1791901603.1203945,
+    "ast_hash": "a830c81f485251ecbb16f41bfb0623ec",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/dto/SellerDashboardResponse.java": {
-    "mtime": 1791897591.4924948,
-    "seen": 1791898107.9885836,
-    "ast_hash": "f42b3a27e2c7d51f1f1b13502a7e5b68",
+    "mtime": 1791900978.4336574,
+    "seen": 1791901603.1203964,
+    "ast_hash": "e4c4c7d742291e4a04dab6120d87a997",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/dto/SellerOrderResponse.java": {
-    "mtime": 1791897591.4964912,
-    "seen": 1791898107.9885888,
-    "ast_hash": "f6e3336240575c375fde7df8901991b4",
+    "mtime": 1791900979.3137774,
+    "seen": 1791901603.120398,
+    "ast_hash": "12a8754f3f8747ec375c6b5a914a9e23",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/dto/SellerOrderStatusRequest.java": {
-    "mtime": 1791897591.5014834,
-    "seen": 1791898107.9885912,
-    "ast_hash": "e23f7ed537f7e5fb92cab98c287080fd",
+    "mtime": 1791900980.3156788,
+    "seen": 1791901603.1204004,
+    "ast_hash": "cde165c7b54ce233bb824fc9772a8355",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/dto/SellerOrderSummaryResponse.java": {
-    "mtime": 1791897591.5034869,
-    "seen": 1791898107.9885933,
-    "ast_hash": "3f2a5d652b7bc92d07f6248972c88ea2",
+    "mtime": 1791900981.9578235,
+    "seen": 1791901603.1204019,
+    "ast_hash": "7cf86150e186f0a99d2f750d6c0fc75b",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/dto/SellerPermissionOption.java": {
-    "mtime": 1791897591.5044844,
-    "seen": 1791898107.9885952,
-    "ast_hash": "4f6ebce0aed0e985c588b9fe30d8609e",
+    "mtime": 1791900983.746824,
+    "seen": 1791901603.120404,
+    "ast_hash": "edae915f0173075dc7d975dd955f78cf",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/dto/SellerPlanRequest.java": {
-    "mtime": 1791897591.5059016,
-    "seen": 1791898107.9885974,
-    "ast_hash": "52ed4dd6fde0155b90a4bf50abbd4350",
+    "mtime": 1791900985.0616353,
+    "seen": 1791901603.1204054,
+    "ast_hash": "a3fe274aafb3f12bc52cca60accdb224",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/dto/SellerPlanResponse.java": {
-    "mtime": 1791897591.5079224,
-    "seen": 1791898107.9885998,
-    "ast_hash": "3fd62ea03dd564b776c5df1784c0844c",
+    "mtime": 1791900986.1262293,
+    "seen": 1791901603.1204078,
+    "ast_hash": "f5ffbf0def933306da5c4c41fe18e39f",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/dto/SellerSetupResponse.java": {
-    "mtime": 1791897591.5089273,
-    "seen": 1791898107.9886034,
-    "ast_hash": "2178b5a3d6fc0d72dbe3c77bb463dc1b",
+    "mtime": 1791901647.032828,
+    "seen": 1791901946.7238038,
+    "ast_hash": "9ef6848edf238c8b111cb207dab1cfbb",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/dto/SellerShipmentCreateRequest.java": {
-    "mtime": 1791897591.51092,
-    "seen": 1791898107.9886062,
-    "ast_hash": "0076a02db0175d7c346f2ad078a2f384",
+    "mtime": 1791900989.867126,
+    "seen": 1791901603.1204162,
+    "ast_hash": "e99d6caa42ce33d3cab6b244cd0ec1c2",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/dto/SellerShipmentStatusRequest.java": {
-    "mtime": 1791897591.5129268,
-    "seen": 1791898107.9886088,
-    "ast_hash": "2260e8b9aa4ecafcf1c6b455f85bfc91",
+    "mtime": 1791900991.267169,
+    "seen": 1791901603.1204178,
+    "ast_hash": "aca8f8af76280722c1251cb1fa778d16",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/entity/SellerApplication.java": {
-    "mtime": 1791897591.5160213,
-    "seen": 1791898107.9886122,
-    "ast_hash": "4fd8ea6bb62ddf053a47d82ff2871e40",
+    "mtime": 1791901647.121257,
+    "seen": 1791901946.7246594,
+    "ast_hash": "12e44454376e19894622a0ff543f188d",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/entity/SellerApplicationDocument.java": {
-    "mtime": 1791897591.517352,
-    "seen": 1791898107.9886153,
-    "ast_hash": "a8c5dfe0aa7ab532f8c95d8ddb2a6212",
+    "mtime": 1791900994.4619622,
+    "seen": 1791901603.120421,
+    "ast_hash": "6ca591b711f3d50f7e2810fc5dcdf5d0",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/entity/SellerApplicationStatus.java": {
-    "mtime": 1791897591.5183806,
-    "seen": 1791898107.9886189,
-    "ast_hash": "4819ceadc1d8b0f04133c692f4dea6d1",
+    "mtime": 1791900995.9646041,
+    "seen": 1791901603.1204224,
+    "ast_hash": "fd8f8d052dc9967b4544300024a2192b",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/entity/SellerCollaboratorInvitation.java": {
-    "mtime": 1791897591.520371,
-    "seen": 1791898107.9886222,
-    "ast_hash": "0133a5bed6861b3e458154b1d896b157",
+    "mtime": 1791901647.2197924,
+    "seen": 1791901946.7253604,
+    "ast_hash": "7f680ff1e8d741a5bc352e31712b0366",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/entity/SellerDocumentType.java": {
-    "mtime": 1791897591.5213807,
-    "seen": 1791898107.9886239,
-    "ast_hash": "747304407c5e10a1783094f0336bc995",
+    "mtime": 1791900998.3168213,
+    "seen": 1791901603.1204255,
+    "ast_hash": "d2e452c67a50d3598be95e372477a85e",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/entity/SellerLegalType.java": {
-    "mtime": 1791897591.5234356,
-    "seen": 1791898107.988627,
-    "ast_hash": "6dbfc0714c6362340336741a4e39c07a",
+    "mtime": 1791900999.4969673,
+    "seen": 1791901603.120427,
+    "ast_hash": "bd521d32899a688d8c732c47991bad7f",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/entity/SellerPayment.java": {
-    "mtime": 1791897591.524439,
-    "seen": 1791898107.9886296,
-    "ast_hash": "d8f9e3fba7e5c0d4a8212499594e5832",
+    "mtime": 1791901001.2019544,
+    "seen": 1791901603.1204288,
+    "ast_hash": "c420eb639f5cec7e653ebc1ffed7758d",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/entity/SellerPlan.java": {
-    "mtime": 1791897591.5264392,
-    "seen": 1791898107.9886327,
-    "ast_hash": "d36093f88387e15051cee85d61d9a752",
+    "mtime": 1791901003.6100948,
+    "seen": 1791901603.1204312,
+    "ast_hash": "e834b89e6a3ddc23069bcdd139fba659",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/repository/SellerApplicationDocumentRepository.java": {
-    "mtime": 1791897591.528638,
-    "seen": 1791898107.9886348,
-    "ast_hash": "ad401a55099077dffdd034a8be06d728",
+    "mtime": 1791901005.38529,
+    "seen": 1791901603.1204326,
+    "ast_hash": "9c3ac278e87df3d7f174f0e68144f7d0",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/repository/SellerApplicationRepository.java": {
-    "mtime": 1791897591.531901,
-    "seen": 1791898107.9886382,
-    "ast_hash": "876833ba1a8bb9aae83aefb8083cdd07",
+    "mtime": 1791901006.3833573,
+    "seen": 1791901603.1204343,
+    "ast_hash": "13031977e45b410a76f0b2987611a3af",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/repository/SellerCollaboratorInvitationRepository.java": {
-    "mtime": 1791897591.5342646,
-    "seen": 1791898107.9886422,
-    "ast_hash": "e98b407ad09187c5596c84d650d26171",
+    "mtime": 1791901007.1940165,
+    "seen": 1791901603.1204362,
+    "ast_hash": "88fb91538027f2e61c3f3b61c50dce6a",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/repository/SellerPaymentRepository.java": {
-    "mtime": 1791897591.5362637,
-    "seen": 1791898107.9886446,
-    "ast_hash": "68999857652601417e32d23ebf6b92cb",
+    "mtime": 1791901007.993865,
+    "seen": 1791901603.1204379,
+    "ast_hash": "1228acf3dec17b80f08ab0150c1bfe11",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/repository/SellerPlanRepository.java": {
-    "mtime": 1791897591.537267,
-    "seen": 1791898107.988648,
-    "ast_hash": "0ca25d99cea096a6a2105c61be583a47",
+    "mtime": 1791901008.7768495,
+    "seen": 1791901603.1204393,
+    "ast_hash": "a188b1fe4b1453dc9e0a1deeeb0ff991",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/service/SellerApplicationService.java": {
-    "mtime": 1791898382.031722,
-    "seen": 1791898592.0314643,
-    "ast_hash": "7aa1a541ac5629c689745d824dd4f54d",
+    "mtime": 1791901647.286702,
+    "seen": 1791901946.72843,
+    "ast_hash": "63559e4a2c2ad62654be00e5d3b68227",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/service/SellerCollaboratorService.java": {
-    "mtime": 1791898382.031722,
-    "seen": 1791898592.031469,
-    "ast_hash": "e381fc3dc6bf1b42a3e9b06f853af1e7",
+    "mtime": 1791901647.372718,
+    "seen": 1791901946.7284327,
+    "ast_hash": "59f5a87c8ddce1b7efc74983b44654a0",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/service/SellerDashboardService.java": {
-    "mtime": 1791899142.5985758,
-    "seen": 1791899301.028904,
-    "ast_hash": "2f8f68b285c30565c3832eb0adb1e861",
+    "mtime": 1791901011.4777615,
+    "seen": 1791901603.1204438,
+    "ast_hash": "364f2e0055741684df3c26d43a3f9c64",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/service/SellerFileService.java": {
-    "mtime": 1791897591.5445685,
-    "seen": 1791898107.9886587,
-    "ast_hash": "afe6046a25cb8bddf475f084a723d803",
+    "mtime": 1791901013.260075,
+    "seen": 1791901603.120446,
+    "ast_hash": "9480fb220a7ad40eea06eacd81de8149",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/service/SellerPaymentService.java": {
-    "mtime": 1791897591.546903,
-    "seen": 1791898107.988661,
-    "ast_hash": "cf293c2f479f88fde4cb250d7ad6bd8a",
+    "mtime": 1791901014.6523192,
+    "seen": 1791901603.1204474,
+    "ast_hash": "99a572f90b70bced2a9093e3f64c6153",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/service/SellerPlanEntitlementService.java": {
-    "mtime": 1791897591.5489106,
-    "seen": 1791898107.9886649,
-    "ast_hash": "165f0de2394034384673867088b3fe9f",
+    "mtime": 1791901018.200169,
+    "seen": 1791901603.1204493,
+    "ast_hash": "06b8002254a65c9a0bd999b97d9eab62",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/seller/service/SellerPlanService.java": {
-    "mtime": 1791897591.549911,
-    "seen": 1791898107.9886677,
-    "ast_hash": "bd802adb64f8ba34608a518eea450178",
+    "mtime": 1791901019.7926672,
+    "seen": 1791901603.1204507,
+    "ast_hash": "eee0c458d73b623382d9cbc370286325",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/store/controller/StoreController.java": {
@@ -954,9 +618,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/store/entity/Collaborator.java": {
-    "mtime": 1791897591.6143935,
-    "seen": 1791898107.991935,
-    "ast_hash": "eb80798d2fb1a9cecf8f30f99f3d66c8",
+    "mtime": 1791901647.566922,
+    "seen": 1791901946.7446518,
+    "ast_hash": "3fd65f97614cbf820c18069dbb9779db",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/store/entity/Location.java": {
@@ -1020,15 +684,15 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/store/service/BranchService.java": {
-    "mtime": 1791897591.6353893,
-    "seen": 1791898107.9919643,
-    "ast_hash": "216392b3500f9b2999e94c848cb87d1e",
+    "mtime": 1791901647.6432774,
+    "seen": 1791901946.747882,
+    "ast_hash": "c448731fe9c35f46f48756f7f90af381",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/store/service/StoreAccessService.java": {
-    "mtime": 1791897591.6363907,
-    "seen": 1791898107.9919667,
-    "ast_hash": "7cfc287aa0fe84a5576241132dc67c10",
+    "mtime": 1791901647.7093265,
+    "seen": 1791901946.7478852,
+    "ast_hash": "f2bf791fc99a12c732f572f7f0bed12a",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/store/service/StorePermissionCodes.java": {
@@ -1038,9 +702,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/store/service/StoreService.java": {
-    "mtime": 1791897591.6406002,
-    "seen": 1791898107.9919722,
-    "ast_hash": "42a3efd93345af8912bbab735ffb7b67",
+    "mtime": 1791901647.789843,
+    "seen": 1791901946.7482064,
+    "ast_hash": "589d5777b39e9cb02b76a7e2664a5c55",
     "semantic_hash": ""
   },
   "backend/src/main/resources/META-INF/additional-spring-configuration-metadata.json": {
@@ -1050,57 +714,9 @@
     "semantic_hash": "aba5ba556acb4a4b62a52d43755b0e63"
   },
   "backend/src/test/java/com/autopartco/backend/BackendApplicationTests.java": {
-    "mtime": 1791897591.6483967,
-    "seen": 1791898107.993522,
-    "ast_hash": "82e0b89bea4218a98ba663a19fc037c9",
-    "semantic_hash": ""
-  },
-  "backend/src/test/java/com/autopartco/backend/auth/service/AccountSessionServiceTest.java": {
-    "mtime": 1791897591.651399,
-    "seen": 1791898107.9935324,
-    "ast_hash": "04ef856672b456afe732d9ebfdfa051c",
-    "semantic_hash": ""
-  },
-  "backend/src/test/java/com/autopartco/backend/auth/service/LoginAttemptServiceTest.java": {
-    "mtime": 1791897591.6523983,
-    "seen": 1791898107.9935358,
-    "ast_hash": "a63d906b4a72edd9011c77f9f6025581",
-    "semantic_hash": ""
-  },
-  "backend/src/test/java/com/autopartco/backend/auth/service/LoginServiceTest.java": {
-    "mtime": 1791897591.6541305,
-    "seen": 1791898107.9935405,
-    "ast_hash": "4a343ad89dfe76b9d6698b7d9865e9f6",
-    "semantic_hash": ""
-  },
-  "backend/src/test/java/com/autopartco/backend/auth/service/PersonAddressServiceTest.java": {
-    "mtime": 1791897591.6577027,
-    "seen": 1791898107.9935436,
-    "ast_hash": "ad377f6ca35d31dc4ecdd9caf91f8e12",
-    "semantic_hash": ""
-  },
-  "backend/src/test/java/com/autopartco/backend/auth/service/ProfileServiceTest.java": {
-    "mtime": 1791897591.6590648,
-    "seen": 1791898107.9935465,
-    "ast_hash": "d65f6d792c5cb908d6d60a41eb29c620",
-    "semantic_hash": ""
-  },
-  "backend/src/test/java/com/autopartco/backend/auth/service/RefreshTokenHashTest.java": {
-    "mtime": 1791897591.661559,
-    "seen": 1791898107.99355,
-    "ast_hash": "33552e8862eba8f92d41e71c454d157b",
-    "semantic_hash": ""
-  },
-  "backend/src/test/java/com/autopartco/backend/auth/service/SellerRegistrationServiceTest.java": {
-    "mtime": 1791897591.6635542,
-    "seen": 1791898107.9935539,
-    "ast_hash": "ae42b92152f79ee96ee2c71196f0883e",
-    "semantic_hash": ""
-  },
-  "backend/src/test/java/com/autopartco/backend/auth/service/SessionRefreshServiceTest.java": {
-    "mtime": 1791897591.6655622,
-    "seen": 1791898107.9935577,
-    "ast_hash": "5d70e329c8865ee51c1bffcddd5f5be5",
+    "mtime": 1791901647.8601525,
+    "seen": 1791901946.7487772,
+    "ast_hash": "4e04f143a2eba8711fdaab5fc2c40d15",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/product/service/ProductImageServiceTest.java": {
@@ -1122,33 +738,33 @@
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/seller/service/SellerCollaboratorServiceTest.java": {
-    "mtime": 1791898382.033722,
-    "seen": 1791898592.0591154,
-    "ast_hash": "6155cea195a41fa3aeefdaa762e2407f",
+    "mtime": 1791901648.3924508,
+    "seen": 1791901946.7503207,
+    "ast_hash": "403b526992929b20f438631d306b3e86",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/seller/service/SellerDashboardServiceTest.java": {
-    "mtime": 1791897591.6750443,
-    "seen": 1791898107.9939713,
-    "ast_hash": "d98c0db02410b9ab66c9e43ef51e97a4",
+    "mtime": 1791901032.5761988,
+    "seen": 1791901603.1365685,
+    "ast_hash": "1601e02826613f6043bca630f6c1a3f2",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/seller/service/SellerFileServiceTest.java": {
-    "mtime": 1791897591.6771028,
-    "seen": 1791898107.9942162,
-    "ast_hash": "3c6973cb669fff812d16be8a0bd097e7",
+    "mtime": 1791901033.4914932,
+    "seen": 1791901603.1365712,
+    "ast_hash": "eb0100d8f83214d426439f7a2a870199",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/seller/service/SellerPaymentServiceTest.java": {
-    "mtime": 1791897591.6805782,
-    "seen": 1791898107.9946074,
-    "ast_hash": "fa976a8bd60cf5d8f950002bf6880df0",
+    "mtime": 1791901034.80726,
+    "seen": 1791901603.136573,
+    "ast_hash": "c780243253376e734e405cb0471c673c",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/store/service/StoreAccessServiceTest.java": {
-    "mtime": 1791897591.6832,
-    "seen": 1791898107.9946306,
-    "ast_hash": "9d9a3b8a2ab9ac337d76538704fce21d",
+    "mtime": 1791901648.4831653,
+    "seen": 1791901946.751619,
+    "ast_hash": "910f7ee747255c738fcb0ff9cb16f5f7",
     "semantic_hash": ""
   },
   "backend/bin/docs/api/conventions.md": {
@@ -1290,9 +906,9 @@
     "semantic_hash": ""
   },
   ".claude/skills/opencode-delegate/scripts/delegate.mjs": {
-    "mtime": 1791893823.0753026,
-    "seen": 1791894005.1556468,
-    "ast_hash": "3258a5b088ba8218e6181fbcb799830e",
+    "mtime": 1791900611.1807673,
+    "seen": 1791901603.098678,
+    "ast_hash": "f3aa7476d1004cf183655d154258f6e9",
     "semantic_hash": ""
   },
   ".claude/skills/opencode-delegate/scripts/models.mjs": {
@@ -1848,9 +1464,9 @@
     "semantic_hash": ""
   },
   ".claude/skills/opencode-delegate/SKILL.md": {
-    "mtime": 1791893851.4018028,
-    "seen": 1791894005.352088,
-    "ast_hash": "054ed6c7dd40f2e9e0792f21a0ed7601",
+    "mtime": 1791900621.7248657,
+    "seen": 1791901603.1671324,
+    "ast_hash": "1fcd6ef173c7ae13d2eb33419025d608",
     "semantic_hash": ""
   },
   ".opencode/agents/arquitecto.md": {
@@ -2028,9 +1644,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/identity/package-info.java": {
-    "mtime": 1791897591.3614748,
-    "seen": 1791898107.9873497,
-    "ast_hash": "45855cb32e62fca9d796823ebf06ffbb",
+    "mtime": 1791900943.6612215,
+    "seen": 1791901603.1039472,
+    "ast_hash": "d2b52ecdb27d72bf4be3d30722ac2d2f",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/inventory/package-info.java": {
@@ -2154,15 +1770,15 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/shared/persistence/BaseEntity.java": {
-    "mtime": 1791897591.5697205,
-    "seen": 1791898107.9918518,
-    "ast_hash": "e804c83d3227721b718b91e435560cba",
+    "mtime": 1791901021.6154432,
+    "seen": 1791901603.1234896,
+    "ast_hash": "556a352d4ae0f96d37e15537d0ff685b",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/shared/persistence/State.java": {
-    "mtime": 1791897591.5722783,
-    "seen": 1791898107.991855,
-    "ast_hash": "949b59dc0ea0bdc41c33bd586b676a68",
+    "mtime": 1791901022.315428,
+    "seen": 1791901603.1234932,
+    "ast_hash": "6c2380c43681454bea55dc81c189966d",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/shared/security/CorsConfig.java": {
@@ -2238,9 +1854,9 @@
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/ModularityTests.java": {
-    "mtime": 1791899059.032296,
-    "seen": 1791899301.075899,
-    "ast_hash": "d4aafd6653651e4adc1ed6684cc3f916",
+    "mtime": 1791901647.9322565,
+    "seen": 1791901946.7487803,
+    "ast_hash": "5945b1f0b68a283a74b2528c69e59eee",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/modularity/AutopartcoModuleDetection.java": {
@@ -2303,10 +1919,436 @@
     "ast_hash": "7b64da141e263cc12c0b76a0d5bdbb9f",
     "semantic_hash": ""
   },
-  "backend/src/main/java/com/autopartco/backend/core/notification/web/NotificationController.java": {
-    "mtime": 1791898800.8527658,
-    "seen": 1791899300.9110904,
-    "ast_hash": "b7d025c632fc8e98d23ac87f49967754",
+  "backend/src/main/java/com/autopartco/backend/core/identity/AccountLookup.java": {
+    "mtime": 1791901643.8328955,
+    "seen": 1791901946.6969087,
+    "ast_hash": "13021d024cf1765f5dda519cc4e0e503",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/AccountProvisioning.java": {
+    "mtime": 1791901643.8909824,
+    "seen": 1791901946.6969132,
+    "ast_hash": "d2fa44ad4643c3a8f78fe22993ed2e2a",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/AccountRef.java": {
+    "mtime": 1791901643.9183547,
+    "seen": 1791901946.6969159,
+    "ast_hash": "05f8ace48a41cffe89572e51e1bb0069",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/LoginResponse.java": {
+    "mtime": 1791901643.9563065,
+    "seen": 1791901946.696919,
+    "ast_hash": "bd9184c7e0b33ebbcf09c7be9bf1d0f9",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/PreparedRegistration.java": {
+    "mtime": 1791901643.9837115,
+    "seen": 1791901946.6969216,
+    "ast_hash": "e6edf7ceb1a1a561ae981c6580a6cbd4",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/RegisterRequest.java": {
+    "mtime": 1791901644.003734,
+    "seen": 1791901946.6969237,
+    "ast_hash": "3c710766429b0cec3f7c7f4d2163be82",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/RegisterResponse.java": {
+    "mtime": 1791901644.0239034,
+    "seen": 1791901946.6969259,
+    "ast_hash": "fcd447aeb9f3fab5dff23105157b3a6a",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/SessionIssuer.java": {
+    "mtime": 1791901644.0464299,
+    "seen": 1791901946.696928,
+    "ast_hash": "58a9221d2e8d8ba380fc64602baedbca",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/Account.java": {
+    "mtime": 1791901644.06926,
+    "seen": 1791901946.69693,
+    "ast_hash": "02dfe7373e9f8c6811af7a5d54edb527",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/AccountMapper.java": {
+    "mtime": 1791901644.090464,
+    "seen": 1791901946.6969318,
+    "ast_hash": "8aee347d6d991aa64866a1866d4300b9",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/AccountRepository.java": {
+    "mtime": 1791901644.1076589,
+    "seen": 1791901946.696934,
+    "ast_hash": "769cbf2d89981870ab2b3972dccd22a6",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/AccountSession.java": {
+    "mtime": 1791901644.1254742,
+    "seen": 1791901946.6969357,
+    "ast_hash": "91f956039e5a8ab55f095403fe734608",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/AccountSessionRepository.java": {
+    "mtime": 1791901644.1485019,
+    "seen": 1791901946.6969376,
+    "ast_hash": "595634dec86422ca86fdbf1ff845fe5b",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/AccountSessionService.java": {
+    "mtime": 1791901644.1686819,
+    "seen": 1791901946.6969397,
+    "ast_hash": "ddea9bbcbda44ca2464fa30f8455ac1f",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/AccountStatusService.java": {
+    "mtime": 1791901644.1913128,
+    "seen": 1791901946.6969414,
+    "ast_hash": "964d821e2fd2499721ce60298006713f",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/AccountToken.java": {
+    "mtime": 1791901644.237678,
+    "seen": 1791901946.6969435,
+    "ast_hash": "391c93cd3a6ff34254ba9d279b0d3178",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/AccountTokenRepository.java": {
+    "mtime": 1791901644.2654252,
+    "seen": 1791901946.696946,
+    "ast_hash": "d01e671a897d6ed70c96175a4b05b0ac",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/AccountType.java": {
+    "mtime": 1791901644.2870128,
+    "seen": 1791901946.696948,
+    "ast_hash": "c110998b2c86e488a88c48ebcbe3689d",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/AccountTypeRepository.java": {
+    "mtime": 1791901644.3221383,
+    "seen": 1791901946.6969497,
+    "ast_hash": "22acf3e1766dc20c8bc4386f3b55b4aa",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/AccountUnlockService.java": {
+    "mtime": 1791901644.3511498,
+    "seen": 1791901946.6969519,
+    "ast_hash": "591ec7167915f298daf7164d2723dfb1",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/AuthResponseMapper.java": {
+    "mtime": 1791901644.3873508,
+    "seen": 1791901946.6969538,
+    "ast_hash": "f995a330f1881b9433bafa076ae9eee6",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/AuthTokenService.java": {
+    "mtime": 1791901644.4194355,
+    "seen": 1791901946.696956,
+    "ast_hash": "106df385afa2139bf3b37d13df13f24d",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/EmailVerificationService.java": {
+    "mtime": 1791901644.4543903,
+    "seen": 1791901946.696958,
+    "ast_hash": "792c3a0bb3732391e69bf985fe52d171",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/EmailVerificationTokenService.java": {
+    "mtime": 1791901644.497078,
+    "seen": 1791901946.6969597,
+    "ast_hash": "0e12569791e30a8ec258f5e5c4ae5089",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/LoginAttempt.java": {
+    "mtime": 1791901644.5411723,
+    "seen": 1791901946.6969616,
+    "ast_hash": "2a4ab0ef1c3a3cb33bca3d5fd00190d0",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/LoginAttemptMapper.java": {
+    "mtime": 1791901644.5801833,
+    "seen": 1791901946.6969635,
+    "ast_hash": "d7e0bbe7116be733a3d0c1e26128bf5d",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/LoginAttemptRepository.java": {
+    "mtime": 1791901644.6307921,
+    "seen": 1791901946.696966,
+    "ast_hash": "e954eb47833e3ecd75c5cc3ce1ed05b1",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/LoginAttemptService.java": {
+    "mtime": 1791901644.6667094,
+    "seen": 1791901946.696968,
+    "ast_hash": "bb8de8382af2fcb23171349231dafeac",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/LoginService.java": {
+    "mtime": 1791901644.715619,
+    "seen": 1791901946.69697,
+    "ast_hash": "6405bccc8190b06fcb8b1981dad7d775",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/PasswordRecoveryService.java": {
+    "mtime": 1791901644.7666206,
+    "seen": 1791901946.6969721,
+    "ast_hash": "d00e13ec6edf1a0fc2983261074f2dff",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/Person.java": {
+    "mtime": 1791901644.8190386,
+    "seen": 1791901946.6969738,
+    "ast_hash": "0476a18b75afe2fe7cf1aaa44fad0c17",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/PersonAddress.java": {
+    "mtime": 1791901644.8549404,
+    "seen": 1791901946.696976,
+    "ast_hash": "c276dd0a026ba8a0164b22cf40c829cb",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/PersonAddressRepository.java": {
+    "mtime": 1791901644.8892405,
+    "seen": 1791901946.696978,
+    "ast_hash": "67579e51debd265e38b022a99e9baa77",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/PersonAddressService.java": {
+    "mtime": 1791901644.9272168,
+    "seen": 1791901946.6969798,
+    "ast_hash": "e58b9a9c962aa59c95b216e1dd4a0389",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/PersonRepository.java": {
+    "mtime": 1791901645.0226214,
+    "seen": 1791901946.6969817,
+    "ast_hash": "f251c85b8a8ff002140a05d6b2c45f9d",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/ProfileService.java": {
+    "mtime": 1791901645.0768273,
+    "seen": 1791901946.696984,
+    "ast_hash": "fa2fb0e65c74e2260add844600341be5",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/RefreshTokenHash.java": {
+    "mtime": 1791901645.128777,
+    "seen": 1791901946.6969862,
+    "ast_hash": "d9a57397b3ffa2a74be07c27901cd38b",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/RegistrationService.java": {
+    "mtime": 1791901645.1870472,
+    "seen": 1791901946.696988,
+    "ast_hash": "4bdb32b9d545b71d48d4cec89af2d293",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/SessionMapper.java": {
+    "mtime": 1791901645.2156427,
+    "seen": 1791901946.6969907,
+    "ast_hash": "dbf8bda1901846d8143056a43396ede9",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/SessionRefreshService.java": {
+    "mtime": 1791901645.2578382,
+    "seen": 1791901946.6969924,
+    "ast_hash": "6b85b0bb39e5106541b211d2288f3513",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/TokenMapper.java": {
+    "mtime": 1791901645.3189573,
+    "seen": 1791901946.6969943,
+    "ast_hash": "e68e4831e296ac595ec0eb83a2bb0777",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/web/AccountSessionResponse.java": {
+    "mtime": 1791901645.3689473,
+    "seen": 1791901946.6973343,
+    "ast_hash": "187c1cfbea2ebbf34f6a7c2b86837f58",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/web/AddressLocationRequest.java": {
+    "mtime": 1791901645.4060552,
+    "seen": 1791901946.6973372,
+    "ast_hash": "66494df8b137d80350e529acae4a710c",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/web/AuthController.java": {
+    "mtime": 1791901645.499957,
+    "seen": 1791901946.697339,
+    "ast_hash": "88533549c8189b1bc3b32c64355f708c",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/web/LoginRequest.java": {
+    "mtime": 1791901645.5690808,
+    "seen": 1791901946.697341,
+    "ast_hash": "3a1520ad788acaefa65dcf2b823240ca",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/web/LogoutRequest.java": {
+    "mtime": 1791901645.6060128,
+    "seen": 1791901946.6973426,
+    "ast_hash": "f3bf7993233620004d9deb4e26a86cba",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/web/MeController.java": {
+    "mtime": 1791901645.650154,
+    "seen": 1791901946.6973445,
+    "ast_hash": "55a1672ed3374488f0a34b69944a5a5a",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/web/PasswordRecoveryRequest.java": {
+    "mtime": 1791901645.7037137,
+    "seen": 1791901946.6973488,
+    "ast_hash": "5a3bb8286a30b0c5ace2320e7b94ff53",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/web/PasswordRecoveryResponse.java": {
+    "mtime": 1791901645.7654295,
+    "seen": 1791901946.6973507,
+    "ast_hash": "581aa1fff04b327c490443d90f6d1e3c",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/web/PasswordResetRequest.java": {
+    "mtime": 1791901645.8053465,
+    "seen": 1791901946.6973522,
+    "ast_hash": "de971dbb7e3868abd2e42c7bd3c0c6cc",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/web/PersonAddressRequest.java": {
+    "mtime": 1791901645.8925004,
+    "seen": 1791901946.697354,
+    "ast_hash": "6f081b4a9f6f0887326f0ae7f950593f",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/web/PersonAddressResponse.java": {
+    "mtime": 1791901645.9981935,
+    "seen": 1791901946.697356,
+    "ast_hash": "27fcac73e99d6b3049bfd48f126c1f30",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/web/ProfileResponse.java": {
+    "mtime": 1791901646.1067078,
+    "seen": 1791901946.697358,
+    "ast_hash": "f59a7f734a4909f6e1aee8e5ba0d1db8",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/web/ProfileUpdateRequest.java": {
+    "mtime": 1791901646.31927,
+    "seen": 1791901946.6973596,
+    "ast_hash": "7678c25a8fd6ab10f66c1a5c45f2aa5e",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/web/RefreshTokenRequest.java": {
+    "mtime": 1791901646.3707535,
+    "seen": 1791901946.6973612,
+    "ast_hash": "9515f200a0cb2a880e4bb0adbd141b06",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/web/UnlockAccountRequest.java": {
+    "mtime": 1791901646.4562716,
+    "seen": 1791901946.697363,
+    "ast_hash": "bbb4175a1b6a45ed401ed7edb07a474f",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/web/UnlockAccountResponse.java": {
+    "mtime": 1791901646.5204206,
+    "seen": 1791901946.6973648,
+    "ast_hash": "4781907bdb23db39c541914c18c4fc58",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/web/VerifyEmailResponse.java": {
+    "mtime": 1791901646.5782824,
+    "seen": 1791901946.6973665,
+    "ast_hash": "cb8980aa68f4c8ba132dba5abbad9df9",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/seller/controller/SellerRegistrationController.java": {
+    "mtime": 1791901646.854409,
+    "seen": 1791901946.7153924,
+    "ast_hash": "163fd629fbd579e32f104b0b7ed0d1c2",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/seller/dto/SellerRegistrationRequest.java": {
+    "mtime": 1791901646.921849,
+    "seen": 1791901946.7237968,
+    "ast_hash": "f33c715d18211f0c266dbec5e5c4ed2d",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/seller/dto/SellerRegistrationResponse.java": {
+    "mtime": 1791901646.9741964,
+    "seen": 1791901946.7238014,
+    "ast_hash": "91b97823947af88444c51e29f5b89b6f",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/seller/service/SellerRegistrationService.java": {
+    "mtime": 1791901647.455102,
+    "seen": 1791901946.7300518,
+    "ast_hash": "a2205d940de3c922058c8330ffc64ad7",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/shared/persistence/StateRepository.java": {
+    "mtime": 1791901647.5199077,
+    "seen": 1791901946.7342532,
+    "ast_hash": "a8469b01b024446c761fb9246eefe102",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/identity/internal/AccountSessionServiceTest.java": {
+    "mtime": 1791901648.0038154,
+    "seen": 1791901946.748784,
+    "ast_hash": "7142e0c4a16d9ea4d8b1283f9a2c5523",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/identity/internal/LoginAttemptServiceTest.java": {
+    "mtime": 1791901648.0787654,
+    "seen": 1791901946.748787,
+    "ast_hash": "3f68407a1dd91c6275eec1f969d7e647",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/identity/internal/LoginServiceTest.java": {
+    "mtime": 1791901648.137534,
+    "seen": 1791901946.7487895,
+    "ast_hash": "72442988ebb8bc13079938972601cc96",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/identity/internal/PersonAddressServiceTest.java": {
+    "mtime": 1791901648.1849973,
+    "seen": 1791901946.7487922,
+    "ast_hash": "e57ee7242e3eaab8880c6497a26f1054",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/identity/internal/ProfileServiceTest.java": {
+    "mtime": 1791901648.234695,
+    "seen": 1791901946.7487957,
+    "ast_hash": "048c9e4d6f330b112c2e4e679a3052d9",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/identity/internal/RefreshTokenHashTest.java": {
+    "mtime": 1791901648.2860842,
+    "seen": 1791901946.748798,
+    "ast_hash": "9b91ac15e7bbd3934e930fa69262a4ae",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/identity/internal/SessionRefreshServiceTest.java": {
+    "mtime": 1791901648.3441417,
+    "seen": 1791901946.7488003,
+    "ast_hash": "d188f09e365ba1d55c6ebf4e0aab3ffe",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/seller/service/SellerRegistrationServiceTest.java": {
+    "mtime": 1791901648.4545975,
+    "seen": 1791901946.7512677,
+    "ast_hash": "0f00236f0f69d1b4efe16f4ac9eeb09a",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/web/MeNotificationController.java": {
+    "mtime": 1791901765.6794283,
+    "seen": 1791901946.6973464,
+    "ast_hash": "74a9bf30a6ed703e7b91570e265f87df",
     "semantic_hash": ""
   }
 }

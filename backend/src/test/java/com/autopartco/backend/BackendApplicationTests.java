@@ -8,7 +8,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import jakarta.validation.Validator;
 
-import com.autopartco.backend.auth.dto.LoginRequest;
+import com.autopartco.backend.core.identity.web.LoginRequest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
