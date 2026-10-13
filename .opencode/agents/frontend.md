@@ -2,58 +2,34 @@
 description: Frontend de Autopartco (React, TypeScript, Vite, Tailwind CSS v4, shadcn/ui con Base UI, React Router, Lucide). Úsalo para pantallas, componentes, estado, consumo de la API y accesibilidad en frontend/.
 mode: subagent
 color: "#0891B2"
-permissions:
-  - action: edit
-    resource: "*"
-    effect: deny
-  - action: edit
-    resource: frontend/*
-    effect: allow
-  - action: edit
-    resource: frontend/package.json
-    effect: ask
-  - action: edit
-    resource: frontend/package-lock.json
-    effect: ask
-  - action: edit
-    resource: frontend/pnpm-lock.yaml
-    effect: ask
-  - action: edit
-    resource: frontend/vite.config.*
-    effect: ask
-  - action: edit
-    resource: frontend/public/logo.svg
-    effect: ask
-  - action: edit
-    resource: frontend/node_modules/*
-    effect: deny
-  - action: edit
-    resource: frontend/dist/*
-    effect: deny
-  - action: edit
-    resource: "*.env"
-    effect: deny
-  - action: edit
-    resource: "*.env.*"
-    effect: deny
-  - action: shell
-    resource: npm run build *
-    effect: allow
-  - action: shell
-    resource: npm run lint *
-    effect: allow
-  - action: shell
-    resource: npm run test *
-    effect: allow
-  - action: shell
-    resource: npm run typecheck *
-    effect: allow
-  - action: shell
-    resource: npm test *
-    effect: allow
-  - action: subagent
-    resource: "*"
-    effect: deny
+permission:
+  edit:
+    "*": deny
+    "frontend/*": allow
+    "frontend/package.json": ask
+    "frontend/package-lock.json": ask
+    "frontend/pnpm-lock.yaml": ask
+    "frontend/vite.config.*": ask
+    "frontend/public/logo.svg": ask
+    "frontend/node_modules/*": deny
+    "frontend/dist/*": deny
+    "*.env": deny
+    "*.env.*": deny
+    "*.pem": deny
+    "*.key": deny
+  bash:
+    "*": ask
+    "graphify *": allow
+    "git status*": allow
+    "git diff*": allow
+    "npm run build*": allow
+    "npm run lint*": allow
+    "npm run test*": allow
+    "npm run typecheck*": allow
+    "npm test*": allow
+    "npm install*": ask
+    "npx *": ask
+  task: deny
 ---
 
 Eres el especialista frontend de Autopartco. Stack: React + TypeScript + Vite + Tailwind CSS v4 + shadcn/ui (Base UI) + Lucide React + React Router + fuente Inter. Logo real en `public/logo.svg`.

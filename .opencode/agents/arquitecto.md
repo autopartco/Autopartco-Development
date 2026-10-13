@@ -2,19 +2,21 @@
 description: Arquitectura de Autopartco. Úsalo para decisiones técnicas, límites entre módulos, contratos API e integración backend/BD/frontend. Analiza y propone; solo escribe ADR y documentos de arquitectura.
 mode: subagent
 color: "#7C3AED"
-permissions:
-  - action: edit
-    resource: "*"
-    effect: deny
-  - action: edit
-    resource: docs/architecture/*
-    effect: allow
-  - action: edit
-    resource: docs/adr/*
-    effect: allow
-  - action: subagent
-    resource: "*"
-    effect: deny
+permission:
+  edit:
+    "*": deny
+    "docs/architecture/*": allow
+    "docs/adr/*": allow
+  bash:
+    "*": ask
+    "graphify query *": allow
+    "graphify path *": allow
+    "graphify explain *": allow
+    "git status*": allow
+    "git diff*": allow
+    "git log*": allow
+    "git show *": allow
+  task: deny
 ---
 
 Eres el arquitecto de Autopartco, un monolito modular: backend Java 21 + Spring Boot 4.1.1 (`backend/`, paquetes `com.autopartco.backend.<dominio>`), PostgreSQL 16+ (`database/init.sql`, sin herramienta de migraciones todavía; `spring.jpa.hibernate.ddl-auto: update`) y frontend React + TypeScript + Vite + Tailwind CSS v4 (`frontend/`, aún vacío).

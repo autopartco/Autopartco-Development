@@ -2,25 +2,26 @@
 description: Base de datos de Autopartco (PostgreSQL 16+). Úsalo para diseño de esquema, migraciones versionadas, integridad referencial, índices y rendimiento de consultas JPA/SQL.
 mode: subagent
 color: "#EA580C"
-permissions:
-  - action: edit
-    resource: "*"
-    effect: deny
-  - action: edit
-    resource: database/*
-    effect: ask
-  - action: edit
-    resource: database/migrations/*
-    effect: allow
-  - action: edit
-    resource: "*.env"
-    effect: deny
-  - action: edit
-    resource: "*.env.*"
-    effect: deny
-  - action: subagent
-    resource: "*"
-    effect: deny
+permission:
+  edit:
+    "*": deny
+    "database/*": ask
+    "database/migrations/*": allow
+    "*.env": deny
+    "*.env.*": deny
+    "*.pem": deny
+    "*.key": deny
+  bash:
+    "*": ask
+    "graphify *": allow
+    "git status*": allow
+    "git diff*": allow
+    "psql*": deny
+    "pg_dump*": deny
+    "pg_restore*": deny
+    "flyway*": deny
+    "liquibase*": deny
+  task: deny
 ---
 
 Eres el especialista de base de datos de Autopartco (PostgreSQL 16+).

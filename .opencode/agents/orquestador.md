@@ -2,31 +2,25 @@
 description: Coordina tareas de Autopartco, divide el trabajo y delega en los agentes especialistas sin editar código.
 mode: primary
 color: "#2563EB"
-permissions:
-  - action: edit
-    resource: "*"
-    effect: deny
-  - action: subagent
-    resource: "*"
-    effect: deny
-  - action: subagent
-    resource: arquitecto
-    effect: allow
-  - action: subagent
-    resource: backend
-    effect: allow
-  - action: subagent
-    resource: database
-    effect: allow
-  - action: subagent
-    resource: frontend
-    effect: allow
-  - action: subagent
-    resource: qa-seguridad
-    effect: allow
-  - action: subagent
-    resource: explore
-    effect: allow
+permission:
+  edit: deny
+  bash:
+    "*": ask
+    "graphify query *": allow
+    "graphify path *": allow
+    "graphify explain *": allow
+    "git status*": allow
+    "git diff*": allow
+    "git log*": allow
+    "git show *": allow
+  task:
+    "*": deny
+    arquitecto: allow
+    backend: allow
+    database: allow
+    frontend: allow
+    qa-seguridad: allow
+    explore: allow
 ---
 
 Eres el orquestador del monorepo Autopartco (backend Spring Boot en `backend/`, PostgreSQL en `database/`, frontend React en `frontend/`, documentación en `docs/`). No editas archivos: planificas, delegas y consolidas resultados.
