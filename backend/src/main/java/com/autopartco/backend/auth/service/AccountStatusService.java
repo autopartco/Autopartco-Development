@@ -9,6 +9,7 @@ import com.autopartco.backend.auth.repository.AccountRepository;
 import com.autopartco.backend.auth.repository.StateRepository;
 import com.autopartco.backend.shared.persistence.State;
 import com.autopartco.backend.shared.error.NotFoundException;
+import com.autopartco.backend.core.audit.AuditService;
 
 import lombok.AllArgsConstructor;
 
@@ -26,7 +27,7 @@ public class AccountStatusService {
     public Account lock(Account account, String ipAddress, int failedAttempts) {
         account.setState(findState(LOCKED));
         Account savedAccount = accountRepository.save(account);
-        auditService.recordAccountLocked(savedAccount, ipAddress, failedAttempts);
+        auditService.recordAccountLocked(savedAccount.getId(), savedAccount.getEmail(), ipAddress, failedAttempts, savedAccount.getState().getCode());
         return savedAccount;
     }
 
@@ -34,7 +35,7 @@ public class AccountStatusService {
     public Account activate(Account account) {
         account.setState(findState(ACTIVE));
         Account savedAccount = accountRepository.save(account);
-        auditService.recordAccountUnlocked(savedAccount);
+        auditService.recordAccountUnlocked(savedAccount.getId(), savedAccount.getEmail(), savedAccount.getState().getCode());
         return savedAccount;
     }
 

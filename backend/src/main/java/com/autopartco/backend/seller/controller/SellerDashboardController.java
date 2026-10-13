@@ -19,7 +19,6 @@ import com.autopartco.backend.seller.dto.SellerCollaboratorAcceptRequest;
 import com.autopartco.backend.seller.dto.SellerCollaboratorInviteRequest;
 import com.autopartco.backend.seller.dto.SellerCollaboratorInvitationResponse;
 import com.autopartco.backend.seller.dto.SellerCollaboratorResponse;
-import com.autopartco.backend.seller.dto.SellerNotificationResponse;
 import com.autopartco.backend.seller.dto.SellerOrderResponse;
 import com.autopartco.backend.seller.dto.SellerOrderStatusRequest;
 import com.autopartco.backend.seller.dto.SellerOrderSummaryResponse;
@@ -95,19 +94,6 @@ public class SellerDashboardController {
             Authentication authentication
     ) {
         return dashboardService.updateShipmentStatus(storeId, saleId, authentication.getName(), request);
-    }
-
-    @GetMapping("/notifications/me")
-    public List<SellerNotificationResponse> notifications(Authentication authentication) {
-        return dashboardService.notifications(authentication.getName());
-    }
-
-    @PatchMapping("/notifications/{notificationId}/read")
-    public void markNotificationRead(
-            @PathVariable UUID notificationId,
-            Authentication authentication
-    ) {
-        dashboardService.markNotificationRead(notificationId, authentication.getName());
     }
 
     @GetMapping("/{storeId}/collaborators")

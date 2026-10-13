@@ -9,6 +9,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import com.autopartco.backend.auth.dto.UnlockAccountRequest;
 import com.autopartco.backend.auth.dto.UnlockAccountResponse;
 import com.autopartco.backend.auth.entity.Account;
+import com.autopartco.backend.core.notification.EmailService;
 import com.autopartco.backend.auth.entity.AccountToken;
 import com.autopartco.backend.auth.repository.AccountRepository;
 import com.autopartco.backend.shared.web.ApiPaths;

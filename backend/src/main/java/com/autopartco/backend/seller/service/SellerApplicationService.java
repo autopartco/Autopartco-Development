@@ -22,7 +22,7 @@ import com.autopartco.backend.auth.repository.StateRepository;
 import com.autopartco.backend.auth.repository.TypeAccountRepository;
 import com.autopartco.backend.auth.service.AccountSessionService;
 import com.autopartco.backend.auth.service.AuthTokenService;
-import com.autopartco.backend.auth.service.EmailService;
+import com.autopartco.backend.core.notification.EmailService;
 import com.autopartco.backend.shared.config.AppProperties;
 import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.ConflictException;

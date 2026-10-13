@@ -12,6 +12,7 @@ import com.autopartco.backend.auth.dto.PasswordResetRequest;
 import com.autopartco.backend.auth.entity.Account;
 import com.autopartco.backend.auth.entity.AccountToken;
 import com.autopartco.backend.auth.repository.AccountRepository;
+import com.autopartco.backend.core.notification.EmailService;
 
 import lombok.AllArgsConstructor;
 

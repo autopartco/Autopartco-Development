@@ -24,7 +24,7 @@ import com.autopartco.backend.auth.repository.AccountRepository;
 import com.autopartco.backend.auth.repository.PersonRepository;
 import com.autopartco.backend.auth.repository.StateRepository;
 import com.autopartco.backend.auth.repository.TypeAccountRepository;
-import com.autopartco.backend.auth.service.EmailService;
+import com.autopartco.backend.core.notification.EmailService;
 import com.autopartco.backend.shared.persistence.State;
 import com.autopartco.backend.shared.config.AppProperties;
 import com.autopartco.backend.shared.error.BadRequestException;

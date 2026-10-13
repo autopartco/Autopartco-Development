@@ -1,10 +1,9 @@
-package com.autopartco.backend.seller.dto;
+package com.autopartco.backend.core.notification;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-public record SellerNotificationResponse(
-        UUID id,
+public record NotificationResponse(        UUID id,
         String title,
         String message,
         boolean read,

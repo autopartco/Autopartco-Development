@@ -1,4 +1,4 @@
-package com.autopartco.backend.auth.service;
+package com.autopartco.backend.core.notification;
 
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;

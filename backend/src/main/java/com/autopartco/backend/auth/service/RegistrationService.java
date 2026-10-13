@@ -15,6 +15,8 @@ import com.autopartco.backend.auth.entity.Person;
 import com.autopartco.backend.auth.mapper.AccountMapper;
 import com.autopartco.backend.auth.mapper.AuthResponseMapper;
 import com.autopartco.backend.auth.repository.AccountRepository;
+import com.autopartco.backend.core.audit.AuditService;
+import com.autopartco.backend.core.notification.EmailService;
 import com.autopartco.backend.auth.repository.PersonRepository;
 import com.autopartco.backend.auth.repository.StateRepository;
 import com.autopartco.backend.auth.repository.TypeAccountRepository;
@@ -91,7 +93,7 @@ public class RegistrationService {
         Account savedAccount = accountRepository.save(account);
         EmailVerificationTokenService.CreatedEmailVerificationToken token = tokenService.create(savedAccount);
 
-        auditService.recordRegistrationRequested(savedAccount);
+        auditService.recordRegistrationRequested(savedAccount.getId(), savedAccount.getEmail(), savedAccount.getAccountType().getCode(), savedAccount.getState().getCode());
         return new PreparedRegistration(
                 authResponseMapper.toRegisterResponse(savedAccount, token.expiresAt()),
                 person.getName() + " " + person.getSurname(),

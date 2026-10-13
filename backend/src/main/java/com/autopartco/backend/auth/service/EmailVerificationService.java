@@ -7,6 +7,7 @@ import com.autopartco.backend.auth.dto.VerifyEmailResponse;
 import com.autopartco.backend.auth.entity.Account;
 import com.autopartco.backend.auth.repository.AccountRepository;
 import com.autopartco.backend.auth.repository.StateRepository;
+import com.autopartco.backend.core.audit.AuditService;
 import com.autopartco.backend.auth.mapper.AuthResponseMapper;
 import com.autopartco.backend.shared.persistence.State;
 import com.autopartco.backend.shared.error.NotFoundException;
@@ -37,7 +38,7 @@ public class EmailVerificationService {
 
         accountRepository.save(account);
         tokenService.save(accountToken);
-        auditService.recordEmailVerified(account, activeState);
+        auditService.recordEmailVerified(account.getId(), account.getEmail(), activeState.getCode());
 
         return authResponseMapper.toVerifyEmailResponse(account, activeState);
     }

@@ -6,11 +6,11 @@ import java.beans.Introspector;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.modulith.core.ApplicationModules;
-import org.springframework.modulith.core.Violations;
 import org.springframework.stereotype.Component;
 
 import com.tngtech.archunit.core.domain.JavaAnnotation;
@@ -28,6 +28,8 @@ import jakarta.persistence.Entity;
  * {@code verify()} completo en la fase 8.</p>
  */
 class ModularityTests {
+    private static final Pattern MIGRATED = Pattern.compile("Module '(core\\.audit|core\\.notification)'");
+    private static final Pattern LEGACY = Pattern.compile("com\\.autopartco\\.backend\\.(auth|seller|store|product)\\.");
 
     private static final String BASE_PACKAGE = "com.autopartco.backend";
     private static final String SPRING_DATA_REPOSITORY = "org.springframework.data.repository.Repository";
@@ -38,9 +40,17 @@ class ModularityTests {
     void printsModules() {
         System.out.println(modules);
 
-        Violations violations = modules.detectViolations();
         System.out.println("Violaciones detectadas (informativo hasta la fase 8): "
-                + violations.getMessages().size());
+                + modules.detectViolations().getMessages().size());
+    }
+
+    @Test
+    void migratedModulesHaveNoViolations() {
+        // Durante la migración (§7) se permiten dependencias hacia los paquetes legados.
+        modules.detectViolations()
+                .filter(violation -> MIGRATED.matcher(violation.getMessage()).find()
+                        && !LEGACY.matcher(violation.getMessage()).find())
+                .throwIfPresent();
     }
 
     @Test

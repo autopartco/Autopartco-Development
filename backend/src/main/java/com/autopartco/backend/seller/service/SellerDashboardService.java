@@ -16,7 +16,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.seller.dto.SellerDashboardResponse;
-import com.autopartco.backend.seller.dto.SellerNotificationResponse;
 import com.autopartco.backend.seller.dto.SellerOrderResponse;
 import com.autopartco.backend.seller.dto.SellerOrderStatusRequest;
 import com.autopartco.backend.seller.dto.SellerOrderSummaryResponse;
@@ -290,40 +289,6 @@ public class SellerDashboardService {
         }
         notifyCustomer(saleId, "Estado del envío actualizado", "Tu envío cambió al estado " + nextStatus + ".");
         return loadOrder(storeId, saleId);
-    }
-
-    @Transactional(readOnly = true)
-    public List<SellerNotificationResponse> notifications(String email) {
-        return jdbcTemplate.query("""
-                SELECT notification.id, notification.title, notification.message,
-                       notification.read_at, notification.created_at
-                FROM notifications notification
-                JOIN accounts account ON account.id = notification.account_id
-                WHERE lower(account.email) = lower(?)
-                ORDER BY notification.created_at DESC
-                LIMIT 50
-                """, (result, row) -> new SellerNotificationResponse(
-                result.getObject("id", UUID.class),
-                result.getString("title"),
-                result.getString("message"),
-                result.getTimestamp("read_at") != null,
-                localDateTime(result, "created_at")
-        ), email);
-    }
-
-    @Transactional
-    public void markNotificationRead(UUID notificationId, String email) {
-        int updated = jdbcTemplate.update("""
-                UPDATE notifications notification
-                SET read_at = COALESCE(read_at, now())
-                FROM accounts account
-                WHERE notification.id = ?
-                  AND notification.account_id = account.id
-                  AND lower(account.email) = lower(?)
-                """, notificationId, email);
-        if (updated == 0) {
-            throw new NotFoundException("NOTIFICATION_NOT_FOUND", "No se encontró la notificación.");
-        }
     }
 
     private SellerOrderResponse loadOrder(UUID storeId, UUID saleId) {
