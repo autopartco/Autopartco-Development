@@ -58,7 +58,7 @@ node .claude/skills/opencode-delegate/scripts/delegate.mjs --kind <kind> [--agen
 - **Tareas independientes en paralelo**: varios documentos distintos, research + docs, o capas sin dependencia. Lánzalas todas a la vez (cada una en su llamada de fondo). Dos agentes con edición nunca sobre los mismos archivos; entre capas dependientes, en secuencia `database` → `backend` → `frontend`.
 - **Nunca detengas una tarea ya iniciada**, aunque tarde: no uses `TaskStop`, no mates el proceso, no la relances en paralelo.
 - `--diff [rutas]` (para PR, commit, changelog) adjunta el diff sin commit y los archivos nuevos ya calculados. No le pidas al agente que ejecute `git diff`: le rechazan las rutas protegidas y pierde pasos.
-- `--verify` ejecuta la verificación al terminar y devuelve solo ok/fallo y las líneas de error, sin que tengas que lanzar otro comando. Pruebas backend siempre con `-Dtest=<Clase>` explícito (nunca `BackendApplicationTests`).
+- `--verify` (sintaxis POSIX; en Windows corre en Git Bash, o en `VERIFY_SHELL`) ejecuta la verificación al terminar y devuelve solo ok/fallo y las líneas de error, sin que tengas que lanzar otro comando. Pruebas backend siempre con `-Dtest=<Clase>` explícito (nunca `BackendApplicationTests`).
 - Permisos `ask` se rechazan solos en modo no interactivo; aparecen en `permissionRejected`. No uses `--auto` sin autorización explícita del usuario para esa tarea.
 - Si el modelo principal falla sin editar nada, el script reintenta solo con el suplente (`attempts`).
 

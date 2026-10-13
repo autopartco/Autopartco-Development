@@ -12,7 +12,7 @@
 // - Si el modelo falla sin haber cambiado archivos, reintenta solo con el siguiente suplente.
 // - --files adjunta archivos de contexto (evita que el agente gaste pasos buscándolos).
 // - --out guarda la respuesta final en un archivo (texto/research): Claude no necesita leerla entera.
-// - --verify ejecuta un comando al terminar y devuelve solo ok/fallo y las últimas líneas.
+// - --verify ejecuta un comando POSIX (Git Bash en Windows) al terminar y devuelve solo ok/fallo y las últimas líneas.
 // El flujo JSON completo queda en logFile; no lo leas salvo para depurar.
 import { execSync } from "node:child_process";
 import fs from "node:fs";
@@ -126,7 +126,7 @@ if (out && (touched.has(outRel) || (!outRel.startsWith("..") && git(dir, "ls-fil
 if (verify && typeof verify === "string") {
   const t = Date.now();
   try {
-    const o = execSync(verify, { cwd: dir, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], maxBuffer: 64 << 20, timeout: 20 * 60_000 });
+    const o = execSync(verify, { cwd: dir, shell: verifyShell(), encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], maxBuffer: 64 << 20, timeout: 20 * 60_000 });
     summary.verify = { ok: true, secs: Math.round((Date.now() - t) / 1000), tail: o.trim().split("\n").slice(-5).join("\n") };
   } catch (e) {
     const o = `${e.stdout || ""}\n${e.stderr || ""}`.trim().split("\n");
@@ -134,6 +134,19 @@ if (verify && typeof verify === "string") {
   }
 }
 summary.logFile = r.logFile;
+
+// --verify usa sintaxis POSIX (cd x && ./mvnw ...). En Windows execSync usaría cmd.exe, así que se busca
+// Git Bash (no el bash.exe de System32, que es WSL). VERIFY_SHELL permite forzar otra shell.
+function verifyShell() {
+  if (process.env.VERIFY_SHELL) return process.env.VERIFY_SHELL;
+  if (process.platform !== "win32") return "/bin/sh";
+  const candidates = [
+    path.join(process.env.ProgramFiles || "C:\Program Files", "Git", "bin", "bash.exe"),
+    path.join(process.env.LOCALAPPDATA || "", "Programs", "Git", "bin", "bash.exe"),
+  ];
+  return candidates.find((c) => fs.existsSync(c)) || "bash";
+}
+
 
 // Quita campos vacíos para no gastar tokens en ruido.
 for (const [k, v] of Object.entries(summary)) {
