@@ -4,7 +4,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
-import com.autopartco.backend.config.AppProperties;
+import com.autopartco.backend.shared.config.AppProperties;
 import java.time.LocalDateTime;
 
 import lombok.AllArgsConstructor;

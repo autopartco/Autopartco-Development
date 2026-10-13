@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.autopartco.backend.config.ApiConfig;
+import com.autopartco.backend.shared.web.ApiPaths;
 import com.autopartco.backend.seller.dto.SellerPlanRequest;
 import com.autopartco.backend.seller.dto.SellerPlanResponse;
 import com.autopartco.backend.seller.service.SellerPlanService;
@@ -24,7 +24,7 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 
 @RestController
-@RequestMapping(ApiConfig.API_BASE_PATH + "/seller-plans")
+@RequestMapping(ApiPaths.BASE + "/seller-plans")
 @AllArgsConstructor
 public class SellerPlanController {
     private final SellerPlanService planService;

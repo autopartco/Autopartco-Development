@@ -14,8 +14,8 @@ import javax.imageio.stream.ImageInputStream;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.autopartco.backend.exception.BadRequestException;
-import com.autopartco.backend.exception.PayloadTooLargeException;
+import com.autopartco.backend.shared.error.BadRequestException;
+import com.autopartco.backend.shared.error.PayloadTooLargeException;
 
 @Component
 public class ProductImageValidator {

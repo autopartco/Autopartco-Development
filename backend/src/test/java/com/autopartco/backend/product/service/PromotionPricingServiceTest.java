@@ -10,7 +10,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
-import com.autopartco.backend.common.State;
+import com.autopartco.backend.shared.persistence.State;
 import com.autopartco.backend.product.entity.Category;
 import com.autopartco.backend.product.entity.Inventory;
 import com.autopartco.backend.product.entity.Manufacturer;

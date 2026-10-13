@@ -23,10 +23,10 @@ import com.autopartco.backend.auth.repository.TypeAccountRepository;
 import com.autopartco.backend.auth.service.AccountSessionService;
 import com.autopartco.backend.auth.service.AuthTokenService;
 import com.autopartco.backend.auth.service.EmailService;
-import com.autopartco.backend.config.AppProperties;
-import com.autopartco.backend.exception.BadRequestException;
-import com.autopartco.backend.exception.ConflictException;
-import com.autopartco.backend.exception.NotFoundException;
+import com.autopartco.backend.shared.config.AppProperties;
+import com.autopartco.backend.shared.error.BadRequestException;
+import com.autopartco.backend.shared.error.ConflictException;
+import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.seller.dto.SellerApplicationResponse;
 import com.autopartco.backend.seller.dto.SellerApplicationReviewRequest;
 import com.autopartco.backend.seller.dto.SellerPlanResponse;
@@ -39,7 +39,7 @@ import com.autopartco.backend.seller.repository.SellerApplicationDocumentReposit
 import com.autopartco.backend.seller.repository.SellerApplicationRepository;
 import com.autopartco.backend.seller.service.SellerFileService.StoredFile;
 import com.autopartco.backend.store.entity.Store;
-import com.autopartco.backend.common.State;
+import com.autopartco.backend.shared.persistence.State;
 
 import lombok.AllArgsConstructor;
 

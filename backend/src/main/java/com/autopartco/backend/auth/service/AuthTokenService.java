@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 
 import com.autopartco.backend.auth.dto.LoginResponse;
 import com.autopartco.backend.auth.entity.Account;
-import com.autopartco.backend.config.AppProperties;
+import com.autopartco.backend.shared.config.AppProperties;
 
 import lombok.AllArgsConstructor;
 

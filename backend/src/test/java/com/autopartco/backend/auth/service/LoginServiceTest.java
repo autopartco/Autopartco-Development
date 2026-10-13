@@ -19,9 +19,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.autopartco.backend.auth.dto.LoginRequest;
 import com.autopartco.backend.auth.entity.Account;
-import com.autopartco.backend.common.State;
+import com.autopartco.backend.shared.persistence.State;
 import com.autopartco.backend.auth.repository.AccountRepository;
-import com.autopartco.backend.exception.UnauthorizedException;
+import com.autopartco.backend.shared.error.UnauthorizedException;
 
 @ExtendWith(MockitoExtension.class)
 class LoginServiceTest {

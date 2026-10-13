@@ -26,8 +26,8 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import com.autopartco.backend.exception.BadRequestException;
-import com.autopartco.backend.exception.StorageException;
+import com.autopartco.backend.shared.error.BadRequestException;
+import com.autopartco.backend.shared.storage.StorageException;
 import com.autopartco.backend.product.dto.ProductImageResponse;
 import com.autopartco.backend.product.entity.Product;
 import com.autopartco.backend.product.entity.ProductImage;
@@ -36,7 +36,7 @@ import com.autopartco.backend.product.repository.InventoryRepository;
 import com.autopartco.backend.product.repository.ProductImageRepository;
 import com.autopartco.backend.product.repository.ProductRepository;
 import com.autopartco.backend.store.service.StorePermissionCodes;
-import com.autopartco.backend.storage.SupabaseStorageService;
+import com.autopartco.backend.shared.storage.SupabaseStorageService;
 
 @ExtendWith(MockitoExtension.class)
 class ProductImageServiceTest {

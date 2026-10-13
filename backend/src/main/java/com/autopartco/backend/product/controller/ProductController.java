@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.autopartco.backend.config.ApiConfig;
+import com.autopartco.backend.shared.web.ApiPaths;
 import com.autopartco.backend.product.dto.ProductCreateRequest;
 import com.autopartco.backend.product.dto.ProductPublicationRequest;
 import com.autopartco.backend.product.dto.ProductResponse;
@@ -33,7 +33,7 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 
 @RestController
-@RequestMapping(ApiConfig.API_BASE_PATH)
+@RequestMapping(ApiPaths.BASE)
 @AllArgsConstructor
 public class ProductController {
     private final ProductService productService;

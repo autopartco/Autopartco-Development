@@ -3,8 +3,8 @@ package com.autopartco.backend.store.entity;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
-import com.autopartco.backend.common.BaseEntity;
-import com.autopartco.backend.common.State;
+import com.autopartco.backend.shared.persistence.BaseEntity;
+import com.autopartco.backend.shared.persistence.State;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

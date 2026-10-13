@@ -10,8 +10,8 @@ import java.util.Base64;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockMultipartFile;
 
-import com.autopartco.backend.exception.BadRequestException;
-import com.autopartco.backend.exception.PayloadTooLargeException;
+import com.autopartco.backend.shared.error.BadRequestException;
+import com.autopartco.backend.shared.error.PayloadTooLargeException;
 
 class ProductImageValidatorTest {
     private static final String ONE_PIXEL_PNG =

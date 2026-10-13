@@ -7,7 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.autopartco.backend.auth.dto.LoginResponse;
 import com.autopartco.backend.auth.entity.AccountSession;
 import com.autopartco.backend.auth.repository.AccountSessionRepository;
-import com.autopartco.backend.exception.UnauthorizedException;
+import com.autopartco.backend.shared.error.UnauthorizedException;
 
 import lombok.AllArgsConstructor;
 

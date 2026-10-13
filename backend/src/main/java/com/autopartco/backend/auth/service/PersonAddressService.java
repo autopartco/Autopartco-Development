@@ -15,7 +15,7 @@ import com.autopartco.backend.auth.entity.Account;
 import com.autopartco.backend.auth.entity.PersonAddress;
 import com.autopartco.backend.auth.repository.AccountRepository;
 import com.autopartco.backend.auth.repository.PersonAddressRepository;
-import com.autopartco.backend.exception.NotFoundException;
+import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.store.entity.Location;
 import com.autopartco.backend.store.repository.LocationRepository;
 

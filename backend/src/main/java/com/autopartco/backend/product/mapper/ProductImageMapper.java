@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component;
 
 import com.autopartco.backend.product.dto.ProductImageResponse;
 import com.autopartco.backend.product.entity.ProductImage;
-import com.autopartco.backend.storage.SupabaseStorageService;
+import com.autopartco.backend.shared.storage.SupabaseStorageService;
 
 import lombok.AllArgsConstructor;
 

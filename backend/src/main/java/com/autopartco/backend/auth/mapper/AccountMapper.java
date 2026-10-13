@@ -8,7 +8,7 @@ import com.autopartco.backend.auth.dto.RegisterRequest;
 import com.autopartco.backend.auth.entity.Account;
 import com.autopartco.backend.auth.entity.AccountType;
 import com.autopartco.backend.auth.entity.Person;
-import com.autopartco.backend.common.State;
+import com.autopartco.backend.shared.persistence.State;
 
 @Component
 public class AccountMapper {

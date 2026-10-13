@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import com.autopartco.backend.auth.entity.Account;
 import com.autopartco.backend.auth.repository.AuditLogsRepository;
 import com.autopartco.backend.auth.mapper.AuditLogMapper;
-import com.autopartco.backend.common.State;
+import com.autopartco.backend.shared.persistence.State;
 
 import lombok.AllArgsConstructor;
 

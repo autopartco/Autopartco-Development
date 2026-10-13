@@ -11,9 +11,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.autopartco.backend.auth.repository.AccountRepository;
 import com.autopartco.backend.auth.repository.StateRepository;
-import com.autopartco.backend.common.State;
-import com.autopartco.backend.exception.ConflictException;
-import com.autopartco.backend.exception.NotFoundException;
+import com.autopartco.backend.shared.persistence.State;
+import com.autopartco.backend.shared.error.ConflictException;
+import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.store.dto.StoreRegistrationRequest;
 import com.autopartco.backend.store.dto.StoreUpdateRequest;
 import com.autopartco.backend.store.dto.StoreResponse;

@@ -11,9 +11,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.autopartco.backend.auth.repository.StateRepository;
-import com.autopartco.backend.common.State;
-import com.autopartco.backend.exception.BadRequestException;
-import com.autopartco.backend.exception.NotFoundException;
+import com.autopartco.backend.shared.persistence.State;
+import com.autopartco.backend.shared.error.BadRequestException;
+import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.product.dto.ProductCreateRequest;
 import com.autopartco.backend.product.dto.ProductPublicationRequest;
 import com.autopartco.backend.product.dto.ProductOptionsResponse;

@@ -14,8 +14,8 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.autopartco.backend.exception.BadRequestException;
-import com.autopartco.backend.exception.NotFoundException;
+import com.autopartco.backend.shared.error.BadRequestException;
+import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.product.dto.ProductImageResponse;
 import com.autopartco.backend.product.entity.Product;
 import com.autopartco.backend.product.entity.ProductImage;
@@ -23,8 +23,8 @@ import com.autopartco.backend.product.mapper.ProductImageMapper;
 import com.autopartco.backend.product.repository.InventoryRepository;
 import com.autopartco.backend.product.repository.ProductImageRepository;
 import com.autopartco.backend.product.repository.ProductRepository;
-import com.autopartco.backend.storage.SupabaseStorageService;
-import com.autopartco.backend.storage.SupabaseStorageService.StoredObject;
+import com.autopartco.backend.shared.storage.SupabaseStorageService;
+import com.autopartco.backend.shared.storage.SupabaseStorageService.StoredObject;
 import com.autopartco.backend.store.service.StorePermissionCodes;
 
 import lombok.AllArgsConstructor;

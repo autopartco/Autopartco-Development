@@ -8,9 +8,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.autopartco.backend.auth.repository.StateRepository;
-import com.autopartco.backend.common.State;
-import com.autopartco.backend.exception.ConflictException;
-import com.autopartco.backend.exception.NotFoundException;
+import com.autopartco.backend.shared.persistence.State;
+import com.autopartco.backend.shared.error.ConflictException;
+import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.store.dto.BranchCreateRequest;
 import com.autopartco.backend.store.dto.BranchLocationRequest;
 import com.autopartco.backend.store.dto.BranchLocationResponse;

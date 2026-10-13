@@ -5,7 +5,7 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.autopartco.backend.common.State;
+import com.autopartco.backend.shared.persistence.State;
 
 public interface StateRepository extends JpaRepository<State, UUID> {
     Optional<State> findByCode(String code);

@@ -8,8 +8,8 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.autopartco.backend.exception.BadRequestException;
-import com.autopartco.backend.exception.NotFoundException;
+import com.autopartco.backend.shared.error.BadRequestException;
+import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.product.dto.PromotionResponse;
 import com.autopartco.backend.product.dto.PromotionUpsertRequest;
 import com.autopartco.backend.product.entity.Promotion;

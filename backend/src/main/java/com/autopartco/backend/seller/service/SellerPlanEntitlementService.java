@@ -8,8 +8,8 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.autopartco.backend.exception.ConflictException;
-import com.autopartco.backend.exception.NotFoundException;
+import com.autopartco.backend.shared.error.ConflictException;
+import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.product.repository.ProductRepository;
 import com.autopartco.backend.seller.entity.SellerApplication;
 import com.autopartco.backend.seller.entity.SellerApplicationStatus;

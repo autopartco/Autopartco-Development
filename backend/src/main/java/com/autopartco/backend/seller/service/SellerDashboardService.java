@@ -13,8 +13,8 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.autopartco.backend.exception.ConflictException;
-import com.autopartco.backend.exception.NotFoundException;
+import com.autopartco.backend.shared.error.ConflictException;
+import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.seller.dto.SellerDashboardResponse;
 import com.autopartco.backend.seller.dto.SellerNotificationResponse;
 import com.autopartco.backend.seller.dto.SellerOrderResponse;

@@ -12,8 +12,8 @@ import com.autopartco.backend.auth.entity.Account;
 import com.autopartco.backend.auth.entity.Person;
 import com.autopartco.backend.auth.repository.AccountRepository;
 import com.autopartco.backend.auth.repository.PersonRepository;
-import com.autopartco.backend.exception.ConflictException;
-import com.autopartco.backend.exception.NotFoundException;
+import com.autopartco.backend.shared.error.ConflictException;
+import com.autopartco.backend.shared.error.NotFoundException;
 
 import lombok.AllArgsConstructor;
 

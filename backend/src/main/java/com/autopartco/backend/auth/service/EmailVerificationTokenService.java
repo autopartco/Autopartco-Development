@@ -13,8 +13,8 @@ import com.autopartco.backend.auth.entity.Account;
 import com.autopartco.backend.auth.entity.AccountToken;
 import com.autopartco.backend.auth.mapper.TokenMapper;
 import com.autopartco.backend.auth.repository.AccountTokenRepository;
-import com.autopartco.backend.config.AppProperties;
-import com.autopartco.backend.exception.BadRequestException;
+import com.autopartco.backend.shared.config.AppProperties;
+import com.autopartco.backend.shared.error.BadRequestException;
 
 import lombok.AllArgsConstructor;
 

@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.autopartco.backend.config.ApiConfig;
+import com.autopartco.backend.shared.web.ApiPaths;
 import com.autopartco.backend.store.dto.StoreResponse;
 import com.autopartco.backend.store.dto.StoreStatusResponse;
 import com.autopartco.backend.store.dto.StoreUpdateRequest;
@@ -29,7 +29,7 @@ import lombok.AllArgsConstructor;
 import org.springframework.security.core.Authentication;
 
 @RestController
-@RequestMapping(ApiConfig.API_BASE_PATH + "/stores")
+@RequestMapping(ApiPaths.BASE + "/stores")
 @AllArgsConstructor
 public class StoreController {
 

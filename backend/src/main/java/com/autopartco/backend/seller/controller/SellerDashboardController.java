@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.autopartco.backend.config.ApiConfig;
+import com.autopartco.backend.shared.web.ApiPaths;
 import com.autopartco.backend.seller.dto.SellerDashboardResponse;
 import com.autopartco.backend.seller.dto.SellerCollaboratorAcceptRequest;
 import com.autopartco.backend.seller.dto.SellerCollaboratorInviteRequest;
@@ -33,7 +33,7 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 
 @RestController
-@RequestMapping(ApiConfig.API_BASE_PATH + "/seller-dashboard")
+@RequestMapping(ApiPaths.BASE + "/seller-dashboard")
 @AllArgsConstructor
 public class SellerDashboardController {
     private final SellerDashboardService dashboardService;

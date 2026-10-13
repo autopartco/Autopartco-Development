@@ -19,8 +19,8 @@ import com.autopartco.backend.auth.dto.LoginResponse;
 import com.autopartco.backend.auth.entity.Account;
 import com.autopartco.backend.auth.entity.AccountSession;
 import com.autopartco.backend.auth.repository.AccountSessionRepository;
-import com.autopartco.backend.common.State;
-import com.autopartco.backend.exception.UnauthorizedException;
+import com.autopartco.backend.shared.persistence.State;
+import com.autopartco.backend.shared.error.UnauthorizedException;
 
 @ExtendWith(MockitoExtension.class)
 class SessionRefreshServiceTest {

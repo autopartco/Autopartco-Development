@@ -42,7 +42,7 @@ import com.autopartco.backend.auth.service.PasswordRecoveryService;
 import com.autopartco.backend.auth.service.RegistrationService;
 import com.autopartco.backend.auth.service.SellerRegistrationService;
 import com.autopartco.backend.seller.entity.SellerDocumentType;
-import com.autopartco.backend.config.ApiConfig;
+import com.autopartco.backend.shared.web.ApiPaths;
 
 import jakarta.validation.Valid;
 import jakarta.servlet.http.HttpServletRequest;
@@ -56,7 +56,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import lombok.AllArgsConstructor;
 
 @RestController
-@RequestMapping(ApiConfig.API_BASE_PATH + "/auth")
+@RequestMapping(ApiPaths.BASE + "/auth")
 @AllArgsConstructor
 public class AuthController {
     private RegistrationService registrationService;

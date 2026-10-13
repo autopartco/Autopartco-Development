@@ -11,9 +11,9 @@ import com.autopartco.backend.auth.dto.UnlockAccountResponse;
 import com.autopartco.backend.auth.entity.Account;
 import com.autopartco.backend.auth.entity.AccountToken;
 import com.autopartco.backend.auth.repository.AccountRepository;
-import com.autopartco.backend.config.ApiConfig;
-import com.autopartco.backend.config.AppProperties;
-import com.autopartco.backend.exception.BadRequestException;
+import com.autopartco.backend.shared.web.ApiPaths;
+import com.autopartco.backend.shared.config.AppProperties;
+import com.autopartco.backend.shared.error.BadRequestException;
 
 import lombok.AllArgsConstructor;
 
@@ -59,7 +59,7 @@ public class AccountUnlockService {
                 tokenService.createAccountUnlockToken(account);
         String link = UriComponentsBuilder
                 .fromUriString(appProperties.publicBaseUrl())
-                .path(ApiConfig.API_BASE_PATH)
+                .path(ApiPaths.BASE)
                 .path("/auth/unlock")
                 .queryParam("token", token.rawToken())
                 .build()

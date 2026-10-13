@@ -22,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import jakarta.servlet.http.HttpServletRequest;
 
-import com.autopartco.backend.config.ApiConfig;
+import com.autopartco.backend.shared.web.ApiPaths;
 import com.autopartco.backend.seller.dto.SellerApplicationResponse;
 import com.autopartco.backend.seller.dto.SellerApplicationCreatedResponse;
 import com.autopartco.backend.seller.dto.SellerApplicationRequest;
@@ -39,7 +39,7 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 
 @RestController
-@RequestMapping(ApiConfig.API_BASE_PATH + "/seller-applications")
+@RequestMapping(ApiPaths.BASE + "/seller-applications")
 @AllArgsConstructor
 public class SellerApplicationController {
     private final SellerApplicationService applicationService;

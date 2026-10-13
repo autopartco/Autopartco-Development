@@ -13,10 +13,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.autopartco.backend.config.WompiProperties;
-import com.autopartco.backend.exception.BadRequestException;
-import com.autopartco.backend.exception.ConflictException;
-import com.autopartco.backend.exception.NotFoundException;
+import com.autopartco.backend.core.billing.internal.wompi.WompiProperties;
+import com.autopartco.backend.shared.error.BadRequestException;
+import com.autopartco.backend.shared.error.ConflictException;
+import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.seller.dto.SellerCheckoutRequest;
 import com.autopartco.backend.seller.dto.SellerCheckoutResponse;
 import com.autopartco.backend.seller.entity.SellerApplication;

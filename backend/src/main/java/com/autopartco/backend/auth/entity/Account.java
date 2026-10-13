@@ -13,8 +13,8 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 import org.hibernate.type.SqlTypes;
 
-import com.autopartco.backend.common.BaseEntity;
-import com.autopartco.backend.common.State;
+import com.autopartco.backend.shared.persistence.BaseEntity;
+import com.autopartco.backend.shared.persistence.State;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

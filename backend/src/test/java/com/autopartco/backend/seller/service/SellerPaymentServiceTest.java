@@ -14,9 +14,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.autopartco.backend.config.WompiProperties;
-import com.autopartco.backend.exception.BadRequestException;
-import com.autopartco.backend.exception.NotFoundException;
+import com.autopartco.backend.core.billing.internal.wompi.WompiProperties;
+import com.autopartco.backend.shared.error.BadRequestException;
+import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.seller.repository.SellerApplicationRepository;
 import com.autopartco.backend.seller.repository.SellerPaymentRepository;
 import com.autopartco.backend.seller.repository.SellerPlanRepository;

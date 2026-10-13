@@ -8,8 +8,8 @@ import com.autopartco.backend.auth.entity.Account;
 import com.autopartco.backend.auth.repository.AccountRepository;
 import com.autopartco.backend.auth.repository.StateRepository;
 import com.autopartco.backend.auth.mapper.AuthResponseMapper;
-import com.autopartco.backend.common.State;
-import com.autopartco.backend.exception.NotFoundException;
+import com.autopartco.backend.shared.persistence.State;
+import com.autopartco.backend.shared.error.NotFoundException;
 
 import lombok.AllArgsConstructor;
 

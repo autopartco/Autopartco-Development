@@ -14,10 +14,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockMultipartFile;
 
-import com.autopartco.backend.config.SupabaseStorageProperties;
-import com.autopartco.backend.exception.BadRequestException;
+import com.autopartco.backend.shared.storage.SupabaseStorageProperties;
+import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.seller.entity.SellerDocumentType;
-import com.autopartco.backend.storage.SupabaseStorageService;
+import com.autopartco.backend.shared.storage.SupabaseStorageService;
 
 @ExtendWith(MockitoExtension.class)
 class SellerFileServiceTest {

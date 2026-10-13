@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.autopartco.backend.config.ApiConfig;
+import com.autopartco.backend.shared.web.ApiPaths;
 import com.autopartco.backend.product.dto.PromotionResponse;
 import com.autopartco.backend.product.dto.PromotionUpsertRequest;
 import com.autopartco.backend.product.service.PromotionService;
@@ -24,7 +24,7 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 
 @RestController
-@RequestMapping(ApiConfig.API_BASE_PATH)
+@RequestMapping(ApiPaths.BASE)
 @AllArgsConstructor
 public class PromotionController {
     private final PromotionService promotionService;

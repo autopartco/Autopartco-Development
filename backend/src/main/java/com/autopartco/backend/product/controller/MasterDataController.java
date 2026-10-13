@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.autopartco.backend.config.ApiConfig;
+import com.autopartco.backend.shared.web.ApiPaths;
 import com.autopartco.backend.product.dto.CategoryRequest;
 import com.autopartco.backend.product.dto.CategoryResponse;
 import com.autopartco.backend.product.dto.ManufacturerRequest;
@@ -25,7 +25,7 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 
 @RestController
-@RequestMapping(ApiConfig.API_BASE_PATH)
+@RequestMapping(ApiPaths.BASE)
 @AllArgsConstructor
 public class MasterDataController {
     private final MasterDataService masterDataService;

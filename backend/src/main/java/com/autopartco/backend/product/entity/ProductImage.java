@@ -1,6 +1,6 @@
 package com.autopartco.backend.product.entity;
 
-import com.autopartco.backend.common.BaseEntity;
+import com.autopartco.backend.shared.persistence.BaseEntity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

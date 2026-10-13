@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 
 import com.autopartco.backend.auth.entity.Account;
 import com.autopartco.backend.common.AuditLogs;
-import com.autopartco.backend.common.State;
+import com.autopartco.backend.shared.persistence.State;
 
 @Component
 public class AuditLogMapper {

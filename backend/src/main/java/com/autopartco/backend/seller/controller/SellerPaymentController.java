@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.autopartco.backend.config.ApiConfig;
+import com.autopartco.backend.shared.web.ApiPaths;
 import com.autopartco.backend.seller.dto.SellerCheckoutRequest;
 import com.autopartco.backend.seller.dto.SellerCheckoutResponse;
 import com.autopartco.backend.seller.service.SellerPaymentService;
@@ -21,7 +21,7 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 
 @RestController
-@RequestMapping(ApiConfig.API_BASE_PATH + "/seller-payments")
+@RequestMapping(ApiPaths.BASE + "/seller-payments")
 @AllArgsConstructor
 public class SellerPaymentController {
     private final SellerPaymentService paymentService;

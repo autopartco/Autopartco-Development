@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 import com.autopartco.backend.auth.dto.RegisterResponse;
 import com.autopartco.backend.auth.dto.VerifyEmailResponse;
 import com.autopartco.backend.auth.entity.Account;
-import com.autopartco.backend.common.State;
+import com.autopartco.backend.shared.persistence.State;
 
 @Component
 public class AuthResponseMapper {

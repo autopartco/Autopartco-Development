@@ -7,10 +7,10 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.autopartco.backend.config.SupabaseStorageProperties;
-import com.autopartco.backend.exception.BadRequestException;
+import com.autopartco.backend.shared.storage.SupabaseStorageProperties;
+import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.seller.entity.SellerDocumentType;
-import com.autopartco.backend.storage.SupabaseStorageService;
+import com.autopartco.backend.shared.storage.SupabaseStorageService;
 
 import lombok.AllArgsConstructor;
 

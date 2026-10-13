@@ -18,10 +18,10 @@ import com.autopartco.backend.auth.repository.AccountRepository;
 import com.autopartco.backend.auth.repository.PersonRepository;
 import com.autopartco.backend.auth.repository.StateRepository;
 import com.autopartco.backend.auth.repository.TypeAccountRepository;
-import com.autopartco.backend.common.State;
-import com.autopartco.backend.config.AppProperties;
-import com.autopartco.backend.exception.ConflictException;
-import com.autopartco.backend.exception.NotFoundException;
+import com.autopartco.backend.shared.persistence.State;
+import com.autopartco.backend.shared.config.AppProperties;
+import com.autopartco.backend.shared.error.ConflictException;
+import com.autopartco.backend.shared.error.NotFoundException;
 
 import lombok.AllArgsConstructor;
 

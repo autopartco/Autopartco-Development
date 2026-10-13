@@ -5,7 +5,7 @@ import org.hibernate.annotations.SQLRestriction;
 
 import org.springframework.security.core.GrantedAuthority;
 
-import com.autopartco.backend.common.BaseEntity;
+import com.autopartco.backend.shared.persistence.BaseEntity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

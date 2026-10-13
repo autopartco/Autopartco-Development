@@ -25,7 +25,7 @@ import com.autopartco.backend.seller.repository.SellerApplicationRepository;
 import com.autopartco.backend.seller.repository.SellerApplicationDocumentRepository;
 import com.autopartco.backend.seller.service.SellerFileService;
 import com.autopartco.backend.seller.service.SellerPlanService;
-import com.autopartco.backend.exception.BadRequestException;
+import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.store.service.StoreService;
 
 @ExtendWith(MockitoExtension.class)

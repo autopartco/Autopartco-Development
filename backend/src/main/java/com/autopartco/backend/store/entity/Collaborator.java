@@ -6,8 +6,8 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import com.autopartco.backend.auth.entity.Person;
-import com.autopartco.backend.common.BaseEntity;
-import com.autopartco.backend.common.State;
+import com.autopartco.backend.shared.persistence.BaseEntity;
+import com.autopartco.backend.shared.persistence.State;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
