@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.autopartco.backend.shared.error.NotFoundException;
+import com.autopartco.backend.shared.security.TokenHashing;
 
 import lombok.AllArgsConstructor;
 
@@ -29,7 +30,7 @@ public class AccountSessionService {
         int insertedRows = repository.insertSession(
                 sessionId,
                 account.getId(),
-                RefreshTokenHash.of(refreshToken),
+                TokenHashing.sha256Hex(refreshToken),
                 ipAddress,
                 userAgent,
                 expiredAt
@@ -70,7 +71,7 @@ public class AccountSessionService {
 
     @Transactional
     public void revokeByRefreshToken(String refreshToken, String accountEmail) {
-        repository.lockByRefreshTokenHash(RefreshTokenHash.of(refreshToken))
+        repository.lockByRefreshTokenHash(TokenHashing.sha256Hex(refreshToken))
                 .filter(session -> session.getAccount().getEmail().equalsIgnoreCase(accountEmail))
                 .ifPresent(session -> {
                     session.setRevokedAt(LocalDateTime.now());
@@ -80,7 +81,7 @@ public class AccountSessionService {
 
     @Transactional
     public void revokeOthersByRefreshToken(String currentRefreshToken, String accountEmail) {
-        repository.lockByRefreshTokenHash(RefreshTokenHash.of(currentRefreshToken))
+        repository.lockByRefreshTokenHash(TokenHashing.sha256Hex(currentRefreshToken))
                 .filter(currentSession -> currentSession.getAccount().getEmail().equalsIgnoreCase(accountEmail))
                 .ifPresent(currentSession -> repository
                         .findNonRevokedByAccountId(currentSession.getAccount().getId())

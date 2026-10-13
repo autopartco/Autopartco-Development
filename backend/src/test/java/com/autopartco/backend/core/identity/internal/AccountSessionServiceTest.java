@@ -14,6 +14,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.autopartco.backend.shared.security.TokenHashing;
+
 
 @ExtendWith(MockitoExtension.class)
 class AccountSessionServiceTest {
@@ -43,7 +45,7 @@ class AccountSessionServiceTest {
         when(repository.insertSession(
                 sessionId,
                 accountId,
-                RefreshTokenHash.of("refresh-token"),
+                TokenHashing.sha256Hex("refresh-token"),
                 "127.0.0.1",
                 "test-agent",
                 expiresAt
@@ -63,7 +65,7 @@ class AccountSessionServiceTest {
         verify(repository).insertSession(
                 sessionId,
                 accountId,
-                RefreshTokenHash.of("refresh-token"),
+                TokenHashing.sha256Hex("refresh-token"),
                 "127.0.0.1",
                 "test-agent",
                 expiresAt

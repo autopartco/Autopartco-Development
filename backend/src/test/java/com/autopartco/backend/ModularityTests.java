@@ -1,5 +1,7 @@
 package com.autopartco.backend;
 
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.beans.Introspector;
@@ -12,7 +14,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.stereotype.Component;
 
+import com.autopartco.backend.core.identity.AccountProvisioning;
+import com.autopartco.backend.storesuite.staff.AcceptStaffInvitation;
+import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaAnnotation;
+import com.tngtech.archunit.core.domain.JavaMethodCall;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
@@ -61,6 +67,26 @@ class ModularityTests {
 
         assertThat(duplicates(beansByName)).as("Nombres de bean de Spring duplicados").isEmpty();
         assertThat(duplicates(entitiesByName)).as("Nombres de entidad JPA duplicados").isEmpty();
+    }
+
+    @Test
+    void onlyAcceptStaffInvitationCreatesInvitedAccounts() {
+        JavaClasses classes = new ClassFileImporter()
+                .withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
+                .importPackages(BASE_PACKAGE);
+        DescribedPredicate<JavaMethodCall> createInvitedAccount = DescribedPredicate.describe(
+                "AccountProvisioning#createInvitedAccount",
+                call -> call.getTargetOwner().isEquivalentTo(AccountProvisioning.class)
+                        && call.getName().equals("createInvitedAccount"));
+
+        // Crear cuentas sin registro propio solo es válido al aceptar una invitación de personal.
+        noClasses().that().doNotHaveFullyQualifiedName(AcceptStaffInvitation.class.getName())
+                .should().callMethodWhere(createInvitedAccount)
+                .check(classes);
+        // Evita que la regla anterior pase en vacío si el método o el llamador cambian de nombre.
+        classes().that().haveFullyQualifiedName(AcceptStaffInvitation.class.getName())
+                .should().callMethodWhere(createInvitedAccount)
+                .check(classes);
     }
 
     private static Optional<String> beanName(JavaClass javaClass) {

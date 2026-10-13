@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.autopartco.backend.core.identity.LoginResponse;
 import com.autopartco.backend.shared.persistence.State;
 import com.autopartco.backend.shared.error.UnauthorizedException;
+import com.autopartco.backend.shared.security.TokenHashing;
 
 @ExtendWith(MockitoExtension.class)
 class SessionRefreshServiceTest {
@@ -44,7 +45,7 @@ class SessionRefreshServiceTest {
         when(session.getExpiredAt()).thenReturn(LocalDateTime.now().plusDays(1));
         when(session.getAccount()).thenReturn(account);
         when(session.getId()).thenReturn(sessionId);
-        when(sessionRepository.lockByRefreshTokenHash(RefreshTokenHash.of("old-token")))
+        when(sessionRepository.lockByRefreshTokenHash(TokenHashing.sha256Hex("old-token")))
                 .thenReturn(Optional.of(session));
 
         LoginResponse response = new LoginResponse("new-access", "new-refresh", "Bearer", 300);
@@ -55,7 +56,7 @@ class SessionRefreshServiceTest {
         ));
 
         assertEquals(response, sessionRefreshService.refresh(" old-token "));
-        verify(session).setRefreshTokenHash(RefreshTokenHash.of("new-refresh"));
+        verify(session).setRefreshTokenHash(TokenHashing.sha256Hex("new-refresh"));
     }
 
     @Test
@@ -63,7 +64,7 @@ class SessionRefreshServiceTest {
         AccountSession session = mock(AccountSession.class);
         when(session.getRevokedAt()).thenReturn(null);
         when(session.getExpiredAt()).thenReturn(LocalDateTime.now().minusSeconds(1));
-        when(sessionRepository.lockByRefreshTokenHash(RefreshTokenHash.of("old-token")))
+        when(sessionRepository.lockByRefreshTokenHash(TokenHashing.sha256Hex("old-token")))
                 .thenReturn(Optional.of(session));
 
         assertThrows(UnauthorizedException.class, () -> sessionRefreshService.refresh("old-token"));

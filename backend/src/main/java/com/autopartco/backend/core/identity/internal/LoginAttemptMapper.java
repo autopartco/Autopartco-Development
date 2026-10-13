@@ -9,7 +9,6 @@ import org.springframework.stereotype.Component;
 public class LoginAttemptMapper {
 
     public LoginAttempt toLoginAttempt(Account account, boolean successful, String ipAddress) {
-        System.out.print("SUCCESS: " + successful);
         return LoginAttempt.builder()
                 .account(account)
                 .attemptedAt(LocalDateTime.now())

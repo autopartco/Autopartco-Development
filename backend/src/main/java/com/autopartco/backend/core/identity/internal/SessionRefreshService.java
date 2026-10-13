@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.autopartco.backend.core.identity.LoginResponse;
 import com.autopartco.backend.shared.error.UnauthorizedException;
 import com.autopartco.backend.shared.persistence.StateCodes;
+import com.autopartco.backend.shared.security.TokenHashing;
 
 import lombok.AllArgsConstructor;
 
@@ -18,7 +19,7 @@ public class SessionRefreshService {
 
     @Transactional(noRollbackFor = UnauthorizedException.class)
     public LoginResponse refresh(String rawRefreshToken) {
-        String tokenHash = RefreshTokenHash.of(rawRefreshToken.trim());
+        String tokenHash = TokenHashing.sha256Hex(rawRefreshToken.trim());
         AccountSession session = sessionRepository.lockByRefreshTokenHash(tokenHash)
                 .orElseThrow(this::invalidRefreshToken);
 
@@ -34,7 +35,7 @@ public class SessionRefreshService {
         }
 
         AuthTokenService.TokenPair pair = authTokenService.issue(session.getAccount(), session.getId());
-        session.setRefreshTokenHash(RefreshTokenHash.of(pair.response().refreshToken()));
+        session.setRefreshTokenHash(TokenHashing.sha256Hex(pair.response().refreshToken()));
         session.setExpiredAt(pair.refreshExpiresAt());
         return pair.response();
     }

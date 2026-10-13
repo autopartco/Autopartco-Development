@@ -13,13 +13,11 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
-import com.autopartco.backend.core.billing.internal.wompi.WompiHashing;
-import com.autopartco.backend.core.identity.internal.RefreshTokenHash;
 
 /**
  * Equivalencia de {@link TokenHashing} con las implementaciones que reemplaza. Las copias de abajo reproducen
  * literalmente el código anterior a la consolidación (fase 7) de {@code StaffInvitations#hash},
- * {@code StoreApplications#hash}, {@code RefreshTokenHash#of} y {@code WompiHashing#sha256}.
+ * {@code StoreApplications#hash}, {@code RefreshTokenHash#of} y {@code WompiHashing#sha256} (envoltorios ya retirados; los llamadores usan {@link TokenHashing} directamente).
  */
 class TokenHashingTest {
 
@@ -40,6 +38,8 @@ class TokenHashingTest {
                 "d7a8fbb307d7809469ca9abcb0082e4f8d5651e46d3cdb762d02d0bf37c9e592",
                 TokenHashing.sha256Hex("The quick brown fox jumps over the lazy dog")
         );
+        // Vector heredado de RefreshTokenHashTest (account_sessions.refresh_token_hash).
+        assertEquals("2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824", TokenHashing.sha256Hex("hello"));
     }
 
     @Test
@@ -50,8 +50,6 @@ class TokenHashingTest {
             assertEquals(expected, oldStoreApplicationsHash(input), input);
             assertEquals(expected, oldRefreshTokenHash(input), input);
             assertEquals(expected, oldWompiSha256(input), input);
-            assertEquals(expected, RefreshTokenHash.of(input), input);
-            assertEquals(expected, WompiHashing.sha256(input), input);
             assertTrue(expected.matches("[0-9a-f]{64}"), input);
         }
     }

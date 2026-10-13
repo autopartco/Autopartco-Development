@@ -1,6 +1,6 @@
 package com.autopartco.backend.core.billing;
 
-import static com.autopartco.backend.core.billing.internal.wompi.WompiHashing.sha256;
+import static com.autopartco.backend.shared.security.TokenHashing.sha256Hex;
 
 import java.util.UUID;
 
@@ -97,7 +97,7 @@ public class SubscriptionCheckout {
                 .status("PENDING")
                 .build());
 
-        String integritySignature = sha256(
+        String integritySignature = sha256Hex(
                 reference + amountInCents + currency + wompiProperties.integritySecret()
         );
         String checkoutUrl = UriComponentsBuilder.fromUriString(wompiProperties.checkoutUrl())

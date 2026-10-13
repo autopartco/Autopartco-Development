@@ -37,7 +37,6 @@ public class AuditLogMapper {
     }
 
     public AuditLog toAccountLocked(UUID accountId, String email, String ipAddress, int failedAttempts, String state) {
-        System.out.print("AUDITANDO");
         return AuditLog.builder()
                 .accountId(accountId)
                 .action("ACCOUNT_LOCKED")

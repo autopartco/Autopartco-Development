@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.autopartco.backend.shared.error.BadRequestException;
+import com.autopartco.backend.shared.security.TokenHashing;
 
 import lombok.AllArgsConstructor;
 
@@ -44,7 +45,7 @@ public class WompiSignatureVerifier {
         }
         signedValues.append(timestamp.isValueNode() ? timestamp.asText() : timestamp.toString())
                 .append(wompiProperties.eventsSecret());
-        byte[] expected = WompiHashing.sha256(signedValues.toString()).getBytes(StandardCharsets.US_ASCII);
+        byte[] expected = TokenHashing.sha256Hex(signedValues.toString()).getBytes(StandardCharsets.US_ASCII);
         byte[] received = checksum.toLowerCase(Locale.ROOT).getBytes(StandardCharsets.US_ASCII);
         if (!MessageDigest.isEqual(expected, received)) {
             throw new BadRequestException("WOMPI_SIGNATURE_INVALID", "La firma del evento no es válida.");

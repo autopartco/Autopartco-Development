@@ -8,7 +8,9 @@ import com.autopartco.backend.core.audit.internal.AuditLogMapper;
 import com.autopartco.backend.core.audit.internal.AuditLogRepository;
 
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Service
 @AllArgsConstructor
 public class AuditService {
@@ -24,7 +26,7 @@ public class AuditService {
     }
 
     public void recordAccountLocked(UUID accountId, String email, String ipAddress, int failedAttempts, String state) {
-        System.out.print("BLOQUEANDO");
+        log.debug("Recording account lock: accountId={}, failedAttempts={}", accountId, failedAttempts);
         repository.save(auditLogMapper.toAccountLocked(accountId, email, ipAddress, failedAttempts, state));
     }
 

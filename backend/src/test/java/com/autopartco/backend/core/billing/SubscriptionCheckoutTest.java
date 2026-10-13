@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -25,7 +26,7 @@ import com.autopartco.backend.core.billing.internal.StoreSubscription;
 import com.autopartco.backend.core.billing.internal.StoreSubscriptionRepository;
 import com.autopartco.backend.core.billing.internal.SubscriptionPayment;
 import com.autopartco.backend.core.billing.internal.SubscriptionPaymentRepository;
-import com.autopartco.backend.core.billing.internal.wompi.WompiHashing;
+import com.autopartco.backend.shared.security.TokenHashing;
 import com.autopartco.backend.core.billing.internal.wompi.WompiProperties;
 import com.autopartco.backend.core.identity.AccountLookup;
 import com.autopartco.backend.core.identity.AccountRef;
@@ -84,6 +85,20 @@ class SubscriptionCheckoutTest {
                 () -> checkout().createCheckout(storeId, "other@example.com", new CheckoutRequest(UUID.randomUUID(), 1))
         );
         verify(paymentRepository, never()).save(any());
+        verifyNoInteractions(planRepository);
+    }
+
+    @Test
+    void rejectsWhenApplicantAccountCannotBeResolvedBeforeRevealingPlanOrState() {
+        // El solicitante ya no existe: nadie puede pagar por el almacén, ni siquiera con un correo coincidente.
+        when(subscriptionRepository.lockByStoreId(storeId)).thenReturn(Optional.of(activeSubscription()));
+        when(accountLookup.findById(applicantId)).thenReturn(Optional.empty());
+
+        assertThrows(
+                AccessDeniedException.class,
+                () -> checkout().createCheckout(storeId, APPLICANT_EMAIL, new CheckoutRequest(UUID.randomUUID(), 1))
+        );
+        verifyNoInteractions(planRepository, paymentRepository);
     }
 
     @Test
@@ -114,7 +129,7 @@ class SubscriptionCheckoutTest {
         assertEquals(payment.getReference(), response.reference());
         assertEquals(15_000_000L, response.amountInCents());
         assertEquals("COP", response.currency());
-        String signature = WompiHashing.sha256(payment.getReference() + 15_000_000L + "COP" + "integrity");
+        String signature = TokenHashing.sha256Hex(payment.getReference() + 15_000_000L + "COP" + "integrity");
         assertTrue(response.checkoutUrl().contains("signature:integrity=" + signature));
     }
 }
