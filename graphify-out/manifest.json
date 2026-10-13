@@ -1494,15 +1494,15 @@
     "semantic_hash": ""
   },
   ".claude/skills/opencode-delegate/scripts/delegate.mjs": {
-    "mtime": 1791883043.798788,
-    "seen": 1791884737.6765323,
-    "ast_hash": "b13eabf65895acb0da1d2707e046f32d",
+    "mtime": 1791893823.0753026,
+    "seen": 1791894005.1556468,
+    "ast_hash": "3258a5b088ba8218e6181fbcb799830e",
     "semantic_hash": ""
   },
   ".claude/skills/opencode-delegate/scripts/models.mjs": {
-    "mtime": 1791883060.9164064,
-    "seen": 1791884737.6765351,
-    "ast_hash": "361b406ed9a92f0cbc69a60147de71aa",
+    "mtime": 1791892959.9108732,
+    "seen": 1791894005.155652,
+    "ast_hash": "6ec6af82cb45c8ec4307e63d6836f6ec",
     "semantic_hash": ""
   },
   ".opencode/opencode.json": {
@@ -2028,9 +2028,9 @@
     "semantic_hash": ""
   },
   ".claude/agents/backend.md": {
-    "mtime": 1791880941.8019977,
-    "seen": 1791884738.2083986,
-    "ast_hash": "ad640888c4ed38daf0cd3a0092088621",
+    "mtime": 1791890121.3051994,
+    "seen": 1791894005.3503838,
+    "ast_hash": "db4b39dd9dee4e6f434daa85f8e94bf4",
     "semantic_hash": ""
   },
   ".claude/agents/database.md": {
@@ -2052,9 +2052,9 @@
     "semantic_hash": ""
   },
   ".claude/skills/opencode-delegate/SKILL.md": {
-    "mtime": 1791883124.3221116,
-    "seen": 1791884738.2084773,
-    "ast_hash": "5a1ddde497841f4ab8ba9bf0c7b50493",
+    "mtime": 1791893851.4018028,
+    "seen": 1791894005.352088,
+    "ast_hash": "054ed6c7dd40f2e9e0792f21a0ed7601",
     "semantic_hash": ""
   },
   ".opencode/agents/arquitecto.md": {
@@ -2064,9 +2064,9 @@
     "semantic_hash": ""
   },
   ".opencode/agents/backend.md": {
-    "mtime": 1791881124.636486,
-    "seen": 1791884738.2084832,
-    "ast_hash": "794081bb018d761bc282d3700d52a362",
+    "mtime": 1791890121.3085263,
+    "seen": 1791894005.3528476,
+    "ast_hash": "d81e017d4f9fee7bc3cad51da23b4e1e",
     "semantic_hash": ""
   },
   ".opencode/agents/database.md": {
@@ -2094,15 +2094,111 @@
     "semantic_hash": ""
   },
   "AGENTS.md": {
-    "mtime": 1791881196.4232876,
-    "seen": 1791884738.2084942,
-    "ast_hash": "adaa3194a73658ef744123f141a49c85",
+    "mtime": 1791893476.3329043,
+    "seen": 1791894005.3560333,
+    "ast_hash": "095abbc6a7040e03473050473234d342",
     "semantic_hash": ""
   },
   "docs/AUTOPARTCO_IDEA.md": {
     "mtime": 1791884025.831772,
     "seen": 1791884738.2132227,
     "ast_hash": "39d8303474e11f05f315aa56844b6ebb",
+    "semantic_hash": ""
+  },
+  ".claude/skills/opencode-delegate/models.json": {
+    "mtime": 1791893047.3144138,
+    "seen": 1791894005.1556387,
+    "ast_hash": "81a776bef4b29bc41b00c6c78e77feae",
+    "semantic_hash": ""
+  },
+  ".claude/skills/opencode-delegate/scripts/bench.mjs": {
+    "mtime": 1791893024.8335164,
+    "seen": 1791894005.1556437,
+    "ast_hash": "b3eb46f88b805bc54fdd10d3da2bf908",
+    "semantic_hash": ""
+  },
+  ".claude/skills/opencode-delegate/scripts/lib.mjs": {
+    "mtime": 1791893234.4976788,
+    "seen": 1791894005.1556494,
+    "ast_hash": "8b9153624d9bc43a07c2cf06cef8d6fa",
+    "semantic_hash": ""
+  },
+  "docs/backlog/backlog.json": {
+    "mtime": 1791885925.9056914,
+    "seen": 1791894005.2850053,
+    "ast_hash": "34995a1eeec29f54c3841f72f8afa858",
+    "semantic_hash": ""
+  },
+  "tools/github/publish-backlog.mjs": {
+    "mtime": 1791886600.511738,
+    "seen": 1791894005.2857378,
+    "ast_hash": "2e583ed1df7f47053c0bf528ed2f2ac0",
+    "semantic_hash": ""
+  },
+  ".claude/skills/opencode-delegate/MODELS.md": {
+    "mtime": 1791893073.2726862,
+    "seen": 1791894005.3520794,
+    "ast_hash": "5b1da4e483c3248b86540a052f82241b",
+    "semantic_hash": ""
+  },
+  ".claude/skills/opencode-delegate/templates/_common.md": {
+    "mtime": 1791893284.2882822,
+    "seen": 1791894005.3520942,
+    "ast_hash": "8fa983db492821a641f63bee06a54e50",
+    "semantic_hash": ""
+  },
+  ".claude/skills/opencode-delegate/templates/code.md": {
+    "mtime": 1791892903.9202352,
+    "seen": 1791894005.3520997,
+    "ast_hash": "c9d7f640aa631778e26272d2a0674dde",
+    "semantic_hash": ""
+  },
+  ".claude/skills/opencode-delegate/templates/docs.md": {
+    "mtime": 1791893845.1153123,
+    "seen": 1791894005.3521056,
+    "ast_hash": "9f83888a09793f0f1a3e800a108c3ba7",
+    "semantic_hash": ""
+  },
+  ".claude/skills/opencode-delegate/templates/research.md": {
+    "mtime": 1791892924.4430192,
+    "seen": 1791894005.352111,
+    "ast_hash": "9660f8beb98e8cdc7f4c6af0fd2e9c74",
+    "semantic_hash": ""
+  },
+  ".claude/skills/opencode-delegate/templates/tests.md": {
+    "mtime": 1791892910.2981737,
+    "seen": 1791894005.352116,
+    "ast_hash": "5b408850fd3a82444e9888f1ea43e5e4",
+    "semantic_hash": ""
+  },
+  ".claude/skills/opencode-delegate/templates/text.md": {
+    "mtime": 1791892919.8858383,
+    "seen": 1791894005.352121,
+    "ast_hash": "a0fa1c4706670a20f93d0c5582d2794b",
+    "semantic_hash": ""
+  },
+  ".github/workflows/publish-backlog.yml": {
+    "mtime": 1791886471.962483,
+    "seen": 1791894005.352125,
+    "ast_hash": "56a6665cbe4bb897a5cd8c8f512f078c",
+    "semantic_hash": ""
+  },
+  ".opencode/agents/redactor.md": {
+    "mtime": 1791892939.4219437,
+    "seen": 1791894005.3560216,
+    "ast_hash": "bf4b73c4b3b833d38f7582a7205b6c1b",
+    "semantic_hash": ""
+  },
+  "docs/architecture/2026-10-13-backend-modular-architecture-design.md": {
+    "mtime": 1791890246.640694,
+    "seen": 1791894005.369356,
+    "ast_hash": "d82c2624e306d614b61d0e268fa15a25",
+    "semantic_hash": ""
+  },
+  "docs/architecture/2026-10-13-backend-modular-architecture-plan.md": {
+    "mtime": 1791892728.784231,
+    "seen": 1791894005.3693619,
+    "ast_hash": "5e38fe7e2d039a4f4e4bd71211198117",
     "semantic_hash": ""
   }
 }

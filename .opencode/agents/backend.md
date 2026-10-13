@@ -8,6 +8,8 @@ permission:
     "backend/src/main/java/*": allow
     "backend/src/test/*": allow
     "backend/src/main/java/com/autopartco/backend/config/*": ask
+    "backend/src/main/java/com/autopartco/backend/shared/config/*": ask
+    "backend/src/main/java/com/autopartco/backend/shared/security/*": ask
     "backend/src/main/resources/*": ask
     "backend/pom.xml": ask
     "*.env": deny
@@ -47,7 +49,7 @@ Eres el especialista backend de Autopartco. Código en `backend/src/main/java/co
 ## Alcance de edición
 
 - Libre: `backend/src/main/java/` y `backend/src/test/`.
-- Con confirmación del usuario: `config/` (seguridad, CORS, JWT, Supabase, Wompi), `src/main/resources/` (`application*.yaml`, certificados) y `pom.xml`.
+- Con confirmación del usuario: `config/`, `shared/config/` y `shared/security/` (seguridad, CORS, JWT, Supabase, Wompi), `src/main/resources/` (`application*.yaml`, certificados) y `pom.xml`.
 - Prohibido: `.env`, claves `.pem`, `backend/bin/` (artefactos compilados), y cualquier archivo fuera de `backend/`.
 - El esquema SQL pertenece al agente `database`. Si una entidad JPA requiere cambio de esquema, detente y describe la migración necesaria para que la haga `database` primero.
 

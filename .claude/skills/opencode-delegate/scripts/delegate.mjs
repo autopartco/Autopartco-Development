@@ -1,115 +1,142 @@
 #!/usr/bin/env node
-// Delega una tarea a OpenCode en modo no interactivo y devuelve un resumen compacto.
+// Delega una tarea a OpenCode en modo no interactivo y devuelve un resumen compacto para Claude.
 //
 // Uso:
-//   node delegate.mjs --agent <agente> --model <proveedor/modelo[#variante]> --prompt-file <archivo>
-//                     [--title <título>] [--session <id>] [--dir <repo>] [--timeout-min 30]
+//   node delegate.mjs --kind <code|tests|docs|text|research> --prompt-file <archivo>
+//                     [--agent <agente>] [--model <proveedor/modelo[#variante]>] [--files a,b,c]
+//                     [--out <archivo>] [--verify "<comando>"] [--session <id>] [--title <t>]
+//                     [--dir <repo>] [--timeout-min N] [--no-fallback] [--auto] [--full]
 //
-// Imprime un JSON con: sesión, duración, pasos, herramientas usadas, permisos rechazados,
-// tokens, archivos cambiados (git diff --stat) y el último mensaje del agente.
-// El flujo JSON completo se guarda en un archivo aparte para no consumir contexto.
-
-import { spawn, execFileSync } from "node:child_process";
+// - --kind añade la plantilla templates/<kind>.md (método, estilo y formato de respuesta) al prompt,
+//   y elige agente y modelo por defecto desde models.json → roles.<kind> (con suplentes).
+// - Si el modelo falla sin haber cambiado archivos, reintenta solo con el siguiente suplente.
+// - --files adjunta archivos de contexto (evita que el agente gaste pasos buscándolos).
+// - --out guarda la respuesta final en un archivo (texto/research): Claude no necesita leerla entera.
+// - --verify ejecuta un comando al terminar y devuelve solo ok/fallo y las últimas líneas.
+// El flujo JSON completo queda en logFile; no lo leas salvo para depurar.
+import { execSync } from "node:child_process";
 import fs from "node:fs";
-import os from "node:os";
 import path from "node:path";
+import { arg, git, logDir, outline, readModels, runOpencode, skillDir } from "./lib.mjs";
 
-function arg(name, fallback) {
-  const i = process.argv.indexOf(`--${name}`);
-  return i > -1 ? process.argv[i + 1] : fallback;
-}
-
-export function findCli() {
-  const candidates = [
-    process.env.OPENCODE_CLI,
-    process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, "Programs", "@opencodedesktop", "resources", "opencode-cli.exe"),
-    "/Applications/OpenCode.app/Contents/Resources/opencode-cli",
-  ].filter(Boolean);
-  for (const c of candidates) if (fs.existsSync(c)) return c;
-  return "opencode"; // CLI global; debe ser compatible con la versión del escritorio si comparten datos
-}
-
-const agent = arg("agent");
-const model = arg("model");
+const kind = arg("kind", "code");
 const promptFile = arg("prompt-file");
 const dir = path.resolve(arg("dir", process.cwd()));
-const session = arg("session");
-const title = arg("title", `delegado-claude-${new Date().toISOString().slice(0, 16)}`);
-const timeoutMin = Number(arg("timeout-min", "30"));
+const out = arg("out") ? path.resolve(arg("out")) : null;
+const verify = arg("verify");
+const full = !!arg("full");
+const index = readModels();
+const role = index.roles?.[kind] || index.roles?.code || {};
+const agent = arg("agent", role.agent);
+const timeoutMin = Number(arg("timeout-min", role.timeoutMin ?? 30));
+// --model admite una lista "a,b" (principal y suplentes) para sustituir la del rol.
+const models = arg("model") ? String(arg("model")).split(",").map((m) => m.trim()) : (role.models || []);
+const fallback = !arg("no-fallback") && !arg("session");
 
-if (!agent || !model || !promptFile) {
-  console.error("Faltan --agent, --model o --prompt-file");
-  process.exit(1);
+const missing = !promptFile ? "Falta --prompt-file"
+  : !models.length ? `No hay modelo: pasa --model o define roles.${kind} en models.json`
+  : !agent ? `--kind ${kind} exige --agent (backend, database, frontend…): elige el dueño del área` : null;
+if (missing) { console.error(missing); process.exit(1); }
+
+const tpl = (name) => { const f = path.join(skillDir, "templates", `${name}.md`); return fs.existsSync(f) ? fs.readFileSync(f, "utf8").trim() : ""; };
+const template = [tpl(kind), tpl("_common")].filter(Boolean).join("\n\n");
+// En una ronda de corrección (--session) el agente ya conoce la plantilla.
+let message = fs.readFileSync(promptFile, "utf8").trim() + (template && !arg("session") ? `\n\n${template.trim()}` : "");
+const files = arg("files") ? String(arg("files")).split(",").map((f) => f.trim()).filter(Boolean) : [];
+// --diff [rutas]: adjunta el diff sin commit (y los archivos nuevos) ya calculado. Para PR, commits y changelogs:
+// ahorra pasos al agente y evita que le rechacen `git diff` sobre rutas protegidas (.claude/, .opencode/).
+const diffArg = arg("diff");
+if (diffArg) {
+  const paths = diffArg === true ? [] : String(diffArg).split(",").map((p) => p.trim()).filter(Boolean);
+  const untracked = git(dir, "ls-files", "--others", "--exclude-standard", "--", ...paths);
+  const body = [`# git diff HEAD -- ${paths.join(" ") || "(todo)"}`, git(dir, "diff", "HEAD", "--stat", "--", ...paths), "",
+    git(dir, "diff", "HEAD", "--", ...paths), "", "# Archivos nuevos sin seguimiento", untracked || "(ninguno)"].join("\n");
+  const diffFile = path.join(logDir, `${Date.now()}-diff.txt`);
+  fs.mkdirSync(logDir, { recursive: true });
+  fs.writeFileSync(diffFile, body);
+  files.push(diffFile);
+}
+// La línea de comandos de Windows admite ~32K caracteres: los prompts largos van como adjunto.
+if (message.length > 24_000) {
+  const big = path.join(logDir, `${Date.now()}-prompt.md`);
+  fs.mkdirSync(logDir, { recursive: true });
+  fs.writeFileSync(big, message);
+  files.unshift(big);
+  message = "Tus instrucciones completas están en el primer archivo adjunto. Síguelas al pie de la letra.";
 }
 
-const prompt = fs.readFileSync(promptFile, "utf8");
-const cli = findCli();
-const logDir = path.join(os.tmpdir(), "opencode-delegate");
-fs.mkdirSync(logDir, { recursive: true });
-const logFile = path.join(logDir, `${Date.now()}.jsonl`);
+const porcelain = () => git(dir, "status", "--porcelain", "--untracked-files=all").split("\n").filter(Boolean)
+  .map((l) => ({ status: l.slice(0, 2).trim(), file: l.slice(3).replace(/^"|"$/g, "") }));
+const dirtyBefore = new Set(porcelain().map((f) => f.file));
+const headBefore = git(dir, "rev-parse", "HEAD");
+const rel = (f) => path.relative(dir, path.resolve(dir, f)).split(path.sep).join("/");
 
-function git(...a) {
-  try { return execFileSync("git", ["-C", dir, ...a], { encoding: "utf8" }).trim(); } catch { return ""; }
-}
-const headBefore = git("rev-parse", "HEAD");
-const dirtyBefore = new Set(git("status", "--porcelain").split("\n").filter(Boolean).map((l) => l.slice(3)));
-
-const args = ["run", "--agent", agent, "--model", model, "--format", "json", "--title", title];
-if (session) args.push("--session", session);
-args.push(prompt);
-
+const attempts = [];
+const touched = new Set();
 const started = Date.now();
-const child = spawn(cli, args, { cwd: dir });
-const log = fs.createWriteStream(logFile);
-let stderr = "";
-child.stdout.pipe(log);
-child.stderr.on("data", (c) => (stderr += c));
-const killer = setTimeout(() => child.kill(), timeoutMin * 60_000);
+let r;
+for (const model of fallback ? models : models.slice(0, 1)) {
+  const logFile = path.join(logDir, `${Date.now()}-${kind}.jsonl`);
+  r = await runOpencode({ dir, agent, model, message, files, logFile, timeoutMin, auto: !!arg("auto"),
+    session: arg("session"), title: arg("title", `claude-${kind}-${new Date().toISOString().slice(0, 16)}`) });
+  r.model = model; r.logFile = logFile;
+  for (const f of r.touched) touched.add(rel(f));
+  const failed = r.timedOut || r.exitCode !== 0 || r.errors.length > 0 || !r.finalText.trim();
+  attempts.push(`${model}: ${failed ? (r.timedOut ? "timeout" : r.errors[0]?.slice(0, 100) || `exit ${r.exitCode}, sin respuesta`) : "ok"} (${r.secs}s)`);
+  // Reintentar con otro modelo solo si este no editó nada: así no se duplican cambios a medias.
+  if (!failed || r.timedOut || r.touched.size) break;
+}
 
-child.on("close", (code) => {
-  clearTimeout(killer);
-  log.end(() => {
-    const summary = {
-      exitCode: code, timedOut: Date.now() - started >= timeoutMin * 60_000,
-      secs: Math.round((Date.now() - started) / 1000), sessionID: null, agent, model,
-      steps: 0, tools: {}, toolErrors: [], permissionRejected: [],
-      tokens: { input: 0, output: 0, reasoning: 0, cacheRead: 0 }, cost: 0,
-      filesChanged: [], newCommits: [], finalText: "", errors: [], logFile,
-    };
-    for (const line of fs.readFileSync(logFile, "utf8").split("\n")) {
-      let e; try { e = JSON.parse(line); } catch { continue; }
-      summary.sessionID ??= e.sessionID ?? null;
-      const p = e.part || {};
-      if (e.type === "step_finish") {
-        summary.steps++;
-        summary.cost += p.cost || 0;
-        summary.tokens.input += p.tokens?.input || 0;
-        summary.tokens.output += p.tokens?.output || 0;
-        summary.tokens.reasoning += p.tokens?.reasoning || 0;
-        summary.tokens.cacheRead += p.tokens?.cache?.read || 0;
-      } else if (e.type === "tool_use") {
-        summary.tools[p.tool] = (summary.tools[p.tool] || 0) + 1;
-        if (p.state?.status === "error") {
-          const err = String(p.state.error || "");
-          const what = `${p.tool}: ${JSON.stringify(p.state.input ?? {}).slice(0, 160)}`;
-          (/permission|cannot ask the user/i.test(err) ? summary.permissionRejected : summary.toolErrors).push(
-            /permission|cannot ask the user/i.test(err) ? what : `${what} -> ${err.slice(0, 200)}`);
-        }
-      } else if (e.type === "text") {
-        summary.finalText = p.text;
-      } else if (e.type === "error") {
-        summary.errors.push(JSON.stringify(e.error ?? e).slice(0, 300));
-      }
-    }
-    if (stderr.trim()) summary.errors.push(...stderr.trim().split("\n").filter((l) => !/auto-rejecting/.test(l)).slice(-5));
-    const headAfter = git("rev-parse", "HEAD");
-    if (headBefore && headAfter && headBefore !== headAfter) {
-      summary.newCommits = git("log", "--oneline", `${headBefore}..${headAfter}`).split("\n").filter(Boolean);
-    }
-    summary.filesChanged = git("status", "--porcelain").split("\n").filter(Boolean)
-      .map((l) => ({ status: l.slice(0, 2).trim(), file: l.slice(3), preexisting: dirtyBefore.has(l.slice(3)) }));
-    summary.diffStat = git("diff", "--stat");
-    if (summary.finalText.length > 4000) summary.finalText = summary.finalText.slice(0, 4000) + "\n…[truncado; ver logFile]";
-    console.log(JSON.stringify(summary, null, 1));
-  });
-});
+// Atribución por los registros del agente (no por git): otras delegaciones en paralelo no se confunden con esta.
+const status = new Map(porcelain().map((f) => [f.file, f.status]));
+const others = [...status.keys()].filter((f) => !dirtyBefore.has(f) && !touched.has(f));
+const summary = {
+  ok: !r.timedOut && r.exitCode === 0 && !r.errors.length && !!r.finalText.trim(),
+  kind, agent, model: r.model, sessionID: r.sessionID, secs: Math.round((Date.now() - started) / 1000),
+  attempts: attempts.length > 1 ? attempts : undefined,
+  steps: r.steps, tools: r.tools,
+  tokens: r.tokens.output ? `${r.tokens.input}in/${r.tokens.output}out` : undefined,
+  cost: r.cost || undefined,
+  permissionRejected: r.permissionRejected, toolErrors: r.toolErrors, errors: r.errors,
+  filesChanged: [...touched].map((f) => `${status.get(f) ?? "="} ${f}${dirtyBefore.has(f) ? " (ya tenía cambios previos)" : ""}`),
+  // Cambios nuevos que el agente no declaró: de otra tarea en paralelo, o de un comando shell (--auto).
+  otherNewChanges: others.length ? others.slice(0, 10) : undefined,
+};
+const headAfter = git(dir, "rev-parse", "HEAD");
+if (headBefore && headAfter !== headBefore) summary.newCommits = git(dir, "log", "--oneline", `${headBefore}..${headAfter}`).split("\n");
+
+// Documentos: índice de encabezados en vez del contenido.
+const docs = [...touched].filter((f) => /\.mdx?$/i.test(f) && fs.existsSync(path.join(dir, f)));
+if (docs.length) summary.docs = Object.fromEntries(docs.map((f) => [f, outline(path.join(dir, f))]));
+
+// --out es para la respuesta del agente, nunca para un archivo que el propio agente editó o que está en el repo bajo seguimiento.
+const outRel = out && rel(out);
+if (out && (touched.has(outRel) || (!outRel.startsWith("..") && git(dir, "ls-files", "--", outRel)))) {
+  summary.warning = `--out ignorado: ${outRel} es un archivo del repo editado o versionado; no se sobrescribe.`;
+} else if (out && r.finalText.trim()) {
+  fs.mkdirSync(path.dirname(out), { recursive: true });
+  fs.writeFileSync(out, r.finalText.trim() + "\n");
+  summary.out = { file: out, ...outline(out, 25) };
+  summary.finalText = full ? r.finalText : r.finalText.slice(0, 300) + (r.finalText.length > 300 ? " …" : "");
+} else {
+  const lim = full ? Infinity : 1500;
+  summary.finalText = r.finalText.length > lim ? r.finalText.slice(0, lim) + "\n…[truncado; usa --out o --full]" : r.finalText;
+}
+
+if (verify && typeof verify === "string") {
+  const t = Date.now();
+  try {
+    const o = execSync(verify, { cwd: dir, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"], maxBuffer: 64 << 20, timeout: 20 * 60_000 });
+    summary.verify = { ok: true, secs: Math.round((Date.now() - t) / 1000), tail: o.trim().split("\n").slice(-5).join("\n") };
+  } catch (e) {
+    const o = `${e.stdout || ""}\n${e.stderr || ""}`.trim().split("\n");
+    summary.verify = { ok: false, secs: Math.round((Date.now() - t) / 1000), tail: o.filter((l) => /error|fail|exception|assert/i.test(l)).slice(-20).join("\n") || o.slice(-25).join("\n") };
+  }
+}
+summary.logFile = r.logFile;
+
+// Quita campos vacíos para no gastar tokens en ruido.
+for (const [k, v] of Object.entries(summary)) {
+  if (v === undefined || v === "" || (Array.isArray(v) && !v.length) || (v && typeof v === "object" && !Array.isArray(v) && !Object.keys(v).length)) delete summary[k];
+}
+console.log(JSON.stringify(summary, null, 1));

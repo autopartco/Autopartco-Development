@@ -25,6 +25,7 @@ Contexto de producto en `docs/AUTOPARTCO_AGENT_CONTEXT.md`.
 - `database`: `database/migrations/`.
 - `frontend`: `frontend/`.
 - `qa-seguridad`: solo lectura; ejecuta pruebas y reporta hallazgos.
+- `redactor` (solo OpenCode, lo usa la skill `opencode-delegate`): documentación Markdown en `docs/`, `README.md` y `CHANGELOG.md`; no edita código.
 
 Reglas comunes:
 - Cada agente edita solo su área. Nunca dos agentes con edición sobre la misma área a la vez; los cambios entre capas van en secuencia `database` → `backend` → `frontend` → `qa-seguridad`.

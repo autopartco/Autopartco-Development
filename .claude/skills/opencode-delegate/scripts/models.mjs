@@ -1,65 +1,43 @@
 #!/usr/bin/env node
-// Lista los modelos de OpenCode de un proveedor (por defecto "opencode") con sus metadatos
-// y los compara con el índice guardado (MODELS.md / models.json de la skill).
+// Compara los modelos disponibles en OpenCode con el índice de la skill (models.json).
+// Solo hace falta cuando una delegación falla por el modelo o el índice tiene más de 30 días.
 //
-// Uso: node models.mjs [--provider opencode] [--dir <repo>]
-// Salida: JSON con { checkedAt, cliVersion, models[], added[], removed[], indexAgeDays }
-
+// Uso: node models.mjs [--provider opencode] [--dir <repo>] [--full]
+// Salida compacta: { cliVersion, benchAgeDays, added[], removed[], roles }  (--full añade metadatos)
 import { execFileSync } from "node:child_process";
-import fs from "node:fs";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
-
-const here = path.dirname(fileURLToPath(import.meta.url));
-const indexFile = path.join(here, "..", "models.json");
-
-function arg(name, fallback) {
-  const i = process.argv.indexOf(`--${name}`);
-  return i > -1 ? process.argv[i + 1] : fallback;
-}
-function findCli() {
-  const c = [process.env.OPENCODE_CLI,
-    process.env.LOCALAPPDATA && path.join(process.env.LOCALAPPDATA, "Programs", "@opencodedesktop", "resources", "opencode-cli.exe"),
-    "/Applications/OpenCode.app/Contents/Resources/opencode-cli"].filter(Boolean);
-  return c.find((p) => fs.existsSync(p)) ?? "opencode";
-}
+import { arg, findCli, readModels } from "./lib.mjs";
 
 const provider = arg("provider", "opencode");
 const dir = path.resolve(arg("dir", process.cwd()));
 const cli = findCli();
-const cliVersion = execFileSync(cli, ["--version"], { encoding: "utf8" }).trim();
 
-let models;
-try {
-  // OpenCode 2.x: API local con metadatos completos
+function list() {
   const raw = execFileSync(cli, ["api", "model.list", "--param", `location[directory]=${dir}`], { encoding: "utf8", maxBuffer: 64 << 20 });
-  const data = JSON.parse(raw).data;
-  models = data.filter((m) => m.providerID === provider).map((m) => ({
-    id: `${m.providerID}/${m.id}`,
-    name: m.name,
-    context: m.limit?.context, output: m.limit?.output,
-    input: m.capabilities?.input, tools: m.capabilities?.tools,
-    variants: (m.variants || []).map((v) => v.id),
-    cost: m.cost?.[0] ? { input: m.cost[0].input, output: m.cost[0].output } : null,
-    released: m.time?.released ? new Date(m.time.released).toISOString().slice(0, 10) : null,
-    status: m.status,
-  }));
-} catch {
-  // OpenCode 1.x: solo nombres
-  const raw = execFileSync(cli, ["models", provider], { encoding: "utf8" });
-  models = raw.split("\n").map((l) => l.trim()).filter((l) => l.startsWith(`${provider}/`)).map((id) => ({ id }));
+  return JSON.parse(raw).data;
 }
+let data;
+// El servicio de fondo de OpenCode puede tardar en arrancar: un reintento antes de rendirse.
+try { data = list(); } catch { try { data = list(); } catch (e) { console.error(`model.list falló: ${e.message.slice(0, 200)}`); process.exit(1); } }
 
-let index = null;
-try { index = JSON.parse(fs.readFileSync(indexFile, "utf8")); } catch { /* sin índice */ }
-const known = new Set((index?.models || []).map((m) => m.id));
+const models = data.filter((m) => m.providerID === provider && m.status === "active").map((m) => ({
+  id: `${m.providerID}/${m.id}`, context: m.limit?.context, tools: m.capabilities?.tools,
+  variants: (m.variants || []).map((v) => v.id),
+  free: !m.cost?.[0] || (m.cost[0].input === 0 && m.cost[0].output === 0),
+  released: m.time?.released ? new Date(m.time.released).toISOString().slice(0, 10) : null,
+}));
+
+const index = readModels();
+const known = new Set(Object.keys(index.bench || {}));
 const current = new Set(models.map((m) => m.id));
+const used = new Set(Object.values(index.roles || {}).flatMap((r) => r.models || []).map((m) => m.split("#")[0]));
 
 console.log(JSON.stringify({
-  checkedAt: new Date().toISOString(),
-  cliVersion,
-  indexAgeDays: index?.evaluatedAt ? Math.floor((Date.now() - Date.parse(index.evaluatedAt)) / 86_400_000) : null,
+  cliVersion: execFileSync(cli, ["--version"], { encoding: "utf8" }).trim(),
+  benchAgeDays: index.benchAt ? Math.floor((Date.now() - Date.parse(index.benchAt)) / 86_400_000) : null,
   added: [...current].filter((id) => !known.has(id)),
   removed: [...known].filter((id) => !current.has(id)),
-  models,
+  rolesUsingRemoved: [...used].filter((id) => !current.has(id)),
+  roles: Object.fromEntries(Object.entries(index.roles || {}).map(([k, r]) => [k, `${r.agent} · ${(r.models || []).join(" → ")}`])),
+  ...(arg("full") ? { models } : {}),
 }, null, 1));
