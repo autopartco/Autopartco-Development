@@ -1,9 +1,9 @@
-package com.autopartco.backend.seller.dto;
+package com.autopartco.backend.core.order;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
-public record SellerShipmentCreateRequest(
+public record ShipmentCreateRequest(
         @NotBlank @Size(max = 100) String carrier,
         @NotBlank @Size(max = 100) String trackingNumber
 ) {

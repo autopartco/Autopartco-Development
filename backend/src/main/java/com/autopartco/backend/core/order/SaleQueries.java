@@ -1,5 +1,6 @@
-package com.autopartco.backend.seller.service;
+package com.autopartco.backend.core.order;
 
+import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -13,30 +14,17 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
-import com.autopartco.backend.seller.dto.SellerDashboardResponse;
-import com.autopartco.backend.seller.dto.SellerOrderResponse;
-import com.autopartco.backend.seller.dto.SellerOrderStatusRequest;
-import com.autopartco.backend.seller.dto.SellerOrderSummaryResponse;
-import com.autopartco.backend.seller.dto.SellerShipmentCreateRequest;
-import com.autopartco.backend.seller.dto.SellerShipmentStatusRequest;
-import com.autopartco.backend.core.organization.internal.StoreApplication;
-import com.autopartco.backend.core.billing.PlanEntitlements;
-import com.autopartco.backend.core.billing.SubscriptionAccess;
-import com.autopartco.backend.core.billing.PlanEntitlements.Usage;
-import com.autopartco.backend.core.organization.internal.StoreApplicationRepository;
-import com.autopartco.backend.core.organization.StoreAccess;
-import com.autopartco.backend.core.organization.StorePermissionCodes;
 
 import lombok.AllArgsConstructor;
 
+/** Lecturas de ventas de un almacén: listado, detalle y resumen mensual. No comprueba permisos. */
 @Service
 @AllArgsConstructor
-public class SellerDashboardService {
+public class SaleQueries {
     private static final int MAX_PAGE_SIZE = 100;
-    private static final RowMapper<SellerOrderSummaryResponse> ORDER_SUMMARY_MAPPER = (result, row) ->
-            new SellerOrderSummaryResponse(
+    private static final RowMapper<SaleSummaryResponse> ORDER_SUMMARY_MAPPER = (result, row) ->
+            new SaleSummaryResponse(
                     result.getObject("sale_id", UUID.class),
                     result.getObject("order_id", UUID.class),
                     result.getLong("order_number"),
@@ -93,22 +81,11 @@ public class SellerDashboardService {
             """;
 
     private final JdbcTemplate jdbcTemplate;
-    private final StoreAccess storeAccessService;
-    private final PlanEntitlements entitlementService;
-    private final StoreApplicationRepository applicationRepository;
 
+    /** Pedidos del mes en curso, ingresos (sin cancelados) y pedidos pendientes o en preparación. */
     @Transactional(readOnly = true)
-    public SellerDashboardResponse dashboard(UUID storeId, String email) {
-        storeAccessService.requirePermission(email, storeId, StorePermissionCodes.STORE_READ);
-        SubscriptionAccess access = entitlementService.requireAccess(storeId);
-        StoreApplication application = applicationRepository.findByStoreId(storeId)
-                .orElseThrow(() -> new NotFoundException(
-                        "SELLER_APPLICATION_NOT_FOUND",
-                        "No se encontró la suscripción de vendedor para este almacén."
-                ));
-        Usage usage = entitlementService.usage(storeId);
-        String storeStatus = application.getStore().getState().getCode();
-        SellerDashboardResponse.SalesSummary sales = jdbcTemplate.queryForObject("""
+    public SalesSummary monthlySummary(UUID storeId) {
+        return jdbcTemplate.queryForObject("""
                 SELECT count(*) FILTER (WHERE sale.created_at >= date_trunc('month', now())) AS month_orders,
                        COALESCE(sum(sale.total) FILTER (
                            WHERE sale.created_at >= date_trunc('month', now())
@@ -121,41 +98,17 @@ public class SellerDashboardService {
                 JOIN states sale_state ON sale_state.id = sale.state_id
                 WHERE branch.store_id = ?
                   AND sale.deleted_at IS NULL
-                """, (result, row) -> new SellerDashboardResponse.SalesSummary(
+                """, (result, row) -> new SalesSummary(
                 result.getLong("month_orders"),
                 result.getBigDecimal("month_revenue"),
                 result.getLong("pending_orders"),
                 result.getLong("preparing_orders")
         ), storeId);
-
-        return new SellerDashboardResponse(
-                storeId,
-                application.getStore().getBusinessName(),
-                storeStatus,
-                access.plan(),
-                access.selectedPlan(),
-                application.getConfigurationCompletedAt() == null,
-                access.subscriptionExpired(),
-                access.trialEndsAt(),
-                access.paidThrough(),
-                access.plan().maxBranches(),
-                access.plan().maxProducts(),
-                access.plan().maxUsers(),
-                access.capabilities(),
-                new SellerDashboardResponse.Usage(usage.branches(), usage.products(), usage.users()),
-                sales
-        );
     }
 
+    /** Ventas del almacén, más recientes primero; {@code status} opcional, tamaño de página entre 1 y 100. */
     @Transactional(readOnly = true)
-    public List<SellerOrderSummaryResponse> orders(
-            UUID storeId,
-            String email,
-            String status,
-            int page,
-            int size
-    ) {
-        storeAccessService.requirePermission(email, storeId, StorePermissionCodes.ORDER_READ);
+    public List<SaleSummaryResponse> list(UUID storeId, String status, int page, int size) {
         int safeSize = Math.max(1, Math.min(size, MAX_PAGE_SIZE));
         int safePage = Math.max(0, page);
         StringBuilder query = new StringBuilder(ORDER_SELECT);
@@ -177,128 +130,10 @@ public class SellerDashboardService {
         return jdbcTemplate.query(query.toString(), ORDER_SUMMARY_MAPPER, args);
     }
 
+    /** Detalle de una venta del almacén; si no existe, {@code SELLER_ORDER_NOT_FOUND}. */
     @Transactional(readOnly = true)
-    public SellerOrderResponse order(UUID storeId, UUID saleId, String email) {
-        storeAccessService.requirePermission(email, storeId, StorePermissionCodes.ORDER_READ);
-        return loadOrder(storeId, saleId);
-    }
-
-    @Transactional
-    public SellerOrderResponse updateOrderStatus(
-            UUID storeId,
-            UUID saleId,
-            String email,
-            SellerOrderStatusRequest request
-    ) {
-        storeAccessService.requirePermission(email, storeId, StorePermissionCodes.ORDER_UPDATE);
-        String currentStatus = lockSaleStatus(storeId, saleId);
-        String nextStatus = request.status().toUpperCase(Locale.ROOT);
-        if (!isOrderTransitionAllowed(currentStatus, nextStatus)) {
-            throw new ConflictException(
-                    "SELLER_ORDER_STATUS_TRANSITION_INVALID",
-                    "No se puede cambiar el pedido de " + currentStatus + " a " + nextStatus + "."
-            );
-        }
-        updateSaleStatus(saleId, nextStatus);
-        notifyCustomer(saleId, "Pedido actualizado", "Tu pedido cambió al estado " + nextStatus + ".");
-        return loadOrder(storeId, saleId);
-    }
-
-    @Transactional
-    public SellerOrderResponse createShipment(
-            UUID storeId,
-            UUID saleId,
-            String email,
-            SellerShipmentCreateRequest request
-    ) {
-        storeAccessService.requirePermission(email, storeId, StorePermissionCodes.SHIPMENT_UPDATE);
-        String saleStatus = lockSaleStatus(storeId, saleId);
-        if (!"PREPARING".equals(saleStatus)) {
-            throw new ConflictException(
-                    "SELLER_SHIPMENT_ORDER_NOT_PREPARING",
-                    "Solo se puede registrar el envío cuando la venta está en preparación."
-            );
-        }
-        if (Boolean.TRUE.equals(jdbcTemplate.queryForObject(
-                "SELECT EXISTS (SELECT 1 FROM shipments WHERE sale_id = ?)",
-                Boolean.class,
-                saleId
-        ))) {
-            throw new ConflictException("SELLER_SHIPMENT_ALREADY_EXISTS", "La venta ya tiene un envío registrado.");
-        }
-        UUID shipmentId = jdbcTemplate.queryForObject("""
-                INSERT INTO shipments (
-                    sale_id, shipment_status_id, carrier, tracking_number
-                )
-                VALUES (
-                    ?, (SELECT id FROM shipment_statuses WHERE code = 'PREPARING'),
-                    ?, ?
-                )
-                RETURNING id
-                """, UUID.class, saleId, request.carrier().trim(), request.trackingNumber().trim());
-        jdbcTemplate.update("""
-                INSERT INTO shipment_events (shipment_id, shipment_status_id, notes, event_at)
-                VALUES (
-                    ?, (SELECT id FROM shipment_statuses WHERE code = 'PREPARING'),
-                    'Envío registrado', now()
-                )
-                """, shipmentId);
-        notifyCustomer(saleId, "Envío registrado", "Se registró el envío de tu pedido.");
-        return loadOrder(storeId, saleId);
-    }
-
-    @Transactional
-    public SellerOrderResponse updateShipmentStatus(
-            UUID storeId,
-            UUID saleId,
-            String email,
-            SellerShipmentStatusRequest request
-    ) {
-        storeAccessService.requirePermission(email, storeId, StorePermissionCodes.SHIPMENT_UPDATE);
-        lockSaleStatus(storeId, saleId);
-        ShipmentRow shipment = jdbcTemplate.query("""
-                SELECT shipment.id, shipment_status.code AS status
-                FROM shipments shipment
-                JOIN shipment_statuses shipment_status ON shipment_status.id = shipment.shipment_status_id
-                WHERE shipment.sale_id = ?
-                FOR UPDATE OF shipment
-                """, (result, row) -> new ShipmentRow(
-                result.getObject("id", UUID.class),
-                result.getString("status")
-        ), saleId).stream().findFirst().orElseThrow(() -> new NotFoundException(
-                "SELLER_SHIPMENT_NOT_FOUND",
-                "No se encontró el envío de esta venta."
-        ));
-        String nextStatus = request.status().toUpperCase(Locale.ROOT);
-        if (!isShipmentTransitionAllowed(shipment.status(), nextStatus)) {
-            throw new ConflictException(
-                    "SELLER_SHIPMENT_STATUS_TRANSITION_INVALID",
-                    "No se puede cambiar el envío de " + shipment.status() + " a " + nextStatus + "."
-            );
-        }
-        jdbcTemplate.update("""
-                UPDATE shipments
-                SET shipment_status_id = (SELECT id FROM shipment_statuses WHERE code = ?),
-                    shipped_at = CASE WHEN ? = 'DISPATCHED' THEN COALESCE(shipped_at, now()) ELSE shipped_at END,
-                    delivered_at = CASE WHEN ? = 'DELIVERED' THEN now() ELSE delivered_at END,
-                    updated_at = now()
-                WHERE id = ?
-                """, nextStatus, nextStatus, nextStatus, shipment.id());
-        jdbcTemplate.update("""
-                INSERT INTO shipment_events (shipment_id, shipment_status_id, notes, event_at)
-                VALUES (?, (SELECT id FROM shipment_statuses WHERE code = ?), ?, now())
-                """, shipment.id(), nextStatus, cleanNotes(request.notes()));
-        if ("DISPATCHED".equals(nextStatus)) {
-            updateSaleStatus(saleId, "SHIPPED");
-        } else if ("DELIVERED".equals(nextStatus)) {
-            updateSaleStatus(saleId, "DELIVERED");
-        }
-        notifyCustomer(saleId, "Estado del envío actualizado", "Tu envío cambió al estado " + nextStatus + ".");
-        return loadOrder(storeId, saleId);
-    }
-
-    private SellerOrderResponse loadOrder(UUID storeId, UUID saleId) {
-        SellerOrderBase base = jdbcTemplate.query("""
+    public SaleDetailResponse detail(UUID storeId, UUID saleId) {
+        SaleBase base = jdbcTemplate.query("""
                 SELECT sale.id AS sale_id,
                        sale.order_id,
                        customer_order.order_number,
@@ -351,7 +186,7 @@ public class SellerDashboardService {
                 WHERE branch.store_id = ?
                   AND sale.id = ?
                   AND sale.deleted_at IS NULL
-                """, (result, row) -> new SellerOrderBase(
+                """, (result, row) -> new SaleBase(
                 result.getObject("sale_id", UUID.class),
                 result.getObject("order_id", UUID.class),
                 result.getLong("order_number"),
@@ -382,7 +217,7 @@ public class SellerDashboardService {
                 "No se encontró la venta de este almacén."
         ));
 
-        List<SellerOrderResponse.Item> items = jdbcTemplate.query("""
+        List<SaleDetailResponse.Item> items = jdbcTemplate.query("""
                 SELECT detail.inventory_id, product.id AS product_id, product.name,
                        product.part_number, detail.units, detail.unit_price
                 FROM order_details detail
@@ -390,7 +225,7 @@ public class SellerDashboardService {
                 JOIN products product ON product.id = inventory.product_id
                 WHERE detail.sale_id = ?
                 ORDER BY product.name
-                """, (result, row) -> new SellerOrderResponse.Item(
+                """, (result, row) -> new SaleDetailResponse.Item(
                 result.getObject("inventory_id", UUID.class),
                 result.getObject("product_id", UUID.class),
                 result.getString("name"),
@@ -399,20 +234,20 @@ public class SellerDashboardService {
                 result.getBigDecimal("unit_price")
         ), saleId);
 
-        SellerOrderResponse.Shipment shipment = null;
+        SaleDetailResponse.Shipment shipment = null;
         if (base.shipmentId() != null) {
-            List<SellerOrderResponse.Event> events = jdbcTemplate.query("""
+            List<SaleDetailResponse.Event> events = jdbcTemplate.query("""
                     SELECT status.code, event.notes, event.event_at
                     FROM shipment_events event
                     JOIN shipment_statuses status ON status.id = event.shipment_status_id
                     WHERE event.shipment_id = ?
                     ORDER BY event.event_at, event.id
-                    """, (result, row) -> new SellerOrderResponse.Event(
+                    """, (result, row) -> new SaleDetailResponse.Event(
                     result.getString("code"),
                     result.getString("notes"),
                     localDateTime(result, "event_at")
             ), base.shipmentId());
-            shipment = new SellerOrderResponse.Shipment(
+            shipment = new SaleDetailResponse.Shipment(
                     base.shipmentId(),
                     base.carrier(),
                     base.trackingNumber(),
@@ -422,9 +257,9 @@ public class SellerDashboardService {
                     events
             );
         }
-        SellerOrderResponse.DeliveryAddress address = base.addressLine() == null
+        SaleDetailResponse.DeliveryAddress address = base.addressLine() == null
                 ? null
-                : new SellerOrderResponse.DeliveryAddress(
+                : new SaleDetailResponse.DeliveryAddress(
                         base.addressLine(),
                         base.addressComplement(),
                         base.city(),
@@ -432,7 +267,7 @@ public class SellerDashboardService {
                         base.country(),
                         base.postalCode()
                 );
-        return new SellerOrderResponse(
+        return new SaleDetailResponse(
                 base.saleId(),
                 base.orderId(),
                 base.orderNumber(),
@@ -452,73 +287,6 @@ public class SellerDashboardService {
         );
     }
 
-    private String lockSaleStatus(UUID storeId, UUID saleId) {
-        return jdbcTemplate.query("""
-                SELECT status.code
-                FROM sales sale
-                JOIN branches branch ON branch.id = sale.branch_id
-                JOIN states status ON status.id = sale.state_id
-                WHERE branch.store_id = ?
-                  AND sale.id = ?
-                  AND sale.deleted_at IS NULL
-                FOR UPDATE OF sale
-                """, (result, row) -> result.getString(1), storeId, saleId)
-                .stream()
-                .findFirst()
-                .orElseThrow(() -> new NotFoundException(
-                        "SELLER_ORDER_NOT_FOUND",
-                        "No se encontró la venta de este almacén."
-                ));
-    }
-
-    private void updateSaleStatus(UUID saleId, String status) {
-        int updated = jdbcTemplate.update("""
-                UPDATE sales
-                SET state_id = (SELECT id FROM states WHERE code = ?),
-                    updated_at = now()
-                WHERE id = ?
-                  AND deleted_at IS NULL
-                """, status, saleId);
-        if (updated != 1) {
-            throw new NotFoundException("SELLER_ORDER_NOT_FOUND", "No se encontró la venta.");
-        }
-    }
-
-    private void notifyCustomer(UUID saleId, String title, String message) {
-        jdbcTemplate.update("""
-                INSERT INTO notifications (account_id, title, message)
-                SELECT account.id, ?, ?
-                FROM sales sale
-                JOIN orders customer_order ON customer_order.id = sale.order_id
-                JOIN accounts account ON account.id_person = customer_order.person_id
-                WHERE sale.id = ?
-                """, title, message, saleId);
-    }
-
-    static boolean isOrderTransitionAllowed(String current, String next) {
-        return switch (current) {
-            case "PENDING" -> next.equals("CONFIRMED") || next.equals("CANCELLED");
-            case "CONFIRMED" -> next.equals("PREPARING") || next.equals("CANCELLED");
-            default -> false;
-        };
-    }
-
-    static boolean isShipmentTransitionAllowed(String current, String next) {
-        return switch (current) {
-            case "PREPARING" -> next.equals("DISPATCHED");
-            case "DISPATCHED" -> next.equals("IN_TRANSIT")
-                    || next.equals("OUT_FOR_DELIVERY")
-                    || next.equals("DELIVERED");
-            case "IN_TRANSIT" -> next.equals("OUT_FOR_DELIVERY") || next.equals("DELIVERED");
-            case "OUT_FOR_DELIVERY" -> next.equals("DELIVERED");
-            default -> false;
-        };
-    }
-
-    private String cleanNotes(String notes) {
-        return notes == null || notes.isBlank() ? null : notes.trim();
-    }
-
     private static LocalDateTime localDateTime(ResultSet result, String column) throws SQLException {
         Timestamp timestamp = result.getTimestamp(column);
         return timestamp == null ? null : timestamp.toLocalDateTime();
@@ -529,19 +297,16 @@ public class SellerDashboardService {
         return value == null ? null : result.getObject(column, UUID.class);
     }
 
-    private record ShipmentRow(UUID id, String status) {
-    }
-
-    private record SellerOrderBase(
+    private record SaleBase(
             UUID saleId,
             UUID orderId,
             long orderNumber,
             UUID branchId,
             String branchName,
             String status,
-            java.math.BigDecimal subtotal,
-            java.math.BigDecimal shippingCost,
-            java.math.BigDecimal total,
+            BigDecimal subtotal,
+            BigDecimal shippingCost,
+            BigDecimal total,
             LocalDateTime createdAt,
             String customerName,
             String paymentStatus,

@@ -1,12 +1,13 @@
-package com.autopartco.backend.seller.dto;
+package com.autopartco.backend.storesuite.dashboard;
 
-import com.autopartco.backend.core.billing.PlanResponse;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-public record SellerDashboardResponse(
+import com.autopartco.backend.core.billing.PlanResponse;
+import com.autopartco.backend.core.order.SalesSummary;
+
+public record DashboardResponse(
         UUID storeId,
         String storeName,
         String storeStatus,
@@ -27,14 +28,6 @@ public record SellerDashboardResponse(
             long branches,
             long products,
             long users
-    ) {
-    }
-
-    public record SalesSummary(
-            long ordersThisMonth,
-            BigDecimal revenueThisMonth,
-            long pendingOrders,
-            long preparingOrders
     ) {
     }
 }

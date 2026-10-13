@@ -1,11 +1,11 @@
-package com.autopartco.backend.seller.dto;
+package com.autopartco.backend.core.order;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-public record SellerOrderResponse(
+public record SaleDetailResponse(
         UUID saleId,
         UUID orderId,
         long orderNumber,

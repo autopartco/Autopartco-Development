@@ -1,9 +1,9 @@
-package com.autopartco.backend.seller.dto;
+package com.autopartco.backend.core.order;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 
-public record SellerOrderStatusRequest(
+public record SaleStatusRequest(
         @NotBlank
         @Pattern(regexp = "CONFIRMED|PREPARING|CANCELLED")
         String status
