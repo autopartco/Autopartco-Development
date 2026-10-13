@@ -16,9 +16,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.autopartco.backend.shared.web.ApiPaths;
-import com.autopartco.backend.product.dto.PromotionResponse;
-import com.autopartco.backend.product.dto.PromotionUpsertRequest;
-import com.autopartco.backend.product.service.PromotionService;
+import com.autopartco.backend.core.pricing.PromotionResponse;
+import com.autopartco.backend.core.pricing.PromotionUpsertRequest;
+import com.autopartco.backend.product.service.PromotionUseCases;
 
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
@@ -27,7 +27,7 @@ import lombok.AllArgsConstructor;
 @RequestMapping(ApiPaths.BASE)
 @AllArgsConstructor
 public class PromotionController {
-    private final PromotionService promotionService;
+    private final PromotionUseCases promotionService;
 
     @GetMapping("/stores/{storeId}/promotions")
     public List<PromotionResponse> listForStore(

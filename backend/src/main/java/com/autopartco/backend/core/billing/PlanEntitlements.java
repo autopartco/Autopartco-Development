@@ -9,7 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
-import com.autopartco.backend.product.repository.ProductRepository;
+import com.autopartco.backend.core.catalog.ProductCatalog;
 import com.autopartco.backend.core.billing.internal.Plan;
 import com.autopartco.backend.core.billing.internal.StoreSubscription;
 import com.autopartco.backend.core.billing.internal.StoreSubscriptionRepository;
@@ -29,8 +29,7 @@ public class PlanEntitlements {
     private final StoreSubscriptionRepository subscriptionRepository;
     private final PlanService planService;
     private final BranchService branchService;
-    // Temporal hasta la fase 4a (catalog.ProductCatalog#countInStore).
-    private final ProductRepository productRepository;
+    private final ProductCatalog productCatalog;
     private final StaffDirectory staffDirectory;
 
     @Transactional(readOnly = true)
@@ -50,7 +49,7 @@ public class PlanEntitlements {
     public Usage usage(UUID storeId) {
         return new Usage(
                 branchService.countActive(storeId),
-                productRepository.countProductsInStore(storeId),
+                productCatalog.countInStore(storeId),
                 staffDirectory.countActive(storeId)
         );
     }
@@ -65,7 +64,7 @@ public class PlanEntitlements {
         requireNotExpired(current);
         long used = switch (capacity) {
             case BRANCHES -> branchService.countActive(storeId);
-            case PRODUCTS -> productRepository.countProductsInStore(storeId);
+            case PRODUCTS -> productCatalog.countInStore(storeId);
             case USERS -> staffDirectory.countActive(storeId);
         };
         Integer maximum = switch (capacity) {

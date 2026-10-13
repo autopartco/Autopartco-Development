@@ -15,11 +15,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.autopartco.backend.shared.web.ApiPaths;
-import com.autopartco.backend.product.dto.CategoryRequest;
-import com.autopartco.backend.product.dto.CategoryResponse;
-import com.autopartco.backend.product.dto.ManufacturerRequest;
-import com.autopartco.backend.product.dto.ManufacturerResponse;
-import com.autopartco.backend.product.service.MasterDataService;
+import com.autopartco.backend.core.catalog.CategoryRequest;
+import com.autopartco.backend.core.catalog.CategoryResponse;
+import com.autopartco.backend.core.catalog.ManufacturerRequest;
+import com.autopartco.backend.core.catalog.ManufacturerResponse;
+import com.autopartco.backend.core.catalog.MasterDataService;
 
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;

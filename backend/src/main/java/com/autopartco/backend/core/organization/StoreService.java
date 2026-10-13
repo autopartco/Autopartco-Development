@@ -146,6 +146,18 @@ public class StoreService {
                 .toList();
     }
 
+    /** {@code true} si el almacén existe (no borrado). */
+    @Transactional(readOnly = true)
+    public boolean exists(UUID storeId) {
+        return storeRepository.existsById(storeId);
+    }
+
+    /** Exige que el almacén exista; si no, {@code STORE_NOT_FOUND}. */
+    @Transactional(readOnly = true)
+    public void requireExists(UUID storeId) {
+        findStore(storeId);
+    }
+
     /** Bloquea la fila del almacén ({@code SELECT ... FOR UPDATE}) hasta el final de la transacción del llamador. */
     @Transactional
     public void lockForUpdate(UUID storeId) {

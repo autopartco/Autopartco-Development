@@ -96,6 +96,15 @@ public class BranchService {
         return branchRepository.countByStore_IdAndState_Code(storeId, ACTIVE);
     }
 
+    /** Exige una sucursal del almacén en estado {@code ACTIVE}; si no existe o no está activa, {@code BRANCH_NOT_FOUND}. */
+    @Transactional(readOnly = true)
+    public void requireActiveInStore(UUID storeId, UUID branchId) {
+        Branch branch = findBranch(storeId, branchId);
+        if (!ACTIVE.equals(branch.getState().getCode())) {
+            throw new NotFoundException("BRANCH_NOT_FOUND", "No se encontró la sucursal activa.");
+        }
+    }
+
     private Store requireStore(UUID storeId) {
         return storeRepository.findById(storeId)
                 .orElseThrow(() -> new NotFoundException("STORE_NOT_FOUND", "No se encontró el almacén."));

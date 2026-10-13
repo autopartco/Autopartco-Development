@@ -19,13 +19,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.autopartco.backend.shared.web.ApiPaths;
-import com.autopartco.backend.product.dto.ProductCreateRequest;
-import com.autopartco.backend.product.dto.ProductPublicationRequest;
-import com.autopartco.backend.product.dto.ProductResponse;
-import com.autopartco.backend.product.dto.ProductOptionsResponse;
-import com.autopartco.backend.product.dto.ProductImageOrderRequest;
-import com.autopartco.backend.product.dto.ProductImageResponse;
-import com.autopartco.backend.product.dto.ProductUpdateRequest;
+import com.autopartco.backend.core.catalog.ProductCreateRequest;
+import com.autopartco.backend.core.catalog.ProductPublicationRequest;
+import com.autopartco.backend.core.catalog.ProductResponse;
+import com.autopartco.backend.core.catalog.ProductOptionsResponse;
+import com.autopartco.backend.core.catalog.ProductImageOrderRequest;
+import com.autopartco.backend.core.catalog.ProductImageResponse;
+import com.autopartco.backend.core.catalog.ProductUpdateRequest;
 import com.autopartco.backend.product.service.ProductImageService;
 import com.autopartco.backend.product.service.ProductService;
 
