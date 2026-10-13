@@ -1,0 +1,43 @@
+name: Publicar backlog
+
+# Crea en este repositorio las etiquetas, milestones (sprints), épicas e issues definidos en
+# docs/backlog/backlog.json. Es idempotente: no duplica lo que ya existe.
+# El GitHub Project de la organización se crea a mano (el token del workflow no puede crearlo).
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Aplicar cambios (si no se marca, solo simula y muestra lo que haría)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: publish-backlog
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Publicar backlog
+        env:
+          GH_TOKEN: ${{ github.token }}
+          APPLY: ${{ inputs.apply }}
+        run: |
+          if [ "$APPLY" = "true" ]; then
+            node tools/github/publish-backlog.mjs --no-project --apply
+          else
+            node tools/github/publish-backlog.mjs --no-project
+          fi
