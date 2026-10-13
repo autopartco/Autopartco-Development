@@ -1,7 +1,7 @@
 /**
  * Promociones y cálculo de precio efectivo.
  */
-@ApplicationModule(displayName = "Core: Pricing")
+@ApplicationModule(displayName = "Core: Pricing", allowedDependencies = "shared")
 package com.autopartco.backend.core.pricing;
 
 import org.springframework.modulith.ApplicationModule;

@@ -17,7 +17,7 @@
 La seguridad del backend se centraliza en:
 
 ```text
-src/main/java/com/autopartco/backend/config/WebSecurityConfig.java
+src/main/java/com/autopartco/backend/shared/security/WebSecurityConfig.java
 ```
 
 La API opera sin sesiones HTTP (`STATELESS`), con CSRF deshabilitado y con JWT como servidor de recursos para endpoints protegidos.
@@ -30,36 +30,48 @@ Todo endpoint queda protegido por defecto:
 .anyRequest().authenticated()
 ```
 
-Los endpoints publicos deben declararse de forma explicita.
+Las rutas publicas se declaran de forma explicita (tabla siguiente). `/api/v1/admin/**` exige `ROLE_ROOT`, además de los `@PreAuthorize` de cada controlador. El resto queda autenticado.
 
 ## Endpoints publicos actuales
 
 | Metodo | Ruta | Motivo |
 | --- | --- | --- |
 | `GET` | `/actuator/health` | Salud de la aplicacion. |
-| `GET` | `/api/v1/test/public` | Endpoint publico de prueba. |
+| `POST` | `/api/v1/auth/register` | Permite iniciar el registro de usuario. |
 | `POST` | `/api/v1/auth/login` | Inicia sesión y emite tokens. |
 | `POST` | `/api/v1/auth/refresh` | Renueva el access token y rota el refresh token. |
-| `POST` | `/api/v1/auth/register` | Permite iniciar el registro de usuario. |
 | `GET` | `/api/v1/auth/verify-email` | Permite verificar correo mediante token. |
 | `POST` | `/api/v1/auth/unlock/request` | Solicita un enlace para desbloquear una cuenta. |
 | `GET` | `/api/v1/auth/unlock?token=TOKEN` | Desbloquea una cuenta mediante token. |
-| `GET` | `/api/v1/stores/published` | Consulta almacenes activos publicados. |
+| `POST` | `/api/v1/auth/password-recovery/request` | Solicita recuperación de contraseña. |
+| `POST` | `/api/v1/auth/password-recovery/reset` | Restablece la contraseña con token. |
+| `POST` | `/api/v1/webhooks/wompi` | Webhook firmado de Wompi. |
+| `POST` | `/api/v1/store-applications` | Alta de solicitud de almacén. |
+| `POST` | `/api/v1/store-applications/setup` | Configuración de almacén con token. |
+| `GET` | `/api/v1/staff-invitations/preview` | Vista previa de invitación. |
+| `POST` | `/api/v1/staff-invitations/accept` | Aceptación de invitación. |
+| `GET` | `/api/v1/plans` | Catálogo público de planes. |
+| `GET` | `/api/v1/marketplace/stores` | Tiendas publicadas. |
+| `GET` | `/api/v1/marketplace/stores/*/brand/*` | Activos de marca de tienda. |
+| `GET` | `/api/v1/marketplace/products` | Catálogo público. |
+| `GET` | `/api/v1/marketplace/products/*` | Detalle público de producto. |
+| `GET` | `/api/v1/marketplace/product-options` | Opciones de filtro. |
+| `GET` | `/api/v1/marketplace/product-options/*` | Opciones por recurso. |
 | `OPTIONS` | `/**` | Preflight CORS. |
 
 El registro y la verificacion de correo son publicos porque el usuario aun no tiene una cuenta activa ni un token JWT.
 
 ## Operaciones de almacenes
 
-`POST /api/v1/stores` requiere autenticación. El servidor registra el almacén en estado `PENDING` y agrega al usuario autenticado como colaborador con rol local `OWNER`.
+El alta de almacén se solicita con `POST /api/v1/store-applications` (pública) y se completa con `POST /api/v1/store-applications/setup` (token de configuración de un solo uso). El colaborador dueño del almacén se registra con el rol local `OWNER` (`core.organization.StoreService`).
 
-`PATCH /api/v1/stores/{id}` requiere `STORE_UPDATE` para ese almacén. Solo permite actualizar `businessName`, `nit` y `businessEmail`; no permite cambiar el estado ni la configuración.
+`PATCH /api/v1/stores/{storeId}` requiere `STORE_UPDATE` para ese almacén. Solo permite actualizar `businessName`, `nit` y `businessEmail`; no permite cambiar el estado ni la configuración.
 
-`GET /api/v1/stores/{id}/status` requiere `STORE_READ`. `GET /api/v1/stores/{id}/permissions` devuelve los permisos efectivos del usuario autenticado para ese almacén. `GET /api/v1/stores/published` es público y solo devuelve almacenes en estado `ACTIVE`.
+`GET /api/v1/stores/{storeId}/status` requiere `STORE_READ`. `GET /api/v1/stores/{storeId}/my-permissions` devuelve los permisos efectivos del usuario autenticado para ese almacén. `GET /api/v1/marketplace/stores` es público y solo devuelve almacenes en estado `ACTIVE`.
 
 Las sucursales se administran en `/api/v1/stores/{storeId}/branches` con los permisos `BRANCH_READ`, `BRANCH_CREATE`, `BRANCH_UPDATE` y `BRANCH_DELETE`. Cada sucursal debe incluir una ubicación; su desactivación cambia el estado a `INACTIVE` y conserva el registro para el historial.
 
-Los productos requieren `PRODUCT_READ`, `PRODUCT_CREATE`, `PRODUCT_UPDATE`, `PRODUCT_PUBLISH` o `PRODUCT_DELETE`; las imágenes requieren `PRODUCT_IMAGE_MANAGE`. Crear requiere `branchId`, fabricante, categoría y compatibilidades existentes. Precio y cantidad se guardan por sucursal en inventario. Las promociones de tienda requieren `PROMOTION_READ`, `PROMOTION_CREATE`, `PROMOTION_UPDATE` o `PROMOTION_DELETE`. El catálogo público `GET /api/v1/products/published` solo devuelve productos activos con stock en sucursales y almacenes activos.
+Los productos requieren `PRODUCT_READ`, `PRODUCT_CREATE`, `PRODUCT_UPDATE`, `PRODUCT_PUBLISH` o `PRODUCT_DELETE`; las imágenes requieren `PRODUCT_IMAGE_MANAGE`. Crear requiere `branchId`, fabricante, categoría y compatibilidades existentes. Precio y cantidad se guardan por sucursal en inventario. Las promociones de tienda requieren `PROMOTION_READ`, `PROMOTION_CREATE`, `PROMOTION_UPDATE` o `PROMOTION_DELETE`. El catálogo público `GET /api/v1/marketplace/products` solo devuelve productos activos con stock en sucursales y almacenes activos.
 
 ## Registro con verificacion de correo
 
@@ -110,8 +122,8 @@ Nunca se devuelve ni se registra en auditoria:
 
 ## Perfil propio
 
-`GET /api/v1/auth/profile` consulta la cuenta asociada al correo del JWT. `PATCH
-/api/v1/auth/profile` acepta cambios parciales solo para `name`, `surname`,
+`GET /api/v1/me/profile` consulta la cuenta asociada al correo del JWT. `PATCH
+/api/v1/me/profile` acepta cambios parciales solo para `name`, `surname`,
 `identification`, `dateBirth` y `numberPhone`. No se recibe un identificador de
 cuenta/persona: el objetivo siempre se obtiene del usuario autenticado.
 
@@ -159,7 +171,7 @@ MAIL_STARTTLS=false
 CORS se mantiene separado en:
 
 ```text
-src/main/java/com/autopartco/backend/config/CorsConfig.java
+src/main/java/com/autopartco/backend/shared/security/CorsConfig.java
 ```
 
 `WebSecurityConfig` solo habilita la integracion con:
@@ -175,10 +187,10 @@ contrato de tokens que el login. Cada renovación reemplaza el refresh token
 vigente de esa sesión; el token anterior deja de ser válido. La base de datos
 solo conserva su hash SHA-256 hexadecimal, nunca el valor que usa el cliente.
 
-`GET /api/v1/auth/sessions` devuelve las sesiones activas de la cuenta
+`GET /api/v1/me/sessions` devuelve las sesiones activas de la cuenta
 autenticada, con IP, user agent, fechas y una marca `current` basada en el ID de
 sesión incluido en el JWT. No devuelve refresh tokens ni sus hashes.
-`DELETE /api/v1/auth/sessions/{sessionId}` revoca una sesión propia. `POST
+`DELETE /api/v1/me/sessions/{sessionId}` revoca una sesión propia. `POST
 /api/v1/auth/logout` revoca la sesión identificada por el refresh token y
 `POST /api/v1/auth/logout/others` revoca las demás sesiones de esa cuenta.
 
@@ -203,7 +215,7 @@ Catálogo de permisos: `STORE_READ`, `STORE_UPDATE`, `BRANCH_READ`,
 `PRODUCT_IMAGE_MANAGE`, `PROMOTION_READ`, `PROMOTION_CREATE`,
 `PROMOTION_UPDATE` y `PROMOTION_DELETE`.
 
-`GET /api/v1/stores/{storeId}/permissions` devuelve los permisos efectivos del
+`GET /api/v1/stores/{storeId}/my-permissions` devuelve los permisos efectivos del
 usuario autenticado para ese almacén. Los endpoints de tienda validan los
 permisos en backend y no confían en los datos enviados por el frontend.
 
@@ -214,10 +226,10 @@ Todas las operaciones usan la persona asociada al JWT; no aceptan un
 
 | Metodo | Ruta | Operacion |
 | --- | --- | --- |
-| `GET` | `/api/v1/auth/addresses` | Lista las direcciones propias. |
-| `POST` | `/api/v1/auth/addresses` | Crea una direccion. |
-| `PUT` | `/api/v1/auth/addresses/{addressId}` | Actualiza una direccion propia. |
-| `DELETE` | `/api/v1/auth/addresses/{addressId}` | Desactiva logicamente una direccion propia. |
+| `GET` | `/api/v1/me/addresses` | Lista las direcciones propias. |
+| `POST` | `/api/v1/me/addresses` | Crea una direccion. |
+| `PUT` | `/api/v1/me/addresses/{addressId}` | Actualiza una direccion propia. |
+| `DELETE` | `/api/v1/me/addresses/{addressId}` | Desactiva logicamente una direccion propia. |
 
 Cada request incluye `label`, los campos de `location` y opcionalmente
 `isDefault`. La primera dirección queda como predeterminada. Marcar otra como

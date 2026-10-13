@@ -6,7 +6,6 @@ import java.beans.Introspector;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
@@ -24,13 +23,9 @@ import jakarta.persistence.Entity;
 /**
  * Verificación de la estructura modular (Spring Modulith). No levanta el contexto de Spring ni toca la BD.
  *
- * <p>Crece por fases: la verificación filtrada a los módulos migrados se añade en la fase 1 y
- * {@code verify()} completo en la fase 8.</p>
+ * <p>{@code verify()} completo, sin filtros, desde la fase 8.</p>
  */
 class ModularityTests {
-    private static final Pattern MIGRATED = Pattern.compile("Module '(core\\.audit|core\\.notification|core\\.identity|core\\.organization|core\\.billing|core\\.vehicle|core\\.inventory|core\\.pricing|core\\.catalog|core\\.order|storesuite|marketplace|operations)'");
-    private static final Pattern LEGACY = Pattern.compile("com\\.autopartco\\.backend\\.(auth|seller|store|product)\\.");
-
     private static final String BASE_PACKAGE = "com.autopartco.backend";
     private static final String SPRING_DATA_REPOSITORY = "org.springframework.data.repository.Repository";
 
@@ -39,18 +34,12 @@ class ModularityTests {
     @Test
     void printsModules() {
         System.out.println(modules);
-
-        System.out.println("Violaciones detectadas (informativo hasta la fase 8): "
-                + modules.detectViolations().getMessages().size());
     }
 
     @Test
-    void migratedModulesHaveNoViolations() {
-        // Durante la migración (§7) se permiten dependencias hacia los paquetes legados.
-        modules.detectViolations()
-                .filter(violation -> MIGRATED.matcher(violation.getMessage()).find()
-                        && !LEGACY.matcher(violation.getMessage()).find())
-                .throwIfPresent();
+    void verifiesModularStructure() {
+        // Sin filtros: ciclos, acceso a tipos internos y allowedDependencies de cada package-info (§4.2).
+        modules.verify();
     }
 
     @Test

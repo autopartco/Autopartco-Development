@@ -29,8 +29,8 @@ Todos los endpoints usan el prefijo `/api/v1`.
 
 | Método | Ruta | Acceso / función |
 | --- | --- | --- |
-| `GET` | `/products/published` | Consulta pública; incluye `images` en cada producto. |
-| `GET` | `/products/{productId}` | Consulta pública del producto publicado; incluye `images`. |
+| `GET` | `/marketplace/products` | Consulta pública; incluye `images` en cada producto. |
+| `GET` | `/marketplace/products/{productId}` | Consulta pública del producto publicado; incluye `images`. |
 | `POST` | `/stores/{storeId}/products/{productId}/images` | Requiere autenticación y permisos de gestión de tienda. `multipart/form-data`: `file`, `files` repetido o `files[]` repetido. |
 | `PUT` | `/stores/{storeId}/products/{productId}/images/{imageId}` | Reemplaza una imagen; `multipart/form-data`, campo `file`. |
 | `PATCH` | `/stores/{storeId}/products/{productId}/images/{imageId}/main` | Marca una imagen como principal y desmarca las demás. |

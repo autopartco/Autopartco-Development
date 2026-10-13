@@ -66,6 +66,11 @@ public class AccountProvisioning {
      * Crea la persona y una cuenta {@code STORE_MANAGER} ya activa para un colaborador que acepta una invitación
      * (el correo quedó verificado al recibir el enlace). La contraseña se guarda con el {@link PasswordEncoder}.
      *
+     * <p><b>Uso restringido:</b> solo debe llamarlo {@code storesuite.staff.AcceptStaffInvitation}, dentro de su
+     * transacción y después de bloquear la invitación pendiente y de {@link AccountLookup#lockByEmail(String)}
+     * sin encontrar cuenta. No valida el token ni la invitación: llamarlo desde otro flujo crearía cuentas
+     * activas sin verificar el correo.</p>
+     *
      * @throws ConflictException {@code IDENTIFICATION_ALREADY_EXISTS} si la identificación ya está registrada
      */
     @Transactional
