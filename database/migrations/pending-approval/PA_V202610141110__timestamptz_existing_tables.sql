@@ -16,17 +16,17 @@
 --   Las restricciones CHECK y los índices se reescriben automáticamente.
 --
 -- Supuesto: los valores actuales están en autopartco.legacy_source_tz.
---   Fíjela a la zona real de la JVM (p. ej. America/Bogota); por defecto es
---   UTC. La BD de desarrollo es desechable (decisión U1 del ADR): las filas
---   con zonas mezcladas no se corrigen una a una.
+--   Ejecútelo con autopartco.legacy_source_tz = 'America/Bogota' (zona de la
+--   JVM, ADR 0002). La BD de desarrollo es desechable (decisión U1 del ADR):
+--   las filas con zonas mezcladas no se corrigen una a una.
 --
--- Backend (en el MISMO despliegue):
---   - LocalDateTime -> OffsetDateTime/Instant en BaseEntity y en las entidades
---     con fechas (AccountSession, AccountToken, LoginAttempt, StaffInvitation,
---     StoreApplication, StoreSubscription...).
---   - spring.jpa.properties.hibernate.jdbc.time_zone: UTC.
---   - Con ddl-auto: validate, Hibernate fallará si las entidades siguen con
---     LocalDateTime.
+-- Backend (en el MISMO despliegue, ADR 0002):
+--   - Se conservan las entidades con LocalDateTime (no se cambian a
+--     OffsetDateTime/Instant).
+--   - La JVM con zona America/Bogota se fija en BackendApplication.main.
+--   - Requiere en backend: la JVM con zona America/Bogota fijada en
+--     BackendApplication.main (ADR 0002) y ddl-auto: validate; no fijar
+--     hibernate.jdbc.time_zone.
 --
 -- Impacto operativo: ACCESS EXCLUSIVE y reescritura de cada tabla. Las
 --   lecturas y escrituras quedan bloqueadas mientras dura. Ejecútelo con la

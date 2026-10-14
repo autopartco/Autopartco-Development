@@ -98,7 +98,7 @@ public class ListingQueries {
               and ss.code = 'ACTIVE'
               and bs.code = 'ACTIVE'
               and i.stock > 0
-            order by p.name, s.bussnies_name, b.name
+            order by p.name, s.business_name, b.name
             """;
 
     static final String PUBLISHED_LISTING_SQL = """
@@ -119,7 +119,7 @@ public class ListingQueries {
               and ss.code = 'ACTIVE'
               and bs.code = 'ACTIVE'
               and i.stock > 0
-            order by i.price, s.bussnies_name, b.name
+            order by i.price, s.business_name, b.name
             """;
 
     private final JdbcTemplate jdbcTemplate;
@@ -246,6 +246,7 @@ public class ListingQueries {
                 row.branchId(),
                 row.branchName(),
                 product.getName(),
+                product.getSku(),
                 product.getPartNumber(),
                 product.getDescription(),
                 row.price(),

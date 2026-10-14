@@ -53,7 +53,8 @@ public class Product extends BaseEntity {
     @Column(columnDefinition = "text")
     private String description;
 
-    @Column(length = 100, unique = true)
+    /** Opcional. Único por almacén entre productos vigentes (índice parcial en BD y validación en ProductCatalog). */
+    @Column(length = 100)
     private String sku;
 
     @Column(name = "part_number", length = 50)
@@ -82,7 +83,7 @@ public class Product extends BaseEntity {
      */
     @Builder.Default
     @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(name = "products_compatibilies", joinColumns = @JoinColumn(name = "product_id"))
+    @CollectionTable(name = "product_compatibilities", joinColumns = @JoinColumn(name = "product_id"))
     @Column(name = "compatibility_id")
     private Set<UUID> compatibilityIds = new HashSet<>();
 
