@@ -1,0 +1,42 @@
+name: Promover a main
+
+# main es la rama de produccion y solo la escribe este workflow. Toma el commit del tag (que debe
+# estar en develop), conserva unicamente lo necesario para deploy y lo publica en main.
+# La lista de rutas vive en tools/release/promote-to-main.sh.
+#
+# Publicar: git tag vX.Y.Z origin/develop && git push origin vX.Y.Z
+
+on:
+  push:
+    tags: ["v*"]
+  # Solo aparece en la UI si este archivo esta en la rama por defecto del repositorio.
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: promote-to-main
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verificar que el commit esta en develop
+        run: |
+          git merge-base --is-ancestor HEAD origin/develop \
+            || { echo "::error::$GITHUB_REF_NAME no apunta a un commit de develop."; exit 1; }
+
+      - name: Publicar en main
+        env:
+          RELEASE_LABEL: ${{ github.ref_name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          bash tools/release/promote-to-main.sh HEAD
