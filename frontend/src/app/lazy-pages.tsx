@@ -16,3 +16,8 @@ export const CustomerRegisterPage = lazy(() => import('@/features/auth/pages/cus
 export const PasswordRecoveryPage = lazy(() => import('@/features/auth/pages/password-recovery-page'))
 export const VerifyEmailPage = lazy(() => import('@/features/auth/pages/verify-email-page'))
 export const SellerRegisterPage = lazy(() => import('@/features/seller/pages/seller-register-page'))
+
+// Portal del almacén (SaaS vendedores, SA-F1, SA-F2, SA-F10).
+export const PortalIndexPage = lazy(() => import('@/features/portal/pages/portal-index-page'))
+export const PortalOverviewPage = lazy(() => import('@/features/portal/pages/portal-overview-page'))
+export const PortalPlanPage = lazy(() => import('@/features/portal/pages/portal-plan-page'))
