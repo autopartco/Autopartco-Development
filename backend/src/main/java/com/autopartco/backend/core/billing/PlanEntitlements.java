@@ -1,6 +1,8 @@
 package com.autopartco.backend.core.billing;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -76,7 +78,8 @@ public class PlanEntitlements {
             throw new ConflictException(
                     "SELLER_PLAN_LIMIT_REACHED",
                     "Alcanzaste el límite de " + capacity.label + " de tu plan "
-                            + current.plan().getName() + " (" + maximum + ")."
+                            + current.plan().getName() + " (" + maximum + ").",
+                Map.of("capacity", capacity.name(), "limit", maximum, "used", used, "requested", additional, "planCode", current.plan().getCode())
             );
         }
     }
@@ -92,7 +95,8 @@ public class PlanEntitlements {
         if (!current.plan().getCapabilities().contains(capability)) {
             throw new ConflictException(
                     "SELLER_PLAN_FEATURE_UNAVAILABLE",
-                    "La función " + capability + " no está incluida en el plan " + current.plan().getName() + "."
+                    "La función " + capability + " no está incluida en el plan " + current.plan().getName() + ".",
+                Map.of("capability", capability, "planCode", current.plan().getCode())
             );
         }
     }
@@ -147,9 +151,16 @@ public class PlanEntitlements {
         if (access.subscriptionExpired()) {
             throw new ConflictException(
                     "SELLER_SUBSCRIPTION_EXPIRED",
-                    "La prueba o suscripción venció. Renueva un plan para publicar productos y crear nuevas operaciones."
+                    "La prueba o suscripción venció. Renueva un plan para publicar productos y crear nuevas operaciones.",
+                expiredDetails(access.validThrough())
             );
         }
+    }
+
+    private static Map<String, Object> expiredDetails(LocalDateTime validThrough) {
+        Map<String, Object> details = new HashMap<>();
+        details.put("expiredAt", validThrough == null ? null : validThrough.toString());
+        return details;
     }
 
     public enum Capacity {

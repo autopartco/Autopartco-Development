@@ -2,6 +2,7 @@ package com.autopartco.backend.core.billing.internal.wompi;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +15,8 @@ import com.autopartco.backend.core.billing.internal.StoreSubscription;
 import com.autopartco.backend.core.billing.internal.SubscriptionPayment;
 import com.autopartco.backend.core.billing.internal.StoreSubscriptionRepository;
 import com.autopartco.backend.core.billing.internal.SubscriptionPaymentRepository;
+import com.autopartco.backend.core.billing.internal.SubscriptionEvents;
+import com.autopartco.backend.core.billing.internal.SubscriptionPeriods;
 
 import lombok.AllArgsConstructor;
 
@@ -27,6 +30,7 @@ public class WompiWebhookProcessor {
     private final SubscriptionPaymentRepository paymentRepository;
     private final StoreSubscriptionRepository applicationRepository;
     private final WompiSignatureVerifier signatureVerifier;
+    private final SubscriptionEvents subscriptionEvents;
 
     @Transactional
     public void processWebhook(JsonNode payload) {
@@ -79,15 +83,16 @@ public class WompiWebhookProcessor {
                             "SELLER_APPLICATION_NOT_FOUND",
                             "No se encontró la solicitud de vendedor del pago."
                     ));
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime periodStart = SubscriptionPeriods.periodStart(now, application.getTrialEndsAt(), application.getPaidThrough());
+            LocalDateTime periodEnd = periodStart.plusMonths(payment.getPrepaidMonths());
+            UUID previousPlanId = application.getPlan() == null ? null : application.getPlan().getId();
             application.setPlan(payment.getPlan());
-            LocalDateTime start = LocalDateTime.now();
-            if (application.getTrialEndsAt() != null && application.getTrialEndsAt().isAfter(start)) {
-                start = application.getTrialEndsAt();
-            }
-            if (application.getPaidThrough() != null && application.getPaidThrough().isAfter(start)) {
-                start = application.getPaidThrough();
-            }
-            application.setPaidThrough(start.plusMonths(payment.getPrepaidMonths()));
+            application.setPaidThrough(periodEnd);
+            payment.setPaidAt(now);
+            payment.setPeriodStartsAt(periodStart);
+            payment.setPeriodEndsAt(periodEnd);
+            subscriptionEvents.paymentApproved(application, payment, previousPlanId, null, now);
         } else if (List.of("DECLINED", "ERROR", "VOIDED", "FAILED").contains(status)) {
             if (!"APPROVED".equals(payment.getStatus())) {
                 payment.setStatus(status);

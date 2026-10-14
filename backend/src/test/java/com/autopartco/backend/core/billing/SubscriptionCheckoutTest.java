@@ -4,11 +4,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -26,15 +30,15 @@ import com.autopartco.backend.core.billing.internal.StoreSubscription;
 import com.autopartco.backend.core.billing.internal.StoreSubscriptionRepository;
 import com.autopartco.backend.core.billing.internal.SubscriptionPayment;
 import com.autopartco.backend.core.billing.internal.SubscriptionPaymentRepository;
-import com.autopartco.backend.shared.security.TokenHashing;
 import com.autopartco.backend.core.billing.internal.wompi.WompiProperties;
-import com.autopartco.backend.core.identity.AccountLookup;
-import com.autopartco.backend.core.identity.AccountRef;
+import com.autopartco.backend.core.organization.StoreAccess;
 import com.autopartco.backend.core.organization.StoreApplicationStatus;
+import com.autopartco.backend.shared.error.ConflictException;
+import com.autopartco.backend.shared.security.TokenHashing;
 
 @ExtendWith(MockitoExtension.class)
 class SubscriptionCheckoutTest {
-    private static final String APPLICANT_EMAIL = "owner@example.com";
+    private static final LocalDateTime NOW = LocalDateTime.now();
 
     @Mock
     private SubscriptionPaymentRepository paymentRepository;
@@ -46,11 +50,10 @@ class SubscriptionCheckoutTest {
     private PlanRepository planRepository;
 
     @Mock
-    private AccountLookup accountLookup;
+    private StoreAccess storeAccess;
 
     private final UUID storeId = UUID.randomUUID();
     private final UUID applicationId = UUID.randomUUID();
-    private final UUID applicantId = UUID.randomUUID();
 
     private SubscriptionCheckout checkout() {
         return new SubscriptionCheckout(
@@ -58,7 +61,7 @@ class SubscriptionCheckoutTest {
                 subscriptionRepository,
                 planRepository,
                 new WompiProperties("pub_test", "integrity", "events", "https://checkout.example/p/", "https://app.example/ok"),
-                accountLookup
+                storeAccess
         );
     }
 
@@ -66,39 +69,50 @@ class SubscriptionCheckoutTest {
         return StoreSubscription.builder()
                 .id(applicationId)
                 .storeId(storeId)
-                .applicantAccountId(applicantId)
                 .status(StoreApplicationStatus.ACTIVE)
                 .build();
     }
 
-    private AccountRef applicant(String email) {
-        return new AccountRef(applicantId, UUID.randomUUID(), email, "Owner", "ACTIVE", "STORE_MANAGER", "Owner");
-    }
-
     @Test
-    void rejectsAccountThatIsNotTheApplicant() {
-        when(subscriptionRepository.lockByStoreId(storeId)).thenReturn(Optional.of(activeSubscription()));
-        when(accountLookup.findById(applicantId)).thenReturn(Optional.of(applicant(APPLICANT_EMAIL)));
+    void rejectsCallersWhoAreNotOwners() {
+        doThrow(new AccessDeniedException("owner required"))
+                .when(storeAccess).requireOwner("collab@example.com", storeId);
 
         assertThrows(
                 AccessDeniedException.class,
-                () -> checkout().createCheckout(storeId, "other@example.com", new CheckoutRequest(UUID.randomUUID(), 1))
+                () -> checkout().createCheckout(storeId, "collab@example.com", new CheckoutRequest(UUID.randomUUID(), 1))
         );
+        verifyNoInteractions(paymentRepository, planRepository);
+    }
+
+    @Test
+    void rejectsPlanChangeWhilePaidPeriodIsActive() {
+        Plan current = mock(Plan.class);
+        UUID currentId = UUID.randomUUID();
+        when(current.getId()).thenReturn(currentId);
+        when(current.getCode()).thenReturn("BUSINESS");
+        StoreSubscription subscription = activeSubscription();
+        subscription.setPlan(current);
+        subscription.setPaidThrough(NOW.plusMonths(1));
+        UUID requestedPlanId = UUID.randomUUID();
+        Plan requested = Plan.builder()
+                .code("ENTERPRISE")
+                .monthlyPriceCop(499_900)
+                .currency("COP")
+                .features(List.of())
+                .capabilities(List.of())
+                .enabled(true)
+                .build();
+        when(subscriptionRepository.lockByStoreId(storeId)).thenReturn(Optional.of(subscription));
+        when(planRepository.findById(requestedPlanId)).thenReturn(Optional.of(requested));
+
+        ConflictException error = assertThrows(
+                ConflictException.class,
+                () -> checkout().createCheckout(storeId, "owner@example.com", new CheckoutRequest(requestedPlanId, 1))
+        );
+
+        assertEquals("SUBSCRIPTION_PLAN_CHANGE_LOCKED", error.getCode());
         verify(paymentRepository, never()).save(any());
-        verifyNoInteractions(planRepository);
-    }
-
-    @Test
-    void rejectsWhenApplicantAccountCannotBeResolvedBeforeRevealingPlanOrState() {
-        // El solicitante ya no existe: nadie puede pagar por el almacén, ni siquiera con un correo coincidente.
-        when(subscriptionRepository.lockByStoreId(storeId)).thenReturn(Optional.of(activeSubscription()));
-        when(accountLookup.findById(applicantId)).thenReturn(Optional.empty());
-
-        assertThrows(
-                AccessDeniedException.class,
-                () -> checkout().createCheckout(storeId, APPLICANT_EMAIL, new CheckoutRequest(UUID.randomUUID(), 1))
-        );
-        verifyNoInteractions(planRepository, paymentRepository);
     }
 
     @Test
@@ -113,11 +127,10 @@ class SubscriptionCheckoutTest {
                 .enabled(true)
                 .build();
         when(subscriptionRepository.lockByStoreId(storeId)).thenReturn(Optional.of(activeSubscription()));
-        when(accountLookup.findById(applicantId)).thenReturn(Optional.of(applicant("OWNER@example.com")));
         when(planRepository.findById(planId)).thenReturn(Optional.of(plan));
         when(paymentRepository.save(any(SubscriptionPayment.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        CheckoutResponse response = checkout().createCheckout(storeId, APPLICANT_EMAIL, new CheckoutRequest(planId, 3));
+        CheckoutResponse response = checkout().createCheckout(storeId, "owner@example.com", new CheckoutRequest(planId, 3));
 
         ArgumentCaptor<SubscriptionPayment> saved = ArgumentCaptor.forClass(SubscriptionPayment.class);
         verify(paymentRepository).save(saved.capture());
@@ -126,10 +139,12 @@ class SubscriptionCheckoutTest {
         assertEquals(15_000_000L, payment.getAmountInCents());
         assertEquals(3, payment.getPrepaidMonths());
         assertEquals("PENDING", payment.getStatus());
+        assertEquals("WOMPI", payment.getProvider());
         assertEquals(payment.getReference(), response.reference());
         assertEquals(15_000_000L, response.amountInCents());
         assertEquals("COP", response.currency());
         String signature = TokenHashing.sha256Hex(payment.getReference() + 15_000_000L + "COP" + "integrity");
         assertTrue(response.checkoutUrl().contains("signature:integrity=" + signature));
+        verify(storeAccess).requireOwner(eq("owner@example.com"), eq(storeId));
     }
 }

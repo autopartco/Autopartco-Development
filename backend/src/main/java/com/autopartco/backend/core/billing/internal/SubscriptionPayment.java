@@ -1,5 +1,6 @@
 package com.autopartco.backend.core.billing.internal;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import org.hibernate.annotations.SQLDelete;
@@ -54,4 +55,17 @@ public class SubscriptionPayment extends BaseEntity {
 
     @Column(name = "provider_transaction_id", unique = true, length = 120)
     private String providerTransactionId;
+
+    // Obligatorio en el INSERT: la columna no tiene valor por defecto en el entity.
+    @Column(nullable = false, length = 20)
+    private String provider;
+
+    @Column(name = "paid_at")
+    private LocalDateTime paidAt;
+
+    @Column(name = "period_starts_at")
+    private LocalDateTime periodStartsAt;
+
+    @Column(name = "period_ends_at")
+    private LocalDateTime periodEndsAt;
 }
