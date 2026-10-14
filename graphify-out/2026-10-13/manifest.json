@@ -1415,12 +1415,6 @@
     "ast_hash": "fa2fb0e65c74e2260add844600341be5",
     "semantic_hash": ""
   },
-  "backend/src/main/java/com/autopartco/backend/core/identity/internal/RefreshTokenHash.java": {
-    "mtime": 1791923758.7712693,
-    "seen": 1791924245.990743,
-    "ast_hash": "8b1ec15061a492587efcf52d6f043bca",
-    "semantic_hash": ""
-  },
   "backend/src/main/java/com/autopartco/backend/core/identity/internal/RegistrationService.java": {
     "mtime": 1791923542.4278953,
     "seen": 1791924245.990747,
@@ -1581,12 +1575,6 @@
     "mtime": 1791901648.234695,
     "seen": 1791901946.7487957,
     "ast_hash": "048c9e4d6f330b112c2e4e679a3052d9",
-    "semantic_hash": ""
-  },
-  "backend/src/test/java/com/autopartco/backend/core/identity/internal/RefreshTokenHashTest.java": {
-    "mtime": 1791928053.566318,
-    "seen": 1791929248.0765216,
-    "ast_hash": "91d64bb285cdfbc2b70b302a429679d8",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/core/identity/internal/SessionRefreshServiceTest.java": {
@@ -1989,12 +1977,6 @@
     "mtime": 1791923466.6042683,
     "seen": 1791924245.9605322,
     "ast_hash": "6e4639bbbdf5cd90efeb2e9172b5f275",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/core/billing/internal/wompi/WompiHashing.java": {
-    "mtime": 1791923761.727949,
-    "seen": 1791924245.9605353,
-    "ast_hash": "d1a167c06b9506df0621c7822274c1b7",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/billing/internal/wompi/WompiSignatureVerifier.java": {
