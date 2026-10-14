@@ -112,76 +112,77 @@ es un alcance de frontend separado del flujo de vendedores.
 
 ## Contratos disponibles en backend
 
-- `GET /api/v1/seller-plans`: planes habilitados y sus características.
-- `GET /api/v1/seller-plans/admin` y las operaciones `POST`, `PUT` y `DELETE`
+- `GET /api/v1/plans`: planes habilitados y sus características.
+- `GET /api/v1/admin/plans` y las operaciones `POST`, `PUT` y `DELETE`
   bajo `/admin`: consulta y administración exclusiva de `ROOT`. El borrado
   deshabilita el plan; `TRY` no se puede deshabilitar ni renombrar.
-- `POST /api/v1/auth/register/seller`: alta de cuenta nueva como solicitud.
+- `POST /api/v1/store-applications`: alta de cuenta nueva como solicitud.
   Recibe una parte multipart JSON llamada `request` con `account`, `store`,
   `legalType` (`NATURAL_PERSON` o `LEGAL_ENTITY`) y `planId` opcional. Las
   partes de archivos son `identityDocument`, `rut`,
   `legalRepresentativeId` y `certificateOfExistence`.
-- `POST /api/v1/seller-applications`: mismo registro legal para un usuario
+- `POST /api/v1/me/store-applications`: mismo registro legal para un usuario
   `CUSTOMER` autenticado, sin crear una segunda cuenta.
-- `GET /api/v1/seller-applications/me`: estado de las solicitudes propias,
+- `GET /api/v1/me/store-applications`: estado de las solicitudes propias,
   junto con plan vigente y plan originalmente seleccionado.
-- `GET /api/v1/seller-applications/root/pending`,
-  `PATCH /api/v1/seller-applications/root/{applicationId}/review` y
-  `GET /api/v1/seller-applications/{applicationId}/documents/{documentId}`:
+- `GET /api/v1/admin/store-applications/pending`,
+  `PATCH /api/v1/admin/store-applications/{applicationId}/review` y
+  `GET /api/v1/me/store-applications/{applicationId}/documents/{documentId}` (solicitante) y
+  `GET /api/v1/admin/store-applications/{applicationId}/documents/{documentId}` (root):
   revisión y descarga privada de documentos; solo `ROOT` puede revisar y
   descargar documentos de cualquier solicitante. El titular solo puede
   descargar los de su propia solicitud.
 - La aprobación cambia el estado a `CONFIGURATION_PENDING` y envía un enlace
   de configuración de un solo uso que vence en 48 horas. `POST
-  /api/v1/seller-applications/setup` acepta ese token y los activos opcionales
+  /api/v1/store-applications/setup` acepta ese token y los activos opcionales
   `logo` y `banner`; requiere correo verificado, activa el almacén con un mes
   de prueba y devuelve los tokens de sesión para continuar al dashboard.
-- `GET /api/v1/seller-applications/stores/{storeId}/brand/{logo|banner}` sirve
+- `GET /api/v1/marketplace/stores/{storeId}/brand/{logo|banner}` sirve
   activos solo para almacenes activos. Los documentos no tienen URL pública.
-- `POST /api/v1/seller-payments/applications/{applicationId}/checkout` inicia
+- `POST /api/v1/stores/{storeId}/subscription/checkout` inicia
   un pago Wompi de 1 a 12 meses. `POST
-  /api/v1/seller-payments/wompi/webhook` valida la firma declarada en el evento
+  /api/v1/webhooks/wompi` valida la firma declarada en el evento
   antes de actualizar la vigencia; los pagos aprobados se suman al mayor entre
   la fecha actual, la prueba y el periodo pagado vigente.
 
 ### Dashboard, ventas y pedidos
 
-- `GET /api/v1/seller-dashboard/{storeId}` devuelve la tienda, el plan efectivo
+- `GET /api/v1/stores/{storeId}/dashboard` devuelve la tienda, el plan efectivo
   y el seleccionado, vigencias, topes, uso, capacidades y resumen del mes.
   `setupRequired` indica que falta completar la configuración inicial; el
   frontend debe abrir ese flujo antes de mostrar las funciones del dashboard.
-- `GET /api/v1/seller-dashboard/{storeId}/orders` lista las ventas del almacén,
+- `GET /api/v1/stores/{storeId}/orders` lista las ventas del almacén,
   con filtro opcional `status` y paginación `page`/`size` (máximo 100).
-- `GET /api/v1/seller-dashboard/{storeId}/orders/{saleId}` devuelve el detalle
+- `GET /api/v1/stores/{storeId}/orders/{saleId}` devuelve el detalle
   de venta, artículos, estado/método del pago, envío y dirección de entrega.
-- `PATCH /api/v1/seller-dashboard/{storeId}/orders/{saleId}/status` admite las
+- `PATCH /api/v1/stores/{storeId}/orders/{saleId}/status` admite las
   transiciones `PENDING -> CONFIRMED|CANCELLED` y
   `CONFIRMED -> PREPARING|CANCELLED`; no modifica ni reembolsa pagos.
-- `POST /api/v1/seller-dashboard/{storeId}/orders/{saleId}/shipment` registra
+- `POST /api/v1/stores/{storeId}/orders/{saleId}/shipment` registra
   transportadora y guía cuando la venta está `PREPARING`. `PATCH` sobre esa
   misma ruta avanza el envío por `DISPATCHED`, `IN_TRANSIT`,
   `OUT_FOR_DELIVERY` y `DELIVERED`; el detalle devuelve el historial de eventos
   e informa al cliente cuando se registra o avanza un envío.
-- `GET /api/v1/seller-dashboard/notifications/me` lista las 50 notificaciones
+- `GET /api/v1/me/notifications` lista las 50 notificaciones
   más recientes de la cuenta autenticada;
-  `PATCH /api/v1/seller-dashboard/notifications/{notificationId}/read` marca
+  `PATCH /api/v1/me/notifications/{notificationId}/read` marca
   como leída únicamente una notificación de esa misma cuenta.
-- `GET /api/v1/seller-dashboard/{storeId}/collaborators` lista integrantes e
+- `GET /api/v1/stores/{storeId}/staff` lista integrantes e
   invitaciones del almacén. Requiere `COLLABORATOR_READ`.
-- `GET /api/v1/seller-dashboard/{storeId}/collaborators/permissions` enumera
+- `GET /api/v1/stores/{storeId}/staff/permission-options` enumera
   permisos asignables y requiere `COLLABORATOR_MANAGE`.
-- `POST /api/v1/seller-dashboard/{storeId}/collaborators/invitations` recibe
+- `POST /api/v1/stores/{storeId}/staff/invitations` recibe
   `email`, `roleName` y `permissionCodes`, crea el rol del almacén y envía una
   invitación con token de un solo uso que vence en siete días.
-- `POST /api/v1/seller-dashboard/{storeId}/collaborators/invitations/{invitationId}/resend`
+- `POST /api/v1/stores/{storeId}/staff/invitations/{invitationId}/resend`
   renueva el token y el vencimiento, incluido para invitaciones expiradas.
-  `PATCH /api/v1/seller-dashboard/{storeId}/collaborators/invitations/{invitationId}/revoke`
+  `PATCH /api/v1/stores/{storeId}/staff/invitations/{invitationId}/revoke`
   invalida una invitación no aceptada. Ambas operaciones requieren
   `COLLABORATOR_MANAGE`; la capacidad `CUSTOM_ROLES` y los cupos `USERS` del
   plan aplican al crear y reenviar invitaciones.
-- `GET /api/v1/seller-dashboard/invitations/preview?token=...` expone solo los
+- `GET /api/v1/staff-invitations/preview?token=...` expone solo los
   datos necesarios para mostrar la invitación y decidir si se debe crear una
-  cuenta. `POST /api/v1/seller-dashboard/invitations/accept` acepta el token;
+  cuenta. `POST /api/v1/staff-invitations/accept` acepta el token;
   si no existe una cuenta para el correo, recibe además `account` con nombre,
   apellido, identificación, fecha de nacimiento, teléfono y contraseña. Estos
   dos endpoints no exigen sesión: el token prueba el control del correo. La
