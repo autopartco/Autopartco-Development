@@ -76,6 +76,7 @@ Este directorio contiene las migraciones versionadas del esquema. Siguen la conv
 | `V202610141310__payment_risk` | Columnas de `payments`, `seller_payments.environment` (nullable) y `payment_risk_assessments` |
 | `V202610141320__analytics_phase2` | Demanda por vehículo, embudo de búsqueda, devoluciones, vistas materializadas (rotación, cohortes, RFM) y lead time de proveedores |
 | `V202610141330__phase_tenant_consistency` | Coherencia de `store_id`/`branch_id` desnormalizados en las tablas nuevas |
+| `V202610141400__seller_subscription_events_and_payments` | SaaS SA-D1: `seller_payments` con proveedor, snapshot y periodo; `seller_subscription_events` de solo inserción |
 
 Todas las de la fase 2 son transaccionales.
 

@@ -35,6 +35,18 @@ public interface CollaboratorRepository extends JpaRepository<Collaborator, UUID
             """)
     boolean isOwner(@Param("personId") UUID personId, @Param("storeId") UUID storeId);
 
+    /** Membresías activas de una persona, con su tienda y roles cargados. */
+    @Query("""
+            SELECT DISTINCT collaborator
+            FROM Collaborator collaborator
+            JOIN FETCH collaborator.store store
+            LEFT JOIN FETCH collaborator.roles role
+            WHERE collaborator.personId = :personId
+              AND collaborator.state.code = 'ACTIVE'
+            ORDER BY store.businessName
+            """)
+    List<Collaborator> findActiveMembershipsByPersonId(@Param("personId") UUID personId);
+
     @Query("""
             SELECT DISTINCT permission.code
             FROM Collaborator collaborator
