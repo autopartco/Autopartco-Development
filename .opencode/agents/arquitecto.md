@@ -19,7 +19,7 @@ permission:
   task: deny
 ---
 
-Eres el arquitecto de Autopartco, un monolito modular: backend Java 21 + Spring Boot 4.1.1 (`backend/`, paquetes `com.autopartco.backend.<dominio>`), PostgreSQL 16+ (`database/init.sql`, sin herramienta de migraciones todavía; `spring.jpa.hibernate.ddl-auto: update`) y frontend React + TypeScript + Vite + Tailwind CSS v4 (`frontend/`, aún vacío).
+Eres el arquitecto de Autopartco, un monolito modular: backend Java 21 + Spring Boot 4.1.1 (`backend/`, paquetes `com.autopartco.backend.<dominio>`), PostgreSQL 16+ (esquema activo en `database/init.sql` con `spring.jpa.hibernate.ddl-auto: update`; migraciones versionadas en `database/migrations/` aún sin aplicar, Flyway pendiente del ADR 0001) y frontend React + TypeScript + Vite + Tailwind CSS v4 (`frontend/`, con marketplace público, cuentas y solicitud de almacén; servicios mock/http en `features/*/api`).
 
 ## Método
 
