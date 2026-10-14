@@ -1,5 +1,6 @@
 package com.autopartco.backend.core.organization;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -34,6 +35,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class StoreService {
     private static final String OWNER_ROLE = "OWNER";
+    private static final String DESCRIPTION_KEY = "description";
 
     private final StoreRepository storeRepository;
     private final CollaboratorRepository collaboratorRepository;
@@ -128,7 +130,30 @@ public class StoreService {
             store.setBusinessEmail(businessEmail);
         }
 
+        if (request.description() != null) {
+            Map<String, Object> configuration = new HashMap<>(configurationOf(store));
+            configuration.put(DESCRIPTION_KEY, request.description().trim());
+            store.setConfiguration(configuration);
+        }
+
         return toResponse(store);
+    }
+
+    /** Perfil del almacén. El llamador ya comprobó el permiso {@code STORE_READ}. */
+    @Transactional(readOnly = true)
+    public StoreProfileResponse profile(UUID storeId) {
+        Store store = findStore(storeId);
+        Object description = configurationOf(store).get(DESCRIPTION_KEY);
+        return new StoreProfileResponse(
+                store.getId(),
+                store.getBusinessName(),
+                store.getNit(),
+                store.getBusinessEmail(),
+                store.getState().getCode(),
+                description instanceof String text ? text : null,
+                null,
+                null
+        );
     }
 
     @Transactional(readOnly = true)
@@ -162,6 +187,11 @@ public class StoreService {
     public void lockForUpdate(UUID storeId) {
         storeRepository.lockById(storeId)
                 .orElseThrow(() -> new NotFoundException("STORE_NOT_FOUND", "No se encontró el almacén."));
+    }
+
+    /** Filas antiguas pueden tener la configuración nula. */
+    private static Map<String, Object> configurationOf(Store store) {
+        return store.getConfiguration() == null ? Map.of() : store.getConfiguration();
     }
 
     private Store findStore(UUID storeId) {
