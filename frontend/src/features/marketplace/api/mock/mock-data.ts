@@ -183,6 +183,7 @@ export const MOCK_PRODUCTS: Product[] = SEEDS.map((seed, index) => {
   return {
     id,
     listingKey: `${id}:${storeId}`,
+    branchId: storeId,
     name: seed.name,
     partNumber: seed.ref,
     description:

@@ -1,11 +1,14 @@
 import { createBrowserRouter } from 'react-router'
 import NotFoundPage from '@/features/marketplace/pages/not-found-page'
 import {
+  CartPage,
   CategoriesPage,
   CategoryPage,
+  CheckoutPage,
   CustomerRegisterPage,
   HomePage,
   LoginPage,
+  OrderResultPage,
   PasswordRecoveryPage,
   ProductPage,
   RegisterPage,
@@ -32,6 +35,10 @@ export const router = createBrowserRouter([
           { path: 'categoria/:slug', element: <CategoryPage /> },
           { path: 'producto/:id', element: <ProductPage /> },
           { path: 'tiendas', element: <StoresPage /> },
+          // Carrito (localStorage) y pago simulado (POST /marketplace/orders).
+          { path: 'carrito', element: <CartPage /> },
+          { path: 'checkout', element: <CheckoutPage /> },
+          { path: 'pedido/:id/resultado', element: <OrderResultPage /> },
           // Almacenes: landing y solicitud (POST /store-applications).
           { path: 'vender', element: <SellPage /> },
           { path: 'vender/registro', element: <SellerRegisterPage /> },

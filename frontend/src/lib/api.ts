@@ -17,16 +17,19 @@ export class ApiError extends Error {
   readonly status?: number
   readonly code?: string
   readonly fieldErrors: Readonly<Record<string, string>>
+  /** `error.details` tal cual llegó (p. ej. `{ items: [...] }` en el checkout); `fieldErrors` solo conserva las cadenas. */
+  readonly details?: unknown
 
   constructor(
     message: string,
-    options: { status?: number; code?: string; fieldErrors?: Record<string, string>; cause?: unknown } = {},
+    options: { status?: number; code?: string; fieldErrors?: Record<string, string>; details?: unknown; cause?: unknown } = {},
   ) {
     super(message, { cause: options.cause })
     this.name = 'ApiError'
     this.status = options.status
     this.code = options.code
     this.fieldErrors = options.fieldErrors ?? {}
+    this.details = options.details
   }
 }
 
@@ -79,6 +82,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
       status: response.status,
       code: payload?.error?.code,
       fieldErrors: readFieldErrors(payload?.error?.details),
+      details: payload?.error?.details ?? undefined,
     })
   }
   if (response.status === 204) return undefined as T

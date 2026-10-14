@@ -8,6 +8,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { cn } from '@/lib/utils'
 import { CityPicker } from '@/features/location/components/city-picker'
 import { SearchBar } from '@/features/marketplace/components/search-bar'
+import { CartIndicator } from '@/features/cart/components/cart-indicator'
 import { HeaderAccount, MobileMenuAccount } from '@/features/auth/components/account-menu'
 
 const NAV = [
@@ -110,6 +111,7 @@ export function SiteHeader() {
           </nav>
           <span className="mx-1.5 hidden h-5 w-px bg-white/15 md:block" aria-hidden />
           <CityPicker />
+          <CartIndicator />
           <HeaderAccount />
           <MobileMenu className="md:hidden" />
         </div>

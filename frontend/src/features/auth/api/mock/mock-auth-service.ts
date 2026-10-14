@@ -1,4 +1,5 @@
 import { ApiError, simulateLatency } from '@/lib/api'
+import { getSession } from '../../session-store'
 import type { AuthService, Session } from '../types'
 
 /**
@@ -41,6 +42,11 @@ export function createMockAuthService(): AuthService {
     simulated: true,
 
     restore: readStored,
+
+    async getAccessToken() {
+      // Token de relleno: los servicios mock no lo validan; solo permite simular el 401 sin sesión.
+      return getSession() ? 'mock-access-token' : undefined
+    },
 
     async login({ email }) {
       await simulateLatency()
