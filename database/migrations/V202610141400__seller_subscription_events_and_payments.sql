@@ -70,6 +70,23 @@ CREATE TABLE IF NOT EXISTS public.seller_subscription_events (
         CHECK (event_type IN ('TRIAL_STARTED', 'PAYMENT_APPROVED', 'PLAN_CHANGED'))
 );
 
+-- CREATE TABLE IF NOT EXISTS no añade restricciones si la tabla ya existe (p. ej. creada por ddl-auto
+-- de las entidades). Estas restricciones se añaden aparte, con la misma comprobación de idempotencia.
+SELECT pg_temp.add_constraint('public.seller_subscription_events', 'fk_seller_subscription_events__application',
+    'FOREIGN KEY (application_id) REFERENCES public.seller_applications(id)');
+SELECT pg_temp.add_constraint('public.seller_subscription_events', 'fk_seller_subscription_events__store',
+    'FOREIGN KEY (store_id) REFERENCES public.store(id)');
+SELECT pg_temp.add_constraint('public.seller_subscription_events', 'fk_seller_subscription_events__plan',
+    'FOREIGN KEY (plan_id) REFERENCES public.seller_plans(id)');
+SELECT pg_temp.add_constraint('public.seller_subscription_events', 'fk_seller_subscription_events__previous_plan',
+    'FOREIGN KEY (previous_plan_id) REFERENCES public.seller_plans(id)');
+SELECT pg_temp.add_constraint('public.seller_subscription_events', 'fk_seller_subscription_events__payment',
+    'FOREIGN KEY (payment_id) REFERENCES public.seller_payments(id)');
+SELECT pg_temp.add_constraint('public.seller_subscription_events', 'fk_seller_subscription_events__actor',
+    'FOREIGN KEY (actor_account_id) REFERENCES public.accounts(id) ON DELETE SET NULL');
+SELECT pg_temp.add_constraint('public.seller_subscription_events', 'chk_seller_subscription_events__type',
+    $c$CHECK (event_type IN ('TRIAL_STARTED', 'PAYMENT_APPROVED', 'PLAN_CHANGED'))$c$);
+
 CREATE INDEX IF NOT EXISTS idx_seller_subscription_events__store_occurred
     ON public.seller_subscription_events (store_id, occurred_at DESC);
 
