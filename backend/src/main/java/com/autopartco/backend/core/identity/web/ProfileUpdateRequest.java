@@ -23,7 +23,7 @@ public record ProfileUpdateRequest(
         @Pattern(regexp = "\\d{4}-\\d{2}-\\d{2}", message = "La fecha debe tener el formato yyyy-MM-dd.")
         String dateBirth,
 
-        @Size(max = 10, message = "El teléfono no puede superar 10 caracteres.")
+        @Size(max = 20, message = "El teléfono no puede superar 20 caracteres.")
         @Pattern(regexp = "(?s).*\\S.*", message = "El teléfono no puede estar vacío.")
         String numberPhone
 ) {

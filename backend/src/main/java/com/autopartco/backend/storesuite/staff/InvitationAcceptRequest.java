@@ -18,7 +18,7 @@ public record InvitationAcceptRequest(
             @NotBlank @Size(max = 100) String surname,
             @NotBlank @Size(max = 20) String identification,
             @NotNull @Past LocalDate dateBirth,
-            @NotBlank @Size(max = 10) String numberPhone,
+            @NotBlank @Size(max = 20) String numberPhone,
             @NotBlank
             @Size(min = 8, max = 72)
             @Pattern(regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^A-Za-z0-9]).+$")

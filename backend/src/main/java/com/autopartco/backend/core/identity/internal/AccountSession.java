@@ -35,7 +35,7 @@ public class AccountSession extends BaseEntity {
     @JoinColumn(name = "account_id", nullable = false)
     private Account account;
 
-    @Column(name = "refresh_token_hash", nullable = false, unique = true)
+    @Column(name = "refresh_token_hash", nullable = false, unique = true, length = 64)
     private String refreshTokenHash;
 
     @Column(name = "ip_address", nullable = false, columnDefinition = "inet")

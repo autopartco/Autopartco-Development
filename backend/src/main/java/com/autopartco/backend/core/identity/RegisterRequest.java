@@ -27,7 +27,7 @@ public record RegisterRequest(
         LocalDate dateBirth,
 
         @NotBlank(message = "El teléfono es obligatorio.")
-        @Size(max = 10, message = "El teléfono no puede superar 10 caracteres.")
+        @Size(max = 20, message = "El teléfono no puede superar 20 caracteres.")
         String numberPhone,
 
         @NotBlank(message = "El correo es obligatorio.")
