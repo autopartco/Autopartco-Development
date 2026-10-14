@@ -1,0 +1,335 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/geist";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Recorrido del hero ligado al scroll: solo en pantallas anchas y altas, y si el
+ * usuario no pidió reducir movimiento. En el resto, el hero es una sección normal.
+ * La misma consulta vive en `SCROLLY_QUERY` (features/marketplace/home/zone-route.tsx).
+ * Alto mínimo 52.5rem: por debajo, titular, buscador y búsquedas frecuentes no
+ * caben fijos en pantalla, así que el hero pasa a ser una sección normal.
+ */
+@custom-variant scrolly (@media (min-width: 64rem) and (min-height: 52.5rem) and (prefers-reduced-motion: no-preference));
+
+/*
+ * Autopartco: papel de mostrador, carbón y un hilo rojo que une al cliente con el almacén.
+ * Contrastes verificados (WCAG AA):
+ *   brand #C81E2C sobre blanco 5.7:1 y sobre papel #F5F6F8 5.3:1; blanco sobre brand 5.7:1.
+ *   brand-on-asphalt #F55058 sobre carbón #171B20 5.1:1: texto rojo sobre fondo oscuro
+ *     (no usarlo sobre asphalt-raised, donde baja a 4.4:1).
+ *   brand #C81E2C contra carbón 3.0:1: sirve como relleno de botón (1.4.11), nunca como texto.
+ *   brand-bright #DC2F3D: hover del botón rojo sobre carbón; blanco encima 4.6:1, contra carbón 3.7:1.
+ *   thread-on-asphalt #EF3A47 contra carbón 4.4:1 (indicadores de 2px; mínimo 3:1).
+ *   header = carbón: enlaces asphalt-muted en reposo, blanco en hover y página activa.
+ *   foreground #171B20 sobre papel 16.4:1.
+ *   muted-foreground #5B6169 sobre papel 5.9:1 y sobre concrete #ECEEF1 5.4:1.
+ *   asphalt-muted #B4B9C0 sobre carbón 8.8:1.
+ *   input #878D96 sobre blanco 3.4:1 (borde de control, 1.4.11).
+ *   map-dot y map-water son decorativos (no transmiten información).
+ */
+@theme inline {
+    --font-heading: var(--font-sans);
+    --font-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: ui-monospace, 'Cascadia Mono', Consolas, monospace;
+
+    --color-brand: var(--primary);
+    --color-brand-deep: #9b0e18;
+    --color-brand-on-asphalt: #f55058;
+    --color-brand-bright: #dc2f3d;
+    --color-thread: var(--primary);
+    --color-thread-on-asphalt: #ef3a47;
+    --color-asphalt: #171b20;
+    --color-asphalt-raised: #22272e;
+    --color-asphalt-line: rgb(255 255 255 / 0.12);
+    --color-asphalt-muted: #b4b9c0;
+    --color-header: #171b20;
+    --color-header-hover: rgb(255 255 255 / 0.1);
+    --color-paper: #f5f6f8;
+    --color-concrete: #eceef1;
+    --color-map-dot: #c4c9d0;
+    --color-map-water: #aab2bc;
+    /* Distintivo "Recomendado": #1F5F8B sobre #E4EEF6 5.8:1, sobre blanco 6.8:1. */
+    --color-recommended: #1f5f8b;
+    --color-recommended-soft: #e4eef6;
+    --color-stock: #1d7a46;
+    --color-stock-low: #8a5300;
+
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar: var(--sidebar);
+    --color-chart-5: var(--chart-5);
+    --color-chart-4: var(--chart-4);
+    --color-chart-3: var(--chart-3);
+    --color-chart-2: var(--chart-2);
+    --color-chart-1: var(--chart-1);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-md: calc(var(--radius) * 0.8);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) * 1.4);
+    --radius-2xl: calc(var(--radius) * 1.8);
+    --radius-3xl: calc(var(--radius) * 2.2);
+    --radius-4xl: calc(var(--radius) * 2.6);
+
+    --ease-out-snap: cubic-bezier(0.23, 1, 0.32, 1);
+    --ease-out-thread: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+:root {
+    --background: #f5f6f8;
+    --foreground: #171b20;
+    --card: #ffffff;
+    --card-foreground: #171b20;
+    --popover: #ffffff;
+    --popover-foreground: #171b20;
+    --primary: #c81e2c;
+    --primary-foreground: #ffffff;
+    --secondary: #eceef1;
+    --secondary-foreground: #171b20;
+    --muted: #eceef1;
+    --muted-foreground: #5b6169;
+    --accent: #eceef1;
+    --accent-foreground: #171b20;
+    --destructive: #b42318;
+    --border: #dfe2e6;
+    --input: #878d96;
+    --ring: #c81e2c;
+    --focus: #c81e2c;
+    --chart-1: #c81e2c;
+    --chart-2: #171b20;
+    --chart-3: #5b6169;
+    --chart-4: #878d96;
+    --chart-5: #dfe2e6;
+    --radius: 0.5rem;
+    --sidebar: #ffffff;
+    --sidebar-foreground: #171b20;
+    --sidebar-primary: #c81e2c;
+    --sidebar-primary-foreground: #ffffff;
+    --sidebar-accent: #eceef1;
+    --sidebar-accent-foreground: #171b20;
+    --sidebar-border: #dfe2e6;
+    --sidebar-ring: #c81e2c;
+
+    /*
+     * Alto de la cabecera fija: dos filas (56px + 56px) en móvil y tablet, una de
+     * 64px desde lg. El hero y los filtros se pegan justo debajo.
+     */
+    --header-h: 7rem;
+}
+
+@media (min-width: 64rem) {
+    :root {
+        --header-h: 4rem;
+    }
+}
+
+/* Superficies oscuras (cabecera, pasaporte, pie): el foco pasa a blanco para mantener 3:1. */
+.surface-asphalt {
+    --focus: #ffffff;
+    background-color: var(--color-asphalt);
+    color: #ffffff;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply font-sans;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    scroll-padding-top: calc(var(--header-h) + 1rem);
+  }
+  body {
+    @apply bg-background text-foreground;
+    line-height: 1.6;
+    /* Referencias y búsquedas largas sin espacios se parten en vez de desbordar. */
+    overflow-wrap: break-word;
+  }
+  button:not(:disabled), [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+  h1, h2, h3 {
+    text-wrap: balance;
+  }
+  p {
+    text-wrap: pretty;
+  }
+}
+
+/*
+ * Foco visible y consistente. Fuera de capas a propósito: las reglas sin capa
+ * ganan a las utilidades `outline-none` de los componentes.
+ */
+:where(a, button, input, select, textarea, summary, [tabindex], [role="button"], [role="combobox"], [role="checkbox"], [role="radio"], [role="option"], [role="slider"]):focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Enlaces que cubren toda una tarjeta: el foco se dibuja en el ::after de la tarjeta. */
+[data-stretched-link]:focus-visible {
+    outline: none;
+}
+
+/*
+ * Escala tipográfica. Display 800 con tracking cerrado; etiquetas mono solo para
+ * datos (distancias, referencias, campos del pasaporte).
+ */
+@utility text-display {
+    font-size: clamp(2.75rem, 1rem + 5vw, 5.5rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 0.92;
+}
+
+@utility text-section {
+    font-size: clamp(2rem, 1.1rem + 3vw, 3.5rem);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 0.95;
+}
+
+@utility text-page-title {
+    font-size: clamp(2.25rem, 1.5rem + 2.5vw, 3.5rem);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 0.95;
+}
+
+/* Títulos de bloque dentro de una página (ficha, filtros, estados). */
+@utility text-block-title {
+    font-size: 1.375rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.1;
+}
+
+@utility label-mono {
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 1.3;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+/*
+ * Hilo vertical de la línea de tiempo móvil: dos trazos discontinuos
+ * entrelazados, desplazados 3px. Un solo elemento con dos gradientes.
+ */
+.thread-v {
+    width: 5px;
+    background-image:
+        repeating-linear-gradient(to bottom, var(--color-thread) 0 7px, transparent 7px 12px),
+        repeating-linear-gradient(to bottom, var(--color-thread) 0 7px, transparent 7px 12px);
+    background-size: 2px 100%, 2px 100%;
+    background-position: 0 0, 3px 6px;
+    background-repeat: no-repeat;
+}
+
+/* Puntada del borde del pie: mismo tejido en horizontal. */
+.stitch-line {
+    height: 5px;
+    background-image:
+        repeating-linear-gradient(to right, var(--color-thread-on-asphalt) 0 10px, transparent 10px 16px),
+        repeating-linear-gradient(to right, var(--color-thread-on-asphalt) 0 10px, transparent 10px 16px);
+    background-size: 100% 2px, 100% 2px;
+    background-position: 0 0, 8px 3px;
+    background-repeat: no-repeat;
+}
+
+/* Bucle de "Así funciona": una vuelta cada 20 s; en pausa fuera de la vista. */
+@keyframes loop-spin {
+    to {
+        transform: rotate(1turn);
+    }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .loop-ring {
+        animation: loop-spin 20s linear infinite;
+    }
+    [data-loop-paused] .loop-ring {
+        animation-play-state: paused;
+    }
+}
+
+/*
+ * Efectos decorativos ligados al scroll con CSS nativo, sin polyfill.
+ * Sin soporte (p. ej. Firefox) o con movimiento reducido se ve el estado final.
+ * `animation-timeline` y `animation-range` van después del shorthand `animation`.
+ */
+@keyframes thread-grow-y {
+    from {
+        transform: scaleY(0);
+    }
+}
+
+@keyframes stitch-sew {
+    to {
+        transform: translateX(101%);
+    }
+}
+
+.stitch-cover {
+    visibility: hidden;
+}
+
+@supports ((animation-timeline: scroll()) and (animation-range: 0% 100%)) {
+    @media (prefers-reduced-motion: no-preference) {
+        .thread-v-scroll {
+            transform-origin: top;
+            animation: thread-grow-y linear both;
+            animation-timeline: view();
+            animation-range: entry 20% cover 55%;
+        }
+
+        /*
+         * Una tapa del color del pie se retira hacia la derecha y "cose" el borde.
+         * La línea de tiempo es la del pie entero (no la de la costura de 5px),
+         * para que la puntada avance mientras el pie entra en pantalla.
+         */
+        .stitch-scope {
+            view-timeline-name: --stitch;
+        }
+        .stitch-cover {
+            visibility: visible;
+            animation: stitch-sew linear both;
+            animation-timeline: --stitch;
+            animation-range: entry 0% entry 70%;
+        }
+    }
+}
