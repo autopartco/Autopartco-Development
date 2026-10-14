@@ -1,0 +1,119 @@
+import { useState } from 'react'
+import { Link, NavLink } from 'react-router'
+import { MenuIcon } from 'lucide-react'
+import { Container } from '@/components/common/page-header'
+import { Logo } from '@/components/common/logo'
+import { Button } from '@/components/ui/button'
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
+import { cn } from '@/lib/utils'
+import { CityPicker } from '@/features/location/components/city-picker'
+import { SearchBar } from '@/features/marketplace/components/search-bar'
+import { HeaderAccount, MobileMenuAccount } from '@/features/auth/components/account-menu'
+
+const NAV = [
+  { to: '/categorias', label: 'Categorías' },
+  { to: '/tiendas', label: 'Tiendas' },
+]
+
+/** Enlace de la cabecera oscura: la página activa se marca con un tramo del hilo rojo. */
+function navClass({ isActive }: { isActive: boolean }) {
+  return cn(
+    'relative inline-flex h-11 items-center rounded-lg px-3 text-sm font-medium transition-colors lg:h-10',
+    'hover:bg-header-hover hover:text-white',
+    'after:absolute after:inset-x-3 after:bottom-1 after:h-0.5 after:origin-left after:scale-x-0 after:rounded-full after:bg-thread-on-asphalt after:transition-transform after:duration-200 after:ease-out-snap',
+    isActive ? 'text-white after:scale-x-100' : 'text-asphalt-muted',
+  )
+}
+
+/** Enlace del menú móvil (panel claro). */
+function menuLinkClass({ isActive }: { isActive: boolean }) {
+  return cn(
+    'flex min-h-12 items-center justify-between rounded-lg px-3 text-base font-semibold transition-colors hover:bg-concrete',
+    isActive && 'bg-concrete',
+  )
+}
+
+/** Menú de navegación en pantallas estrechas, donde los enlaces no caben junto al logo y la ciudad. */
+function MobileMenu({ className }: { className?: string }) {
+  const [open, setOpen] = useState(false)
+  const close = () => setOpen(false)
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger
+        render={
+          <Button
+            variant="ghost"
+            className={cn('size-11 text-white hover:bg-header-hover hover:text-white aria-expanded:bg-header-hover aria-expanded:text-white', className)}
+            aria-label="Abrir menú"
+          />
+        }
+      >
+        <MenuIcon className="size-5" aria-hidden />
+      </SheetTrigger>
+      <SheetContent side="right" className="gap-0 p-0">
+        <SheetHeader className="border-b border-border px-5 py-4 pr-16">
+          <SheetTitle className="text-lg font-extrabold tracking-tight">Menú</SheetTitle>
+          <SheetDescription className="sr-only">Secciones de Autopartco</SheetDescription>
+        </SheetHeader>
+        <nav aria-label="Principal" className="flex flex-col gap-1 px-3 py-4">
+          {NAV.map((item) => (
+            <NavLink key={item.to} to={item.to} className={menuLinkClass} onClick={close}>
+              {item.label}
+            </NavLink>
+          ))}
+          <NavLink to="/buscar" end className={menuLinkClass} onClick={close}>
+            Todos los repuestos
+          </NavLink>
+        </nav>
+        <section aria-labelledby="menu-cuenta" className="mx-5 mt-2 flex flex-col gap-3 border-t border-border pt-5">
+          <h2 id="menu-cuenta" className="label-mono text-muted-foreground">
+            Tu cuenta
+          </h2>
+          <MobileMenuAccount onNavigate={close} />
+        </section>
+        <div className="mx-5 mt-5 flex flex-col items-start gap-1 border-t border-border pt-5">
+          <p className="label-mono text-muted-foreground">Para almacenes</p>
+          <Link
+            to="/vender"
+            onClick={close}
+            className="inline-flex min-h-11 items-center font-semibold text-brand underline-offset-4 hover:underline"
+          >
+            Vende en Autopartco
+          </Link>
+        </div>
+      </SheetContent>
+    </Sheet>
+  )
+}
+
+/**
+ * Cabecera carbón. En móvil y tablet son dos filas (logo y acciones: ciudad, cuenta y menú; buscador a
+ * todo el ancho) y desde lg una sola. El buscador va justo después del logo en
+ * el orden del documento: es lo primero que se usa.
+ */
+export function SiteHeader() {
+  return (
+    <header className="surface-asphalt sticky top-0 z-40 bg-header">
+      <Container className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 [grid-template-areas:'logo_actions'_'search_search'] lg:h-16 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-x-8 lg:[grid-template-areas:'logo_search_actions']">
+        <div className="flex h-14 min-w-0 items-center [grid-area:logo] lg:h-auto">
+          <Logo tone="dark" />
+        </div>
+        <SearchBar tone="dark" className="pb-3 [grid-area:search] lg:max-w-2xl lg:pb-0" />
+        <div className="flex items-center gap-0.5 [grid-area:actions]">
+          {/* Enlaces desde md; por debajo van en el menú para dejar sitio a la ciudad y a la cuenta. */}
+          <nav aria-label="Principal" className="hidden items-center gap-0.5 md:flex">
+            {NAV.map((item) => (
+              <NavLink key={item.to} to={item.to} className={navClass}>
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
+          <span className="mx-1.5 hidden h-5 w-px bg-white/15 md:block" aria-hidden />
+          <CityPicker />
+          <HeaderAccount />
+          <MobileMenu className="md:hidden" />
+        </div>
+      </Container>
+    </header>
+  )
+}
