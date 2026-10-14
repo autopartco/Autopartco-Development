@@ -19,6 +19,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -196,6 +197,76 @@ class ListingQueriesTest {
         assertEquals(new BigDecimal("60.00"), response.effectivePrice());
         assertEquals(new BigDecimal("20.00"), response.discountAmount());
         assertEquals("Semana", response.appliedPromotionName());
+    }
+
+    @Test
+    void purchasableListingsWithoutKeysDoNotQuery() {
+        assertThat(queries.purchasableListings(List.of())).isEmpty();
+        verifyNoInteractions(jdbcTemplate, productRepository, productImageRepository, compatibilityService,
+                promotionRepository);
+    }
+
+    @Test
+    void purchasableListingsKeepTheActiveFiltersWithoutTheStockFilter() {
+        UUID productA = UUID.randomUUID();
+        UUID branchA = UUID.randomUUID();
+        UUID productB = UUID.randomUUID();
+        UUID branchB = UUID.randomUUID();
+        ArgumentCaptor<String> sql = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Object> args = ArgumentCaptor.forClass(Object.class);
+        when(jdbcTemplate.query(sql.capture(), any(RowMapper.class), args.capture(), args.capture(),
+                args.capture(), args.capture())).thenReturn(List.of());
+
+        Map<ListingKey, ProductResponse> result = queries.purchasableListings(List.of(
+                new ListingKey(productA, branchA), new ListingKey(productB, branchB)));
+
+        assertThat(result).isEmpty();
+        String normalized = normalize(sql.getValue());
+        assertThat(normalized)
+                .doesNotContain("stock > 0")
+                .doesNotContain(ListingQueries.KEYS_PLACEHOLDER)
+                .contains("ps.code = 'ACTIVE'")
+                .contains("ss.code = 'ACTIVE'")
+                .contains("bs.code = 'ACTIVE'")
+                .contains("where i.deleted_at is null")
+                .contains(PUBLISHED_JOINS.replace("from inventory i ", "") + PRODUCT_JOINS)
+                .contains("join (values (?::uuid, ?::uuid), (?::uuid, ?::uuid)) as k(product_id, branch_id) "
+                        + "on k.product_id = i.product_id and k.branch_id = i.branch_id");
+        assertThat(args.getAllValues()).containsExactly(productA, branchA, productB, branchB);
+    }
+
+    @Test
+    void purchasableListingsApplyTheActivePromotionLikePublishedListing() {
+        Product product = product("Filtro", Set.of());
+        UUID branchId = UUID.randomUUID();
+        UUID missingProduct = UUID.randomUUID();
+        when(jdbcTemplate.query(any(String.class), any(RowMapper.class), eq(product.getId()), eq(branchId),
+                eq(missingProduct), eq(branchId)))
+                .thenReturn((List) List.of(new ListingRow(
+                        product.getId(), branchId, STORE_ID, "Norte", new BigDecimal("80.00"), 0)));
+        when(productRepository.findAllWithDetails(anyCollection())).thenReturn(List.of(product));
+        when(compatibilityService.existingAmong(anyCollection())).thenReturn(Set.of());
+        when(productImageRepository.findAllOfProducts(anyCollection())).thenReturn(List.of());
+        when(promotionRepository.findActiveAt(any())).thenReturn(List.of(
+                Promotion.builder()
+                        .scope(PromotionScope.STORE)
+                        .storeId(STORE_ID)
+                        .name("Semana")
+                        .targetType(PromotionTargetType.PRODUCT)
+                        .targetId(product.getId())
+                        .discountType(PromotionDiscountType.PERCENTAGE)
+                        .discountValue(new BigDecimal("25.00"))
+                        .build()));
+
+        Map<ListingKey, ProductResponse> result = queries.purchasableListings(List.of(
+                new ListingKey(product.getId(), branchId), new ListingKey(missingProduct, branchId)));
+
+        assertThat(result).containsOnlyKeys(new ListingKey(product.getId(), branchId));
+        ProductResponse listing = result.get(new ListingKey(product.getId(), branchId));
+        assertEquals(new BigDecimal("80.00"), listing.price());
+        assertEquals(new BigDecimal("60.00"), listing.effectivePrice());
+        assertEquals(new BigDecimal("20.00"), listing.discountAmount());
+        assertEquals(0, listing.quantity());
     }
 
     private Product product(String name, Set<UUID> compatibilityIds) {

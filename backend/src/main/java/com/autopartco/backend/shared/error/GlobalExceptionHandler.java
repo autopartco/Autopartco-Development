@@ -26,7 +26,7 @@ public class GlobalExceptionHandler {
         ApiError error = new ApiError(
                 exception.getCode(),
                 exception.getMessage(),
-                null
+                exception.getDetails()
         );
 
         return ResponseEntity
@@ -40,7 +40,7 @@ public class GlobalExceptionHandler {
         ApiError error = new ApiError(
                 exception.getCode(),
                 exception.getMessage(),
-                null
+                exception.getDetails()
         );
 
         return ResponseEntity
@@ -54,11 +54,25 @@ public class GlobalExceptionHandler {
         ApiError error = new ApiError(
                 exception.getCode(),
                 exception.getMessage(),
-                null
+                exception.getDetails()
         );
 
         return ResponseEntity
                 .status(HttpStatus.CONFLICT)
+                .body(new ErrorResponse(error));
+    }
+
+    @ExceptionHandler(PaymentRequiredException.class)
+    public ResponseEntity<ErrorResponse> handlePaymentRequired(PaymentRequiredException exception) {
+
+        ApiError error = new ApiError(
+                exception.getCode(),
+                exception.getMessage(),
+                exception.getDetails()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.PAYMENT_REQUIRED)
                 .body(new ErrorResponse(error));
     }
 
