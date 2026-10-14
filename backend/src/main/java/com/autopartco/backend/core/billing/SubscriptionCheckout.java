@@ -2,16 +2,17 @@ package com.autopartco.backend.core.billing;
 
 import static com.autopartco.backend.shared.security.TokenHashing.sha256Hex;
 
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
-import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.autopartco.backend.core.billing.internal.wompi.WompiProperties;
-import com.autopartco.backend.core.identity.AccountLookup;
-import com.autopartco.backend.core.identity.AccountRef;
+import com.autopartco.backend.core.organization.StoreAccess;
 import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
@@ -26,8 +27,8 @@ import com.autopartco.backend.core.billing.internal.PlanRepository;
 import lombok.AllArgsConstructor;
 
 /**
- * Crea el pago pendiente de una suscripción y el enlace firmado al checkout de Wompi. Solo puede hacerlo el
- * solicitante de la solicitud del almacén, y el almacén debe estar {@code ACTIVE}.
+ * Crea el pago pendiente de una suscripción y el enlace firmado al checkout de Wompi. Solo puede hacerlo el OWNER
+ * del almacén, y el almacén debe estar {@code ACTIVE}.
  */
 @Service
 @AllArgsConstructor
@@ -36,7 +37,7 @@ public class SubscriptionCheckout {
     private final StoreSubscriptionRepository applicationRepository;
     private final PlanRepository planRepository;
     private final WompiProperties wompiProperties;
-    private final AccountLookup accountLookup;
+    private final StoreAccess storeAccess;
 
     @Transactional
     public CheckoutResponse createCheckout(
@@ -44,20 +45,12 @@ public class SubscriptionCheckout {
             String email,
             CheckoutRequest request
     ) {
+        storeAccess.requireOwner(email, storeId);
         StoreSubscription application = applicationRepository.lockByStoreId(storeId)
                 .orElseThrow(() -> new NotFoundException(
                         "SELLER_APPLICATION_NOT_FOUND",
                         "No se encontró la solicitud de vendedor."
                 ));
-        boolean applicantMatches = accountLookup.findById(application.getApplicantAccountId())
-                .map(AccountRef::email)
-                .filter(applicantEmail -> applicantEmail.equalsIgnoreCase(email))
-                .isPresent();
-        if (!applicantMatches) {
-            throw new AccessDeniedException(
-                    "La solicitud no pertenece a la cuenta autenticada."
-            );
-        }
         if (application.getStatus() != StoreApplicationStatus.ACTIVE) {
             throw new ConflictException("SELLER_APPLICATION_NOT_ACTIVE", "El almacén todavía no está habilitado.");
         }
@@ -70,6 +63,7 @@ public class SubscriptionCheckout {
         if (plan.getMonthlyPriceCop() <= 0 || "TRY".equalsIgnoreCase(plan.getCode())) {
             throw new BadRequestException("SELLER_PLAN_NOT_PAYABLE", "El plan gratuito no requiere pago.");
         }
+        requirePlanChangeAllowed(application, plan);
         if (request.months() < 1 || request.months() > 12) {
             throw new BadRequestException("INVALID_PREPAID_MONTHS", "Puedes pagar entre 1 y 12 meses.");
         }
@@ -95,6 +89,7 @@ public class SubscriptionCheckout {
                 .prepaidMonths(request.months())
                 .currency(currency)
                 .status("PENDING")
+                .provider("WOMPI")
                 .build());
 
         String integritySignature = sha256Hex(
@@ -117,6 +112,20 @@ public class SubscriptionCheckout {
                 currency,
                 request.months()
         );
+    }
+
+    // D3: con periodo pagado vigente no se cambia de plan; se paga el mismo plan o se espera al vencimiento.
+    private void requirePlanChangeAllowed(StoreSubscription application, Plan plan) {
+        LocalDateTime now = LocalDateTime.now();
+        Plan current = application.getPlan();
+        boolean paidNow = application.getPaidThrough() != null && application.getPaidThrough().isAfter(now);
+        if (paidNow && current != null && !Objects.equals(current.getId(), plan.getId())) {
+            throw new ConflictException(
+                    "SUBSCRIPTION_PLAN_CHANGE_LOCKED",
+                    "Tienes un periodo pagado vigente en el plan " + current.getCode() + ". Cambia de plan al vencer.",
+                    Map.of("currentPlanCode", current.getCode(), "paidThrough", application.getPaidThrough().toString())
+            );
+        }
     }
 
     private void requireWompiConfiguration() {

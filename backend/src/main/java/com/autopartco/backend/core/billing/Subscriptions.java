@@ -2,6 +2,7 @@ package com.autopartco.backend.core.billing;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -12,6 +13,7 @@ import com.autopartco.backend.core.billing.internal.Plan;
 import com.autopartco.backend.core.billing.internal.StoreSubscription;
 import com.autopartco.backend.core.billing.internal.StoreSubscriptionRepository;
 import com.autopartco.backend.core.billing.internal.SubscriptionEvent;
+import com.autopartco.backend.core.billing.internal.SubscriptionPaymentRepository;
 import com.autopartco.backend.core.billing.internal.SubscriptionEventRepository;
 import com.autopartco.backend.core.billing.internal.SubscriptionPeriods;
 import com.autopartco.backend.shared.error.NotFoundException;
@@ -28,6 +30,7 @@ public class Subscriptions {
 
     private final StoreSubscriptionRepository subscriptionRepository;
     private final SubscriptionEventRepository eventRepository;
+    private final SubscriptionPaymentRepository paymentRepository;
     private final PlanService planService;
 
     /**
@@ -91,6 +94,33 @@ public class Subscriptions {
                 validThrough,
                 daysRemaining(validThrough, now)
         );
+    }
+
+    /** Historial de pagos del almacén, más reciente primero. El llamador ya comprobó {@code STORE_READ}. */
+    @Transactional(readOnly = true)
+    public List<SubscriptionPaymentView> payments(UUID storeId) {
+        StoreSubscription subscription = subscriptionRepository.findByStoreId(storeId)
+                .orElseThrow(() -> new NotFoundException(
+                        "SELLER_APPLICATION_NOT_FOUND",
+                        "No se encontró la suscripción de vendedor para este almacén."
+                ));
+        return paymentRepository.findByStoreApplicationIdOrderByCreatedAtDesc(subscription.getId()).stream()
+                .map(payment -> new SubscriptionPaymentView(
+                        payment.getId(),
+                        payment.getReference(),
+                        payment.getProvider(),
+                        payment.getPlan().getCode(),
+                        payment.getPlan().getName(),
+                        payment.getPrepaidMonths(),
+                        payment.getAmountInCents() / 100,
+                        payment.getCurrency(),
+                        payment.getStatus(),
+                        payment.getCreatedAt(),
+                        payment.getPaidAt(),
+                        payment.getPeriodStartsAt(),
+                        payment.getPeriodEndsAt()
+                ))
+                .toList();
     }
 
     private static Long daysRemaining(LocalDateTime validThrough, LocalDateTime now) {
