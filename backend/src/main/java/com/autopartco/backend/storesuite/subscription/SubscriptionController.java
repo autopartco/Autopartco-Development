@@ -3,6 +3,7 @@ package com.autopartco.backend.storesuite.subscription;
 import java.util.UUID;
 
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.autopartco.backend.core.billing.CheckoutRequest;
 import com.autopartco.backend.core.billing.CheckoutResponse;
 import com.autopartco.backend.core.billing.SubscriptionCheckout;
+import com.autopartco.backend.core.billing.SubscriptionView;
 import com.autopartco.backend.shared.web.ApiPaths;
 
 import jakarta.validation.Valid;
@@ -26,6 +28,12 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class SubscriptionController {
     private final SubscriptionCheckout subscriptionCheckout;
+    private final GetSubscription getSubscription;
+
+    @GetMapping
+    public SubscriptionView subscription(@PathVariable UUID storeId, Authentication authentication) {
+        return getSubscription.execute(storeId, authentication.getName());
+    }
 
     @PostMapping("/checkout")
     public CheckoutResponse checkout(
