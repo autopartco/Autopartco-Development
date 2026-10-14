@@ -899,7 +899,7 @@ Se ejecutan en orden: T8 → T9 → T10 → T11. Todas usan el agente `frontend`
 - **Contexto mínimo:** §5 y T8–T11 terminadas.
 - **Aceptación:**
   - `cd frontend && npm run build && npm run lint` en verde.
-  - Recorrido de los 7 casos de T10 y los 4 de T11 en modo mock, con evidencia (capturas o Playwright si ya está disponible; instalarlo requiere aprobación).
+  - Recorrido de los 7 casos de T10 y los 4 de T11 en modo mock, con evidencia (con Playwright, ya instalado por el usuario).
   - Revisión de accesibilidad: foco tras error, `role="alert"`, etiquetas en los grupos de opciones y uso a 360 px.
   - Cuando T6 esté desplegado en local: repetir el flujo aprobado y rechazado con `VITE_MARKETPLACE_DATA_SOURCE=http`.
 
@@ -931,10 +931,12 @@ Se ejecutan en orden: T8 → T9 → T10 → T11. Todas usan el agente `frontend`
 9. **El envoltorio `data` de `conventions.md`** no se usa (D9). Si algún día se adopta, hay que cambiar todos los endpoints a la vez.
 10. **`SIMULATED_CASH`** se aprueba al instante, aunque el efectivo contra entrega real no funciona así. Es aceptable para la demo.
 
-### Decisiones que requieren aprobación del usuario
+### Decisiones del usuario (2026-10-14)
 
-- Mantener activos los pagos simulados (con `simulatedOutcome` elegible por el cliente) en cualquier build que se publique a `main`, o fijar `app.checkout.simulated-payments-enabled=false` en producción.
-- Añadir Testcontainers (dependencia nueva) para cubrir el `UPDATE` atómico y la reversión con PostgreSQL real.
-- Ejecutar el guion manual de `curl` de T7 contra la base de datos de desarrollo de `backend/.env` (son comandos contra la base de datos).
-- Exponer `getAccessToken()` en la interfaz `AuthService` del frontend (T8). Es un cambio menor en la superficie de seguridad del cliente: el token sigue solo en memoria.
-- Instalar Playwright para la evidencia de T12, si todavía no está disponible.
+| # | Decisión | Respuesta | Efecto en el plan |
+|---|---|---|---|
+| 1 | Pagos simulados en builds publicados a `main` | **Se mantienen activos para la demo** | `app.checkout.simulated-payments-enabled` queda en `true`. El riesgo 2 se acepta hasta después de la demo; desactivarlo exige una nueva decisión |
+| 2 | Testcontainers | **No** | No se añade la dependencia. El `UPDATE` atómico y la reversión se cubren con pruebas unitarias con mocks (T6) y con el guion manual de T7. El riesgo 1 sigue abierto |
+| 3 | Guion `curl` de T7 contra la BD de `backend/.env` | **Sí, autorizado** | T7 puede ejecutarlo contra la BD de desarrollo |
+| 4 | `getAccessToken()` en `AuthService` (T8) | **Sí, autorizado** | T8 se ejecuta tal como está descrita |
+| 5 | Instalar Playwright para T12 | **No hace falta: el usuario ya lo instaló** | T12 usa Playwright para la evidencia, sin instalar nada |
