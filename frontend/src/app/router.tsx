@@ -1,5 +1,6 @@
-import { createBrowserRouter } from 'react-router'
+import { createBrowserRouter, Navigate } from 'react-router'
 import NotFoundPage from '@/features/marketplace/pages/not-found-page'
+import { PortalLayout } from '@/features/portal/components/portal-layout'
 import {
   CategoriesPage,
   CategoryPage,
@@ -7,6 +8,9 @@ import {
   HomePage,
   LoginPage,
   PasswordRecoveryPage,
+  PortalIndexPage,
+  PortalOverviewPage,
+  PortalPlanPage,
   ProductPage,
   RegisterPage,
   SearchPage,
@@ -43,6 +47,17 @@ export const router = createBrowserRouter([
           { path: 'verificar-correo', element: <VerifyEmailPage /> },
           // El correo de verificación del backend enlaza a `{APP_FRONTEND_BASE_URL}/verify-email?token=`.
           { path: 'verify-email', element: <VerifyEmailPage /> },
+          // Portal del almacén: solo se muestran los datos que el servidor autoriza.
+          { path: 'portal', element: <PortalIndexPage /> },
+          {
+            path: 'portal/:storeId',
+            element: <PortalLayout />,
+            children: [
+              { index: true, element: <Navigate to="inicio" replace /> },
+              { path: 'inicio', element: <PortalOverviewPage /> },
+              { path: 'plan', element: <PortalPlanPage /> },
+            ],
+          },
           { path: '*', element: <NotFoundPage /> },
         ],
       },
