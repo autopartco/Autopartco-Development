@@ -16,10 +16,11 @@ public record ProductUpdateRequest(
         @Size(max = 200)
         @Pattern(regexp = "(?s).*\\S.*", message = "El nombre no puede estar vacío.")
         String name,
+        @Size(max = 100) String sku,
         @Size(max = 50) String partNumber,
         @Pattern(regexp = "(?s).*\\S.*", message = "La descripción no puede estar vacía.")
         String description,
-        @DecimalMin("0.0") @Digits(integer = 10, fraction = 2) BigDecimal price,
+        @DecimalMin("0.01") @Digits(integer = 10, fraction = 2) BigDecimal price,
         @PositiveOrZero Integer quantity,
         UUID manufacturerId,
         UUID categoryId,
@@ -28,7 +29,7 @@ public record ProductUpdateRequest(
 ) {
     @AssertTrue(message = "Debe proporcionar al menos un campo para actualizar.")
     public boolean hasChanges() {
-        return name != null || partNumber != null || description != null || price != null
+        return name != null || partNumber != null || sku != null || description != null || price != null
                 || quantity != null || manufacturerId != null || categoryId != null
                 || compatibilityIds != null || attributes != null;
     }

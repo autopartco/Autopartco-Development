@@ -12,6 +12,7 @@ public record ProductResponse(
         UUID branchId,
         String branchName,
         String name,
+        String sku,
         String partNumber,
         String description,
         BigDecimal price,
