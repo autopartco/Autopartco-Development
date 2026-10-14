@@ -241,17 +241,15 @@ HTTP/1.1 404 Not Found
 
 ## 6. Formato estándar de respuestas
 
-Las respuestas exitosas deberán mantener una estructura consistente.
+Las respuestas exitosas devuelven el recurso directamente, sin envoltorio `data`. Las listas paginadas usan el formato de la sección 8.
 
 ### 6.1 Recurso individual
 
 ```json
 {
-  "data": {
-    "id": "uuid",
-    "name": "Filtro de aceite",
-    "price": 45000
-  }
+  "id": "uuid",
+  "name": "Filtro de aceite",
+  "price": 45000
 }
 ```
 
@@ -263,11 +261,9 @@ HTTP/1.1 201 Created
 
 ```json
 {
-  "data": {
-    "id": "uuid",
-    "name": "Filtro de aceite",
-    "price": 45000
-  }
+  "id": "uuid",
+  "name": "Filtro de aceite",
+  "price": 45000
 }
 ```
 
@@ -347,14 +343,14 @@ Las colecciones que puedan contener una cantidad considerable de registros deber
 Ejemplo:
 
 ```http
-GET /api/v1/products?page=1&limit=20
+GET /api/v1/products?page=1&size=20
 ```
 
-Respuesta:
+Respuesta (sin envoltorio `data`):
 
 ```json
 {
-  "data": [
+  "items": [
     {
       "id": "uuid",
       "name": "Filtro de aceite"
@@ -364,29 +360,31 @@ Respuesta:
       "name": "Pastillas de freno"
     }
   ],
-  "pagination": {
-    "page": 1,
-    "limit": 20,
-    "total": 150,
-    "totalPages": 8
-  }
+  "page": 1,
+  "size": 20,
+  "total": 150,
+  "totalPages": 8
 }
 ```
+
+- `totalPages = ceil(total / size)`; `0` si `total = 0`.
+- Una `page` mayor que `totalPages` devuelve `items: []` con `total` correcto.
+- Backend: `PageResponse<T>(List<T> items, int page, int size, long total, int totalPages)`.
 
 ### 8.1 Parámetros
 
 | Parámetro | Descripción                      | Valor predeterminado |
 | --------- | -------------------------------- | -------------------: |
-| `page`    | Número de página                 |                  `1` |
-| `limit`   | Cantidad de elementos por página |                 `20` |
+| `page`    | Número de página, desde `1`      |                  `1` |
+| `size`    | Cantidad de elementos por página |                 `20` |
 
-El límite máximo recomendado será:
+Cada endpoint fija su `size` por defecto y máximo; el máximo recomendado es:
 
 ```text
-limit <= 100
+size <= 100
 ```
 
-Esto evita solicitudes excesivamente grandes que puedan afectar el rendimiento del backend.
+Valores fuera de rango responden `400 VALIDATION_ERROR` con `details` por campo.
 
 ---
 
@@ -419,7 +417,7 @@ GET /api/v1/products?search=filtro
 Los filtros podrán combinarse:
 
 ```http
-GET /api/v1/products?search=freno&brandId=uuid&available=true&page=1&limit=20
+GET /api/v1/products?search=freno&brandId=uuid&available=true&page=1&size=20
 ```
 
 ### 9.3 Rangos numéricos
@@ -728,7 +726,7 @@ Los cambios internos de implementación no deberán modificar el contrato públi
 ### Request
 
 ```http
-GET /api/v1/products?search=freno&minPrice=30000&maxPrice=150000&sortBy=price&sortOrder=asc&page=1&limit=10
+GET /api/v1/products?search=freno&minPrice=30000&maxPrice=150000&sortBy=price&sortOrder=asc&page=1&size=10
 ```
 
 ### Response exitosa
@@ -739,7 +737,7 @@ GET /api/v1/products?search=freno&minPrice=30000&maxPrice=150000&sortBy=price&so
 
 ```json
 {
-  "data": [
+  "items": [
     {
       "id": "550e8400-e29b-41d4-a716-446655440000",
       "name": "Pastillas de freno delanteras",
@@ -748,12 +746,10 @@ GET /api/v1/products?search=freno&minPrice=30000&maxPrice=150000&sortBy=price&so
       "available": true
     }
   ],
-  "pagination": {
-    "page": 1,
-    "limit": 10,
-    "total": 1,
-    "totalPages": 1
-  }
+  "page": 1,
+  "size": 10,
+  "total": 1,
+  "totalPages": 1
 }
 ```
 
@@ -830,9 +826,9 @@ Este estándar se considerará implementado cuando:
 | Reemplazar         | `PUT`                                 |
 | Actualizar         | `PATCH`                               |
 | Eliminar           | `DELETE`                              |
-| Respuesta          | `{ "data": ... }`                     |
+| Respuesta          | Recurso directo, sin envoltorio `data` |
 | Error              | `{ "error": ... }`                    |
-| Paginación         | `page` + `limit`                      |
+| Paginación         | `page` + `size` → `{ items, page, size, total, totalPages }` |
 | Filtros            | Query parameters                      |
 | Ordenamiento       | `sortBy` + `sortOrder`                |
 | Fechas             | ISO 8601                              |

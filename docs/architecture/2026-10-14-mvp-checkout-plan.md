@@ -1,8 +1,10 @@
-# Plan: checkout del MVP (B1 + F3 + F4)
+# Plan: checkout del MVP (BL-B1 + BL-F3 + BL-F4)
+
+> Orden de ejecución, despliegues conjuntos y aprobaciones: [`2026-10-14-mvp-orden-global.md`](2026-10-14-mvp-orden-global.md).
 
 - Fecha: 2026-10-14
 - Base revisada: rama `chore/mvp-backlog` (commit `5fa7db8`, mismo código que `develop` en `50a92aa`)
-- Origen: `docs/architecture/mvp-backlog.md`, ítems B1, F3 y F4
+- Origen: `docs/architecture/mvp-backlog.md`, ítems BL-B1, BL-F3 y BL-F4
 - Estructura: (1) objetivo y alcance, (2) **contrato compartido**, (3) decisiones, (4) **backend**, (5) **frontend**, (6) QA, (7) riesgos y aprobaciones pendientes.
 - La sección 5 (frontend) se puede ejecutar sola con las secciones 1 y 2, sin contexto adicional ni backend, usando el servicio `mock`.
 
@@ -14,14 +16,14 @@
 
 **Dentro del alcance**
 
-- B1: `POST /api/v1/marketplace/orders`. Crea el pedido (`orders`), la dirección congelada (`order_addresses`), una venta por sucursal (`sales`), el detalle (`order_details`), el pago aprobado (`payments`) y su evento (`payment_events`). Descuenta el stock con un `UPDATE` condicional atómico. Calcula el precio en el servidor con `core.pricing`. Es idempotente con `clientRequestId`.
-- F3: vista `/checkout`, que requiere sesión. Muestra el resumen del carrito por tienda, la selección o creación de una dirección, el método de pago simulado y el resultado simulado. Maneja los errores 400, 401, 402, 404 y 409.
-- F4: vista `/pedido/:id/resultado`, la confirmación de un pedido aprobado.
+- BL-B1: `POST /api/v1/marketplace/orders`. Crea el pedido (`orders`), la dirección congelada (`order_addresses`), una venta por sucursal (`sales`), el detalle (`order_details`), el pago aprobado (`payments`) y su evento (`payment_events`). Descuenta el stock con un `UPDATE` condicional atómico. Calcula el precio en el servidor con `core.pricing`. Es idempotente con `clientRequestId`.
+- BL-F3: vista `/checkout`, que requiere sesión. Muestra el resumen del carrito por tienda, la selección o creación de una dirección, el método de pago simulado y el resultado simulado. Maneja los errores 400, 401, 402, 404 y 409.
+- BL-F4: vista `/pedido/:id/resultado`, la confirmación de un pedido aprobado.
 
 **Fuera del alcance**
 
-- El carrito y su UI (F1–F2), con una excepción: aquí se fija el formato de `localStorage` que el checkout lee (§2.6).
-- "Mis pedidos" (B2/F5), "mis tiendas" (B3), notificaciones (B8), el movimiento de inventario `SALE` (B6) y la auditoría.
+- El carrito y su UI (BL-F1–BL-F2: MK-F2, MK-F3), con una excepción: aquí se fija el formato de `localStorage` que el checkout lee (§2.6).
+- "Mis pedidos" (BL-B2/BL-F5: MK-B3, MK-F6), "mis tiendas" (BL-B3: SA-B1), notificaciones (BL-B8), el movimiento de inventario `SALE` (BL-B6: SA-B5, dueño único del registro de movimientos dentro de `StockService.decrementIfAvailable`) y la auditoría.
 - Wompi o cualquier pasarela real, los costos de envío (son `0` en el MVP), las reservas de stock, los cupones, la facturación y los correos de pedido.
 - Cambios de esquema. Todas las tablas y semillas ya existen en `database/init.sql`.
 
@@ -32,7 +34,7 @@
 ### 2.1 Convenciones que aplican
 
 - Prefijo `/api/v1`. Autenticación con `Authorization: Bearer <accessToken>`. La ruta **no** es pública: la regla `anyRequest().authenticated()` de `WebSecurityConfig` ya la cubre.
-- Las respuestas exitosas van **sin envoltorio `data`**, igual que todos los endpoints existentes (`MeController`, `ProductBrowseController`). `docs/api/conventions.md §6` propone `{ "data": … }`, pero el código y el frontend actual no lo usan, así que se mantiene la coherencia con el código.
+- Las respuestas exitosas van **sin envoltorio `data`**, como define `docs/api/conventions.md` §6 y todos los endpoints existentes (`MeController`, `ProductBrowseController`).
 - El formato de error es el de `docs/api/error-handling.md`: `{ "error": { "code", "message", "details" } }`. `message` siempre es seguro para mostrarlo al usuario.
 - Dinero:
   - En el backend es `BigDecimal` con escala 2 y `RoundingMode.HALF_UP`.
@@ -69,7 +71,7 @@
 
 ### 2.3 Response `201 Created` (y `200 OK` en una repetición idempotente)
 
-- Cabecera `Location: /api/v1/me/orders/{orderId}`. B2 creará ese recurso más adelante.
+- Cabecera `Location: /api/v1/me/orders/{orderId}`. BL-B2 (MK-B3) creará ese recurso más adelante.
 - `201`: el pedido se creó en esta petición.
 - `200`: ya existía un pedido de este usuario con el mismo `clientRequestId`. El cuerpo es idéntico y no hubo cobro ni descuento de stock nuevos. El frontend trata `200` y `201` igual.
 
@@ -130,7 +132,7 @@ Semántica:
 - `items[].unitPrice` es el precio efectivo por unidad (con la promoción vigente aplicada), el mismo valor que `ProductResponse.effectivePrice` en `GET /marketplace/products/{id}`. Es lo que se guarda en `order_details.unit_price`.
 - `lineTotal` es `unitPrice × quantity`. `sales[].subtotal` es la suma de los `lineTotal` de la venta. `shippingCost` es `0.00` en el MVP. `sales[].total` es `subtotal + shippingCost`.
 - `subtotal` del pedido es la suma de `sales[].subtotal`. `shippingTotal` es la suma de `shippingCost`. `total` es `subtotal + shippingTotal`, y `payment.amount` es igual a `total`.
-- El pedido no informa el precio de lista ni el nombre de la promoción, porque no se guardan. Así B2 (`GET /me/orders/{id}`) podrá devolver exactamente esta misma forma.
+- El pedido no informa el precio de lista ni el nombre de la promoción, porque no se guardan. Así BL-B2 (`GET /me/orders/{id}`) podrá devolver exactamente esta misma forma.
 - `status` del pedido es `CONFIRMED` (pagado). `sales[].status` empieza en `PENDING`: el almacén lo pasa a `CONFIRMED` con el flujo existente de `SaleStatusService`.
 - Orden: `sales` por `storeName` y luego `branchName`. `items` por `name`.
 
@@ -182,7 +184,7 @@ Ejemplos:
 { "error": { "code": "ADDRESS_NOT_FOUND", "message": "No se encontró la dirección.", "details": null } }
 ```
 
-> El código HTTP 402 no está en la tabla de `docs/api/error-handling.md §3`. La tarea T13 lo documenta.
+> El código HTTP 402 no está en la tabla de `docs/api/error-handling.md §3`. La tarea CK-T13 lo documenta.
 
 ### 2.5 Tipos TypeScript del contrato (copiar tal cual en el frontend)
 
@@ -292,7 +294,7 @@ export interface PersonAddressRequestDto {
 }
 ```
 
-### 2.6 Formato del carrito en `localStorage` (lo escribe F1/F2; lo lee el checkout)
+### 2.6 Formato del carrito en `localStorage` (lo escribe BL-F1/BL-F2; lo lee el checkout)
 
 ```ts
 /** Clave: 'autopartco.cart.v1'. Si el valor no cumple el esquema, se trata como carrito vacío. */
@@ -318,8 +320,8 @@ export interface CartLine {
 }
 ```
 
-- Quien modifique el carrito escribe la clave completa y emite `window.dispatchEvent(new Event('autopartco:cart-changed'))`. El indicador del header (F1) escucha ese evento y también `storage`, que llega desde otras pestañas.
-- El modelo `Product` de `features/marketplace/api/types.ts` todavía no tiene `branchId`. Exponerlo es responsabilidad de F1 (en http viene de `ProductResponse.branchId`; en mock se usa `storeId`).
+- Quien modifique el carrito escribe la clave completa y emite `window.dispatchEvent(new Event('autopartco:cart-changed'))`. El indicador del header (BL-F1) escucha ese evento y también `storage`, que llega desde otras pestañas.
+- El modelo `Product` de `features/marketplace/api/types.ts` todavía no tiene `branchId`. Exponerlo es responsabilidad de BL-F1 (en http viene de `ProductResponse.branchId`; en mock se usa `storeId`).
 
 ---
 
@@ -327,18 +329,18 @@ export interface CartLine {
 
 | # | Decisión | Justificación | Alternativas descartadas |
 |---|---|---|---|
-| D1 | El rechazo del pago responde **402 sin persistir nada** y F4 solo existe para pedidos aprobados. El rechazo se muestra dentro de `/checkout` | Es la decisión del usuario: si se rechaza, se revierte toda la transacción. Sin pedido no hay `:id` que mostrar en F4 | Guardar el pedido `REJECTED` con su pago, que contradice la decisión del usuario. Usar `/pedido/rechazado/resultado`, que mete una pseudo-id en la ruta |
+| D1 | El rechazo del pago responde **402 sin persistir nada** y BL-F4 solo existe para pedidos aprobados. El rechazo se muestra dentro de `/checkout` | Es la decisión del usuario: si se rechaza, se revierte toda la transacción. Sin pedido no hay `:id` que mostrar en BL-F4 | Guardar el pedido `REJECTED` con su pago, que contradice la decisión del usuario. Usar `/pedido/rechazado/resultado`, que mete una pseudo-id en la ruta |
 | D2 | Idempotencia con `clientRequestId` en el **cuerpo**, guardado como `payments.provider_reference` (la restricción `UNIQUE(provider, provider_reference)` ya existe) | No requiere cambios de esquema ni de CORS. La base de datos garantiza la unicidad. Como un rechazo no deja rastro, se puede reintentar con la misma clave | Cabecera `Idempotency-Key`: requiere una tabla nueva para guardar respuestas. Sin idempotencia: un doble clic crea dos pedidos y cobra dos veces |
 | D3 | El precio sale de `ListingQueries` (nuevo `purchasableListings`, mismo `toResponses` que `effectivePrice`). Se lee **antes** del `UPDATE` de stock y el `UPDATE … RETURNING price` confirma que el precio base no cambió | Es el mismo cálculo que ve el comprador. `publishedListings` filtra `stock > 0` y ocultaría el producto después de descontarlo | Recalcular el precio después del `UPDATE`: el listado podría quedar en stock 0 y desaparecer de la consulta publicada. Aceptar el precio del cliente: prohibido |
 | D4 | Descuento con `UPDATE inventory SET stock = stock - :n, version = version + 1 … WHERE … AND stock >= :n RETURNING id, stock, price`, recorriendo las líneas ordenadas por `(branchId, productId)` | Es atómico y bloquea las filas hasta el commit. El orden fijo evita interbloqueos entre compras simultáneas. Subir `version` mantiene coherente el `@Version` de la entidad `Inventory`, que otros flujos editan con JPA | `SELECT … FOR UPDATE` y luego restar en Java: dos viajes por línea. Bloqueo optimista con JPA: requiere entidades y reintentos |
 | D5 | Se recorren **todas** las líneas antes de fallar, y se reportan todas las faltantes en `details.items` | El usuario corrige el carrito una sola vez. Un `UPDATE` que afecta 0 filas no aborta la transacción en PostgreSQL | Fallar en la primera línea: obliga a varios intentos |
 | D6 | El pago se simula **antes** de insertar el pedido, con un puerto `CheckoutPaymentGateway` y su implementación `SimulatedCheckoutPaymentGateway` en `marketplace.checkout` | Las integraciones van detrás de un adaptador, así que Wompi podrá reemplazarlo. Si se rechaza, solo hay que revertir el stock | Llamar al simulador desde `core.order`: mezcla el dominio con el proveedor. Usar `core.billing`: es la facturación de suscripciones de almacenes |
-| D7 | `core.order` escribe y lee las tablas de pedido con JDBC: `OrderPlacement` (escritura) y `BuyerOrderQueries.receipt` (lectura, la reutilizará B2) | Respeta la decisión del usuario (sin JPA nuevo) y el patrón de `SaleQueries`. `core.order` sigue dependiendo solo de `shared` y `core.notification` | Poner el SQL en `marketplace`: duplicaría la propiedad de las tablas de pedido |
+| D7 | `core.order` escribe y lee las tablas de pedido con JDBC: `OrderPlacement` (escritura) y `BuyerOrderQueries.receipt` (lectura, la reutilizará BL-B2) | Respeta la decisión del usuario (sin JPA nuevo) y el patrón de `SaleQueries`. `core.order` sigue dependiendo solo de `shared` y `core.notification` | Poner el SQL en `marketplace`: duplicaría la propiedad de las tablas de pedido |
 | D8 | Las clases nuevas sobre tablas de pedido usan `JdbcClient`. Los métodos que se añaden a clases existentes (`ListingQueries`, `StockService`) usan su mismo estilo: `JdbcTemplate` en `ListingQueries` y `JdbcClient` inyectado en `StockService` | Es la decisión del usuario, y no se mezclan estilos dentro de una misma clase | Migrar `SaleQueries` a `JdbcClient`: fuera de alcance |
-| D9 | El envoltorio de éxito no lleva `data` | Es coherente con todos los endpoints y servicios http actuales | Seguir `conventions.md §6` solo aquí: sería inconsistente |
+| D9 | El envoltorio de éxito no lleva `data` | Coherente con `conventions.md` §6 y con todos los endpoints y servicios http actuales | Envoltorio `{ data }`: descartado en `conventions.md` |
 | D10 | Se añade un interruptor `app.checkout.simulated-payments-enabled` (`@Value` con valor por defecto `true`, sin tocar `application.yaml`) | Permite apagar el simulador en un entorno real sin desplegar código. Si está apagado, responde 400 `PAYMENT_METHOD_NOT_SUPPORTED` | Ninguno: el simulador siempre activo es un riesgo en producción |
 | D11 | El costo de envío es `0.00` y la moneda es `COP`, fija | MVP solo para Colombia, sin tarifas de envío definidas | Calcular el envío: no hay modelo de tarifas |
-| D12 | Para mostrar F4 tras recargar, se guarda un **resumen sin dirección** en `sessionStorage` (`autopartco.order-result.<orderId>`) hasta que exista B2 | La sesión http vive en memoria y se pierde al recargar. El resumen no contiene datos personales de entrega | Guardar el pedido completo en `localStorage`: persiste datos personales. Depender de B2: todavía no existe |
+| D12 | Para mostrar BL-F4 tras recargar, se guarda un **resumen sin dirección** en `sessionStorage` (`autopartco.order-result.<orderId>`) hasta que exista BL-B2 | La sesión http vive en memoria y se pierde al recargar. El resumen no contiene datos personales de entrega | Guardar el pedido completo en `localStorage`: persiste datos personales. Depender de BL-B2: todavía no existe |
 
 ---
 
@@ -348,7 +350,7 @@ export interface CartLine {
 
 Rutas relativas a `backend/src/main/java/com/autopartco/backend/`. No se tocan los `package-info.java` de los módulos: las dependencias nuevas (`marketplace` → `core.identity`, `core.catalog`, `core.inventory` y `core.order`) ya están permitidas.
 
-**`shared/error`** (T1)
+**`shared/error`** (CK-T1)
 
 ```java
 // Nuevo. 402. Lo mapea GlobalExceptionHandler.
@@ -365,7 +367,7 @@ public class PaymentRequiredException extends RuntimeException {
 - `handleConflict` y `handleNotFound` pasan `exception.getDetails()`.
 - Nuevo `handlePaymentRequired` que responde `HttpStatus.PAYMENT_REQUIRED`.
 
-**`core/inventory`** (T2)
+**`core/inventory`** (CK-T2)
 
 ```java
 public record StockDecrement(UUID inventoryId, int newStock, BigDecimal price) { }
@@ -389,7 +391,7 @@ WHERE branch_id = :branchId AND product_id = :productId
 RETURNING id, stock, price
 ```
 
-**`core/catalog`** (T3)
+**`core/catalog`** (CK-T3)
 
 ```java
 public record ListingKey(UUID productId, UUID branchId) { }
@@ -403,7 +405,7 @@ public Map<ListingKey, ProductResponse> purchasableListings(Collection<ListingKe
 
 Se implementa con `JdbcTemplate` y `VALUES (?, ?), …` generado según el número de claves (máximo 50, que ya valida la capa web). Reutiliza `toResponses`, así que `effectivePrice` sale idéntico al de `ProductResponse`.
 
-**`core/identity`** (T4)
+**`core/identity`** (CK-T4)
 
 ```java
 public record AddressSnapshot(String addressLine, String addressComplement, String city, String department,
@@ -420,7 +422,7 @@ public class PersonAddressLookup {
 
 Usa `PersonAddressRepository.findByIdAndPerson_Id`, que ya existe y respeta `@SQLRestriction`.
 
-**`core/order`** (T5)
+**`core/order`** (CK-T5)
 
 ```java
 public record NewOrder(UUID personId, DeliveryAddress address, String paymentMethodCode,
@@ -446,7 +448,7 @@ public class OrderPlacement {
     @Transactional public UUID placeApproved(NewOrder order);
 }
 
-/** Lecturas del pedido desde el punto de vista del comprador (B2 añadirá list/detail aquí). */
+/** Lecturas del pedido desde el punto de vista del comprador (BL-B2, MK-B3, añadirá list/detail aquí). */
 @Service
 public class BuyerOrderQueries {
     /** Pedido de esa persona con la forma de §2.3; si no existe o es ajeno, NotFoundException("ORDER_NOT_FOUND"). */
@@ -472,7 +474,7 @@ public record BuyerOrderResponse(UUID orderId, long orderNumber, String status, 
 - `storeName` sale de `store.bussnies_name` (así se llama la columna).
 - `lineTotal` se calcula en SQL como `units * unit_price`, o en Java con escala 2.
 
-**`marketplace/checkout`** (T6)
+**`marketplace/checkout`** (CK-T6)
 
 ```java
 public record PlaceOrderRequest(
@@ -503,7 +505,7 @@ class SimulatedCheckoutPaymentGateway implements CheckoutPaymentGateway {
 
 public record CheckoutResult(BuyerOrderResponse order, boolean replayed) { }
 
-/** Caso de uso B1. Una sola transacción. */
+/** Caso de uso BL-B1. Una sola transacción. */
 @Service
 public class PlaceMarketplaceOrder {
     @Transactional
@@ -522,7 +524,7 @@ public class MarketplaceOrderController {
 Algoritmo de `PlaceMarketplaceOrder.execute` (normativo):
 
 1. `account = accountLookup.requireByEmail(email)`; `personId = account.personId()`.
-2. Si algún par `productId`+`branchId` se repite: `BadRequestException("CHECKOUT_DUPLICATE_LINE")`, con los pares en `details`. `BadRequestException` no tiene `details`: hay que añadirle el mismo constructor en T1.
+2. Si algún par `productId`+`branchId` se repite: `BadRequestException("CHECKOUT_DUPLICATE_LINE")`, con los pares en `details`. `BadRequestException` no tiene `details`: hay que añadirle el mismo constructor en CK-T1.
 3. Si `!gateway.enabled() || !orderPlacement.isActivePaymentMethod(request.paymentMethod())`: 400 `PAYMENT_METHOD_NOT_SUPPORTED`.
 4. `reference = request.clientRequestId().toString()`. Si `orderPlacement.findByPaymentReference(reference)` devuelve un dueño:
    - si es la misma persona, `return new CheckoutResult(buyerOrderQueries.receipt(personId, orderId), true)`;
@@ -544,11 +546,11 @@ Algoritmo de `PlaceMarketplaceOrder.execute` (normativo):
 
 ### 4.2 Tareas de backend
 
-Las tareas se ejecutan **en orden** (T1 → T6), porque todas editan el área del agente `backend` y no puede haber dos ediciones simultáneas. Las pruebas se corren desde `backend/` con `./mvnw -q test -Dtest=<Clase>` y **nunca** sin `-Dtest`: `BackendApplicationTests` modifica la base de datos de `backend/.env`. Ninguna tarea ejecuta comandos contra la base de datos.
+Las tareas se ejecutan **en orden** (CK-T1 → CK-T6), porque todas editan el área del agente `backend` y no puede haber dos ediciones simultáneas. Las pruebas se corren desde `backend/` con `./mvnw -q test -Dtest=<Clase>` y **nunca** sin `-Dtest`: `BackendApplicationTests` modifica la base de datos de `backend/.env`. Ninguna tarea ejecuta comandos contra la base de datos.
 
 ---
 
-#### T1 — Errores con `details` y 402
+#### CK-T1 — Errores con `details` y 402
 
 - **Modelo:** Haiku. **Agente:** `backend`.
 - **Archivos:**
@@ -565,7 +567,7 @@ Las tareas se ejecutan **en orden** (T1 → T6), porque todas editan el área de
   - `./mvnw -q test -Dtest=GlobalExceptionHandlerTest` pasa, con pruebas nuevas que comprueban: (a) 402 con code, message y details; (b) 409 con details no nulos; (c) 404 y 400 creados con el constructor antiguo siguen devolviendo `details` null.
   - `./mvnw -q test -Dtest=ModularityTests` pasa.
 
-#### T2 — Descuento atómico de stock en `core.inventory`
+#### CK-T2 — Descuento atómico de stock en `core.inventory`
 
 - **Modelo:** Sonnet. **Agente:** `backend`.
 - **Archivos:**
@@ -578,11 +580,12 @@ Las tareas se ejecutan **en orden** (T1 → T6), porque todas editan el área de
   - Implementa `int availableStock(UUID branchId, UUID productId)` (`SELECT stock … WHERE deleted_at IS NULL`, o 0 si no existe).
   - Si `units < 1`, lanza `IllegalArgumentException`.
   - No modifiques `Inventory` ni `InventoryRepository`.
+  - No registres movimientos en `inventory_movements`: el movimiento de venta dentro de `decrementIfAvailable` lo añade después SA-B5 (dueño único del ledger), sin cambiar esta firma ni el SQL.
 - **Aceptación:**
   - `./mvnw -q test -Dtest=StockServiceTest` pasa, con Mockito (`RETURNS_DEEP_STUBS` para `JdbcClient` o un `ArgumentCaptor` del SQL). Comprueba que el SQL contiene `stock >= :units`, `version = version + 1` y `deleted_at IS NULL`; que una lista vacía devuelve `Optional.empty()`; y que `units = 0` lanza la excepción.
   - `./mvnw -q test -Dtest=ModularityTests` pasa.
 
-#### T3 — Listados comprables por par producto-sucursal en `core.catalog`
+#### CK-T3 — Listados comprables por par producto-sucursal en `core.catalog`
 
 - **Modelo:** Sonnet. **Agente:** `backend`.
 - **Archivos:**
@@ -599,7 +602,7 @@ Las tareas se ejecutan **en orden** (T1 → T6), porque todas editan el área de
   - `./mvnw -q test -Dtest=ListingQueriesTest` pasa, con pruebas nuevas que comprueban: (a) con claves vacías no hay interacción con `jdbcTemplate`; (b) el SQL enviado no contiene `stock > 0` y sí `ps.code = 'ACTIVE'`, `ss.code = 'ACTIVE'` y `bs.code = 'ACTIVE'`; (c) `effectivePrice` refleja una promoción activa igual que en `publishedListing`.
   - `ModularityTests` pasa.
 
-#### T4 — Consulta pública de direcciones en `core.identity`
+#### CK-T4 — Consulta pública de direcciones en `core.identity`
 
 - **Modelo:** Haiku. **Agente:** `backend`.
 - **Archivos:**
@@ -613,7 +616,7 @@ Las tareas se ejecutan **en orden** (T1 → T6), porque todas editan el área de
   - `./mvnw -q test -Dtest=PersonAddressLookupTest` pasa: devuelve el snapshot de la dirección propia y vacío para una ajena.
   - `ModularityTests` pasa.
 
-#### T5 — Escritura y lectura del pedido en `core.order`
+#### CK-T5 — Escritura y lectura del pedido en `core.order`
 
 - **Modelo:** Sonnet. **Agente:** `backend`.
 - **Archivos:**
@@ -631,7 +634,7 @@ Las tareas se ejecutan **en orden** (T1 → T6), porque todas editan el área de
   - `./mvnw -q test -Dtest=OrderPlacementTest,BuyerOrderQueriesTest` pasa, con mocks. Comprueba: (a) el orden de inserción y los códigos de estado en los parámetros; (b) que `amount` es la suma de los `total` de las ventas; (c) que `receipt` con otra persona lanza `ORDER_NOT_FOUND`.
   - `ModularityTests` pasa: `core.order` no importa `core.identity`, `core.catalog` ni `core.inventory`.
 
-#### T6 — Caso de uso, adaptador de pago y endpoint en `marketplace.checkout`
+#### CK-T6 — Caso de uso, adaptador de pago y endpoint en `marketplace.checkout`
 
 - **Modelo:** Opus (lógica crítica de dinero, stock y transacciones). **Agente:** `backend`.
 - **Archivos:**
@@ -639,7 +642,7 @@ Las tareas se ejecutan **en orden** (T1 → T6), porque todas editan el área de
   - actualizar el Javadoc de `marketplace/checkout/package-info.java`, que hoy dice "No implementado";
   - nuevos `backend/src/test/java/com/autopartco/backend/marketplace/checkout/{PlaceMarketplaceOrderTest,SimulatedCheckoutPaymentGatewayTest}.java`.
 - **Contexto mínimo:**
-  - Depende de T1–T5.
+  - Depende de CK-T1–CK-T5.
   - El algoritmo normativo de 12 pasos está en §4.1. El contrato HTTP completo, en §2.
   - `marketplace/package-info.java` ya permite depender de `core.identity`, `core.catalog`, `core.inventory`, `core.pricing` y `core.order`; no lo modifiques.
   - El email del usuario se obtiene con `authentication.getName()`, como en `MeController`.
@@ -687,13 +690,13 @@ Las tareas se ejecutan **en orden** (T1 → T6), porque todas editan el área de
 ### 5.2 Componentes y firmas
 
 ```ts
-// src/lib/api.ts (T8): ApiError conserva el `details` crudo
+// src/lib/api.ts (CK-T8): ApiError conserva el `details` crudo
 export class ApiError extends Error { readonly details?: unknown /* + lo existente */ }
 
-// features/auth/api/types.ts (T8)
+// features/auth/api/types.ts (CK-T8)
 export interface AuthService { /* … existente … */ getAccessToken(): Promise<string | undefined> }
 
-// features/checkout/api/types.ts (T9): los tipos de §2.5 y, además:
+// features/checkout/api/types.ts (CK-T9): los tipos de §2.5 y, además:
 export interface CheckoutService {
   readonly simulated: boolean
   placeOrder(input: PlaceOrderRequestDto): Promise<BuyerOrderDto>   // lanza ApiError
@@ -704,18 +707,18 @@ export interface AddressService {
   create(input: PersonAddressRequestDto): Promise<PersonAddressDto>
 }
 
-// features/checkout/api/checkout-service.ts (T9)
+// features/checkout/api/checkout-service.ts (CK-T9)
 export function getCheckoutService(): Promise<CheckoutService>
 export function getAddressService(): Promise<AddressService>
 
-// features/checkout/lib/cart-source.ts (T9): lee y escribe la clave de §2.6
+// features/checkout/lib/cart-source.ts (CK-T9): lee y escribe la clave de §2.6
 export function readCartLines(): CartLine[]                  // tolerante: si el esquema no es válido, devuelve []
 export function removeCartLines(refs: CheckoutLineRef[]): void
 export function setCartLineQuantity(ref: CheckoutLineRef, quantity: number): void
 export function clearCart(): void                            // todas las escrituras emiten 'autopartco:cart-changed'
 export function useCartLines(): CartLine[]                   // useSyncExternalStore con 'autopartco:cart-changed' y 'storage'
 
-// features/checkout/lib/order-result-store.ts (T9)
+// features/checkout/lib/order-result-store.ts (CK-T9)
 export interface OrderResultSummary {                         // BuyerOrderDto sin deliveryAddress
   orderId: string; orderNumber: number; status: string; createdAt: string; total: number
   payment: BuyerOrderDto['payment']; sales: BuyerOrderDto['sales']
@@ -742,12 +745,12 @@ El mock de direcciones arranca con dos direcciones (Bogotá, Cundinamarca, por d
 Servicio **http**:
 
 - `placeOrder`: `apiRequest<BuyerOrderDto>('/marketplace/orders', { method: 'POST', body, token })`.
-- Direcciones: `GET /me/addresses` y `POST /me/addresses` (requiere añadir `'PUT' | 'DELETE'` a `RequestOptions.method` solo si lo necesitas; para T9 basta `GET` y `POST`).
+- Direcciones: `GET /me/addresses` y `POST /me/addresses` (requiere añadir `'PUT' | 'DELETE'` a `RequestOptions.method` solo si lo necesitas; para CK-T9 basta `GET` y `POST`).
 - El token se obtiene con `(await getAuthService()).getAccessToken()`. Si no hay token, lanza `ApiError` con status 401 y code `UNAUTHORIZED` sin llamar al servidor.
 
 ### 5.3 Comportamiento de las vistas
 
-**`/checkout` (F3)**
+**`/checkout` (BL-F3)**
 
 1. Sin sesión: `<Navigate to="/ingresar" replace state={{ from: '/checkout' }} />`. El carrito se conserva en `localStorage`.
 2. Carrito vacío: `EmptyState` con enlace a `/buscar`.
@@ -764,14 +767,14 @@ Servicio **http**:
    - **404 `PRODUCT_NOT_FOUND`:** marca las líneas como "Ya no está disponible" con la acción "Quitar del carrito" (`removeCartLines`).
    - **404 `ADDRESS_NOT_FOUND`:** recarga las direcciones y pide elegir otra.
    - **409 `CHECKOUT_LISTING_CHANGED`:** mensaje "Un precio cambió mientras pagabas. Revisa el resumen e inténtalo de nuevo".
-   - **409 `CHECKOUT_DUPLICATE_REQUEST`:** mensaje "Este pedido ya se está procesando. Revisa tus pedidos antes de volver a pagar", con enlace a `/`, ya que F5 no existe todavía.
+   - **409 `CHECKOUT_DUPLICATE_REQUEST`:** mensaje "Este pedido ya se está procesando. Revisa tus pedidos antes de volver a pagar", con enlace a `/`, ya que BL-F5 no existe todavía.
    - **400** (`VALIDATION_ERROR`, `CHECKOUT_DUPLICATE_LINE`, `PAYMENT_METHOD_NOT_SUPPORTED`, `INVALID_REQUEST_BODY`): `FormAlert` con `error.message`.
    - **401:** `setSession(undefined)` y redirección a `/ingresar` con `state.from = '/checkout'`.
    - **Error de red o 500:** `ErrorState` con "Reintentar" (el mismo `clientRequestId`).
 
-**`/pedido/:id/resultado` (F4)**
+**`/pedido/:id/resultado` (BL-F4)**
 
-1. Datos: `location.state.order` si coincide con `:id`; si no, `loadOrderResult(id)`. Si no hay ninguno: `EmptyState` con "No encontramos el resumen de este pedido en este dispositivo" y enlaces a `/` y `/buscar`. Cuando exista B2 se cambiará por `GET /me/orders/{id}`, pero eso queda fuera de alcance.
+1. Datos: `location.state.order` si coincide con `:id`; si no, `loadOrderResult(id)`. Si no hay ninguno: `EmptyState` con "No encontramos el resumen de este pedido en este dispositivo" y enlaces a `/` y `/buscar`. Cuando exista BL-B2 se cambiará por `GET /me/orders/{id}`, pero eso queda fuera de alcance.
 2. Contenido:
    - encabezado de éxito (icono y "¡Pago aprobado!") con **número de pedido `#orderNumber`** destacado;
    - total con `formatCOP`, método (`payment.methodName`), referencia y fecha;
@@ -780,15 +783,15 @@ Servicio **http**:
    - aviso "Pago de demostración: no se realizó ningún cobro real";
    - acciones "Seguir comprando" (`/buscar`) e "Ir al inicio".
 3. Mapa de estados para mostrar: `CONFIRMED` es "Confirmado", `PENDING` es "Pendiente de confirmación por la tienda" y `APPROVED` es "Aprobado". Un código desconocido se muestra tal cual.
-4. El componente que muestra la venta y sus ítems se llama `OrderSalesList` y vive en `features/checkout/components/order-sales-list.tsx`, para que F5 pueda reutilizarlo.
+4. El componente que muestra la venta y sus ítems se llama `OrderSalesList` y vive en `features/checkout/components/order-sales-list.tsx`, para que BL-F5 pueda reutilizarlo.
 
 ### 5.4 Tareas de frontend
 
-Se ejecutan en orden: T8 → T9 → T10 → T11. Todas usan el agente `frontend` y no deben coincidir con F1–F2 en los mismos archivos: el checkout **no** edita `features/marketplace/**` ni `src/app/site-header.tsx`.
+Se ejecutan en orden: CK-T8 → CK-T9 → CK-T10 → CK-T11. Todas usan el agente `frontend` y no deben coincidir con BL-F1–BL-F2 (MK-F2, MK-F3) en los mismos archivos: el checkout **no** edita `features/marketplace/**` ni `src/app/site-header.tsx`.
 
 ---
 
-#### T8 — Base compartida: `details` en `ApiError` y token para servicios
+#### CK-T8 — Base compartida: `details` en `ApiError` y token para servicios
 
 - **Modelo:** Haiku. **Agente:** `frontend`.
 - **Archivos:**
@@ -808,7 +811,7 @@ Se ejecutan en orden: T8 → T9 → T10 → T11. Todas usan el agente `frontend`
   - En el diff, `getAccessToken` no escribe en `localStorage` ni en `sessionStorage`.
   - Todas las llamadas existentes a `new ApiError(...)` siguen compilando.
 
-#### T9 — Capa de datos del checkout (tipos, mock, http y fuente del carrito)
+#### CK-T9 — Capa de datos del checkout (tipos, mock, http y fuente del carrito)
 
 - **Modelo:** Sonnet. **Agente:** `frontend`.
 - **Archivos:**
@@ -834,13 +837,13 @@ Se ejecutan en orden: T8 → T9 → T10 → T11. Todas usan el agente `frontend`
     4. Con `DATA_SOURCE = 'mock'`, el bundle no incluye `http-checkout-service` (import dinámico).
     5. `saveOrderResult` guarda en `sessionStorage` el resumen **sin** `deliveryAddress` (D12).
 
-#### T10 — Vista `/checkout` (F3)
+#### CK-T10 — Vista `/checkout` (BL-F3)
 
 - **Modelo:** Sonnet. **Agente:** `frontend`.
 - **Archivos:**
   - nuevos `frontend/src/features/checkout/pages/checkout-page.tsx` y `frontend/src/features/checkout/components/{address-selector.tsx,address-form.tsx,payment-method-picker.tsx,checkout-summary.tsx,payment-rejected-panel.tsx}`;
-  - `frontend/src/app/router.tsx` y `frontend/src/app/lazy-pages.tsx` (solo para añadir las dos rutas, `checkout` y `pedido/:id/resultado`; la segunda apunta a la página de T11, así que crea en esta tarea un stub mínimo `features/checkout/pages/order-result-page.tsx` que T11 reemplazará).
-- **Contexto mínimo:** §5.1 y §5.3 (todos los casos de `/checkout`), con los servicios de T9 y `getAccessToken` de T8. Reutiliza los componentes de `components/ui` y `components/common`. No toques `features/marketplace/**` ni `site-header.tsx`.
+  - `frontend/src/app/router.tsx` y `frontend/src/app/lazy-pages.tsx` (solo para añadir las dos rutas, `checkout` y `pedido/:id/resultado`; la segunda apunta a la página de CK-T11, así que crea en esta tarea un stub mínimo `features/checkout/pages/order-result-page.tsx` que CK-T11 reemplazará).
+- **Contexto mínimo:** §5.1 y §5.3 (todos los casos de `/checkout`), con los servicios de CK-T9 y `getAccessToken` de CK-T8. Reutiliza los componentes de `components/ui` y `components/common`. No toques `features/marketplace/**` ni `site-header.tsx`.
 - **Aceptación:**
   - `npm run build && npm run lint` sin errores.
   - Prueba manual con `npm run dev` en modo mock y sesión simulada (ingresar en `/ingresar`), con carrito sembrado en la consola: `localStorage.setItem('autopartco.cart.v1', JSON.stringify({version:1,updatedAt:new Date().toISOString(),lines:[{productId:'p1',branchId:'b1',quantity:2,name:'Filtro',storeId:'s1',storeName:'Tienda 1',unitPrice:45000,addedAt:new Date().toISOString()}]}))`. Debe cumplirse:
@@ -852,15 +855,15 @@ Se ejecutan en orden: T8 → T9 → T10 → T11. Todas usan el agente `frontend`
     6. Durante la petición, el botón de pago está desactivado.
     7. Todo el flujo funciona con el teclado.
 
-#### T11 — Vista `/pedido/:id/resultado` (F4)
+#### CK-T11 — Vista `/pedido/:id/resultado` (BL-F4)
 
 - **Modelo:** Sonnet. **Agente:** `frontend`.
 - **Archivos:**
-  - `frontend/src/features/checkout/pages/order-result-page.tsx` (reemplaza el stub de T10);
+  - `frontend/src/features/checkout/pages/order-result-page.tsx` (reemplaza el stub de CK-T10);
   - nuevo `frontend/src/features/checkout/components/order-sales-list.tsx`.
 - **Contexto mínimo:**
-  - §5.3 (F4) y la decisión D12.
-  - `loadOrderResult` existe desde T9 (`features/checkout/lib/order-result-store.ts`), y T10 ya llama a `saveOrderResult`; no los modifiques.
+  - §5.3 (BL-F4) y la decisión D12.
+  - `loadOrderResult` existe desde CK-T9 (`features/checkout/lib/order-result-store.ts`), y CK-T10 ya llama a `saveOrderResult`; no los modifiques.
 - **Aceptación:**
   - `npm run build && npm run lint` sin errores.
   - Prueba manual en modo mock:
@@ -873,11 +876,11 @@ Se ejecutan en orden: T8 → T9 → T10 → T11. Todas usan el agente `frontend`
 
 ## 6. QA (agente `qa-seguridad`, solo lectura)
 
-#### T7 — Revisión de seguridad y pruebas del backend
+#### CK-T7 — Revisión de seguridad y pruebas del backend
 
 - **Modelo:** Opus. **Agente:** `qa-seguridad`.
 - **Archivos:** ninguno (solo lectura).
-- **Contexto mínimo:** §2 y §4 de este plan. Requiere T1–T6 terminadas.
+- **Contexto mínimo:** §2 y §4 de este plan. Requiere CK-T1–CK-T6 terminadas.
 - **Qué revisar:**
   1. El precio solo sale de `effectivePrice`.
   2. Ningún campo del request llega a SQL por concatenación.
@@ -892,18 +895,18 @@ Se ejecutan en orden: T8 → T9 → T10 → T11. Todas usan el agente `frontend`
   - Informe de hallazgos con su severidad.
   - Las pruebas manuales con `curl` contra la base de datos de desarrollo (aprobado, rechazado, stock insuficiente, repetición idempotente, dos compras simultáneas del último ítem) **solo se ejecutan con autorización explícita del usuario**. Mientras tanto se entregan como guion.
 
-#### T12 — Verificación del frontend
+#### CK-T12 — Verificación del frontend
 
 - **Modelo:** Sonnet. **Agente:** `qa-seguridad`.
 - **Archivos:** ninguno.
-- **Contexto mínimo:** §5 y T8–T11 terminadas.
+- **Contexto mínimo:** §5 y CK-T8–CK-T11 terminadas.
 - **Aceptación:**
   - `cd frontend && npm run build && npm run lint` en verde.
-  - Recorrido de los 7 casos de T10 y los 4 de T11 en modo mock, con evidencia (con Playwright, ya instalado por el usuario).
+  - Recorrido de los 7 casos de CK-T10 y los 4 de CK-T11 en modo mock, con evidencia (con Playwright, ya instalado por el usuario).
   - Revisión de accesibilidad: foco tras error, `role="alert"`, etiquetas en los grupos de opciones y uso a 360 px.
-  - Cuando T6 esté desplegado en local: repetir el flujo aprobado y rechazado con `VITE_MARKETPLACE_DATA_SOURCE=http`.
+  - Cuando CK-T6 esté desplegado en local: repetir el flujo aprobado y rechazado con `VITE_MARKETPLACE_DATA_SOURCE=http`.
 
-#### T13 — Documentar el 402 (opcional)
+#### CK-T13 — Documentar el 402 (opcional)
 
 - **Modelo:** Haiku. **Agente:** `redactor` (OpenCode, skill `opencode-delegate`), o el usuario.
 - **Archivos:** `docs/api/error-handling.md`.
@@ -912,31 +915,30 @@ Se ejecutan en orden: T8 → T9 → T10 → T11. Todas usan el agente `frontend`
 
 ### Orden y paralelismo
 
-- Backend: T1 → T2 → T3 → T4 → T5 → T6 → T7.
-- Frontend: T8 → T9 → T10 → T11 → T12. Puede arrancar **en paralelo** con el backend, porque son áreas distintas y usa el mock. La verificación `http` de T12 espera a T6.
-- T13 puede hacerse en cualquier momento.
+- Backend: CK-T1 → CK-T2 → CK-T3 → CK-T4 → CK-T5 → CK-T6 → CK-T7.
+- Frontend: CK-T8 → CK-T9 → CK-T10 → CK-T11 → CK-T12. Puede arrancar **en paralelo** con el backend, porque son áreas distintas y usa el mock. La verificación `http` de CK-T12 espera a CK-T6.
+- CK-T13 puede hacerse en cualquier momento.
 
 ---
 
 ## 7. Riesgos y puntos a verificar
 
-1. **Sin pruebas de integración contra PostgreSQL.** El repositorio no tiene Testcontainers, y `BackendApplicationTests` toca la base de datos real. El `UPDATE` condicional, las restricciones únicas y la reversión solo se prueban con mocks y con el guion manual de T7. Añadir Testcontainers es una dependencia nueva y **requiere aprobación**.
+1. **Sin pruebas de integración contra PostgreSQL.** El repositorio no tiene Testcontainers, y `BackendApplicationTests` toca la base de datos real. El `UPDATE` condicional, las restricciones únicas y la reversión solo se prueban con mocks y con el guion manual de CK-T7. Añadir Testcontainers es una dependencia nueva y **requiere aprobación**.
 2. **Simulador expuesto en producción.** Cualquier usuario autenticado puede crear pedidos "pagados" con `simulatedOutcome`. El interruptor `app.checkout.simulated-payments-enabled` existe, pero su valor por defecto es `true`. Antes de etiquetar una versión para `main` hay que decidir si se desactiva (**requiere aprobación**: despliegue y seguridad).
 3. **Llamada al proveedor dentro de la transacción.** Con el simulador no importa. Con Wompi habrá que separarlo en un pedido `PENDING` más un webhook idempotente, sin mantener bloqueos de stock durante la llamada externa. No se debe reutilizar este flujo síncrono para un proveedor real.
 4. **Diferencia entre el precio del carrito y el cobrado.** Si una promoción vence entre la vista del carrito y el pago, el servidor cobra el precio nuevo sin pedir confirmación. La respuesta muestra el monto real. Si molesta en la demo, se puede añadir más adelante un `expectedTotal` con 409, como decisión aparte.
 5. **Sin límite de frecuencia** en `POST /marketplace/orders`. Para el MVP lo mitigan la autenticación y el límite de 50 líneas × 99 unidades. Pendiente para seguridad.
 6. **Migraciones sin aplicar** (`database/migrations/U202610130925__tenant_isolation_triggers.sql` y `…0930__append_only_tables.sql`). El diseño ya las cumple (`order_details` con la misma sucursal y pedido que la venta, un solo pago `APPROVED` por pedido, `payment_events` sin `UPDATE`). Hay que verificarlo de nuevo cuando se apliquen.
-7. **`ProductResponse` del detalle devuelve solo el listado más barato.** F1 debe guardar el `branchId` de ese listado. Si el comprador quiere otra sucursal, la UI actual no lo permite (fuera de alcance).
-8. **Sesión http en memoria.** Recargar en `/checkout` obliga a volver a ingresar. El carrito sobrevive porque está en `localStorage`. En F4, después de recargar, la dirección no se muestra (D12).
-9. **El envoltorio `data` de `conventions.md`** no se usa (D9). Si algún día se adopta, hay que cambiar todos los endpoints a la vez.
-10. **`SIMULATED_CASH`** se aprueba al instante, aunque el efectivo contra entrega real no funciona así. Es aceptable para la demo.
+7. **`ProductResponse` del detalle devuelve solo el listado más barato.** BL-F1 debe guardar el `branchId` de ese listado. Si el comprador quiere otra sucursal, la UI actual no lo permite (fuera de alcance).
+8. **Sesión http en memoria.** Recargar en `/checkout` obliga a volver a ingresar. El carrito sobrevive porque está en `localStorage`. En BL-F4, después de recargar, la dirección no se muestra (D12).
+9. **`SIMULATED_CASH`** se aprueba al instante, aunque el efectivo contra entrega real no funciona así. Es aceptable para la demo.
 
 ### Decisiones del usuario (2026-10-14)
 
 | # | Decisión | Respuesta | Efecto en el plan |
 |---|---|---|---|
 | 1 | Pagos simulados en builds publicados a `main` | **Se mantienen activos para la demo** | `app.checkout.simulated-payments-enabled` queda en `true`. El riesgo 2 se acepta hasta después de la demo; desactivarlo exige una nueva decisión |
-| 2 | Testcontainers | **No** | No se añade la dependencia. El `UPDATE` atómico y la reversión se cubren con pruebas unitarias con mocks (T6) y con el guion manual de T7. El riesgo 1 sigue abierto |
-| 3 | Guion `curl` de T7 contra la BD de `backend/.env` | **Sí, autorizado** | T7 puede ejecutarlo contra la BD de desarrollo |
-| 4 | `getAccessToken()` en `AuthService` (T8) | **Sí, autorizado** | T8 se ejecuta tal como está descrita |
-| 5 | Instalar Playwright para T12 | **No hace falta: el usuario ya lo instaló** | T12 usa Playwright para la evidencia, sin instalar nada |
+| 2 | Testcontainers | **No** | No se añade la dependencia. El `UPDATE` atómico y la reversión se cubren con pruebas unitarias con mocks (CK-T6) y con el guion manual de CK-T7. El riesgo 1 sigue abierto |
+| 3 | Guion `curl` de CK-T7 contra la BD de `backend/.env` | **Sí, autorizado** | CK-T7 puede ejecutarlo contra la BD de desarrollo |
+| 4 | `getAccessToken()` en `AuthService` (CK-T8) | **Sí, autorizado** | CK-T8 se ejecuta tal como está descrita |
+| 5 | Instalar Playwright para CK-T12 | **No hace falta: el usuario ya lo instaló** | CK-T12 usa Playwright para la evidencia, sin instalar nada |
