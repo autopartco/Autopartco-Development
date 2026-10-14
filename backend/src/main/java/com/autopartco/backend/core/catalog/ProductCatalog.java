@@ -126,6 +126,36 @@ public class ProductCatalog {
         productRepository.flush();
     }
 
+    /** Detalle del producto del almacén con sus listados por sucursal. */
+    @Transactional(readOnly = true)
+    public StoreProductDetail detail(UUID storeId, UUID productId) {
+        return listingQueries.storeProductDetail(storeId, productId);
+    }
+
+    /** Agrega el producto a otra sucursal activa del almacén. */
+    @Transactional
+    public StoreProductDetail addListing(UUID storeId, UUID productId, ProductListingRequest request) {
+        requireOwnedForUpdate(storeId, productId);
+        branchService.requireActiveInStore(storeId, request.branchId());
+        stockService.addListing(request.branchId(), productId, request.stock(), request.price());
+        productRepository.flush();
+        return listingQueries.storeProductDetail(storeId, productId);
+    }
+
+    /** Quita el listado de una sucursal. El último listado no se quita: para eso se borra el producto. */
+    @Transactional
+    public void removeListing(UUID storeId, UUID productId, UUID branchId) {
+        requireOwnedForUpdate(storeId, productId);
+        stockService.removeListing(storeId, branchId, productId);
+        // Si no quedó ninguno, el lanzamiento revierte el borrado lógico de esta transacción.
+        if (stockService.countListingsOfProduct(productId) == 0) {
+            throw new ConflictException(
+                    "LAST_LISTING",
+                    "Es el único listado del producto. Para quitarlo, borra el producto."
+            );
+        }
+    }
+
     @Transactional(readOnly = true)
     public long countInStore(UUID storeId) {
         return productRepository.countProductsInStore(storeId);
