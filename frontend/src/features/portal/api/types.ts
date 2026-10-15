@@ -409,3 +409,66 @@ export interface StaffInviteInput {
   roleName: string
   permissionCodes: string[]
 }
+
+// ------------------------------------------------------------ ventas (analítica)
+
+/** Rangos de días que ofrece la pantalla «Ventas». */
+export type SalesRange = 7 | 30 | 90
+
+export interface SalesDailyPoint {
+  /** `YYYY-MM-DD` (día local). */
+  date: string
+  revenue: number
+  orders: number
+  averageTicket: number
+}
+
+/** Pedido que cae en una celda del mapa de calor. */
+export interface SalesHeatOrder {
+  saleId: string
+  orderNumber: number
+  createdAt: string
+  total: number
+  status: OrderStatus
+  customerName: string | null
+}
+
+/** Celda no vacía del mapa de calor. `day`: 0 = lunes … 6 = domingo; `hour`: 0-23. */
+export interface SalesHeatCell {
+  day: number
+  hour: number
+  orders: SalesHeatOrder[]
+}
+
+export type SalesFunnelStage = 'RECEIVED' | 'PAID' | 'SHIPPED' | 'DELIVERED'
+
+export type SalesEventKind = 'ORDER' | 'PAYMENT' | 'LOW_STOCK'
+
+export interface SalesEvent {
+  id: string
+  kind: SalesEventKind
+  /** ISO de cuando ocurrió. */
+  at: string
+  title: string
+  detail: string
+  /** Ruta relativa a `/portal/:storeId/` (p. ej. `pedidos/{saleId}`), si el evento tiene destino. */
+  to?: string
+}
+
+/**
+ * Analítica de ventas de un rango. Contrato del endpoint recomendado
+ * `GET /stores/{id}/analytics/sales?days=7|30|90` (permiso `ORDER_READ`): HOY NO EXISTE en el
+ * backend y el servicio HTTP la calcula a partir de `GET /orders` y `GET /products`.
+ */
+export interface SalesAnalytics {
+  range: SalesRange
+  generatedAt: string
+  totals: { revenue: number; orders: number; averageTicket: number; delivered: number }
+  /** Periodo inmediatamente anterior de la misma duración, para comparar. */
+  previous: { revenue: number; orders: number; averageTicket: number }
+  daily: SalesDailyPoint[]
+  heatmap: SalesHeatCell[]
+  /** Embudo acumulado: cada etapa cuenta los pedidos que la alcanzaron (sin cancelados/rechazados). */
+  funnel: { stage: SalesFunnelStage; count: number }[]
+  cancelled: number
+}

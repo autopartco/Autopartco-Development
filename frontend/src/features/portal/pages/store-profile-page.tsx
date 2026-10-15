@@ -44,6 +44,11 @@ function ProfileForm({ profile }: { profile: StoreProfile }) {
   else if (values.businessEmail.trim().length > 200) errors.businessEmail = 'El correo no puede superar 200 caracteres.'
   if (values.description.length > DESCRIPTION_MAX) errors.description = `La descripción no puede superar ${DESCRIPTION_MAX} caracteres.`
 
+  const dirty =
+    values.businessName.trim() !== profile.businessName ||
+    values.businessEmail.trim() !== profile.businessEmail ||
+    values.description.trim() !== (profile.description ?? '')
+
   const shown = (field: Field) => serverErrors[field] ?? (submitted || touched[field] ? errors[field] : undefined)
   const bind = (field: Field) => ({
     id: fieldId(field),
@@ -126,9 +131,14 @@ function ProfileForm({ profile }: { profile: StoreProfile }) {
         <StatusBadge tone={profile.state === 'ACTIVE' ? 'success' : 'warning'}>{profile.state === 'ACTIVE' ? 'Activa' : 'Pendiente'}</StatusBadge>
       </div>
       {editable ? (
-        <Button type="submit" className="h-11 w-fit px-6" disabled={pending}>
-          {pending ? 'Guardando…' : 'Guardar cambios'}
-        </Button>
+        <div className="sticky bottom-0 z-10 -mx-4 flex flex-wrap items-center gap-3 border-t border-border bg-background/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0">
+          <Button type="submit" className="h-11 px-6" disabled={pending || !dirty}>
+            {pending ? 'Guardando…' : 'Guardar cambios'}
+          </Button>
+          <p role="status" className="text-sm text-muted-foreground">
+            {dirty ? 'Tienes cambios sin guardar.' : 'Sin cambios por guardar.'}
+          </p>
+        </div>
       ) : null}
     </form>
   )

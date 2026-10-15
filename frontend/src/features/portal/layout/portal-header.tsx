@@ -22,18 +22,21 @@ interface PortalHeaderProps {
   start?: ReactNode
   /** Clases del contenedor interno (ancho máximo y márgenes de cada pantalla). */
   innerClassName?: string
+  /** Herramientas antes del menú de cuenta (buscador de la paleta de comandos). */
+  tools?: ReactNode
 }
 
 /**
  * Cabecera carbón del portal: la misma barra del marketplace (color, alto, logo y menú de cuenta)
  * con la etiqueta "Portal de almacenes", para que ambos se sientan el mismo producto.
  */
-export function PortalHeader({ start, innerClassName }: PortalHeaderProps) {
+export function PortalHeader({ start, innerClassName, tools }: PortalHeaderProps) {
   return (
     <header className="surface-asphalt sticky top-0 z-40 bg-header">
       <div className={cn('flex h-14 items-center gap-1 px-3 sm:gap-2 sm:px-6 lg:h-16 lg:px-8', innerClassName)}>
         {start}
         <PortalBrand className="flex-1" />
+        {tools}
         <PortalAccountMenu />
       </div>
     </header>

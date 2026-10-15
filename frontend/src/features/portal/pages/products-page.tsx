@@ -4,7 +4,6 @@ import { toast } from 'sonner'
 import { EyeIcon, EyeOffIcon, MoreHorizontalIcon, PackageIcon, PencilIcon, PlusIcon, SearchXIcon, Trash2Icon } from 'lucide-react'
 import { DataTable, type DataColumn } from '@/components/common/data-table'
 import { EmptyState } from '@/components/common/states'
-import { INPUT_CLASS } from '@/components/common/form-fields'
 import { Button } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { SmartImage } from '@/components/common/smart-image'
@@ -13,6 +12,7 @@ import { getProductService } from '../api/product-service'
 import type { ProductRow } from '../api/types'
 import { ConfirmDialog } from '../components/confirm-dialog'
 import { SelectField } from '../components/form-controls'
+import { ResultCount, SearchField } from '../components/search-field'
 import { PageHeader } from '../components/page-header'
 import { QueryBoundary } from '../components/query-boundary'
 import { StatusBadge, StockBadge } from '../components/status-badge'
@@ -170,7 +170,6 @@ function ProductsView({ rows }: { rows: ProductRow[] }) {
     },
   ]
 
-  const filtering = Boolean(q || estado || stock || sucursal)
   const productsUsage = subscription?.usage.products
 
   return (
@@ -185,20 +184,7 @@ function ProductsView({ rows }: { rows: ProductRow[] }) {
         onSubmit={(event) => event.preventDefault()}
         className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_repeat(3,minmax(0,1fr))]"
       >
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <label htmlFor="filtro-q" className="text-sm font-semibold">
-            Buscar
-          </label>
-          <input
-            id="filtro-q"
-            type="search"
-            value={q}
-            onChange={(event) => setFilter('q', event.target.value)}
-            placeholder="Nombre, SKU o referencia"
-            className={INPUT_CLASS}
-            autoComplete="off"
-          />
-        </div>
+        <SearchField value={q} onChange={(value) => setFilter('q', value)} placeholder="Nombre, SKU o referencia" />
         <SelectField id="filtro-estado" label="Estado" placeholder="Todos" options={STATE_OPTIONS} value={estado} onChange={(event) => setFilter('estado', event.target.value)} />
         <SelectField id="filtro-stock" label="Existencias" placeholder="Todas" options={STOCK_OPTIONS} value={stock} onChange={(event) => setFilter('stock', event.target.value)} />
         {branches.length > 1 ? (
@@ -213,9 +199,7 @@ function ProductsView({ rows }: { rows: ProductRow[] }) {
         ) : null}
       </form>
 
-      <p className="text-sm text-muted-foreground" role="status">
-        {filtering ? `${filtered.length} de ${rows.length} publicaciones` : `${rows.length} ${rows.length === 1 ? 'publicación' : 'publicaciones'}`}
-      </p>
+      <ResultCount shown={filtered.length} total={rows.length} singular="publicación" plural="publicaciones" />
 
       {filtered.length === 0 ? (
         <EmptyState
@@ -235,6 +219,7 @@ function ProductsView({ rows }: { rows: ProductRow[] }) {
           rows={filtered}
           getRowId={(row) => `${row.id}:${row.branchId}`}
           defaultSort={{ columnId: 'producto', direction: 'asc' }}
+          pageSize={10}
         />
       )}
 

@@ -8,6 +8,8 @@ import { formatCOP } from '@/lib/format'
 import { getOrderService } from '../api/order-service'
 import type { OrderStatus, OrderSummary } from '../api/types'
 import { SelectField } from '../components/form-controls'
+import { ResultCount, SearchField } from '../components/search-field'
+import { normalizeText } from '../lib/fuzzy'
 import { PageHeader } from '../components/page-header'
 import { QueryBoundary } from '../components/query-boundary'
 import { StatusBadge } from '../components/status-badge'
@@ -24,8 +26,27 @@ function OrdersView({ rows }: { rows: OrderSummary[] }) {
   const base = `/portal/${encodeURIComponent(storeId)}`
   const [params, setParams] = useSearchParams()
   const estado = params.get('estado') ?? ''
+  const q = params.get('q') ?? ''
 
-  const filtered = useMemo(() => rows.filter((row) => !estado || row.status === estado), [rows, estado])
+  function setFilter(name: string, value: string) {
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current)
+        if (value) next.set(name, value)
+        else next.delete(name)
+        return next
+      },
+      { replace: true },
+    )
+  }
+
+  const filtered = useMemo(() => {
+    const term = normalizeText(q).replace(/^#/, '')
+    return rows.filter((row) => {
+      if (estado && row.status !== estado) return false
+      return !term || normalizeText(`${row.orderNumber} ${row.customerName ?? ''}`).includes(term)
+    })
+  }, [rows, estado, q])
   const pending = rows.filter((row) => row.status === 'PENDING').length
 
   const columns: DataColumn<OrderSummary>[] = [
@@ -75,25 +96,22 @@ function OrdersView({ rows }: { rows: OrderSummary[] }) {
           <strong className="font-semibold">{pending === 1 ? 'Tienes 1 pedido pendiente.' : `Tienes ${pending} pedidos pendientes.`}</strong> Confírmalos o cancélalos para que el cliente sepa qué pasa.
         </p>
       ) : null}
-      <form role="search" aria-label="Filtrar pedidos" onSubmit={(event) => event.preventDefault()} className="max-w-xs">
+      <form role="search" aria-label="Filtrar pedidos" onSubmit={(event) => event.preventDefault()} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <SearchField value={q} onChange={(value) => setFilter('q', value)} placeholder="Número de pedido o cliente" />
         <SelectField
           id="filtro-estado-pedido"
           label="Estado del pedido"
           placeholder="Todos"
           options={STATUS_OPTIONS}
           value={estado}
-          onChange={(event) =>
-            setParams(event.target.value ? { estado: event.target.value } : {}, { replace: true })
-          }
+          onChange={(event) => setFilter('estado', event.target.value)}
         />
       </form>
-      <p className="text-sm text-muted-foreground" role="status">
-        {estado ? `${filtered.length} de ${rows.length} pedidos` : `${rows.length} ${rows.length === 1 ? 'pedido' : 'pedidos'}`}
-      </p>
+      <ResultCount shown={filtered.length} total={rows.length} singular="pedido" plural="pedidos" />
       {filtered.length === 0 ? (
-        <EmptyState icon={<SearchXIcon />} title="No hay pedidos con ese estado" description="Prueba con otro estado o muestra todos." className="py-8">
+        <EmptyState icon={<SearchXIcon />} title="Ningún pedido coincide" description="Revisa el número o el nombre, o prueba con otro estado." className="py-8">
           <Button variant="outline" className="h-11 px-4" onClick={() => setParams({}, { replace: true })}>
-            Ver todos
+            Quitar filtros
           </Button>
         </EmptyState>
       ) : (
@@ -103,6 +121,7 @@ function OrdersView({ rows }: { rows: OrderSummary[] }) {
           rows={filtered}
           getRowId={(row) => row.saleId}
           defaultSort={{ columnId: 'fecha', direction: 'desc' }}
+          pageSize={10}
         />
       )}
     </div>

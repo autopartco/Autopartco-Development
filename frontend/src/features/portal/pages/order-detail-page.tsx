@@ -9,6 +9,7 @@ import { ApiError } from '@/lib/api'
 import { formatCOP } from '@/lib/format'
 import { getOrderService } from '../api/order-service'
 import type { OrderDetail, OrderItem } from '../api/types'
+import { Reveal, RevealGroup } from '../components/bento'
 import { OrderStatusActions } from '../components/order-status-actions'
 import { PageHeader } from '../components/page-header'
 import { QueryBoundary } from '../components/query-boundary'
@@ -36,16 +37,18 @@ const ITEM_COLUMNS: DataColumn<OrderItem>[] = [
   { id: 'subtotal', header: 'Subtotal', align: 'end', cell: (row) => <span className="font-semibold tabular-nums">{formatCOP(row.unitPrice * row.units)}</span> },
 ]
 
-function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
+function Section({ id, title, index = 0, children }: { id: string; title: string; index?: number; children: ReactNode }) {
   return (
-    <Card className="gap-4 p-5" role="region" aria-labelledby={id}>
-      <CardHeader className="px-0">
-        <CardTitle id={id} className="text-lg font-extrabold tracking-tight">
-          {title}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="px-0">{children}</CardContent>
-    </Card>
+    <Reveal index={index}>
+      <Card className="gap-4 p-5" role="region" aria-labelledby={id}>
+        <CardHeader className="px-0">
+          <CardTitle id={id} className="text-lg font-extrabold tracking-tight">
+            {title}
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="px-0">{children}</CardContent>
+      </Card>
+    </Reveal>
   )
 }
 
@@ -53,7 +56,7 @@ function OrderView({ order }: { order: OrderDetail }) {
   const payment = paymentStatus(order.paymentStatus)
   const address = order.deliveryAddress
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+    <RevealGroup className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
       <div className="flex min-w-0 flex-col gap-6">
         <OrderStatusActions order={order} />
         <Section id="productos-pedido" title="Productos">
@@ -69,13 +72,13 @@ function OrderView({ order }: { order: OrderDetail }) {
             </dl>
           </div>
         </Section>
-        <Section id="envio-pedido" title="Envío">
+        <Section id="envio-pedido" title="Envío" index={1}>
           <ShipmentPanel order={order} />
         </Section>
       </div>
 
       <div className="flex min-w-0 flex-col gap-6">
-        <Section id="cliente-pedido" title="Cliente y entrega">
+        <Section id="cliente-pedido" title="Cliente y entrega" index={1}>
           <dl className="flex flex-col gap-3 text-sm">
             <div>
               <dt className="text-muted-foreground">Cliente</dt>
@@ -103,7 +106,7 @@ function OrderView({ order }: { order: OrderDetail }) {
             </div>
           </dl>
         </Section>
-        <Section id="pago-pedido" title="Pago">
+        <Section id="pago-pedido" title="Pago" index={2}>
           <dl className="flex flex-col gap-3 text-sm">
             <div>
               <dt className="text-muted-foreground">Estado del pago</dt>
@@ -118,7 +121,7 @@ function OrderView({ order }: { order: OrderDetail }) {
           </dl>
         </Section>
       </div>
-    </div>
+    </RevealGroup>
   )
 }
 

@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from 'react-router'
+import { Link, useLocation, useNavigate } from 'react-router'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -25,7 +25,10 @@ export function StoreSwitcher() {
     return (
       <div className="flex min-w-0 items-center gap-2.5">
         {avatar}
-        <p className="truncate text-sm font-semibold">{name}</p>
+        <p className="truncate text-sm font-semibold">
+          <span className="sr-only">Almacén: </span>
+          {name}
+        </p>
       </div>
     )
   }
@@ -55,6 +58,9 @@ export function StoreSwitcher() {
           ))}
         </SelectContent>
       </Select>
+      <Link to="/portal" className="hidden shrink-0 rounded-md px-2 py-2.5 text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline md:inline">
+        Mis almacenes
+      </Link>
     </div>
   )
 }

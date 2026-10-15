@@ -4,15 +4,17 @@ import {
   ClipboardListIcon,
   CreditCardIcon,
   LayoutDashboardIcon,
+  LineChartIcon,
   MapPinIcon,
   PackageIcon,
   UsersIcon,
+  WarehouseIcon,
   type LucideProps,
 } from 'lucide-react'
 import type { StorePermission } from '../api/types'
 
 /** Secciones del portal (segmento de ruta tras `/portal/:storeId/`). */
-export const PORTAL_SECTIONS = ['inicio', 'productos', 'pedidos', 'sucursales', 'equipo', 'tienda', 'plan'] as const
+export const PORTAL_SECTIONS = ['inicio', 'ventas', 'productos', 'inventario', 'pedidos', 'sucursales', 'equipo', 'tienda', 'plan'] as const
 
 /** Sección actual a partir de la URL, para conservarla al cambiar de tienda. */
 export function sectionOf(pathname: string): string {
@@ -29,6 +31,8 @@ export interface PortalSection {
   permission: StorePermission
   /** Coincide también con las rutas hijas (p. ej. `productos/:id`). */
   end?: boolean
+  /** Palabras extra para la búsqueda de la paleta de comandos. */
+  keywords?: string
 }
 
 export interface PortalSectionGroup {
@@ -41,21 +45,26 @@ export const PORTAL_SECTION_GROUPS: PortalSectionGroup[] = [
   {
     label: 'Operación',
     items: [
-      { to: 'inicio', label: 'Inicio', icon: LayoutDashboardIcon, permission: 'STORE_READ', end: true },
-      { to: 'productos', label: 'Productos', icon: PackageIcon, permission: 'PRODUCT_READ' },
-      { to: 'pedidos', label: 'Pedidos', icon: ClipboardListIcon, permission: 'ORDER_READ' },
+      { to: 'inicio', label: 'Inicio', icon: LayoutDashboardIcon, permission: 'STORE_READ', end: true, keywords: 'resumen dashboard' },
+      { to: 'ventas', label: 'Ventas', icon: LineChartIcon, permission: 'ORDER_READ', keywords: 'ingresos analitica metricas' },
+      { to: 'productos', label: 'Productos', icon: PackageIcon, permission: 'PRODUCT_READ', keywords: 'catalogo repuestos' },
+      { to: 'inventario', label: 'Inventario', icon: WarehouseIcon, permission: 'PRODUCT_READ', keywords: 'stock existencias' },
+      { to: 'pedidos', label: 'Pedidos', icon: ClipboardListIcon, permission: 'ORDER_READ', keywords: 'ventas envios' },
     ],
   },
   {
     label: 'Administración',
     items: [
-      { to: 'sucursales', label: 'Sucursales', icon: MapPinIcon, permission: 'BRANCH_READ' },
-      { to: 'equipo', label: 'Equipo', icon: UsersIcon, permission: 'COLLABORATOR_READ' },
-      { to: 'tienda', label: 'Tienda', icon: Building2Icon, permission: 'STORE_READ' },
-      { to: 'plan', label: 'Plan y suscripción', icon: CreditCardIcon, permission: 'STORE_READ' },
+      { to: 'sucursales', label: 'Sucursales', icon: MapPinIcon, permission: 'BRANCH_READ', keywords: 'sedes bodegas' },
+      { to: 'equipo', label: 'Equipo', icon: UsersIcon, permission: 'COLLABORATOR_READ', keywords: 'empleados colaboradores' },
+      { to: 'tienda', label: 'Tienda', icon: Building2Icon, permission: 'STORE_READ', keywords: 'perfil almacen' },
+      { to: 'plan', label: 'Plan y suscripción', icon: CreditCardIcon, permission: 'STORE_READ', keywords: 'pago facturacion' },
     ],
   },
 ]
+
+/** Alias usado por la paleta de comandos. */
+export const PORTAL_NAV_GROUPS = PORTAL_SECTION_GROUPS
 
 /** Primera sección a la que la persona tiene acceso, o `undefined` si no tiene ninguna. */
 export function firstAllowedSection(
