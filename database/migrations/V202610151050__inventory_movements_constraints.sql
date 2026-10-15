@@ -1,4 +1,3 @@
--- REQUIERE APROBACIÓN (A4)
 -- =============================================================================
 -- V202610140945__inventory_movements_constraints.sql
 -- Autopartco | PostgreSQL 16+ | Diseño predictivo §5.3 / §11 A4

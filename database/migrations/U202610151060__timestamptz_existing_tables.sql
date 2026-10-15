@@ -1,4 +1,3 @@
--- REQUIERE APROBACIÓN
 -- =============================================================================
 -- U202610141110__timestamptz_existing_tables.sql  (rollback de A3)
 -- Devuelve a TIMESTAMP (valor en UTC) solo las columnas registradas en

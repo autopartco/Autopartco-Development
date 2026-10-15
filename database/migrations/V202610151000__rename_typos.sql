@@ -1,4 +1,3 @@
--- REQUIERE APROBACIÓN: renombrados (rompen el backend si no se despliega a la vez)
 -- =============================================================================
 -- V202610131000__rename_typos.sql
 -- Autopartco | PostgreSQL 16+ | Auditoría punto 22

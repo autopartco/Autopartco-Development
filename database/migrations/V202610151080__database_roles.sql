@@ -1,4 +1,3 @@
--- REQUIERE APROBACIÓN (A6): cambio de seguridad
 -- =============================================================================
 -- V202610141510__database_roles.sql
 -- Autopartco | PostgreSQL 16+ | Diseño predictivo §4 / ADR 0001 §3 / auditoría punto 10

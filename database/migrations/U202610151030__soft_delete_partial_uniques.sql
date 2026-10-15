@@ -1,5 +1,4 @@
 -- flyway:executeInTransaction=false
--- REQUIERE APROBACIÓN
 -- =============================================================================
 -- U202610131025__soft_delete_partial_uniques.sql  (rollback)
 -- Restaura los UNIQUE totales. Falla si ya existen duplicados entre filas

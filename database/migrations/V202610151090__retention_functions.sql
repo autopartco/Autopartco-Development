@@ -1,4 +1,3 @@
--- REQUIERE APROBACIÓN (A9): borrado de datos por retención
 -- =============================================================================
 -- V202610141520__retention_functions.sql
 -- Autopartco | PostgreSQL 16+ | Diseño predictivo §3, §9 / §11 A9

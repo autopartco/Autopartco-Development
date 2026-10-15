@@ -1,4 +1,3 @@
--- REQUIERE APROBACIÓN
 -- =============================================================================
 -- U202610131000__rename_typos.sql  (rollback de los renombrados)
 -- Devuelve los nombres originales. El backend debe volver a los nombres viejos
