@@ -29,6 +29,13 @@ interface StoreApplicationDto {
   createdAt: string
 }
 
+/** `StoreSetupResponse` (storesuite/onboarding). Solo los campos que usa la UI. */
+interface StoreSetupDto {
+  storeId: string
+  status: StoreApplicationStatus
+  trialEndsAt: string | null
+}
+
 /**
  * Cuerpo multipart: la parte `request` va como JSON con su propio Content-Type para que
  * Spring la lea con `@RequestPart`; cada documento, en su parte con nombre.
@@ -84,6 +91,17 @@ export function createHttpSellerApplicationService(): SellerApplicationService {
         status: dto.status,
         planCode: dto.planCode ?? undefined,
       }
+    },
+
+    async completeSetup(input) {
+      // El token va como campo de formulario: el backend lo lee con @RequestParam.
+      const form = new FormData()
+      form.append('token', input.token)
+      if (input.businessDescription?.trim()) form.append('businessDescription', input.businessDescription.trim())
+      if (input.logo) form.append('logo', input.logo, input.logo.name)
+      if (input.banner) form.append('banner', input.banner, input.banner.name)
+      const dto = await apiRequest<StoreSetupDto>('/store-applications/setup', { method: 'POST', body: form })
+      return { storeId: dto.storeId, status: dto.status, trialEndsAt: dto.trialEndsAt }
     },
 
     async myApplications() {

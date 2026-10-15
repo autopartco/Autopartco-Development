@@ -28,6 +28,7 @@ import {
   RegisterPage,
   SearchPage,
   SellerRegisterPage,
+  SellerSetupPage,
   SellPage,
   StoresPage,
   VerifyEmailPage,
@@ -60,6 +61,8 @@ export const router = createBrowserRouter([
           // Almacenes: landing y solicitud (POST /store-applications).
           { path: 'vender', element: <SellPage /> },
           { path: 'vender/registro', element: <SellerRegisterPage /> },
+          // Enlace del correo de aprobación: `/seller/setup?token=` (ver ReviewStoreApplication).
+          { path: 'seller/setup', element: <SellerSetupPage /> },
           // Cuentas (core/identity/web/AuthController).
           { path: 'ingresar', element: <LoginPage /> },
           // Solo invitados: con sesión activa se redirige al inicio.

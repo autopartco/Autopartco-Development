@@ -89,6 +89,20 @@ export interface MyStoreApplication {
 /** Estados que el backend considera "en curso" (`StoreApplications.requireNoOpenApplication`). */
 export const OPEN_APPLICATION_STATUSES: readonly StoreApplicationStatus[] = ['PENDING_REVIEW', 'CONFIGURATION_PENDING', 'ACTIVE']
 
+export interface SetupInput {
+  /** Token de un solo uso del correo de aprobación (`/seller/setup?token=`). */
+  token: string
+  businessDescription?: string
+  logo?: File
+  banner?: File
+}
+
+export interface SetupResult {
+  storeId: string
+  status: StoreApplicationStatus
+  trialEndsAt: string | null
+}
+
 export interface SellerApplicationService {
   readonly simulated: boolean
   /** Registro público: crea la cuenta y la solicitud (`POST /store-applications`). */
@@ -97,4 +111,6 @@ export interface SellerApplicationService {
   applyAsCurrentUser(input: CurrentUserApplicationInput): Promise<CurrentUserApplicationResult>
   /** Solicitudes de la cuenta con sesión (`GET /me/store-applications`). */
   myApplications(): Promise<MyStoreApplication[]>
+  /** Configuración del almacén aprobado con el token del correo (`POST /store-applications/setup`). */
+  completeSetup(input: SetupInput): Promise<SetupResult>
 }

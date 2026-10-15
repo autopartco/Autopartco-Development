@@ -50,5 +50,20 @@ export function createMockSellerApplicationService(): SellerApplicationService {
       await simulateLatency(300)
       return mine.map((application) => ({ ...application }))
     },
+
+    async completeSetup(input) {
+      await simulateLatency(900)
+      if (!input.token.trim()) {
+        throw new ApiError('El enlace de configuración venció o ya fue utilizado.', {
+          status: 400,
+          code: 'SELLER_SETUP_TOKEN_INVALID',
+        })
+      }
+      return {
+        storeId: crypto.randomUUID(),
+        status: 'ACTIVE',
+        trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      }
+    },
   }
 }
