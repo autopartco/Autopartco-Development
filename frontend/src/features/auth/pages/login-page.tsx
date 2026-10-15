@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { ApiError } from '@/lib/api'
 import { getAuthService } from '../api/auth-service'
 import { AuthShell, SimulatedNotice } from '../components/auth-shell'
-import { useSession, useSignOut } from '../hooks'
+import { useSession } from '../hooks'
 import { compact, emailError, type FieldErrors } from '../lib/validation'
 import { safeReturnPath } from '../lib/return-path'
 import { setSession } from '../session-store'
@@ -22,7 +22,6 @@ export default function LoginPage() {
   // Destino de vuelta: `?next=` (guardas de ruta) o `state.from`; solo rutas internas.
   const returnTo = safeReturnPath(searchParams.get('next') ?? (location.state as { from?: unknown } | null)?.from)
   const hasNext = searchParams.has('next') && returnTo !== '/'
-  const { signOut, pending: signingOut } = useSignOut()
   const [errors, setErrors] = useState<FieldErrors>({})
   const [formError, setFormError] = useState<{ title: string; credentials?: boolean }>()
   const [submitting, setSubmitting] = useState(false)
@@ -65,28 +64,9 @@ export default function LoginPage() {
 
   const crumbs = [{ label: 'Inicio', to: '/' }, { label: 'Ingresar' }]
 
-  // Ya hay sesión y venimos de una guarda de ruta: seguimos al destino sin pedir nada.
-  if (session && hasNext) return <Navigate to={returnTo} replace />
+  // Con sesión activa no hay nada que hacer aquí: seguimos al destino (guarda de ruta o inicio).
+  if (session) return <Navigate to={returnTo} replace />
 
-  if (session) {
-    return (
-      <AuthShell crumbs={crumbs} label="Tu cuenta" title="Ya ingresaste">
-        <div className="flex flex-col items-start gap-4">
-          <p>
-            Estás usando Autopartco como <strong className="font-semibold">{session.user.name}</strong> ({session.user.email}).
-          </p>
-          <div className="flex flex-wrap gap-2">
-            <Button className="h-11 px-5" nativeButton={false} render={<Link to="/" />}>
-              Ir al inicio
-            </Button>
-            <Button variant="outline" className="h-11 px-5" onClick={signOut} disabled={signingOut}>
-              {signingOut ? 'Cerrando sesión…' : 'Cerrar sesión'}
-            </Button>
-          </div>
-        </div>
-      </AuthShell>
-    )
-  }
 
   return (
     <AuthShell
