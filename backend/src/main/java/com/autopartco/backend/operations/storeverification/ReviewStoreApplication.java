@@ -4,13 +4,11 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import com.autopartco.backend.core.billing.PlanService;
-import com.autopartco.backend.core.notification.EmailService;
+import com.autopartco.backend.core.notification.SellerSetupMailer;
 import com.autopartco.backend.core.organization.StoreApplicationReviewRequest;
 import com.autopartco.backend.core.organization.StoreApplications;
-import com.autopartco.backend.shared.config.AppProperties;
 
 import lombok.AllArgsConstructor;
 
@@ -23,8 +21,7 @@ import lombok.AllArgsConstructor;
 public class ReviewStoreApplication {
     private final StoreApplications storeApplications;
     private final PlanService planService;
-    private final EmailService emailService;
-    private final AppProperties appProperties;
+    private final SellerSetupMailer sellerSetupMailer;
 
     @Transactional
     public StoreApplicationResponse execute(
@@ -34,16 +31,10 @@ public class ReviewStoreApplication {
     ) {
         StoreApplications.Reviewed reviewed = storeApplications.review(applicationId, reviewerEmail, request);
         if (reviewed.onboardingToken() != null) {
-            String setupLink = UriComponentsBuilder
-                    .fromUriString(appProperties.frontendBaseUrl().replaceAll("/+$", ""))
-                    .path("/seller/setup")
-                    .queryParam("token", reviewed.onboardingToken())
-                    .build()
-                    .toUriString();
-            emailService.sendSellerOnboarding(
+            sellerSetupMailer.send(
                     reviewed.applicantEmail(),
                     reviewed.applicantGivenName(),
-                    setupLink
+                    reviewed.onboardingToken()
             );
         }
         return StoreApplicationResponse.from(reviewed.application(), planService);

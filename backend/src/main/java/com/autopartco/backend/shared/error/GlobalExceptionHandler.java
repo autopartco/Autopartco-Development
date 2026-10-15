@@ -76,6 +76,20 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(error));
     }
 
+    @ExceptionHandler(TooManyRequestsException.class)
+    public ResponseEntity<ErrorResponse> handleTooManyRequests(TooManyRequestsException exception) {
+
+        ApiError error = new ApiError(
+                exception.getCode(),
+                exception.getMessage(),
+                exception.getDetails()
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(new ErrorResponse(error));
+    }
+
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<ErrorResponse> handleUnauthorized(UnauthorizedException exception) {
 

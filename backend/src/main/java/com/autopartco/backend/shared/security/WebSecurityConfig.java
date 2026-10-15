@@ -72,6 +72,7 @@ public class WebSecurityConfig {
                 // storesuite.onboarding: solicitud de almacén y configuración con token.
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/store-applications"),
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/store-applications/setup"),
+                new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/store-applications/setup/resend"),
                 // storesuite.staff: invitaciones con token.
                 new PublicRoute(HttpMethod.GET, ApiPaths.BASE + "/staff-invitations/preview"),
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/staff-invitations/accept"),
