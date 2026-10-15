@@ -53,7 +53,7 @@ CREATE TEMP TABLE chk_defs (
 CREATE OR REPLACE FUNCTION pg_temp.add_check(p_table regclass, p_name TEXT, p_expr TEXT)
 RETURNS void
 LANGUAGE sql
-AS $$ INSERT INTO chk_defs (tbl, name, expr) VALUES (p_table, p_name, p_expr) $$;
+AS $$ INSERT INTO pg_temp.chk_defs (tbl, name, expr) VALUES (p_table, p_name, p_expr) $$;
 
 -- Pagos de suscripción --------------------------------------------------------
 SELECT pg_temp.add_check('public.seller_payments', 'chk_seller_payments__status',
