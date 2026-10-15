@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, NavLink } from 'react-router'
-import { MenuIcon } from 'lucide-react'
+import { MenuIcon, StoreIcon } from 'lucide-react'
+import { useSellerCta } from '@/features/seller/hooks'
 import { Container } from '@/components/common/page-header'
 import { Logo } from '@/components/common/logo'
 import { Button } from '@/components/ui/button'
@@ -12,6 +13,7 @@ import { CartIndicator } from '@/features/cart/components/cart-indicator'
 import { HeaderAccount, MobileMenuAccount } from '@/features/auth/components/account-menu'
 
 const NAV = [
+  { to: '/buscar', label: 'Productos' },
   { to: '/categorias', label: 'Categorías' },
   { to: '/tiendas', label: 'Tiendas' },
 ]
@@ -34,9 +36,28 @@ function menuLinkClass({ isActive }: { isActive: boolean }) {
   )
 }
 
+/** Acceso destacado a almacenes (desde md; solo icono hasta 2xl): registrar, ver la solicitud o ir al portal según la cuenta. */
+function SellerHeaderLink() {
+  const cta = useSellerCta()
+  if (cta.state === 'loading') return null
+  const label = cta.state === 'learn' ? 'Vender' : cta.state === 'review' ? 'Mi solicitud' : cta.label
+  return (
+    <Link
+      to={cta.to}
+      aria-label={label}
+      title={label}
+      className="hidden h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg px-2.5 text-sm font-semibold text-white transition-colors hover:bg-header-hover md:inline-flex lg:h-10 2xl:px-3"
+    >
+      <StoreIcon className="size-4 text-brand-on-asphalt" aria-hidden />
+      <span className="hidden 2xl:inline">{label}</span>
+    </Link>
+  )
+}
+
 /** Menú de navegación en pantallas estrechas, donde los enlaces no caben junto al logo y la ciudad. */
 function MobileMenu({ className }: { className?: string }) {
   const [open, setOpen] = useState(false)
+  const cta = useSellerCta()
   const close = () => setOpen(false)
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -62,9 +83,6 @@ function MobileMenu({ className }: { className?: string }) {
               {item.label}
             </NavLink>
           ))}
-          <NavLink to="/buscar" end className={menuLinkClass} onClick={close}>
-            Todos los repuestos
-          </NavLink>
         </nav>
         <section aria-labelledby="menu-cuenta" className="mx-5 mt-2 flex flex-col gap-3 border-t border-border pt-5">
           <h2 id="menu-cuenta" className="label-mono text-muted-foreground">
@@ -75,11 +93,12 @@ function MobileMenu({ className }: { className?: string }) {
         <div className="mx-5 mt-5 flex flex-col items-start gap-1 border-t border-border pt-5">
           <p className="label-mono text-muted-foreground">Para almacenes</p>
           <Link
-            to="/vender"
+            to={cta.state === 'loading' ? '/vender/registro' : cta.to}
             onClick={close}
-            className="inline-flex min-h-11 items-center font-semibold text-brand underline-offset-4 hover:underline"
+            className="inline-flex min-h-11 items-center gap-2 font-semibold text-brand underline-offset-4 hover:underline"
           >
-            Vende en Autopartco
+            <StoreIcon className="size-5" aria-hidden />
+            {cta.state === 'loading' ? 'Registra tu almacén' : cta.label}
           </Link>
         </div>
       </SheetContent>
@@ -89,31 +108,32 @@ function MobileMenu({ className }: { className?: string }) {
 
 /**
  * Cabecera carbón. En móvil y tablet son dos filas (logo y acciones: ciudad, cuenta y menú; buscador a
- * todo el ancho) y desde lg una sola. El buscador va justo después del logo en
+ * todo el ancho) y desde xl una sola. El buscador va justo después del logo en
  * el orden del documento: es lo primero que se usa.
  */
 export function SiteHeader() {
   return (
     <header className="surface-asphalt sticky top-0 z-40 bg-header">
-      <Container className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 [grid-template-areas:'logo_actions'_'search_search'] lg:h-16 lg:grid-cols-[auto_minmax(0,1fr)_auto] lg:gap-x-8 lg:[grid-template-areas:'logo_search_actions']">
-        <div className="flex h-14 min-w-0 items-center [grid-area:logo] lg:h-auto">
+      <Container className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 [grid-template-areas:'logo_actions'_'search_search'] xl:h-16 xl:grid-cols-[auto_minmax(0,1fr)_auto] xl:gap-x-8 xl:[grid-template-areas:'logo_search_actions']">
+        <div className="flex h-14 min-w-0 items-center [grid-area:logo] xl:h-auto">
           <Logo tone="dark" />
         </div>
-        <SearchBar tone="dark" className="pb-3 [grid-area:search] lg:max-w-2xl lg:pb-0" />
+        <SearchBar tone="dark" shortcut className="pb-3 [grid-area:search] xl:max-w-2xl xl:pb-0" />
         <div className="flex items-center gap-0.5 [grid-area:actions]">
-          {/* Enlaces desde md; por debajo van en el menú para dejar sitio a la ciudad y a la cuenta. */}
-          <nav aria-label="Principal" className="hidden items-center gap-0.5 md:flex">
+          {/* Enlaces desde lg; por debajo van en el menú para dejar sitio a la ciudad y a la cuenta. */}
+          <nav aria-label="Principal" className="hidden items-center gap-0.5 lg:flex">
             {NAV.map((item) => (
               <NavLink key={item.to} to={item.to} className={navClass}>
                 {item.label}
               </NavLink>
             ))}
           </nav>
-          <span className="mx-1.5 hidden h-5 w-px bg-white/15 md:block" aria-hidden />
+          <SellerHeaderLink />
+          <span className="mx-1.5 hidden h-5 w-px bg-white/15 lg:block" aria-hidden />
           <CityPicker />
           <CartIndicator />
           <HeaderAccount />
-          <MobileMenu className="md:hidden" />
+          <MobileMenu className="lg:hidden" />
         </div>
       </Container>
     </header>

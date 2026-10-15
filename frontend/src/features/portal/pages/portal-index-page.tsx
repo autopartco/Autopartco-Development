@@ -4,6 +4,7 @@ import { EmptyState } from '@/components/common/states'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { initials } from '@/lib/format'
+import { SELLER_APPLICATION_PATH, useSellerCta } from '@/features/seller/hooks'
 import { useAsync } from '@/lib/use-async'
 import { getPortalService } from '../api/portal-service'
 import type { MyStore, StoreApplicationStatus } from '../api/types'
@@ -53,10 +54,12 @@ function StoreCard({ store }: { store: MyStore }) {
   )
   const base = 'flex items-center gap-4 rounded-xl bg-card p-4 ring-1 ring-foreground/10 sm:p-5'
   if (!openable) {
+    // Sin portal todavía: la tarjeta lleva al estado de la solicitud.
     return (
-      <div className={base}>
+      <Link to={SELLER_APPLICATION_PATH} className={`${base} group transition-shadow hover:ring-foreground/30`}>
         {body}
-      </div>
+        <span className="shrink-0 text-sm font-medium text-brand group-hover:underline">Ver solicitud</span>
+      </Link>
     )
   }
   return (
@@ -72,12 +75,32 @@ function StoreCard({ store }: { store: MyStore }) {
 /** `/portal`: abre el almacén si hay uno activo; si hay varios, deja elegir; si no hay, explica cómo empezar. */
 export default function PortalIndexPage() {
   const stores = useAsync('portal:stores', async () => (await getPortalService()).myStores())
+  // Respaldo: si el servidor no lista el almacén de una solicitud en curso, se muestra la solicitud.
+  const hasNoStores = stores.data?.length === 0
+  const seller = useSellerCta()
 
   let content
   if (stores.status === 'error') {
     content = <QueryError error={stores.error} what="tus almacenes" onRetry={stores.retry} />
   } else if (stores.data === undefined) {
     content = <ListSkeleton rows={2} label="Cargando tus almacenes" />
+  } else if (hasNoStores && seller.state === 'loading') {
+    content = <ListSkeleton rows={1} label="Consultando tu solicitud" />
+  } else if (hasNoStores && seller.state === 'review' && seller.application) {
+    content = (
+      <Link
+        to={seller.to}
+        className="group flex items-center gap-4 rounded-xl bg-card p-4 ring-1 ring-foreground/10 transition-shadow hover:ring-foreground/30 sm:p-5"
+      >
+        <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+          <p className="text-lg leading-tight font-extrabold tracking-tight">{seller.application.businessName}</p>
+          <StatusBadge tone="warning">
+            {APPLICATION_LABEL[seller.application.status].label}
+          </StatusBadge>
+        </div>
+        <span className="shrink-0 text-sm font-medium text-brand group-hover:underline">Ver solicitud</span>
+      </Link>
+    )
   } else if (stores.data.length === 0) {
     content = (
       <EmptyState

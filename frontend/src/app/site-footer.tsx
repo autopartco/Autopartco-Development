@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import { Container } from '@/components/common/page-header'
 import { Logo } from '@/components/common/logo'
+import { useSellerCta } from '@/features/seller/hooks'
 
 const CURRENT_YEAR = new Date().getFullYear()
 
@@ -32,6 +33,7 @@ function ColumnTitle({ children }: { children: string }) {
 }
 
 export function SiteFooter() {
+  const cta = useSellerCta()
   return (
     <footer className="surface-asphalt stitch-scope mt-20 sm:mt-24">
       <StitchedEdge />
@@ -67,8 +69,8 @@ export function SiteFooter() {
                 </Link>
               </li>
               <li>
-                <Link to="/vender/registro" className={LINK_CLASS}>
-                  Registrar mi almacén
+                <Link to={cta.state === 'loading' ? '/vender/registro' : cta.to} className={LINK_CLASS}>
+                  {cta.state === 'loading' || cta.state === 'learn' ? 'Registra tu almacén' : cta.label}
                 </Link>
               </li>
             </ul>
