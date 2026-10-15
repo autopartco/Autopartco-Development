@@ -12,6 +12,11 @@ export interface SessionUser {
 
 export interface Session {
   user: SessionUser
+  /**
+   * Claim `roles` del access token (p. ej. `["ROLE_CUSTOMER","ROLE_STORE_MANAGER"]`). Solo decide
+   * qué opciones muestra la UI (ver `lib/account-menu-items.ts`); el servidor autoriza cada petición.
+   */
+  roles: string[]
   /** `true` con la fuente `mock`: no hay cuenta real detrás. */
   simulated: boolean
 }

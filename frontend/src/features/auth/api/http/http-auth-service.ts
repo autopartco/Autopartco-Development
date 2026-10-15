@@ -1,4 +1,6 @@
 import { apiRequest } from '@/lib/api'
+import { rolesFromAccessToken } from '../../lib/jwt'
+import { getSession, setSession } from '../../session-store'
 import type { AuthService, Session } from '../types'
 
 /**
@@ -73,6 +75,19 @@ export function createHttpAuthService(): AuthService {
     tokens = { access: dto.accessToken, renewAt: Date.now() + Math.max(0, dto.expiresIn - 30) * 1000 }
   }
 
+  /** Roles del access token vigente (solo para la UI: ver `lib/jwt.ts`). */
+  function currentRoles(): string[] {
+    return tokens ? rolesFromAccessToken(tokens.access) : []
+  }
+
+  /** Tras renovar el token, refleja en la sesión visible un cambio de roles (p. ej. la cuenta pasó a almacén). */
+  function syncRoles() {
+    const session = getSession()
+    if (!session || session.simulated) return
+    const roles = currentRoles()
+    if (roles.join() !== session.roles.join()) setSession({ ...session, roles })
+  }
+
   /** Pide un access token nuevo usando la cookie de refresh (el navegador la envía sola). */
   function refreshSession(): Promise<LoginResponseDto> {
     return apiRequest<LoginResponseDto>(PATHS.refresh, { method: 'POST', credentials: 'include' })
@@ -84,6 +99,7 @@ export function createHttpAuthService(): AuthService {
     if (Date.now() < tokens.renewAt) return tokens.access
     try {
       keep(await refreshSession())
+      syncRoles()
       return tokens.access
     } catch {
       tokens = undefined
@@ -106,7 +122,7 @@ export function createHttpAuthService(): AuthService {
       }
       try {
         const profile = await apiRequest<ProfileResponseDto>(PATHS.profile, { token: tokens?.access })
-        return { user: toUser(profile), simulated: false }
+        return { user: toUser(profile), roles: currentRoles(), simulated: false }
       } catch {
         tokens = undefined
         return undefined
@@ -122,10 +138,10 @@ export function createHttpAuthService(): AuthService {
       }))
       try {
         const profile = await apiRequest<ProfileResponseDto>(PATHS.profile, { token: tokens?.access })
-        return { user: toUser(profile), simulated: false }
+        return { user: toUser(profile), roles: currentRoles(), simulated: false }
       } catch {
         // El perfil es informativo: si falla, la sesión sigue siendo válida.
-        return { user: { name: email.trim(), email: email.trim() }, simulated: false }
+        return { user: { name: email.trim(), email: email.trim() }, roles: currentRoles(), simulated: false }
       }
     },
 

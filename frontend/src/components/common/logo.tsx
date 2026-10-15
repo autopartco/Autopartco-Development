@@ -5,6 +5,10 @@ import { cn } from '@/lib/utils'
 interface LogoProps {
   /** Fondo sobre el que va el logo: cambia el color de "Autopart" y el rojo de "co". */
   tone?: 'light' | 'dark'
+  /** Destino del enlace (el portal de almacenes lleva a su propio inicio). */
+  to?: string
+  /** Nombre accesible del enlace. */
+  label?: string
   className?: string
 }
 
@@ -15,13 +19,13 @@ interface LogoProps {
  * lectores de pantalla porque ya lo anuncia `aria-label`.
  * Si la imagen no carga, queda solo el nombre.
  */
-export function Logo({ tone = 'light', className }: LogoProps) {
+export function Logo({ tone = 'light', to = '/', label = 'Autopartco, ir al inicio', className }: LogoProps) {
   const [failed, setFailed] = useState(false)
   const dark = tone === 'dark'
   return (
     <Link
-      to="/"
-      aria-label="Autopartco, ir al inicio"
+      to={to}
+      aria-label={label}
       className={cn('inline-flex shrink-0 items-center gap-1.5 rounded-md lg:gap-2', className)}
     >
       {failed ? null : (

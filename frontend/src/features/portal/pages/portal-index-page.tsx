@@ -1,7 +1,6 @@
 import { Link, Navigate } from 'react-router'
 import { ArrowRightIcon, StoreIcon } from 'lucide-react'
 import { EmptyState } from '@/components/common/states'
-import { Logo } from '@/components/common/logo'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { initials } from '@/lib/format'
@@ -11,7 +10,8 @@ import type { MyStore, StoreApplicationStatus } from '../api/types'
 import { ListSkeleton } from '../components/list-skeleton'
 import { QueryError } from '../components/query-boundary'
 import { StatusBadge } from '../components/status-badge'
-import { PortalAccountMenu } from '../layout/portal-account-menu'
+import { PageHeader } from '../components/page-header'
+import { PortalHeader } from '../layout/portal-header'
 import { formatDate, SUBSCRIPTION_STATUS_LABEL, SUBSCRIPTION_STATUS_TONE, type Tone } from '../lib/labels'
 
 const APPLICATION_LABEL: Record<StoreApplicationStatus, { label: string; tone: Tone }> = {
@@ -43,7 +43,12 @@ function StoreCard({ store }: { store: MyStore }) {
           ) : null}
         </div>
       </div>
-      {openable ? <ArrowRightIcon className="size-5 shrink-0 text-muted-foreground" aria-hidden /> : null}
+      {openable ? (
+        <ArrowRightIcon
+          className="size-5 shrink-0 text-muted-foreground transition-[color,transform] duration-200 ease-out-snap group-hover:text-foreground motion-safe:group-hover:translate-x-0.5"
+          aria-hidden
+        />
+      ) : null}
     </>
   )
   const base = 'flex items-center gap-4 rounded-xl bg-card p-4 ring-1 ring-foreground/10 sm:p-5'
@@ -57,7 +62,7 @@ function StoreCard({ store }: { store: MyStore }) {
   return (
     <Link
       to={`/portal/${encodeURIComponent(store.storeId)}/inicio`}
-      className={`${base} transition-shadow hover:ring-foreground/30`}
+      className={`${base} group transition-shadow hover:ring-foreground/30`}
     >
       {body}
     </Link>
@@ -104,16 +109,10 @@ export default function PortalIndexPage() {
 
   return (
     <div className="min-h-svh bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto flex h-14 w-full max-w-3xl items-center justify-between gap-3 px-4 sm:px-6">
-          <Logo />
-          <PortalAccountMenu />
-        </div>
-      </header>
+      <PortalHeader innerClassName="mx-auto w-full max-w-3xl px-4 sm:px-6 lg:px-6" />
       <main id="contenido" className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
         <title>Mis almacenes | Autopartco</title>
-        <h1 className="mb-2 text-2xl font-extrabold tracking-tight sm:text-3xl">Mis almacenes</h1>
-        <p className="mb-6 text-muted-foreground">Elige el almacén que quieres administrar.</p>
+        <PageHeader label="Portal de almacenes" title="Mis almacenes" description="Elige el almacén que quieres administrar." />
         {content}
       </main>
     </div>
