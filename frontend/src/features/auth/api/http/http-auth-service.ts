@@ -106,6 +106,8 @@ export function createHttpAuthService(): AuthService {
       return undefined
     },
 
+    getAccessToken: accessToken,
+
     async login({ email, password }) {
       keep(await apiRequest<LoginResponseDto>(PATHS.login, { body: { email: email.trim(), password } }))
       return { user: await loadUser(email.trim()), simulated: false }

@@ -17,7 +17,7 @@ export class ApiError extends Error {
   readonly status?: number
   readonly code?: string
   readonly fieldErrors: Readonly<Record<string, string>>
-  /** `error.details` tal como llega (objeto con datos del conflicto, mapa de campos o `null`). */
+  /** `error.details` tal como llega (p. ej. `{ items: [...] }` en el checkout, mapa de campos o `null`); `fieldErrors` solo conserva las cadenas. */
   readonly details: unknown
 
   constructor(

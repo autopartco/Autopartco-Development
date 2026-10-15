@@ -112,6 +112,7 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
     return {
       id: dto.id,
       listingKey: `${dto.id}:${dto.branchId ?? dto.storeId}`,
+      branchId: dto.branchId ?? undefined,
       name: dto.name,
       partNumber: dto.partNumber ?? undefined,
       description: dto.description ?? undefined,

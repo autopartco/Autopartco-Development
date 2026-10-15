@@ -17,6 +17,11 @@ export const PasswordRecoveryPage = lazy(() => import('@/features/auth/pages/pas
 export const VerifyEmailPage = lazy(() => import('@/features/auth/pages/verify-email-page'))
 export const SellerRegisterPage = lazy(() => import('@/features/seller/pages/seller-register-page'))
 
+// Carrito, pago y confirmación del pedido.
+export const CartPage = lazy(() => import('@/features/cart/pages/cart-page'))
+export const CheckoutPage = lazy(() => import('@/features/checkout/pages/checkout-page'))
+export const OrderResultPage = lazy(() => import('@/features/checkout/pages/order-result-page'))
+
 // Portal del almacén (SaaS vendedores): cada pantalla se descarga al visitarla.
 export const PortalRoot = lazy(() => import('@/features/portal/layout/portal-root').then((module) => ({ default: module.PortalRoot })))
 export const PortalLayout = lazy(() =>
