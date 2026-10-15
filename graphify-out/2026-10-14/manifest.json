@@ -120,9 +120,9 @@
     "semantic_hash": ""
   },
   "docs/api/conventions.md": {
-    "mtime": 1791005356.7763228,
-    "seen": 1791873478.6429713,
-    "ast_hash": "c9f7fd3c3a8b2c147c43216f22b7cbed",
+    "mtime": 1792010032.3554366,
+    "seen": 1792010492.1135988,
+    "ast_hash": "88a2436c5d620482a5e1494a8924ba7a",
     "semantic_hash": ""
   },
   "docs/api/error-handling.md": {
@@ -3888,9 +3888,9 @@
     "semantic_hash": ""
   },
   "docs/architecture/2026-10-14-mvp-checkout-plan.md": {
-    "mtime": 1791982622.8522615,
-    "seen": 1791984486.1418593,
-    "ast_hash": "250c23f1363ec756cd061e68a9c0a143",
+    "mtime": 1792010054.9264677,
+    "seen": 1792010492.1154084,
+    "ast_hash": "00e3f5062e5b0a442053fdc765eefc05",
     "semantic_hash": ""
   },
   "docs/architecture/mvp-backlog.md": {
@@ -3939,6 +3939,36 @@
     "mtime": 1791991347.3295667,
     "seen": 1791991507.9071968,
     "ast_hash": "414a0780add751ab800176f7f4a2a39e",
+    "semantic_hash": ""
+  },
+  "database/seeds/demo/README.md": {
+    "mtime": 1791992781.067369,
+    "seen": 1792010492.1108453,
+    "ast_hash": "8ceff5aeceec4ab79b47c580019ce974",
+    "semantic_hash": ""
+  },
+  "docs/architecture/2026-10-14-mvp-admin-operaciones-plan.md": {
+    "mtime": 1792009860.7744396,
+    "seen": 1792010492.115404,
+    "ast_hash": "a6a743975b6aa33f6dcb0fb6d8fedfed",
+    "semantic_hash": ""
+  },
+  "docs/architecture/2026-10-14-mvp-marketplace-plan.md": {
+    "mtime": 1792009978.691887,
+    "seen": 1792010492.115412,
+    "ast_hash": "07631447d7820ba88b8146ddda615940",
+    "semantic_hash": ""
+  },
+  "docs/architecture/2026-10-14-mvp-orden-global.md": {
+    "mtime": 1792009978.8770554,
+    "seen": 1792010492.1154153,
+    "ast_hash": "2a5f6dd6125440f32093470a5bbcc4dd",
+    "semantic_hash": ""
+  },
+  "docs/architecture/2026-10-14-mvp-saas-vendedores-plan.md": {
+    "mtime": 1791995808.0886314,
+    "seen": 1792010492.1154182,
+    "ast_hash": "bebebc5f1a06a8a5790788b5e07e8bda",
     "semantic_hash": ""
   }
 }
