@@ -533,7 +533,8 @@ export function requireOwner(store: MockStore): void {
 /** Cuentas que ve cada tipo de correo (ver la descripción de este archivo). */
 export function storesForSession(): MockStore[] {
   const email = getSession()?.user.email ?? ''
-  if (email.startsWith('sinalmacen')) return []
+  // `cliente...` y `admin...` simulan cuentas sin rol de almacén (ver mock-auth-service).
+  if (email.startsWith('sinalmacen') || email.startsWith('cliente') || email.startsWith('admin')) return []
   if (email.startsWith('uno')) return [stores.get(STORE_A) as MockStore]
   return [...stores.values()]
 }

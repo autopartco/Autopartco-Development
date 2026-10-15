@@ -8,6 +8,12 @@ import type { AuthService, Session } from '../types'
  * `sessionStorage` un usuario simulado (nombre y correo, marcado como tal). Nunca
  * se guardan contraseñas ni tokens.
  *
+ * Tipo de cuenta simulado (claim `roles` del token real), según cómo empiece el correo:
+ * - `cliente...` -> `["ROLE_CUSTOMER"]` (cliente del marketplace).
+ * - `admin...` -> `["ROLE_ADMIN"]` (rol sin menú propio: se degrada a datos y salir).
+ * - Cualquier otro -> `["ROLE_CUSTOMER","ROLE_STORE_MANAGER"]` (gerente de almacén; así el portal
+ *   simulado sigue funcionando con cualquier correo, como antes).
+ *
  * Casos para probar errores:
  * - Ingresar con un correo que empiece por `error` -> credenciales no válidas.
  * - Registrar `existe@autopartco.co` -> el correo ya tiene cuenta.
@@ -21,13 +27,21 @@ function nameFromEmail(email: string): string {
   return words ? words.charAt(0).toUpperCase() + words.slice(1) : 'Cliente'
 }
 
+/** Roles simulados a partir del correo (ver la descripción de este archivo). */
+export function mockRolesFor(email: string): string[] {
+  const clean = email.trim().toLowerCase()
+  if (clean.startsWith('cliente')) return ['ROLE_CUSTOMER']
+  if (clean.startsWith('admin')) return ['ROLE_ADMIN']
+  return ['ROLE_CUSTOMER', 'ROLE_STORE_MANAGER']
+}
+
 function readStored(): Session | undefined {
   try {
     const raw = window.sessionStorage.getItem(STORAGE_KEY)
     if (!raw) return undefined
     const parsed = JSON.parse(raw) as { name?: unknown; email?: unknown }
     if (typeof parsed.name !== 'string' || typeof parsed.email !== 'string') return undefined
-    return { user: { name: parsed.name, email: parsed.email }, simulated: true }
+    return { user: { name: parsed.name, email: parsed.email }, roles: mockRolesFor(parsed.email), simulated: true }
   } catch {
     return undefined
   }
@@ -54,7 +68,7 @@ export function createMockAuthService(): AuthService {
       if (clean.startsWith('error')) {
         throw new ApiError('Las credenciales no son válidas.', { status: 401, code: 'UNAUTHORIZED' })
       }
-      const session: Session = { user: { name: nameFromEmail(clean), email: clean }, simulated: true }
+      const session: Session = { user: { name: nameFromEmail(clean), email: clean }, roles: mockRolesFor(clean), simulated: true }
       try {
         window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session.user))
       } catch {

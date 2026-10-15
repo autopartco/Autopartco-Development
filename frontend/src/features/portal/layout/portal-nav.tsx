@@ -54,7 +54,7 @@ export function PortalNav({ onNavigate }: { onNavigate?: () => void }) {
       <div className="flex flex-col gap-2 px-3" role="status">
         <span className="sr-only">Cargando menú…</span>
         {Array.from({ length: 6 }, (_, index) => (
-          <Skeleton key={index} aria-hidden className="h-10 bg-white/10" />
+          <Skeleton key={index} aria-hidden className="h-10 bg-asphalt-line" />
         ))}
       </div>
     )
@@ -82,7 +82,7 @@ export function PortalNav({ onNavigate }: { onNavigate?: () => void }) {
                       cn(
                         'relative flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors hover:bg-header-hover hover:text-white lg:min-h-10',
                         'before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-thread-on-asphalt before:opacity-0 before:transition-opacity',
-                        isActive ? 'bg-white/10 text-white before:opacity-100' : 'text-asphalt-muted',
+                        isActive ? 'bg-header-hover text-white before:opacity-100' : 'text-asphalt-muted',
                       )
                     }
                   >

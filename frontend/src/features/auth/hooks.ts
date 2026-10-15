@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
 import { getAuthService } from './api/auth-service'
 import type { Session } from './api/types'
+import { forgetPortalStore } from './lib/account-menu-items'
 import { getSession, setSession, subscribeSession } from './session-store'
 
 /** Sesión actual. Al montar, carga el servicio para recuperar la sesión simulada si la hay. */
@@ -40,6 +41,7 @@ export function useSignOut() {
       const service = await getAuthService()
       await service.logout()
     } finally {
+      forgetPortalStore()
       setSession(undefined)
       setPending(false)
     }
