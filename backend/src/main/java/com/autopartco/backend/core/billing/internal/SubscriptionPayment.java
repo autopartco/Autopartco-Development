@@ -1,9 +1,13 @@
 package com.autopartco.backend.core.billing.internal;
 
+import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.UUID;
 
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.type.SqlTypes;
 
 import com.autopartco.backend.shared.persistence.BaseEntity;
 
@@ -54,4 +58,25 @@ public class SubscriptionPayment extends BaseEntity {
 
     @Column(name = "provider_transaction_id", unique = true, length = 120)
     private String providerTransactionId;
+
+    // Obligatorio en el INSERT: la columna no tiene valor por defecto en el entity.
+    @Column(nullable = false, length = 20)
+    private String provider;
+
+    @Column(name = "paid_at")
+    private LocalDateTime paidAt;
+
+    @Column(name = "period_starts_at")
+    private LocalDateTime periodStartsAt;
+
+    @Column(name = "period_ends_at")
+    private LocalDateTime periodEndsAt;
+
+    // Copia del plan al momento del pago: los cambios de precio no afectan periodos ya pagados.
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "plan_snapshot", columnDefinition = "jsonb")
+    private Map<String, Object> planSnapshot;
+
+    @Column(name = "requested_by_account_id")
+    private UUID requestedByAccountId;
 }

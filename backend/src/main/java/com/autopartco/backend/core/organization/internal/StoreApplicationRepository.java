@@ -48,6 +48,11 @@ public interface StoreApplicationRepository extends JpaRepository<StoreApplicati
             + "and application.status = com.autopartco.backend.core.organization.StoreApplicationStatus.ACTIVE")
     boolean isActive(@Param("storeId") UUID storeId);
 
+    /** Estado de la solicitud por tienda: filas {@code [storeId, status]}. Las tiendas sin solicitud no aparecen. */
+    @Query("select application.store.id, application.status from StoreApplication application "
+            + "where application.store.id in :storeIds")
+    List<Object[]> findStatusesByStoreIds(@Param("storeIds") Collection<UUID> storeIds);
+
     boolean existsByApplicantAccountIdAndStatusIn(UUID applicantAccountId, Collection<StoreApplicationStatus> statuses);
 
     @Query("select application from StoreApplication application "

@@ -19,6 +19,7 @@ import com.autopartco.backend.core.inventory.StockService;
 import com.autopartco.backend.core.organization.BranchService;
 import com.autopartco.backend.core.vehicle.CompatibilityService;
 import com.autopartco.backend.shared.error.BadRequestException;
+import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.shared.persistence.State;
 import com.autopartco.backend.shared.persistence.StateCodes;
@@ -48,9 +49,12 @@ public class ProductCatalog {
     @Transactional
     public ProductResponse create(UUID storeId, ProductCreateRequest request) {
         branchService.requireActiveInStore(storeId, request.branchId());
+        String sku = clean(request.sku());
+        requireSkuFree(storeId, sku, null);
         Product product = Product.builder()
                 .storeId(storeId)
                 .name(request.name().trim())
+                .sku(sku)
                 .partNumber(clean(request.partNumber()))
                 .description(request.description().trim())
                 .manufacturer(findManufacturer(request.manufacturerId()))
@@ -74,6 +78,12 @@ public class ProductCatalog {
         Product product = productRepository.findOwned(storeId, productId).orElseThrow(ProductCatalog::productNotFound);
 
         if (request.name() != null) product.setName(request.name().trim());
+        if (request.sku() != null) {
+            // Semántica existente: "" o solo espacios borra el SKU (igual que partNumber); null = no cambiar.
+            String sku = clean(request.sku());
+            requireSkuFree(storeId, sku, productId);
+            product.setSku(sku);
+        }
         if (request.partNumber() != null) product.setPartNumber(clean(request.partNumber()));
         if (request.description() != null) product.setDescription(request.description().trim());
         if (request.price() != null || request.quantity() != null) {
@@ -116,6 +126,36 @@ public class ProductCatalog {
         productRepository.flush();
     }
 
+    /** Detalle del producto del almacén con sus listados por sucursal. */
+    @Transactional(readOnly = true)
+    public StoreProductDetail detail(UUID storeId, UUID productId) {
+        return listingQueries.storeProductDetail(storeId, productId);
+    }
+
+    /** Agrega el producto a otra sucursal activa del almacén. */
+    @Transactional
+    public StoreProductDetail addListing(UUID storeId, UUID productId, ProductListingRequest request) {
+        requireOwnedForUpdate(storeId, productId);
+        branchService.requireActiveInStore(storeId, request.branchId());
+        stockService.addListing(request.branchId(), productId, request.stock(), request.price());
+        productRepository.flush();
+        return listingQueries.storeProductDetail(storeId, productId);
+    }
+
+    /** Quita el listado de una sucursal. El último listado no se quita: para eso se borra el producto. */
+    @Transactional
+    public void removeListing(UUID storeId, UUID productId, UUID branchId) {
+        requireOwnedForUpdate(storeId, productId);
+        stockService.removeListing(storeId, branchId, productId);
+        // Si no quedó ninguno, el lanzamiento revierte el borrado lógico de esta transacción.
+        if (stockService.countListingsOfProduct(productId) == 0) {
+            throw new ConflictException(
+                    "LAST_LISTING",
+                    "Es el único listado del producto. Para quitarlo, borra el producto."
+            );
+        }
+    }
+
     @Transactional(readOnly = true)
     public long countInStore(UUID storeId) {
         return productRepository.countProductsInStore(storeId);
@@ -145,6 +185,13 @@ public class ProductCatalog {
     private State findState(String code) {
         return stateRepository.findByCode(code)
                 .orElseThrow(() -> new NotFoundException("PRODUCT_STATE_NOT_FOUND", "No está configurado el estado."));
+    }
+
+    /** El SKU es opcional; si se informa, no puede repetirse en otro producto del mismo almacén. */
+    private void requireSkuFree(UUID storeId, String sku, UUID excludeProductId) {
+        if (sku != null && productRepository.skuInUse(storeId, sku, excludeProductId)) {
+            throw new ConflictException("PRODUCT_SKU_ALREADY_EXISTS", "Ya existe un repuesto con ese SKU en el almacén.");
+        }
     }
 
     private String clean(String value) {

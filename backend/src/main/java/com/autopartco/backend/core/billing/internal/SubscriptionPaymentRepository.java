@@ -1,5 +1,6 @@
 package com.autopartco.backend.core.billing.internal;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -12,6 +13,8 @@ import jakarta.persistence.LockModeType;
 
 public interface SubscriptionPaymentRepository extends JpaRepository<SubscriptionPayment, UUID> {
     Optional<SubscriptionPayment> findByReference(String reference);
+
+    List<SubscriptionPayment> findByStoreApplicationIdOrderByCreatedAtDesc(UUID storeApplicationId);
 
     boolean existsByProviderTransactionId(String providerTransactionId);
 

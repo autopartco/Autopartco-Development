@@ -7,6 +7,7 @@ import { SmartImage } from '@/components/common/smart-image'
 import { ErrorState } from '@/components/common/states'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { AddToCart } from '@/features/cart/components/add-to-cart'
 import { formatCOP } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { isNotFoundError, type Product } from '../api/types'
@@ -151,13 +152,7 @@ function PurchasePanel({ product }: { product: Product }) {
         </div>
       ) : null}
 
-      <p className="flex items-start gap-2 rounded-lg bg-concrete p-4 text-sm">
-        <InfoIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
-        <span>
-          La compra en línea aún no está disponible en Autopartco. Guarda la referencia y consulta con la tienda
-          para comprar este repuesto.
-        </span>
-      </p>
+      <AddToCart product={product} />
     </div>
   )
 }
