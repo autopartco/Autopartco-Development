@@ -10,6 +10,7 @@ import type { AuthService, Session } from '../types'
  *
  * Tipo de cuenta simulado (claim `roles` del token real), según cómo empiece el correo:
  * - `cliente...` -> `["ROLE_CUSTOMER"]` (cliente del marketplace).
+ * - `root...` -> `["ROLE_ROOT"]` (servicio de administración `/admin`).
  * - `admin...` -> `["ROLE_ADMIN"]` (rol sin menú propio: se degrada a datos y salir).
  * - Cualquier otro -> `["ROLE_CUSTOMER","ROLE_STORE_MANAGER"]` (gerente de almacén; así el portal
  *   simulado sigue funcionando con cualquier correo, como antes).
@@ -31,6 +32,7 @@ function nameFromEmail(email: string): string {
 export function mockRolesFor(email: string): string[] {
   const clean = email.trim().toLowerCase()
   if (clean.startsWith('cliente')) return ['ROLE_CUSTOMER']
+  if (clean.startsWith('root')) return ['ROLE_ROOT']
   if (clean.startsWith('admin')) return ['ROLE_ADMIN']
   return ['ROLE_CUSTOMER', 'ROLE_STORE_MANAGER']
 }

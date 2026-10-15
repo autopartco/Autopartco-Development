@@ -2,6 +2,8 @@ import { Suspense } from 'react'
 import { createBrowserRouter, Navigate } from 'react-router'
 import NotFoundPage from '@/features/marketplace/pages/not-found-page'
 import {
+  AdminApplicationsPage,
+  AdminRoot,
   CartPage,
   CategoriesPage,
   CategoryPage,
@@ -105,3 +107,18 @@ export const router = createBrowserRouter([
     ],
   },
 ])
+  {
+    // Administración: solo ROLE_ROOT (la interfaz oculta; el servidor responde 403 a cualquier otro rol).
+    path: 'admin',
+    element: (
+      <Suspense fallback={<PageFallback />}>
+        <AdminRoot />
+      </Suspense>
+    ),
+    errorElement: <RouteError />,
+    children: [
+      { index: true, element: <Navigate to="solicitudes" replace /> },
+      { path: 'solicitudes', element: <AdminApplicationsPage /> },
+      { path: '*', element: <Navigate to="solicitudes" replace /> },
+    ],
+  },
