@@ -1,7 +1,7 @@
 import type { CustomerRegistration } from '@/features/auth/api/types'
 
 /**
- * Solicitud pública de almacén. Contrato real en
+ * Solicitud de almacén. Contrato real en
  * `backend/.../storesuite/onboarding/StoreApplicationController` (`POST /store-applications`,
  * multipart): parte `request` = `SellerSignupRequest` { account: RegisterRequest,
  * store: StoreRegistrationRequest, legalType, planId? } y una parte por documento.
@@ -60,7 +60,41 @@ export interface SellerApplicationResult {
   planCode?: string
 }
 
+/**
+ * Solicitud con la cuenta ya iniciada: `POST /me/store-applications` (multipart, con token).
+ * Parte `request` = `StoreApplicationRequest` { store, legalType, planId? }: igual que la
+ * pública pero sin `account`.
+ */
+export type CurrentUserApplicationInput = Omit<SellerApplicationInput, 'account'>
+
+/** `StoreApplicationCreatedResponse` { applicationId, storeId, status, planCode }. */
+export interface CurrentUserApplicationResult {
+  applicationId: string
+  storeId: string
+  status: StoreApplicationStatus
+  planCode?: string
+}
+
+/** Lo que la UI usa de `storesuite.onboarding.StoreApplicationResponse` (`GET /me/store-applications`). */
+export interface MyStoreApplication {
+  applicationId: string
+  storeId: string
+  businessName: string
+  status: StoreApplicationStatus
+  reviewNotes?: string
+  /** `LocalDateTime` sin zona (`AAAA-MM-DDTHH:mm:ss`). */
+  createdAt: string
+}
+
+/** Estados que el backend considera "en curso" (`StoreApplications.requireNoOpenApplication`). */
+export const OPEN_APPLICATION_STATUSES: readonly StoreApplicationStatus[] = ['PENDING_REVIEW', 'CONFIGURATION_PENDING', 'ACTIVE']
+
 export interface SellerApplicationService {
   readonly simulated: boolean
+  /** Registro público: crea la cuenta y la solicitud (`POST /store-applications`). */
   submit(input: SellerApplicationInput): Promise<SellerApplicationResult>
+  /** Cuenta de cliente con sesión iniciada (`POST /me/store-applications`). */
+  applyAsCurrentUser(input: CurrentUserApplicationInput): Promise<CurrentUserApplicationResult>
+  /** Solicitudes de la cuenta con sesión (`GET /me/store-applications`). */
+  myApplications(): Promise<MyStoreApplication[]>
 }
