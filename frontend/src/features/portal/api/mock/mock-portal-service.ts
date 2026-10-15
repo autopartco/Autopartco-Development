@@ -1,69 +1,44 @@
-import { simulateLatency } from '@/lib/api'
+import { ApiError } from '@/lib/api'
 import type { PortalService } from '../portal-service'
-import type { Plan, Subscription, SubscriptionPayment } from '../types'
+import { getStore, requirePermission, simulateNetwork, storesForSession, summaryOf } from './mock-state'
 
-const STORE_ID = '6f1c2a3e-0000-4000-8000-000000000001'
-
-const trialPlan: Plan = {
-  id: 'p-try',
-  code: 'TRY',
-  name: 'Prueba gratuita',
-  description: '1 mes para probar la plataforma',
-  monthlyPriceCop: 0,
-  currency: 'COP',
-  features: ['1 sucursal', '100 productos'],
-  recommended: false,
-  enabled: true,
-  maxBranches: 1,
-  maxProducts: 100,
-  maxUsers: 2,
-  capabilities: ['BASIC_ANALYTICS', 'CSV_IMPORT'],
-}
-
-const subscription: Subscription = {
-  storeId: STORE_ID,
-  status: 'TRIALING',
-  plan: trialPlan,
-  selectedPlan: null,
-  trialStartsAt: '2026-10-01T10:00:00',
-  trialEndsAt: '2026-11-01T10:00:00',
-  paidThrough: null,
-  validThrough: '2026-11-01T10:00:00',
-  daysRemaining: 18,
-  usage: {
-    branches: { used: 1, limit: 1 },
-    products: { used: 40, limit: 100 },
-    users: { used: 1, limit: 2 },
-  },
-  capabilities: trialPlan.capabilities,
-  canManage: true,
-  planChangeAllowed: true,
-}
-
-/** Datos simulados para desarrollo sin backend. No llama a ningún servidor. */
+/** Tiendas, permisos y perfil simulados (ver `mock-state.ts` para los casos de prueba). */
 export function createMockPortalService(): PortalService {
   return {
     async myStores() {
-      await simulateLatency()
-      return [
-        {
-          storeId: STORE_ID,
-          businessName: 'Repuestos La 30',
-          logoUrl: null,
-          applicationStatus: 'ACTIVE',
-          isOwner: true,
-          roleNames: ['Propietario'],
-          subscription: { status: subscription.status, planCode: trialPlan.code, planName: trialPlan.name, validThrough: subscription.validThrough },
-        },
-      ]
+      await simulateNetwork()
+      return storesForSession().map(summaryOf)
     },
-    async subscription() {
-      await simulateLatency()
-      return subscription
+
+    async permissions(storeId) {
+      await simulateNetwork(250)
+      return [...getStore(storeId).permissions]
     },
-    async payments() {
-      await simulateLatency()
-      return [] as SubscriptionPayment[]
+
+    async profile(storeId) {
+      await simulateNetwork()
+      const store = getStore(storeId)
+      requirePermission(store, 'STORE_READ')
+      return { ...store.profile }
+    },
+
+    async updateProfile(storeId, input) {
+      await simulateNetwork(600)
+      const store = getStore(storeId)
+      requirePermission(store, 'STORE_UPDATE')
+      if (input.businessEmail !== undefined && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(input.businessEmail)) {
+        throw new ApiError('Hay datos por corregir.', {
+          status: 400,
+          code: 'VALIDATION_ERROR',
+          fieldErrors: { businessEmail: 'El correo del almacén debe tener un formato válido.' },
+        })
+      }
+      if (input.businessName !== undefined) {
+        store.profile.businessName = input.businessName
+        store.summary.businessName = input.businessName
+      }
+      if (input.businessEmail !== undefined) store.profile.businessEmail = input.businessEmail
+      if (input.description !== undefined) store.profile.description = input.description || null
     },
   }
 }

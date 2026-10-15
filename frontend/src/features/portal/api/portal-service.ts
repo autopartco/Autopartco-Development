@@ -1,10 +1,16 @@
 import { DATA_SOURCE } from '@/lib/api'
-import type { MyStore, Subscription, SubscriptionPayment } from './types'
+import type { MyStore, StorePermission, StoreProfile, StoreProfileUpdate } from './types'
 
+/** Tiendas de la persona, permisos y perfil del almacén. */
 export interface PortalService {
+  /** `GET /me/stores`. */
   myStores(): Promise<MyStore[]>
-  subscription(storeId: string): Promise<Subscription>
-  payments(storeId: string): Promise<SubscriptionPayment[]>
+  /** `GET /stores/{id}/my-permissions`. Solo sirve para ocultar acciones: el servidor decide. */
+  permissions(storeId: string): Promise<StorePermission[]>
+  /** `GET /stores/{id}/profile`. */
+  profile(storeId: string): Promise<StoreProfile>
+  /** `PATCH /stores/{id}`. */
+  updateProfile(storeId: string, input: StoreProfileUpdate): Promise<void>
 }
 
 let servicePromise: Promise<PortalService> | undefined

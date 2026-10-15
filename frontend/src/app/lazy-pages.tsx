@@ -17,7 +17,18 @@ export const PasswordRecoveryPage = lazy(() => import('@/features/auth/pages/pas
 export const VerifyEmailPage = lazy(() => import('@/features/auth/pages/verify-email-page'))
 export const SellerRegisterPage = lazy(() => import('@/features/seller/pages/seller-register-page'))
 
-// Portal del almacén (SaaS vendedores, SA-F1, SA-F2, SA-F10).
+// Portal del almacén (SaaS vendedores): cada pantalla se descarga al visitarla.
+export const PortalRoot = lazy(() => import('@/features/portal/layout/portal-root').then((module) => ({ default: module.PortalRoot })))
+export const PortalLayout = lazy(() =>
+  import('@/features/portal/components/portal-layout').then((module) => ({ default: module.PortalLayout })),
+)
 export const PortalIndexPage = lazy(() => import('@/features/portal/pages/portal-index-page'))
 export const PortalOverviewPage = lazy(() => import('@/features/portal/pages/portal-overview-page'))
 export const PortalPlanPage = lazy(() => import('@/features/portal/pages/portal-plan-page'))
+export const PortalProductsPage = lazy(() => import('@/features/portal/pages/products-page'))
+export const PortalProductFormPage = lazy(() => import('@/features/portal/pages/product-form-page'))
+export const PortalOrdersPage = lazy(() => import('@/features/portal/pages/orders-page'))
+export const PortalOrderDetailPage = lazy(() => import('@/features/portal/pages/order-detail-page'))
+export const PortalBranchesPage = lazy(() => import('@/features/portal/pages/branches-page'))
+export const PortalTeamPage = lazy(() => import('@/features/portal/pages/team-page'))
+export const PortalStorePage = lazy(() => import('@/features/portal/pages/store-profile-page'))

@@ -1,16 +1,15 @@
-import { apiRequest } from '@/lib/api'
-import { getAccessToken } from '@/features/auth/api/http/http-auth-service'
 import type { PortalService } from '../portal-service'
-import type { MyStore, Subscription, SubscriptionPayment } from '../types'
+import type { MyStore, StorePermission, StoreProfile } from '../types'
+import { portalRequest, storePath } from './portal-http'
 
+/** `storesuite/store/MeStoreController` y `StoreProfileController`. */
 export function createHttpPortalService(): PortalService {
-  async function get<T>(path: string): Promise<T> {
-    return apiRequest<T>(path, { token: await getAccessToken() })
-  }
-
   return {
-    myStores: () => get<MyStore[]>('/me/stores'),
-    subscription: (storeId) => get<Subscription>(`/stores/${storeId}/subscription`),
-    payments: (storeId) => get<SubscriptionPayment[]>(`/stores/${storeId}/subscription/payments`),
+    myStores: () => portalRequest<MyStore[]>('/me/stores'),
+    permissions: (storeId) => portalRequest<StorePermission[]>(storePath(storeId, '/my-permissions')),
+    profile: (storeId) => portalRequest<StoreProfile>(storePath(storeId, '/profile')),
+    async updateProfile(storeId, input) {
+      await portalRequest(storePath(storeId), { method: 'PATCH', body: input })
+    },
   }
 }
