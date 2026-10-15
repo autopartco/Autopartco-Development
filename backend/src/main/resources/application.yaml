@@ -1,6 +1,11 @@
 spring:
   config:
-    import: "optional:file:.env[.properties]"
+    # Único .env en la raíz del repo (mvn spring-boot:run corre desde backend/).
+    import: "optional:file:../.env[.properties]"
+
+  # Desde el .env importado, SPRING_PROFILES_ACTIVE no se mapea solo a spring.profiles.active.
+  profiles:
+    active: "${SPRING_PROFILES_ACTIVE:dev}"
 
   application:
     name: backend
@@ -47,7 +52,7 @@ wompi:
   integrity-secret: "${WOMPI_INTEGRITY_SECRET:}"
   events-secret: "${WOMPI_EVENTS_SECRET:}"
   checkout-url: "${WOMPI_CHECKOUT_URL:https://checkout.wompi.co/p/}"
-  redirect-url: "${WOMPI_REDIRECT_URL:http://localhost:5173/seller/payment-result}"
+  redirect-url: "${WOMPI_REDIRECT_URL:http://localhost:5173/portal/pago/resultado}"
 
 app:
   public-base-url: "${APP_PUBLIC_BASE_URL:http://localhost:8081}"

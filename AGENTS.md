@@ -30,7 +30,7 @@ Contexto de producto en `docs/AUTOPARTCO_AGENT_CONTEXT.md`.
 Reglas comunes:
 - Cada agente edita solo su área. Nunca dos agentes con edición sobre la misma área a la vez; los cambios entre capas van en secuencia `database` → `backend` → `frontend` → `qa-seguridad`.
 - Requieren autorización del usuario: operaciones destructivas, despliegues, git que reescriba historia o publique, comandos contra bases de datos, instalación de dependencias, servicios de pago o externos, y cambios en seguridad, secretos, `.opencode/` o `.claude/`.
-- Pruebas backend solo con `-Dtest=<Clase>` explícito: `BackendApplicationTests` (`@SpringBootTest` + `ddl-auto: update`) modifica la BD de `backend/.env` hasta que se aíslen las pruebas de integración.
+- Pruebas backend solo con `-Dtest=<Clase>` explícito: `BackendApplicationTests` (`@SpringBootTest` + `ddl-auto: update`) modifica la BD del `.env` raíz hasta que se aíslen las pruebas de integración.
 
 ## Flujo de trabajo: diseño con Opus, ejecución por modelo
 

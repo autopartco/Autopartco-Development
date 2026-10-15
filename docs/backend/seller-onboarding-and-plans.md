@@ -207,7 +207,7 @@ logos/banners PNG/JPEG/WebP de hasta 5 MiB. El contenido se valida por
 firma binaria y no por la extensión o el MIME declarado por el cliente. El
 backend requiere el bucket Supabase privado `bussniess` (variable
 `SUPABASE_BUCKET_BUSINESS`) y las variables de Wompi definidas en
-`backend/.env.example`; no crea el bucket remoto.
+`.env.example` (raíz); no crea el bucket remoto.
 
 ## Configuración de integración requerida
 

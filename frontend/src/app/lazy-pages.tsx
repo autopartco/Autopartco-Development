@@ -30,6 +30,7 @@ export const PortalLayout = lazy(() =>
 export const PortalIndexPage = lazy(() => import('@/features/portal/pages/portal-index-page'))
 export const PortalOverviewPage = lazy(() => import('@/features/portal/pages/portal-overview-page'))
 export const PortalPlanPage = lazy(() => import('@/features/portal/pages/portal-plan-page'))
+export const PortalPaymentResultPage = lazy(() => import('@/features/portal/pages/payment-result-page'))
 export const PortalProductsPage = lazy(() => import('@/features/portal/pages/products-page'))
 export const PortalProductFormPage = lazy(() => import('@/features/portal/pages/product-form-page'))
 export const PortalOrdersPage = lazy(() => import('@/features/portal/pages/orders-page'))
