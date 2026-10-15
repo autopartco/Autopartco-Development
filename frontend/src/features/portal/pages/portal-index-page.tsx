@@ -4,7 +4,7 @@ import { EmptyState } from '@/components/common/states'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { initials } from '@/lib/format'
-import { SELLER_APPLICATION_PATH, useSellerCta } from '@/features/seller/hooks'
+import { SELLER_APPLICATION_PATH, SELLER_SETUP_PATH, useSellerCta } from '@/features/seller/hooks'
 import { useAsync } from '@/lib/use-async'
 import { getPortalService } from '../api/portal-service'
 import type { MyStore, StoreApplicationStatus } from '../api/types'
@@ -56,9 +56,14 @@ function StoreCard({ store }: { store: MyStore }) {
   if (!openable) {
     // Sin portal todavía: la tarjeta lleva al estado de la solicitud.
     return (
-      <Link to={SELLER_APPLICATION_PATH} className={`${base} group transition-shadow hover:ring-foreground/30`}>
+      <Link
+        to={store.applicationStatus === 'CONFIGURATION_PENDING' ? SELLER_SETUP_PATH : SELLER_APPLICATION_PATH}
+        className={`${base} group transition-shadow hover:ring-foreground/30`}
+      >
         {body}
-        <span className="shrink-0 text-sm font-medium text-brand group-hover:underline">Ver solicitud</span>
+        <span className="shrink-0 text-sm font-medium text-brand group-hover:underline">
+          {store.applicationStatus === 'CONFIGURATION_PENDING' ? 'Terminar configuración' : 'Ver solicitud'}
+        </span>
       </Link>
     )
   }
@@ -89,7 +94,7 @@ export default function PortalIndexPage() {
   } else if (hasNoStores && seller.state === 'review' && seller.application) {
     content = (
       <Link
-        to={seller.to}
+        to={seller.application.status === 'CONFIGURATION_PENDING' ? SELLER_SETUP_PATH : seller.to}
         className="group flex items-center gap-4 rounded-xl bg-card p-4 ring-1 ring-foreground/10 transition-shadow hover:ring-foreground/30 sm:p-5"
       >
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
@@ -98,7 +103,9 @@ export default function PortalIndexPage() {
             {APPLICATION_LABEL[seller.application.status].label}
           </StatusBadge>
         </div>
-        <span className="shrink-0 text-sm font-medium text-brand group-hover:underline">Ver solicitud</span>
+        <span className="shrink-0 text-sm font-medium text-brand group-hover:underline">
+          {seller.application.status === 'CONFIGURATION_PENDING' ? 'Terminar configuración' : 'Ver solicitud'}
+        </span>
       </Link>
     )
   } else if (stores.data.length === 0) {

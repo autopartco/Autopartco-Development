@@ -10,6 +10,9 @@ import type { MyStoreApplication } from './api/types'
  */
 export const SELLER_APPLICATION_PATH = '/portal/solicitud'
 
+/** Configuración del almacén aprobado (con `?token=` del correo o con la sesión iniciada). */
+export const SELLER_SETUP_PATH = '/seller/setup'
+
 /** Prefijo de caché: se invalida al cerrar sesión y al enviar una solicitud. */
 export const SELLER_CACHE_PREFIX = 'seller:'
 
