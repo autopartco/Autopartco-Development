@@ -6,12 +6,11 @@ import type { AuthService, Session } from '../types'
  * y `MeController`, `ApiPaths.ME`). Rutas públicas según `WebSecurityConfig.PUBLIC_ROUTES`;
  * `/auth/logout` y `/me/**` exigen el access token.
  *
- * Tokens: `POST /auth/login` devuelve `accessToken` y `refreshToken` en el cuerpo
- * (`LoginResponse`); no hay cookie HttpOnly. Opción elegida: los dos viven SOLO en
- * memoria (este módulo). No se guardan en localStorage ni sessionStorage porque
- * cualquier XSS los leería; el costo es que al recargar la página hay que volver
- * a ingresar. TODO(api): mover el refresh token a una cookie HttpOnly, Secure y
- * SameSite para poder restaurar la sesión sin exponerlo a JavaScript.
+ * Tokens: el refresh token va SOLO en la cookie HttpOnly `autopartco_refresh`
+ * (`SameSite=Lax`, `Path=/api/v1/auth`), así que JavaScript nunca lo lee. El access token
+ * vive en memoria de este módulo. Al cargar la página, `restore()` pide `/auth/refresh` con
+ * la cookie: si sigue válida, la sesión se recupera sin volver a ingresar, también en pestañas nuevas.
+ * El logout la borra en el servidor.
  */
 const PATHS = {
   login: '/auth/login',
@@ -24,10 +23,9 @@ const PATHS = {
   profile: '/me/profile',
 } as const
 
-/** `LoginResponse` (core/identity). `expiresIn` en segundos. */
+/** `LoginResponse` (core/identity). `refreshToken` no viene: está en la cookie. `expiresIn` en segundos. */
 interface LoginResponseDto {
   accessToken: string
-  refreshToken: string
   tokenType: string
   expiresIn: number
 }
@@ -52,7 +50,6 @@ interface ProfileResponseDto {
 
 interface Tokens {
   access: string
-  refresh: string
   /** Momento (ms) a partir del cual conviene renovar el access token. */
   renewAt: number
 }
@@ -64,35 +61,33 @@ export function getAccessToken(): Promise<string | undefined> {
   return tokenProvider ? tokenProvider() : Promise.resolve(undefined)
 }
 
+function toUser(profile: ProfileResponseDto): Session['user'] {
+  return { name: [profile.name, profile.surname].filter(Boolean).join(' '), email: profile.email }
+}
+
 export function createHttpAuthService(): AuthService {
   let tokens: Tokens | undefined
 
   function keep(dto: LoginResponseDto) {
     // Renueva 30 s antes de que venza para no fallar en mitad de una petición.
-    tokens = { access: dto.accessToken, refresh: dto.refreshToken, renewAt: Date.now() + Math.max(0, dto.expiresIn - 30) * 1000 }
+    tokens = { access: dto.accessToken, renewAt: Date.now() + Math.max(0, dto.expiresIn - 30) * 1000 }
   }
 
-  /** Access token vigente; si está por vencer, lo renueva (el refresh token rota en cada renovación). */
+  /** Pide un access token nuevo usando la cookie de refresh (el navegador la envía sola). */
+  function refreshSession(): Promise<LoginResponseDto> {
+    return apiRequest<LoginResponseDto>(PATHS.refresh, { method: 'POST', credentials: 'include' })
+  }
+
+  /** Access token vigente; si está por vencer, lo renueva con la cookie. */
   async function accessToken(): Promise<string | undefined> {
     if (!tokens) return undefined
     if (Date.now() < tokens.renewAt) return tokens.access
     try {
-      keep(await apiRequest<LoginResponseDto>(PATHS.refresh, { body: { refreshToken: tokens.refresh } }))
+      keep(await refreshSession())
       return tokens.access
     } catch {
       tokens = undefined
       return undefined
-    }
-  }
-
-  async function loadUser(email: string): Promise<Session['user']> {
-    const token = await accessToken()
-    try {
-      const profile = await apiRequest<ProfileResponseDto>(PATHS.profile, { token })
-      return { name: [profile.name, profile.surname].filter(Boolean).join(' '), email: profile.email }
-    } catch {
-      // El perfil es informativo: si falla, la sesión sigue siendo válida.
-      return { name: email, email }
     }
   }
 
@@ -101,25 +96,46 @@ export function createHttpAuthService(): AuthService {
   return {
     simulated: false,
 
-    restore() {
-      // Sin cookie HttpOnly no hay forma segura de recuperar la sesión tras recargar (ver arriba).
-      return undefined
+    async restore() {
+      // Sin sesión previa, el refresh falla (401) y la app muestra la pantalla de ingreso.
+      try {
+        keep(await refreshSession())
+      } catch {
+        tokens = undefined
+        return undefined
+      }
+      try {
+        const profile = await apiRequest<ProfileResponseDto>(PATHS.profile, { token: tokens?.access })
+        return { user: toUser(profile), simulated: false }
+      } catch {
+        tokens = undefined
+        return undefined
+      }
     },
 
     getAccessToken: accessToken,
 
     async login({ email, password }) {
-      keep(await apiRequest<LoginResponseDto>(PATHS.login, { body: { email: email.trim(), password } }))
-      return { user: await loadUser(email.trim()), simulated: false }
+      keep(await apiRequest<LoginResponseDto>(PATHS.login, {
+        body: { email: email.trim(), password },
+        credentials: 'include',
+      }))
+      try {
+        const profile = await apiRequest<ProfileResponseDto>(PATHS.profile, { token: tokens?.access })
+        return { user: toUser(profile), simulated: false }
+      } catch {
+        // El perfil es informativo: si falla, la sesión sigue siendo válida.
+        return { user: { name: email.trim(), email: email.trim() }, simulated: false }
+      }
     },
 
     async logout() {
-      const current = tokens
+      // Renueva el access token con la cookie si hace falta: el logout exige access token.
       const token = await accessToken()
       tokens = undefined
-      if (!current || !token) return
-      // Revoca la sesión en el servidor; si falla, la sesión local ya se cerró igual.
-      await apiRequest<void>(PATHS.logout, { body: { refreshToken: current.refresh }, token }).catch(() => undefined)
+      if (!token) return
+      // Revoca la sesión y el servidor borra la cookie; si falla, la sesión local ya se cerró igual.
+      await apiRequest<void>(PATHS.logout, { method: 'POST', token, credentials: 'include' }).catch(() => undefined)
     },
 
     async register(input) {

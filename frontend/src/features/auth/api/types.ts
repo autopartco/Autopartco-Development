@@ -47,8 +47,8 @@ export interface VerifyEmailResult {
 
 export interface AuthService {
   readonly simulated: boolean
-  /** Sesión que se puede recuperar al cargar la página (solo la simulada; ver http-auth-service). */
-  restore(): Session | undefined
+  /** Sesión que se puede recuperar al cargar la página: la simulada de sessionStorage o la cookie de refresh (http). */
+  restore(): Session | undefined | Promise<Session | undefined>
   login(input: LoginInput): Promise<Session>
   logout(): Promise<void>
   register(input: CustomerRegistration): Promise<RegistrationResult>
