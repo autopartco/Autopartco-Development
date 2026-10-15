@@ -1,0 +1,95 @@
+/*
+ * Movimiento del servicio de administración. Todo es decorativo y se declara solo si el usuario
+ * no pidió reducir movimiento: con `prefers-reduced-motion: reduce` queda el estado final, fijo.
+ * Colores de la paleta existente (carbón, rojo sobre carbón, azul "recomendado").
+ */
+.aurora {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background-color: #171b20;
+}
+
+.aurora__blob {
+  position: absolute;
+  z-index: -1;
+  border-radius: 9999px;
+  filter: blur(64px);
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.aurora__blob--a {
+  top: -45%;
+  left: -8%;
+  width: 46%;
+  height: 150%;
+  background: radial-gradient(closest-side, #ef3a47, transparent);
+}
+
+.aurora__blob--b {
+  top: -60%;
+  left: 32%;
+  width: 40%;
+  height: 160%;
+  opacity: 0.35;
+  background: radial-gradient(closest-side, #1f5f8b, transparent);
+}
+
+.aurora__blob--c {
+  top: -20%;
+  right: -10%;
+  width: 38%;
+  height: 130%;
+  opacity: 0.3;
+  background: radial-gradient(closest-side, #f55058, transparent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .aurora__blob--a {
+    animation: aurora-drift-a 18s ease-in-out infinite alternate;
+  }
+  .aurora__blob--b {
+    animation: aurora-drift-b 24s ease-in-out infinite alternate;
+  }
+  .aurora__blob--c {
+    animation: aurora-drift-a 21s ease-in-out infinite alternate-reverse;
+  }
+
+  /* Línea de relaciones: se dibuja al elegir una solicitud. */
+  .relation-line {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: relation-draw 700ms ease-out forwards;
+  }
+  .relation-node {
+    animation: relation-pop 420ms ease-out both;
+  }
+  .timeline-dot {
+    transition: transform 160ms ease-out;
+  }
+}
+
+@keyframes aurora-drift-a {
+  from { transform: translate3d(-4%, 0, 0) scale(1); }
+  to { transform: translate3d(10%, 8%, 0) scale(1.15); }
+}
+
+@keyframes aurora-drift-b {
+  from { transform: translate3d(6%, 4%, 0) scale(1.1); }
+  to { transform: translate3d(-12%, -6%, 0) scale(0.95); }
+}
+
+@keyframes relation-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes relation-pop {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Deslizadores de la línea temporal: color de la marca. */
+.timeline-range {
+  accent-color: #c81e2c;
+}

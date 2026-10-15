@@ -1,0 +1,29 @@
+# Perfil de PRODUCCIÓN (SPRING_PROFILES_ACTIVE=prod). Se suma a application.yaml y lo sobrescribe.
+# Las variables obligatorias están sin valor por defecto a propósito: si faltan, el arranque falla
+# en vez de usar valores de desarrollo. Ver backend/.env.production.example.
+spring:
+  jpa:
+    hibernate:
+      # El esquema lo gobiernan init.sql y las migraciones versionadas, no Hibernate.
+      # Cambiar a `validate` cuando las entidades JPA y el esquema estén reconciliados (agente database).
+      ddl-auto: none
+    show-sql: false
+
+server:
+  # La app corre detrás de un proxy/balanceador con HTTPS: respeta X-Forwarded-*.
+  forward-headers-strategy: framework
+  error:
+    include-message: never
+    include-stacktrace: never
+    include-binding-errors: never
+    include-exception: false
+
+app:
+  cors:
+    # Obligatorio y explícito (sin comodines). Varios orígenes separados por comas.
+    allowed-origins: "${APP_CORS_ALLOWED_ORIGINS}"
+
+logging:
+  level:
+    root: INFO
+    org.hibernate.SQL: WARN
