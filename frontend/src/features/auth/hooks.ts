@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
 import { getAuthService } from './api/auth-service'
 import type { Session } from './api/types'
+import { invalidateAsync } from '@/lib/use-async'
 import { clearPendingCheckout } from '@/features/portal/lib/pending-checkout'
 import { forgetPortalStore } from './lib/account-menu-items'
 import { getSession, setSession, subscribeSession } from './session-store'
@@ -43,6 +44,7 @@ export function useSignOut() {
       await service.logout()
     } finally {
       forgetPortalStore()
+      invalidateAsync('seller:')
       clearPendingCheckout()
       setSession(undefined)
       setPending(false)

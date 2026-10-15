@@ -1,9 +1,11 @@
 import {
   ClipboardListIcon,
   CreditCardIcon,
+  FileClockIcon,
   LayoutDashboardIcon,
   PackageIcon,
   ShoppingBagIcon,
+  ShieldCheckIcon,
   ShoppingCartIcon,
   StoreIcon,
   type LucideIcon,
@@ -41,7 +43,7 @@ export const ACCOUNT_KIND_LABEL: Record<AccountKind, string> = {
 
 export function accountKindOf(roles: readonly string[]): AccountKind {
   if (roles.includes('ROLE_STORE_MANAGER')) return 'store'
-  if (roles.includes('ROLE_ADMIN')) return 'admin'
+  if (roles.includes('ROLE_ADMIN') || roles.includes('ROLE_ROOT')) return 'admin'
   if (roles.includes('ROLE_CUSTOMER')) return 'customer'
   return 'unknown'
 }
@@ -53,6 +55,10 @@ interface MenuOptions {
   storeId?: string
   /** Filtro de permisos del portal; fuera del portal no se filtra. */
   can?: (permission: string) => boolean
+  /** Ruta de la solicitud de almacén en curso del cliente; sin ella no se muestra la opción. */
+  sellerApplicationTo?: string
+  /** Cuenta ROOT: ofrece el servicio de administración (`/admin`). El servidor sigue decidiendo. */
+  root?: boolean
 }
 
 const CART: AccountMenuLink = { key: 'carrito', label: 'Carrito', to: '/carrito', icon: ShoppingCartIcon }
@@ -72,7 +78,7 @@ function storeSections(storeId: string): AccountMenuLink[] {
  * Grupos de enlaces (se separan con una línea). "Cerrar sesión" no va aquí: cada menú
  * lo añade al final porque su comportamiento depende del área.
  */
-export function accountMenuGroups({ kind, area, storeId, can }: MenuOptions): AccountMenuLink[][] {
+export function accountMenuGroups({ kind, area, storeId, can, sellerApplicationTo, root }: MenuOptions): AccountMenuLink[][] {
   const groups: AccountMenuLink[][] = []
 
   if (kind === 'store') {
@@ -83,10 +89,16 @@ export function accountMenuGroups({ kind, area, storeId, can }: MenuOptions): Ac
     ])
     groups.push(area === 'portal' ? [MARKETPLACE, CART] : [CART])
   } else if (kind === 'customer') {
+    if (sellerApplicationTo) {
+      groups.push([
+        { key: 'solicitud-almacen', label: 'Ver mi solicitud de almacén', to: sellerApplicationTo, icon: FileClockIcon },
+      ])
+    }
     groups.push(area === 'portal' ? [MARKETPLACE, CART] : [CART])
-  } else if (area === 'portal') {
+  } else {
+    if (root) groups.push([{ key: 'administracion', label: 'Administración', to: '/admin', icon: ShieldCheckIcon }])
     // Admin u otro rol sin menú propio: solo la salida del portal.
-    groups.push([MARKETPLACE])
+    if (area === 'portal') groups.push([MARKETPLACE])
   }
 
   return groups.filter((group) => group.length > 0)

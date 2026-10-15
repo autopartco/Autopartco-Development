@@ -12,7 +12,9 @@ import { CheckEmail } from '@/features/auth/components/check-email'
 import { compact, emailError, requiredText, type FieldErrors } from '@/features/auth/lib/validation'
 import { ApiError } from '@/lib/api'
 import { cn } from '@/lib/utils'
+import { invalidateAsync } from '@/lib/use-async'
 import { getSellerApplicationService } from '../api/seller-service'
+import { SELLER_CACHE_PREFIX } from '../hooks'
 import {
   DOCUMENT_ACCEPT,
   DOCUMENT_LABELS,
@@ -640,7 +642,11 @@ function CustomerApplication({ email }: { email: string }) {
         mode={{
           kind: 'current-user',
           email,
-          onResult: (result, businessName) => setCreated({ result, businessName }),
+          onResult: (result, businessName) => {
+            // El menú y los CTA del marketplace pasan a "Ver mi solicitud".
+            invalidateAsync(SELLER_CACHE_PREFIX)
+            setCreated({ result, businessName })
+          },
           onAlreadyOpen: () => void load(),
         }}
         notice={

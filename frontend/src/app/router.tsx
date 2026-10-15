@@ -13,6 +13,7 @@ import {
   LoginPage,
   OrderResultPage,
   PasswordRecoveryPage,
+  PortalApplicationPage,
   PortalBranchesPage,
   PortalInventoryPage,
   PortalIndexPage,
@@ -96,6 +97,8 @@ export const router = createBrowserRouter([
       { index: true, element: <PortalIndexPage /> },
       // Retorno de Wompi tras pagar la suscripción (`?id=&env=`): consulta el estado al servidor.
       { path: 'pago/resultado', element: <PortalPaymentResultPage /> },
+      // Estado de la solicitud de almacén (`GET /me/store-applications`).
+      { path: 'solicitud', element: <PortalApplicationPage /> },
       {
         path: ':storeId',
         element: <PortalLayout />,

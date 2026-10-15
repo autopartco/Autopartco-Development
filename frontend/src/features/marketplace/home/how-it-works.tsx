@@ -1,9 +1,9 @@
 import { useRef } from 'react'
-import { Link } from 'react-router'
 import { m, useInView } from 'motion/react'
 import { CarFrontIcon, ScaleIcon, SearchIcon, StoreIcon, type LucideIcon } from 'lucide-react'
 import { Container } from '@/components/common/page-header'
 import { cn } from '@/lib/utils'
+import { SellerCtaPanel } from '@/features/seller/components/seller-cta-panel'
 import { REVEAL_ITEM, REVEAL_ONCE } from './motion-presets'
 
 interface Step {
@@ -83,19 +83,7 @@ export function HowItWorksSection() {
             </p>
           </div>
 
-          <div className="surface-asphalt flex flex-col items-start gap-3 rounded-2xl p-6">
-            <p className="text-xl font-bold tracking-tight">¿Tienes un almacén?</p>
-            <p className="max-w-sm text-sm text-asphalt-muted">
-              Muestra tu inventario a quienes buscan repuestos cerca de tu almacén. Revisamos cada solicitud antes de
-              publicar.
-            </p>
-            <Link
-              to="/vender"
-              className="mt-1 inline-flex min-h-11 items-center rounded-lg bg-white px-4 py-2 font-semibold text-asphalt transition-colors hover:bg-white/90"
-            >
-              Vende en Autopartco
-            </Link>
-          </div>
+          <SellerCtaPanel />
         </div>
 
         <div ref={loopRef} data-loop-paused={loopVisible ? undefined : ''} className="relative mx-auto w-full max-w-3xl xl:max-w-none">

@@ -3,7 +3,7 @@ import { FileTextIcon } from 'lucide-react'
 import { Container, PageIntro } from '@/components/common/page-header'
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/features/auth/hooks'
-import { accountKindOf } from '@/features/auth/lib/account-menu-items'
+import { useSellerCta } from '@/features/seller/hooks'
 import { DOCUMENT_LABELS, REQUIRED_DOCUMENTS } from '@/features/seller/api/types'
 
 /**
@@ -59,13 +59,13 @@ function DocumentList({ title, keys }: { title: string; keys: readonly (keyof ty
 
 export default function SellPage() {
   const session = useSession()
-  const kind = session ? accountKindOf(session.roles) : undefined
   const steps = stepsFor(Boolean(session))
-  // El rol solo decide el atajo; `/vender/registro` y el servidor resuelven cada caso.
+  // Registrar, ver la solicitud en curso o ir al portal: lo decide la cuenta (el servidor valida).
+  const seller = useSellerCta()
   const cta =
-    kind === 'store'
-      ? { to: '/portal', label: 'Ir al portal de mi almacén' }
-      : { to: '/vender/registro', label: session ? 'Solicitar mi almacén' : 'Registrar mi almacén' }
+    seller.state === 'loading' || seller.state === 'register'
+      ? { to: '/vender/registro', label: session ? 'Solicitar mi almacén' : 'Registrar mi almacén' }
+      : { to: seller.to, label: seller.label }
   return (
     <Container className="py-6 sm:py-8">
       <title>Vende en Autopartco | Autopartco</title>
