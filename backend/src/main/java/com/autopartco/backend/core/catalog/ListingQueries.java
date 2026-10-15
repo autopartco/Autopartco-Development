@@ -6,7 +6,10 @@ import java.sql.SQLException;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -135,6 +138,33 @@ public class ListingQueries {
             order by i.price, s.business_name, b.name
             """;
 
+    static final String KEYS_PLACEHOLDER = "{keys}";
+
+    /**
+     * Mismos joins y filtros de estado que {@link #PUBLISHED_LISTING_SQL} pero sin {@code i.stock > 0} (el stock lo
+     * valida el descuento atómico de {@code inventory}). {@link #KEYS_PLACEHOLDER} se reemplaza por tantos
+     * {@code (?::uuid, ?::uuid)} como claves; los valores siempre van como parámetros.
+     */
+    static final String PURCHASABLE_LISTINGS_SQL = """
+            select i.id, i.product_id, i.branch_id, b.store_id as branch_store_id, b.name as branch_name,
+                   i.price, i.stock
+            from inventory i
+            join (values {keys}) as k(product_id, branch_id)
+              on k.product_id = i.product_id and k.branch_id = i.branch_id
+            join branches b on b.id = i.branch_id and b.deleted_at is null
+            join store s on s.id = b.store_id and s.deleted_at is null
+            join states ss on ss.id = s.state and ss.deleted_at is null
+            join states bs on bs.id = b.state and bs.deleted_at is null
+            join products p on p.id = i.product_id and p.deleted_at is null
+            join manufacturers m on m.id = p.manufacturer_id and m.deleted_at is null
+            join categories c on c.id = p.category_id and c.deleted_at is null
+            join states ps on ps.id = p.state_id and ps.deleted_at is null
+            where i.deleted_at is null
+              and ps.code = 'ACTIVE'
+              and ss.code = 'ACTIVE'
+              and bs.code = 'ACTIVE'
+            """;
+
     private final JdbcTemplate jdbcTemplate;
     private final ProductRepository productRepository;
     private final ProductImageRepository productImageRepository;
@@ -231,6 +261,32 @@ public class ListingQueries {
                 .findFirst()
                 .map(row -> toResponses(List.of(row)).getFirst())
                 .orElseThrow(() -> new NotFoundException("PRODUCT_NOT_FOUND", "No se encontró el repuesto."));
+    }
+
+    /**
+     * Listados comprables: mismos filtros que el listado publicado (producto, almacén y sucursal {@code ACTIVE}, sin
+     * borrar) pero SIN {@code i.stock > 0}, restringidos a los pares pedidos. Las claves sin listado no aparecen en el
+     * mapa. El número de claves lo limita la capa web (máximo 50).
+     */
+    @Transactional(readOnly = true)
+    public Map<ListingKey, ProductResponse> purchasableListings(Collection<ListingKey> keys) {
+        if (keys == null || keys.isEmpty()) {
+            return Map.of();
+        }
+        List<ListingKey> distinctKeys = List.copyOf(new LinkedHashSet<>(keys));
+        String values = String.join(", ", Collections.nCopies(distinctKeys.size(), "(?::uuid, ?::uuid)"));
+        Object[] args = new Object[distinctKeys.size() * 2];
+        for (int index = 0; index < distinctKeys.size(); index++) {
+            args[index * 2] = distinctKeys.get(index).productId();
+            args[index * 2 + 1] = distinctKeys.get(index).branchId();
+        }
+        List<ListingRow> rows = jdbcTemplate.query(
+                PURCHASABLE_LISTINGS_SQL.replace(KEYS_PLACEHOLDER, values), ListingQueries::mapRow, args);
+        return toResponses(rows).stream().collect(Collectors.toMap(
+                response -> new ListingKey(response.id(), response.branchId()),
+                Function.identity(),
+                (first, second) -> first,
+                LinkedHashMap::new));
     }
 
     @Transactional(readOnly = true)

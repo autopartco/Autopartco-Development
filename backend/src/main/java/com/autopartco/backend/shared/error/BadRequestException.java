@@ -5,6 +5,7 @@ import lombok.Getter;
 @Getter
 public class BadRequestException extends RuntimeException {
     private final String code;
+    /** Datos adicionales seguros para el cliente; se serializan en {@code error.details}. */
     private final transient Object details;
 
     public BadRequestException(String code, String message) {
