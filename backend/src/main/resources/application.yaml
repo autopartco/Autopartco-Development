@@ -51,6 +51,9 @@ wompi:
 
 app:
   public-base-url: "${APP_PUBLIC_BASE_URL:http://localhost:8081}"
+  billing:
+    # Cobro simulado del portal (sin pasarela). Apagado por defecto: solo local y demo lo encienden.
+    simulated-payments-enabled: "${SIMULATED_PAYMENTS_ENABLED:false}"
   frontend-base-url: "${APP_FRONTEND_BASE_URL:http://localhost:5173}"
   email-verification:
     expires-minutes: "${EMAIL_VERIFICATION_EXPIRES_MINUTES:30}"

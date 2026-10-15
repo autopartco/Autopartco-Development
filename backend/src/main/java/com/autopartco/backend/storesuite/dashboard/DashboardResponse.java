@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.autopartco.backend.core.billing.PlanResponse;
+import com.autopartco.backend.core.billing.SubscriptionStatus;
 import com.autopartco.backend.core.order.SalesSummary;
 
 public record DashboardResponse(
@@ -22,8 +23,19 @@ public record DashboardResponse(
         Integer maxUsers,
         List<String> capabilities,
         Usage usage,
-        SalesSummary sales
+        SalesSummary sales,
+        SubscriptionStatus subscriptionStatus,
+        Long daysRemaining,
+        Inventory inventory
 ) {
+    /** Conteos de listados: total, agotados (stock ≤ 0) y con poco stock (0 &lt; stock ≤ 3). */
+    public record Inventory(
+            long listings,
+            long outOfStock,
+            long lowStock
+    ) {
+    }
+
     public record Usage(
             long branches,
             long products,

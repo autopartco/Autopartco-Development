@@ -109,14 +109,14 @@ class ListingQueriesTest {
     void publishedListingsKeepTheFiltersAndOrderOfFindPublished() {
         assertThat(normalize(ListingQueries.PUBLISHED_LISTINGS_SQL)).endsWith(PUBLISHED_JOINS + PRODUCT_JOINS
                 + "where i.deleted_at is null " + PUBLISHED_FILTER
-                + "order by p.name, s.bussnies_name, b.name");
+                + "order by p.name, s.business_name, b.name");
     }
 
     @Test
     void publishedListingKeepsTheFiltersAndOrderOfFindPublishedByProductId() {
         assertThat(normalize(ListingQueries.PUBLISHED_LISTING_SQL)).endsWith(PUBLISHED_JOINS + PRODUCT_JOINS
                 + "where i.deleted_at is null and p.id = ? " + PUBLISHED_FILTER
-                + "order by i.price, s.bussnies_name, b.name");
+                + "order by i.price, s.business_name, b.name");
     }
 
     @Test

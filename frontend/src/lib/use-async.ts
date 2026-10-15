@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useEffectEvent, useState } from 'react'
+import { useCallback, useEffect, useEffectEvent, useState, useSyncExternalStore } from 'react'
 
 /** Resultados ya resueltos por clave, para no repetir peticiones al volver a una pantalla. */
 const resolved = new Map<string, unknown>()
@@ -16,6 +16,28 @@ function load<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
     .finally(() => inflight.delete(key))
   inflight.set(key, promise)
   return promise
+}
+
+/** Contador de invalidaciones: los hooks montados vuelven a pedir sus datos cuando cambia. */
+let invalidations = 0
+const invalidationListeners = new Set<() => void>()
+
+function subscribeInvalidations(listener: () => void): () => void {
+  invalidationListeners.add(listener)
+  return () => invalidationListeners.delete(listener)
+}
+
+/**
+ * Descarta los resultados en caché cuyas claves empiezan por `prefix` (tras una mutación o al
+ * cambiar de sesión). Las pantallas montadas con esas claves recargan solas; mientras llega la
+ * respuesta conservan los últimos datos que ya tenían.
+ */
+export function invalidateAsync(prefix: string): void {
+  for (const key of [...resolved.keys()]) {
+    if (key.startsWith(prefix)) resolved.delete(key)
+  }
+  invalidations += 1
+  for (const listener of invalidationListeners) listener()
 }
 
 type Settled<T> =
@@ -42,6 +64,11 @@ export function useAsync<T>(key: string, fetcher: () => Promise<T>): AsyncResult
   const [lastData, setLastData] = useState<T | undefined>(undefined)
   const [attempt, setAttempt] = useState(0)
   const runFetcher = useEffectEvent(() => load(key, fetcher))
+  const invalidation = useSyncExternalStore(
+    subscribeInvalidations,
+    () => invalidations,
+    () => 0,
+  )
 
   useEffect(() => {
     if (resolved.has(key)) return
@@ -59,7 +86,7 @@ export function useAsync<T>(key: string, fetcher: () => Promise<T>): AsyncResult
     return () => {
       active = false
     }
-  }, [key, attempt])
+  }, [key, attempt, invalidation])
 
   const retry = useCallback(() => {
     resolved.delete(key)

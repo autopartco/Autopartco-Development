@@ -57,6 +57,8 @@ export interface Product {
   id: string
   /** Clave única del listado (producto + sucursal); úsala como `key` en listas. */
   listingKey: string
+  /** Sucursal del listado; el carrito y el checkout la envían al servidor. En datos mock es el id de la tienda. */
+  branchId?: string
   name: string
   partNumber?: string
   description?: string

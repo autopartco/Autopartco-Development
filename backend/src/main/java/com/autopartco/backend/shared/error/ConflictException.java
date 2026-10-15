@@ -6,7 +6,7 @@ import lombok.Getter;
 public class ConflictException extends RuntimeException {
     private final String code;
     /** Datos adicionales seguros para el cliente; se serializan en {@code error.details}. */
-    private final Object details;
+    private final transient Object details;
 
     public ConflictException(String code, String message) {
         this(code, message, null);

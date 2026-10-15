@@ -1,5 +1,7 @@
 package com.autopartco.backend.core.billing.internal.wompi;
 
+import com.autopartco.backend.core.billing.internal.SubscriptionEvents;
+import com.autopartco.backend.core.billing.internal.SubscriptionEventRepository;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.never;
@@ -46,7 +48,8 @@ class WompiWebhookProcessorTest {
         return new WompiWebhookProcessor(
                 paymentRepository,
                 applicationRepository,
-                new WompiSignatureVerifier(new WompiProperties("", "", EVENTS_SECRET, "", ""))
+                new WompiSignatureVerifier(new WompiProperties("", "", EVENTS_SECRET, "", "")),
+                new SubscriptionEvents(org.mockito.Mockito.mock(SubscriptionEventRepository.class))
         );
     }
 

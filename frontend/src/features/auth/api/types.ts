@@ -56,4 +56,9 @@ export interface AuthService {
   /** Devuelve el mensaje del servidor (es el mismo exista o no la cuenta). */
   requestPasswordRecovery(email: string): Promise<string>
   resetPassword(token: string, password: string): Promise<string>
+  /**
+   * Access token vigente para llamar a otros servicios autenticados (lo renueva si está por vencer),
+   * o `undefined` si no hay sesión. Solo se entrega al llamador: no se guarda en ningún almacenamiento.
+   */
+  getAccessToken(): Promise<string | undefined>
 }

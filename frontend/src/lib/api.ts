@@ -17,16 +17,19 @@ export class ApiError extends Error {
   readonly status?: number
   readonly code?: string
   readonly fieldErrors: Readonly<Record<string, string>>
+  /** `error.details` tal como llega (p. ej. `{ items: [...] }` en el checkout, mapa de campos o `null`); `fieldErrors` solo conserva las cadenas. */
+  readonly details: unknown
 
   constructor(
     message: string,
-    options: { status?: number; code?: string; fieldErrors?: Record<string, string>; cause?: unknown } = {},
+    options: { status?: number; code?: string; fieldErrors?: Record<string, string>; details?: unknown; cause?: unknown } = {},
   ) {
     super(message, { cause: options.cause })
     this.name = 'ApiError'
     this.status = options.status
     this.code = options.code
     this.fieldErrors = options.fieldErrors ?? {}
+    this.details = options.details ?? null
   }
 }
 
@@ -41,8 +44,8 @@ function readFieldErrors(details: unknown): Record<string, string> {
   )
 }
 
-interface RequestOptions {
-  method?: 'GET' | 'POST'
+export interface RequestOptions {
+  method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE'
   /** Objeto (se envía como JSON) o `FormData` (multipart; el navegador pone el boundary). */
   body?: unknown
   /** Access token para rutas autenticadas. */
@@ -79,10 +82,27 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
       status: response.status,
       code: payload?.error?.code,
       fieldErrors: readFieldErrors(payload?.error?.details),
+      details: payload?.error?.details,
     })
   }
   if (response.status === 204) return undefined as T
   return (await response.json()) as T
+}
+
+/** Lee un campo numérico de `error.details` (p. ej. `limit`, `used`). */
+export function detailNumber(error: ApiError, key: string): number | undefined {
+  const details = error.details
+  if (!details || typeof details !== 'object') return undefined
+  const value = (details as Record<string, unknown>)[key]
+  return typeof value === 'number' ? value : undefined
+}
+
+/** Lee un campo de texto de `error.details` (p. ej. `capability`, `planCode`). */
+export function detailText(error: ApiError, key: string): string | undefined {
+  const details = error.details
+  if (!details || typeof details !== 'object') return undefined
+  const value = (details as Record<string, unknown>)[key]
+  return typeof value === 'string' ? value : undefined
 }
 
 /** Espera simulada para los servicios `mock` (deja ver los estados de carga). */
