@@ -10,6 +10,7 @@ import { getSubscriptionService } from '../api/subscription-service'
 import type { Plan, SimulatedPaymentResult, Subscription } from '../api/types'
 import { actionErrorMessage } from '../lib/errors'
 import { formatDate } from '../lib/labels'
+import { savePendingCheckout } from '../lib/pending-checkout'
 import { SelectField } from './form-controls'
 
 interface CheckoutDialogProps {
@@ -79,6 +80,15 @@ function CheckoutForm({ storeId, plan, subscription, onPaid, onClose }: Omit<Che
           fail('No pudimos abrir la pasarela de pago', 'La dirección de pago no es válida. Inténtalo de nuevo o escríbenos.')
           return
         }
+        // Wompi vuelve sin nuestra referencia: se guarda para consultar el estado al regresar.
+        savePendingCheckout({
+          storeId,
+          reference: result.reference,
+          planName: plan.name,
+          months: result.prepaidMonths || count,
+          amountInCents: result.amountInCents,
+          startedAt: new Date().toISOString(),
+        })
         window.location.assign(result.checkoutUrl)
       }
     } catch (cause) {

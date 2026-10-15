@@ -333,3 +333,98 @@
         }
     }
 }
+
+/*
+ * Indicador del resultado de pago (`PaymentStatusIndicator`). Los estilos base son el estado
+ * final; las animaciones solo se declaran sin `prefers-reduced-motion`, así nunca se queda a medias.
+ * Los trazos usan `pathLength="1"`: dibujar es llevar `stroke-dashoffset` de 1 a 0.
+ */
+.psi-draw {
+    stroke-dasharray: 1 1;
+    stroke-dashoffset: 0;
+}
+.psi-orbit {
+    transform: rotate(-90deg);
+    transform-box: view-box;
+    transform-origin: 50% 50%;
+}
+.psi-pulse {
+    opacity: 0.6;
+}
+.psi-burst circle {
+    opacity: 0;
+    transform-box: fill-box;
+    transform-origin: center;
+}
+.psi-shake {
+    transform-box: fill-box;
+    transform-origin: center;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .psi-orbit {
+        animation: psi-spin 1.4s linear infinite;
+    }
+    .psi-pulse {
+        animation: psi-pulse 2s ease-in-out infinite;
+    }
+    .psi-ring {
+        animation: psi-draw 0.6s var(--ease-out-snap) both;
+    }
+    .psi-ring-fast {
+        animation-duration: 0.4s;
+    }
+    .psi-mark {
+        animation: psi-draw 0.45s var(--ease-out-snap) 0.5s both;
+    }
+    .psi-mark-second {
+        animation-delay: 0.62s;
+    }
+    .psi-burst circle {
+        animation: psi-burst 0.8s ease-out 0.85s both;
+    }
+    .psi-shake {
+        animation: psi-shake 0.3s ease-in-out 1.05s;
+    }
+}
+
+@keyframes psi-spin {
+    from {
+        transform: rotate(-90deg);
+    }
+    to {
+        transform: rotate(270deg);
+    }
+}
+@keyframes psi-pulse {
+    50% {
+        opacity: 0.2;
+    }
+}
+@keyframes psi-draw {
+    from {
+        stroke-dashoffset: 1;
+    }
+}
+@keyframes psi-burst {
+    0% {
+        opacity: 0;
+        transform: scale(0);
+    }
+    40% {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0);
+    }
+}
+@keyframes psi-shake {
+    25% {
+        transform: translateX(-2px);
+    }
+    75% {
+        transform: translateX(2px);
+    }
+}

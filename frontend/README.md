@@ -26,10 +26,10 @@ Parámetros de búsqueda: `q`, `categoria`, `marca` (ids separados por comas), `
 
 ## Origen de datos
 
-Copia `.env.example` a `.env.local` y ajusta:
+Se configura en el único `.env` de la raíz del repo (plantilla `/.env.example`; Vite lo lee con `envDir: '..'`). Ver `docs/deploy/ENVIRONMENTS.md`.
 
-- `VITE_MARKETPLACE_DATA_SOURCE`: `mock` (por defecto) o `http`.
-- `VITE_API_BASE_URL`: URL base con el prefijo de versión, p. ej. `http://localhost:8080/api/v1`.
+- `VITE_MARKETPLACE_DATA_SOURCE`: `http` (backend real) o `mock`.
+- `VITE_API_BASE_URL`: URL base con el prefijo de versión, p. ej. `http://localhost:8081/api/v1`.
 
 La interfaz `MarketplaceService` (`src/features/marketplace/api/types.ts`) tiene dos implementaciones que se cargan bajo demanda:
 

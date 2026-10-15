@@ -17,6 +17,7 @@ import {
   PortalOrderDetailPage,
   PortalOrdersPage,
   PortalOverviewPage,
+  PortalPaymentResultPage,
   PortalPlanPage,
   PortalProductFormPage,
   PortalProductsPage,
@@ -81,6 +82,8 @@ export const router = createBrowserRouter([
     errorElement: <RouteError />,
     children: [
       { index: true, element: <PortalIndexPage /> },
+      // Retorno de Wompi tras pagar la suscripción (`?id=&env=`): consulta el estado al servidor.
+      { path: 'pago/resultado', element: <PortalPaymentResultPage /> },
       {
         path: ':storeId',
         element: <PortalLayout />,

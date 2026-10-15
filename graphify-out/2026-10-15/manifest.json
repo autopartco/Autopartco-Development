@@ -24,9 +24,9 @@
     "semantic_hash": "a2a96102e44344e62ceb287667ebf497"
   },
   "backend/pom.xml": {
-    "mtime": 1791896835.9233358,
-    "seen": 1791897547.3301609,
-    "ast_hash": "f7fc776c61a5014634929cbdbe4ff38e",
+    "mtime": 1792060821.0856593,
+    "seen": 1792072652.942843,
+    "ast_hash": "fcfd027560be698d7fdf1fad8bc0938c",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/BackendApplication.java": {
@@ -90,9 +90,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/resources/application.yaml": {
-    "mtime": 1792017452.712734,
-    "seen": 1792059545.8368192,
-    "ast_hash": "38e299138e9a8b5985356ff29de44e74",
+    "mtime": 1792074062.7433195,
+    "seen": 1792074390.4032931,
+    "ast_hash": "d4991398c080b42b88884e2f5dc29cd1",
     "semantic_hash": ""
   },
   "docs/AUTOPARTCO_AGENT_CONTEXT.md": {
@@ -138,9 +138,9 @@
     "semantic_hash": ""
   },
   "docs/backend/product-images.md": {
-    "mtime": 1791925614.5637138,
-    "seen": 1791926382.8176823,
-    "ast_hash": "dd6a38fda3ddb3628114d5e79f0fa248",
+    "mtime": 1792074328.5989037,
+    "seen": 1792074390.4128208,
+    "ast_hash": "94d40ff2c3a595f6088b176de6617027",
     "semantic_hash": ""
   },
   "docs/backend/security.md": {
@@ -150,9 +150,9 @@
     "semantic_hash": ""
   },
   "docs/backend/seller-onboarding-and-plans.md": {
-    "mtime": 1791925804.0963879,
-    "seen": 1791926382.8176918,
-    "ast_hash": "bd706554c2a6d6f711a50a78d78afeac",
+    "mtime": 1792074328.735643,
+    "seen": 1792074390.4166732,
+    "ast_hash": "5294731fe8ef43ca27638b2003310c1d",
     "semantic_hash": ""
   },
   ".agents/skills/brainstorming/scripts/helper.js": {
@@ -786,9 +786,9 @@
     "semantic_hash": ""
   },
   "AGENTS.md": {
-    "mtime": 1791979591.3195415,
-    "seen": 1791984486.1217709,
-    "ast_hash": "253a4d988ebc07fd721d775558f1dab2",
+    "mtime": 1792074312.4417956,
+    "seen": 1792074390.3996253,
+    "ast_hash": "0b7f61b78b289055a57019e2710f3e20",
     "semantic_hash": ""
   },
   "docs/AUTOPARTCO_IDEA.md": {
@@ -1002,15 +1002,15 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/shared/error/BadRequestException.java": {
-    "mtime": 1792011523.7075763,
-    "seen": 1792017095.4796414,
-    "ast_hash": "4d77980cd197bec763bc183a978f5156",
+    "mtime": 1792066159.0210824,
+    "seen": 1792072653.0979288,
+    "ast_hash": "2cdc0bc4c00706c7bf86e2dce7d05927",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/shared/error/ConflictException.java": {
-    "mtime": 1792011523.7099729,
-    "seen": 1792017095.479647,
-    "ast_hash": "f110c485ac833cb8b3bdc15ae32d0241",
+    "mtime": 1792066159.0210824,
+    "seen": 1792072653.097934,
+    "ast_hash": "065c5858702a8b2535bff9aeb71f3054",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/shared/error/ErrorResponse.java": {
@@ -1026,9 +1026,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/shared/error/NotFoundException.java": {
-    "mtime": 1792011523.7139742,
-    "seen": 1792017095.4803667,
-    "ast_hash": "1379a0a5e33241e8dbca19f9efe70aec",
+    "mtime": 1792066159.0210824,
+    "seen": 1792072653.099008,
+    "ast_hash": "91bc5b7fd4d2e7460aaba4a74b45dfad",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/shared/error/PayloadTooLargeException.java": {
@@ -1062,9 +1062,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/shared/security/CorsConfig.java": {
-    "mtime": 1791974617.0335052,
-    "seen": 1791974975.6857333,
-    "ast_hash": "6d3f89c96f51b307ebf0a8a0ab1801ae",
+    "mtime": 1792071126.7811403,
+    "seen": 1792072653.103825,
+    "ast_hash": "52d2ee58caa786e556ec92895a6424f7",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/shared/security/ForbiddenHandler.java": {
@@ -1146,9 +1146,9 @@
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/shared/error/GlobalExceptionHandlerTest.java": {
-    "mtime": 1792011523.7259924,
-    "seen": 1792017095.571053,
-    "ast_hash": "3049a3466d63adb8336d60a3dfe24253",
+    "mtime": 1792066159.0622008,
+    "seen": 1792072653.1459138,
+    "ast_hash": "e9b22be71d0e2891edcac5ffa5339133",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/tools/GeneratedKeyPair.java": {
@@ -1452,9 +1452,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/identity/web/AuthController.java": {
-    "mtime": 1791974616.866372,
-    "seen": 1791974975.6851046,
-    "ast_hash": "5d9401e6ab54c3e95edd04ad8569cda8",
+    "mtime": 1792071126.7730772,
+    "seen": 1792072653.0174296,
+    "ast_hash": "cea460e86c73bebf171752f61805df9e",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/identity/web/LoginRequest.java": {
@@ -1464,9 +1464,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/identity/web/LogoutRequest.java": {
-    "mtime": 1791974616.8685863,
-    "seen": 1791974975.6851177,
-    "ast_hash": "f3bf7993233620004d9deb4e26a86cba",
+    "mtime": 1792071126.7750964,
+    "seen": 1792072653.0183754,
+    "ast_hash": "f418f09a5fdb9a1777d8892bbad1e983",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/identity/web/MeController.java": {
@@ -2058,9 +2058,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/catalog/ListingQueries.java": {
-    "mtime": 1792016782.1137595,
-    "seen": 1792017095.3339722,
-    "ast_hash": "1da4497ef250644c207080221a2269d3",
+    "mtime": 1792066158.982913,
+    "seen": 1792072652.9643857,
+    "ast_hash": "12fb4bc65196b2c37f91485b017a0165",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/catalog/ManufacturerRequest.java": {
@@ -2202,9 +2202,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/inventory/StockService.java": {
-    "mtime": 1792017456.5688753,
-    "seen": 1792059545.4979293,
-    "ast_hash": "dab75b9d9e133dd93fc994a6be223eac",
+    "mtime": 1792066158.9941013,
+    "seen": 1792072653.0275075,
+    "ast_hash": "2bcaf213fcda2513be5254b07337647d",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/inventory/internal/Inventory.java": {
@@ -2334,9 +2334,9 @@
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/core/catalog/ListingQueriesTest.java": {
-    "mtime": 1792010635.8118768,
-    "seen": 1792017095.561333,
-    "ast_hash": "fd86f952eb142a338719d1873958cc86",
+    "mtime": 1792066159.0322502,
+    "seen": 1792072653.138752,
+    "ast_hash": "de2c886de41cc90c3cdf51721c920f7c",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/core/catalog/ProductImagesTest.java": {
@@ -2364,8 +2364,8 @@
     "semantic_hash": ""
   },
   "frontend/package.json": {
-    "mtime": 1791909081.2792912,
-    "seen": 1791909456.6982079,
+    "mtime": 1792073942.5019977,
+    "seen": 1792074390.2513466,
     "ast_hash": "6020d34962459a0c13eb9eaf0d542c7a",
     "semantic_hash": ""
   },
@@ -2400,15 +2400,15 @@
     "semantic_hash": ""
   },
   "frontend/vite.config.ts": {
-    "mtime": 1791912032.784792,
-    "seen": 1791912341.8036106,
-    "ast_hash": "7ddf5d8cd11e3eaf24602098b3295d3b",
+    "mtime": 1792073942.3983934,
+    "seen": 1792074390.3444376,
+    "ast_hash": "0aee51647a93fff1ba7be5191eebf720",
     "semantic_hash": ""
   },
   "frontend/README.md": {
-    "mtime": 1791911839.8104515,
-    "seen": 1791911959.849771,
-    "ast_hash": "f61b9f6e81b4438a8600c7ccd59e1406",
+    "mtime": 1792074312.3032517,
+    "seen": 1792074390.4166849,
+    "ast_hash": "c4a53fca8955600f50bf11baf8ee4cd8",
     "semantic_hash": ""
   },
   "frontend/index.html": {
@@ -2700,9 +2700,9 @@
     "semantic_hash": ""
   },
   "frontend/src/app/lazy-pages.tsx": {
-    "mtime": 1792017277.4996164,
-    "seen": 1792059545.6499848,
-    "ast_hash": "9ba3243cb5058bc11016ffacf69fc4f4",
+    "mtime": 1792064011.7587874,
+    "seen": 1792072653.1595764,
+    "ast_hash": "1f2b6c5b72a99653d65825cd6402a323",
     "semantic_hash": ""
   },
   "frontend/src/app/page-fallback.tsx": {
@@ -2724,9 +2724,9 @@
     "semantic_hash": ""
   },
   "frontend/src/app/router.tsx": {
-    "mtime": 1792017296.14998,
-    "seen": 1792059545.650869,
-    "ast_hash": "1bbfe28a10a37b906c36f04c93885b73",
+    "mtime": 1792064011.7633412,
+    "seen": 1792072653.1608677,
+    "ast_hash": "d6ba9df7e42b16a36103a00c1360a574",
     "semantic_hash": ""
   },
   "frontend/src/app/site-footer.tsx": {
@@ -2736,15 +2736,15 @@
     "semantic_hash": ""
   },
   "frontend/src/app/site-header.tsx": {
-    "mtime": 1791933718.2827363,
-    "seen": 1791959106.618753,
-    "ast_hash": "674af9eb9e155aea7dfaabc9ba7f7761",
+    "mtime": 1792064011.7729511,
+    "seen": 1792072653.1612651,
+    "ast_hash": "b69d656a5cbceac2a7c74c9f8a267608",
     "semantic_hash": ""
   },
   "frontend/src/components/common/logo.tsx": {
-    "mtime": 1791931990.3402922,
-    "seen": 1791932542.7568219,
-    "ast_hash": "02aba5eb3c1e0c2ce8fbb00fb79fc5f5",
+    "mtime": 1792073527.2437615,
+    "seen": 1792074390.255386,
+    "ast_hash": "dacd17e3e8b909c3635d648456de5211",
     "semantic_hash": ""
   },
   "frontend/src/components/common/option-select.tsx": {
@@ -2772,9 +2772,9 @@
     "semantic_hash": ""
   },
   "frontend/src/env.d.ts": {
-    "mtime": 1791909674.3019981,
-    "seen": 1791911959.627741,
-    "ast_hash": "0df9c6b6111bad96d26de3856d3918ab",
+    "mtime": 1792064011.7775033,
+    "seen": 1792072653.17507,
+    "ast_hash": "c81a99224c8b1ee8b9b85944c4c66779",
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/api/dto.ts": {
@@ -2784,9 +2784,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/api/http/http-service.ts": {
-    "mtime": 1791932966.049441,
-    "seen": 1791959106.6572895,
-    "ast_hash": "e946521e974ccc7b8fcbf425e86d95cf",
+    "mtime": 1792064011.9747963,
+    "seen": 1792072653.185088,
+    "ast_hash": "a3af7a18c8a9b7087f49a96418222070",
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/api/marketplace-service.ts": {
@@ -2796,9 +2796,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/api/mock/mock-data.ts": {
-    "mtime": 1791932965.1947317,
-    "seen": 1791959106.6625814,
-    "ast_hash": "4ff9e4da41ccfacdac5406ac4e04dde8",
+    "mtime": 1792064011.9829566,
+    "seen": 1792072653.1855652,
+    "ast_hash": "57ffe4b7d76732cef46dd7d02d3480b1",
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/api/mock/mock-service.ts": {
@@ -2808,9 +2808,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/api/types.ts": {
-    "mtime": 1791932964.6413202,
-    "seen": 1791959106.662757,
-    "ast_hash": "48ff967b435d616676efa5acd4275e6d",
+    "mtime": 1792064011.9870002,
+    "seen": 1792072653.1859863,
+    "ast_hash": "e49a487df1fc9457c2356ce2d43ead06",
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/components/active-filters.tsx": {
@@ -2916,9 +2916,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/pages/product-page.tsx": {
-    "mtime": 1791933047.7048838,
-    "seen": 1791959106.696335,
-    "ast_hash": "b98363135dce23a8508478c1f94c71aa",
+    "mtime": 1792064011.9928632,
+    "seen": 1792072653.1975186,
+    "ast_hash": "17893d3844edbf8cc1816fa6ca3215ba",
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/pages/search-page.tsx": {
@@ -3504,9 +3504,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/marketplace/checkout/package-info.java": {
-    "mtime": 1791988050.1137755,
-    "seen": 1791990011.4044688,
-    "ast_hash": "e215ba50a4fe731fb0af8e3c3bf7cb89",
+    "mtime": 1792066159.0146008,
+    "seen": 1792072653.08176,
+    "ast_hash": "1584c93f25dccc84d4642d34e76bbacd",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/marketplace/comparison/package-info.java": {
@@ -3684,27 +3684,27 @@
     "semantic_hash": ""
   },
   "frontend/src/features/auth/api/auth-service.ts": {
-    "mtime": 1791933309.5780022,
-    "seen": 1791959106.649749,
-    "ast_hash": "848c30e50f91400c5750a501e3f97be0",
+    "mtime": 1792071126.786918,
+    "seen": 1792072653.1750753,
+    "ast_hash": "d3e55cb35aad87af4bfad9076bc0f540",
     "semantic_hash": ""
   },
   "frontend/src/features/auth/api/http/http-auth-service.ts": {
-    "mtime": 1792014303.344947,
-    "seen": 1792017095.6082547,
-    "ast_hash": "54819780d472363f503f8f9e8e921b90",
+    "mtime": 1792073527.2498822,
+    "seen": 1792074390.2694933,
+    "ast_hash": "29314fcb24bfb5d48a1dedf115d11451",
     "semantic_hash": ""
   },
   "frontend/src/features/auth/api/mock/mock-auth-service.ts": {
-    "mtime": 1791983373.873862,
-    "seen": 1791984485.8371222,
-    "ast_hash": "4269291f24500b2e5da66134b1911ff5",
+    "mtime": 1792073527.253935,
+    "seen": 1792074390.2694979,
+    "ast_hash": "70c29f14b6d1bf400b988ed496a44c9a",
     "semantic_hash": ""
   },
   "frontend/src/features/auth/api/types.ts": {
-    "mtime": 1791983373.8779743,
-    "seen": 1791984485.8371258,
-    "ast_hash": "a842180c2de9ffff0bf7a91993531817",
+    "mtime": 1792073527.2587068,
+    "seen": 1792074390.2695022,
+    "ast_hash": "34d58e869dbd46bbb934adccab680172",
     "semantic_hash": ""
   },
   "frontend/src/features/auth/components/account-fields.tsx": {
@@ -3714,9 +3714,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/auth/components/account-menu.tsx": {
-    "mtime": 1791933687.1969893,
-    "seen": 1791959106.6497676,
-    "ast_hash": "ff4ebfee330040ac3f157cce53ea43f0",
+    "mtime": 1792073527.2618072,
+    "seen": 1792074390.2699614,
+    "ast_hash": "46dadf56575b364ad6486adaca7e5a16",
     "semantic_hash": ""
   },
   "frontend/src/features/auth/components/auth-shell.tsx": {
@@ -3732,9 +3732,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/auth/hooks.ts": {
-    "mtime": 1792016405.4543035,
-    "seen": 1792017095.613485,
-    "ast_hash": "131b3f0136e1bc01994a959289e007fd",
+    "mtime": 1792073527.2655928,
+    "seen": 1792074390.2712402,
+    "ast_hash": "76850ba9f690318e794edbe8e3634098",
     "semantic_hash": ""
   },
   "frontend/src/features/auth/lib/account.ts": {
@@ -3780,9 +3780,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/auth/session-store.ts": {
-    "mtime": 1791933256.6699584,
-    "seen": 1791959106.6498005,
-    "ast_hash": "72713d12106befa8e938153a37645e20",
+    "mtime": 1792071126.7949598,
+    "seen": 1792072653.179747,
+    "ast_hash": "1f28870f599603e27732e93115301a74",
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/components/photo-search.tsx": {
@@ -3822,9 +3822,9 @@
     "semantic_hash": ""
   },
   "frontend/src/lib/api.ts": {
-    "mtime": 1792016574.3371494,
-    "seen": 1792017095.6535704,
-    "ast_hash": "ec7f39b7fb42ddf3d4534cfa39939028",
+    "mtime": 1792071126.7967422,
+    "seen": 1792072653.226386,
+    "ast_hash": "fff03b53b5f6f434af856c1a183c034b",
     "semantic_hash": ""
   },
   ".agents/skills/vibesec-skill/README.md": {
@@ -3851,34 +3851,10 @@
     "ast_hash": "0d99b93dbbccec084c3890309a83ebcd",
     "semantic_hash": ""
   },
-  "package.json": {
-    "mtime": 1791982444.5779042,
-    "seen": 1791984485.9666243,
-    "ast_hash": "01252835102abd130148bbb60d994264",
-    "semantic_hash": ""
-  },
-  "playwright.config.ts": {
-    "mtime": 1791982444.5520155,
-    "seen": 1791984485.9666286,
-    "ast_hash": "aea7147cb8b3e8b7101e91d06a5109c6",
-    "semantic_hash": ""
-  },
-  "tests/example.spec.ts": {
-    "mtime": 1791982444.5635047,
-    "seen": 1791984485.9674203,
-    "ast_hash": "68aa5c260169df5934d9ad593ece881e",
-    "semantic_hash": ""
-  },
   "tools/release/promote-to-main.sh": {
     "mtime": 1791979591.3228388,
     "seen": 1791984485.9692874,
     "ast_hash": "5d4f8a2c157d0d4efcf6be045a50ed10",
-    "semantic_hash": ""
-  },
-  ".github/workflows/playwright.yml": {
-    "mtime": 1791982444.5569859,
-    "seen": 1791984486.1115823,
-    "ast_hash": "8eeea4038250dc5028a9d1bf4da54425",
     "semantic_hash": ""
   },
   ".github/workflows/promote-to-main.yml": {
@@ -4068,9 +4044,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/shared/error/PaymentRequiredException.java": {
-    "mtime": 1792011523.7159743,
-    "seen": 1792017095.4811463,
-    "ast_hash": "8178fe065cbed3cb7753237facbf5013",
+    "mtime": 1792066159.0210824,
+    "seen": 1792072653.1000845,
+    "ast_hash": "46aa914aa6294dd6e84193468285dcd3",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/storesuite/products/AddProductListing.java": {
@@ -4176,9 +4152,9 @@
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/integration/SaasPortalEndpointsDbTest.java": {
-    "mtime": 1792016402.6399746,
-    "seen": 1792017095.5703747,
-    "ast_hash": "4af9e0c868e65fab1e4c574c5ee9eb07",
+    "mtime": 1792070790.3764064,
+    "seen": 1792072653.1454773,
+    "ast_hash": "5c79b49c0b86a932fe0f3a439c6805e7",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/storesuite/products/ProductListingsTest.java": {
@@ -4356,9 +4332,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/portal/api/mock/mock-state.ts": {
-    "mtime": 1792016837.8807125,
-    "seen": 1792017095.650653,
-    "ast_hash": "1ec84001111b3c17dc2a42ef8031b23a",
+    "mtime": 1792073527.2754676,
+    "seen": 1792074390.3162208,
+    "ast_hash": "e6d6a08f0f1e3ecfd675fa23d743390c",
     "semantic_hash": ""
   },
   "frontend/src/features/portal/api/mock/mock-subscription-service.ts": {
@@ -4416,15 +4392,15 @@
     "semantic_hash": ""
   },
   "frontend/src/features/portal/components/page-header.tsx": {
-    "mtime": 1792016944.8007972,
-    "seen": 1792017095.650675,
-    "ast_hash": "67e5ac0c7de1555f7608bf4f81912477",
+    "mtime": 1792073527.2792592,
+    "seen": 1792074390.3221867,
+    "ast_hash": "8b330ecb8821355bcd860e7624b3b5fe",
     "semantic_hash": ""
   },
   "frontend/src/features/portal/components/portal-layout.tsx": {
-    "mtime": 1792017463.3152092,
-    "seen": 1792059545.7742195,
-    "ast_hash": "6ee14a36990d791f0d84580edce91f6f",
+    "mtime": 1792073527.2878509,
+    "seen": 1792074390.3229825,
+    "ast_hash": "1d7f7198b4b546e62e1a84876df51f67",
     "semantic_hash": ""
   },
   "frontend/src/features/portal/components/query-boundary.tsx": {
@@ -4470,9 +4446,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/portal/pages/portal-index-page.tsx": {
-    "mtime": 1792017263.211403,
-    "seen": 1792059545.7755003,
-    "ast_hash": "fe36473abf1b2309e2e4fc53fff6a621",
+    "mtime": 1792073527.3055394,
+    "seen": 1792074390.3331141,
+    "ast_hash": "e8a87961ccaa6785a9c0211477f9d7c4",
     "semantic_hash": ""
   },
   "frontend/src/features/portal/pages/portal-overview-page.tsx": {
@@ -4488,9 +4464,9 @@
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/integration/SaasPaymentDbTest.java": {
-    "mtime": 1792017464.022169,
-    "seen": 1792059545.624279,
-    "ast_hash": "457ac41388524f6546865159594a9599",
+    "mtime": 1792070790.3687322,
+    "seen": 1792072653.1454732,
+    "ast_hash": "6315370d1cb73b2054703f1b289bf104",
     "semantic_hash": ""
   },
   "frontend/src/features/portal/components/branch-sheet.tsx": {
@@ -4554,9 +4530,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/portal/components/stat-card.tsx": {
-    "mtime": 1792017331.9977539,
-    "seen": 1792059545.7745192,
-    "ast_hash": "a3d736e3af052062824abd4df18c60f9",
+    "mtime": 1792073527.292011,
+    "seen": 1792074390.324842,
+    "ast_hash": "92b2dbe9b9267e8eb75b9fd8dc5cd12e",
     "semantic_hash": ""
   },
   "frontend/src/features/portal/components/store-inactive-notice.tsx": {
@@ -4584,15 +4560,15 @@
     "semantic_hash": ""
   },
   "frontend/src/features/portal/layout/portal-account-menu.tsx": {
-    "mtime": 1792017168.1331851,
-    "seen": 1792059545.7751691,
-    "ast_hash": "dfcf88ab92cf073b0f32c3c5a7b4a3c2",
+    "mtime": 1792073527.294582,
+    "seen": 1792074390.3278632,
+    "ast_hash": "712ce4b9462a98faf5489bc8ba933807",
     "semantic_hash": ""
   },
   "frontend/src/features/portal/layout/portal-nav.tsx": {
-    "mtime": 1792018036.7798908,
-    "seen": 1792059545.7751706,
-    "ast_hash": "cc6c68497619f9ed26d1bb27c9dd4e36",
+    "mtime": 1792073527.3014903,
+    "seen": 1792074390.3278716,
+    "ast_hash": "d061453219576e6b3d505fcac674bb76",
     "semantic_hash": ""
   },
   "frontend/src/features/portal/layout/portal-root.tsx": {
@@ -4659,6 +4635,342 @@
     "mtime": 1792017918.1338964,
     "seen": 1792059545.775511,
     "ast_hash": "c88349020185a5857d280bf2fde028a8",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/catalog/ListingKey.java": {
+    "mtime": 1792066158.982913,
+    "seen": 1792072652.9643807,
+    "ast_hash": "c67129fb21a150337256b843beddea55",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/AddressSnapshot.java": {
+    "mtime": 1792066158.982913,
+    "seen": 1792072652.9815762,
+    "ast_hash": "15f8d90a6cbce7e37dda13c4007ee0a1",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/PersonAddressLookup.java": {
+    "mtime": 1792066158.9899282,
+    "seen": 1792072652.9834526,
+    "ast_hash": "113747bf84ed6efc780138bf27161acc",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/web/RefreshCookie.java": {
+    "mtime": 1792071126.7791276,
+    "seen": 1792072653.0252094,
+    "ast_hash": "ac22a5ed7f28f35b9e9c717a543e3e81",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/inventory/StockDecrement.java": {
+    "mtime": 1792066158.9899282,
+    "seen": 1792072653.0275009,
+    "ast_hash": "5c5d95eeb4d6a441f7b7b97ca7a8079c",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/order/BuyerOrderQueries.java": {
+    "mtime": 1792066158.9941013,
+    "seen": 1792072653.0311794,
+    "ast_hash": "25ac42fe54fc38d2bf4c439bf059f6e0",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/order/BuyerOrderResponse.java": {
+    "mtime": 1792066158.9941013,
+    "seen": 1792072653.031185,
+    "ast_hash": "e30b430326a184942d9f6541d175d0e6",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/order/NewOrder.java": {
+    "mtime": 1792066158.9941013,
+    "seen": 1792072653.03119,
+    "ast_hash": "fef3721456136be6f5960a1cc5c1f376",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/order/OrderPlacement.java": {
+    "mtime": 1792066158.9988377,
+    "seen": 1792072653.031193,
+    "ast_hash": "c8c41b175e97b8494b06d7d3424712a4",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/order/PaymentReferenceOwner.java": {
+    "mtime": 1792066158.9988377,
+    "seen": 1792072653.031196,
+    "ast_hash": "66ab7a853600a62683ed2f1c7836e2a8",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/marketplace/checkout/CheckoutPaymentGateway.java": {
+    "mtime": 1792066158.9988377,
+    "seen": 1792072653.0817297,
+    "ast_hash": "87db8b84bdbf8c8e90bf5dec24263234",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/marketplace/checkout/CheckoutResult.java": {
+    "mtime": 1792066158.9988377,
+    "seen": 1792072653.081735,
+    "ast_hash": "79694ec5746aef64043368c1d4b04017",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/marketplace/checkout/MarketplaceOrderController.java": {
+    "mtime": 1792066159.0055535,
+    "seen": 1792072653.0817387,
+    "ast_hash": "156ea718b0a31b821ae3bc60336e108e",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/marketplace/checkout/PaymentAttempt.java": {
+    "mtime": 1792066159.0075653,
+    "seen": 1792072653.0817418,
+    "ast_hash": "3948a1d0ec7bc140884f738939c89a42",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/marketplace/checkout/PaymentDecision.java": {
+    "mtime": 1792066159.0095725,
+    "seen": 1792072653.0817454,
+    "ast_hash": "7c450b184af0f8ce289f152046d74ee7",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/marketplace/checkout/PlaceMarketplaceOrder.java": {
+    "mtime": 1792066159.0115836,
+    "seen": 1792072653.0817485,
+    "ast_hash": "eac28b1721d9fb7d5c9bdfc4f5f2db09",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/marketplace/checkout/PlaceOrderRequest.java": {
+    "mtime": 1792066159.0115836,
+    "seen": 1792072653.081752,
+    "ast_hash": "4e6be9e45db69c169ea297e288b6145d",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/marketplace/checkout/SimulatedCheckoutPaymentGateway.java": {
+    "mtime": 1792066159.0146008,
+    "seen": 1792072653.081755,
+    "ast_hash": "6bfb7e0b3ab0e4eee8e24ea916e66906",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/identity/PersonAddressLookupTest.java": {
+    "mtime": 1792066159.0358763,
+    "seen": 1792072653.1400979,
+    "ast_hash": "142894bd7ee5cd9079ca4ba0d0c4f246",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/inventory/StockServiceTest.java": {
+    "mtime": 1792066159.0383344,
+    "seen": 1792072653.1428857,
+    "ast_hash": "5e6ff07fdc59af93052288d761ef2e50",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/order/BuyerOrderQueriesTest.java": {
+    "mtime": 1792066159.0413547,
+    "seen": 1792072653.142891,
+    "ast_hash": "306091d918d60f938dfae1fd1bf2f7f3",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/order/OrderPlacementTest.java": {
+    "mtime": 1792066159.0440054,
+    "seen": 1792072653.1428947,
+    "ast_hash": "98db31370f134d76a1e7a94b1ae38b3c",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/order/RecordingJdbcClient.java": {
+    "mtime": 1792066159.0464165,
+    "seen": 1792072653.1428974,
+    "ast_hash": "a287501230e9cdafd653f7b1a0eb0fc5",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/marketplace/checkout/MarketplaceOrderControllerTest.java": {
+    "mtime": 1792066159.0464165,
+    "seen": 1792072653.145482,
+    "ast_hash": "5c6ca07b1ab340fcb2da6f97f9a0c243",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/marketplace/checkout/PlaceMarketplaceOrderTest.java": {
+    "mtime": 1792066159.0557916,
+    "seen": 1792072653.1454854,
+    "ast_hash": "86698db66c92036028810fa82f0bb5d2",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/marketplace/checkout/SimulatedCheckoutPaymentGatewayTest.java": {
+    "mtime": 1792066159.0557916,
+    "seen": 1792072653.1454885,
+    "ast_hash": "3b5b311ce73dddb33fa47eed08e5d497",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/auth/lib/account-menu-items.ts": {
+    "mtime": 1792073527.2677295,
+    "seen": 1792074390.2712448,
+    "ast_hash": "7c6fc26ef82f42aed4f80e0e81dd3b97",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/auth/lib/jwt.ts": {
+    "mtime": 1792073527.271761,
+    "seen": 1792074390.271708,
+    "ast_hash": "25d25ff38c1147f9e6f9f92e11e7b173",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/cart/components/add-to-cart.tsx": {
+    "mtime": 1792064011.8271801,
+    "seen": 1792072653.179751,
+    "ast_hash": "0255580f976e0dc42c5cc1c62a2e0845",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/cart/components/cart-indicator.tsx": {
+    "mtime": 1792064011.8354378,
+    "seen": 1792072653.1797543,
+    "ast_hash": "1c6b22dc9adb96876f25a2e9699fb8c7",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/cart/components/quantity-stepper.tsx": {
+    "mtime": 1792064011.840982,
+    "seen": 1792072653.179757,
+    "ast_hash": "934514ddb7824d424ebf6a9a03211491",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/cart/pages/cart-page.tsx": {
+    "mtime": 1792064011.847015,
+    "seen": 1792072653.1797595,
+    "ast_hash": "a56d54e088969f10ef3b1bc4176951fd",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/checkout/api/checkout-service.ts": {
+    "mtime": 1792064011.856879,
+    "seen": 1792072653.1797621,
+    "ast_hash": "39b0f8d84301147b7008dc810a40753c",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/checkout/api/http/http-address-service.ts": {
+    "mtime": 1792064011.8631203,
+    "seen": 1792072653.1797645,
+    "ast_hash": "5216b26002fffdb9527fef6490623f8c",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/checkout/api/http/http-checkout-service.ts": {
+    "mtime": 1792064011.8730962,
+    "seen": 1792072653.1797664,
+    "ast_hash": "b973afbdedec61163607b861aeec2430",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/checkout/api/mock/mock-address-service.ts": {
+    "mtime": 1792064011.8953507,
+    "seen": 1792072653.1797686,
+    "ast_hash": "4a8a3db5d767ad0a25a5dc9503b2a9fb",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/checkout/api/mock/mock-checkout-service.ts": {
+    "mtime": 1792064011.901947,
+    "seen": 1792072653.1797707,
+    "ast_hash": "c758a10cf3a8d5948be444d58b76f2f2",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/checkout/api/types.ts": {
+    "mtime": 1792064011.9058547,
+    "seen": 1792072653.1797724,
+    "ast_hash": "a5c0e85497103594ae5736970cee375d",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/checkout/components/address-form.tsx": {
+    "mtime": 1792064011.9105895,
+    "seen": 1792072653.1797748,
+    "ast_hash": "85f820bd2963f54e4e37148a06800984",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/checkout/components/address-selector.tsx": {
+    "mtime": 1792064011.916284,
+    "seen": 1792072653.1797776,
+    "ast_hash": "031caa09c1d4b52cba2215c5735d10a5",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/checkout/components/checkout-summary.tsx": {
+    "mtime": 1792064011.9193866,
+    "seen": 1792072653.1797793,
+    "ast_hash": "2c89405476d9c536f119d85c40f8642c",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/checkout/components/order-sales-list.tsx": {
+    "mtime": 1792064011.9239273,
+    "seen": 1792072653.1797814,
+    "ast_hash": "11fea13f0cf43e986a37513de7fb4fbd",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/checkout/components/payment-method-picker.tsx": {
+    "mtime": 1792064011.9271264,
+    "seen": 1792072653.1797836,
+    "ast_hash": "0de31565120351006a28dc0d370f061d",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/checkout/components/payment-rejected-panel.tsx": {
+    "mtime": 1792064011.9333847,
+    "seen": 1792072653.1797857,
+    "ast_hash": "d4eb072b1c073c17809e42b27ef15a8c",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/checkout/lib/cart-source.ts": {
+    "mtime": 1792064011.9389727,
+    "seen": 1792072653.1797884,
+    "ast_hash": "21ca824540a310c49f70b6f5098cfe39",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/checkout/lib/checkout-errors.ts": {
+    "mtime": 1792064011.9415066,
+    "seen": 1792072653.17979,
+    "ast_hash": "b7569ff4e0cfe01f7b96a1058a2e4fb4",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/checkout/lib/labels.ts": {
+    "mtime": 1792064011.9445083,
+    "seen": 1792072653.179792,
+    "ast_hash": "67cfbd610947388b3f6430dc8c530167",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/checkout/lib/order-result-store.ts": {
+    "mtime": 1792064011.9501479,
+    "seen": 1792072653.179794,
+    "ast_hash": "2e2b204af92df64326a23e8b3510d5c1",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/checkout/lib/paths.ts": {
+    "mtime": 1792064011.9541142,
+    "seen": 1792072653.1797962,
+    "ast_hash": "7b2f278483ff026e478dbf6f8d4b77ef",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/checkout/lib/use-session-ready.ts": {
+    "mtime": 1792064011.9561956,
+    "seen": 1792072653.1797993,
+    "ast_hash": "92edfbc64bf3efd5010e15507a0884dc",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/checkout/pages/checkout-page.tsx": {
+    "mtime": 1792064011.9647245,
+    "seen": 1792072653.1798017,
+    "ast_hash": "f29a5b7b71e6e3dbb5c7570fb1dfd539",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/checkout/pages/order-result-page.tsx": {
+    "mtime": 1792064011.9699883,
+    "seen": 1792072653.1798043,
+    "ast_hash": "5a2e31add18f0271607f71687f62d6ad",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/portal/layout/portal-header.tsx": {
+    "mtime": 1792073527.2974453,
+    "seen": 1792074390.3278682,
+    "ast_hash": "6bcc394a808764b9c5c44b6e6e4d4c88",
+    "semantic_hash": ""
+  },
+  "backend/src/main/resources/application-prod.yaml": {
+    "mtime": 1792064011.683499,
+    "seen": 1792072653.2809043,
+    "ast_hash": "e20953a9b60336a1d7b08751437b83dd",
+    "semantic_hash": ""
+  },
+  "docs/architecture/2026-10-14-marketplace-frontend-plan.md": {
+    "mtime": 1792064011.710229,
+    "seen": 1792072653.2896585,
+    "ast_hash": "201621062cb38f4081ba550de8d43af7",
+    "semantic_hash": ""
+  },
+  "docs/deploy/ENVIRONMENTS.md": {
+    "mtime": 1792074308.2015405,
+    "seen": 1792074390.4166796,
+    "ast_hash": "e5d8a3dd330b837c3db73a5aac9c901a",
     "semantic_hash": ""
   }
 }

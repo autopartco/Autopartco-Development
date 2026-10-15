@@ -4,7 +4,7 @@ Las imágenes se guardan en Supabase Storage; PostgreSQL almacena únicamente la
 
 ## Configuración
 
-Define en `backend/.env`:
+Define en el `.env` de la raíz del repo:
 
 ```dotenv
 SUPABASE_URL=https://<proyecto>.supabase.co
