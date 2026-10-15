@@ -1,49 +1,8 @@
-import type { ComponentType } from 'react'
 import { NavLink } from 'react-router'
-import {
-  Building2Icon,
-  ClipboardListIcon,
-  CreditCardIcon,
-  LayoutDashboardIcon,
-  MapPinIcon,
-  PackageIcon,
-  UsersIcon,
-  type LucideProps,
-} from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
-import type { StorePermission } from '../api/types'
 import { usePortal } from '../context'
-
-interface NavItem {
-  to: string
-  label: string
-  icon: ComponentType<LucideProps>
-  /** Permiso que hace visible el enlace. El servidor sigue decidiendo cada petición. */
-  permission: StorePermission
-  /** Coincide también con las rutas hijas (p. ej. `productos/:id`). */
-  end?: boolean
-}
-
-const GROUPS: { label: string; items: NavItem[] }[] = [
-  {
-    label: 'Operación',
-    items: [
-      { to: 'inicio', label: 'Inicio', icon: LayoutDashboardIcon, permission: 'STORE_READ', end: true },
-      { to: 'productos', label: 'Productos', icon: PackageIcon, permission: 'PRODUCT_READ' },
-      { to: 'pedidos', label: 'Pedidos', icon: ClipboardListIcon, permission: 'ORDER_READ' },
-    ],
-  },
-  {
-    label: 'Administración',
-    items: [
-      { to: 'sucursales', label: 'Sucursales', icon: MapPinIcon, permission: 'BRANCH_READ' },
-      { to: 'equipo', label: 'Equipo', icon: UsersIcon, permission: 'COLLABORATOR_READ' },
-      { to: 'tienda', label: 'Tienda', icon: Building2Icon, permission: 'STORE_READ' },
-      { to: 'plan', label: 'Plan y suscripción', icon: CreditCardIcon, permission: 'STORE_READ' },
-    ],
-  },
-]
+import { PORTAL_SECTION_GROUPS } from '../lib/sections'
 
 /** Enlaces del portal sobre fondo carbón. El ítem activo lleva barra roja de 2px y `aria-current="page"`. */
 export function PortalNav({ onNavigate }: { onNavigate?: () => void }) {
@@ -62,7 +21,7 @@ export function PortalNav({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <nav aria-label="Portal del almacén" className="flex flex-col gap-5 px-3">
-      {GROUPS.map((group) => {
+      {PORTAL_SECTION_GROUPS.map((group) => {
         const items = group.items.filter((item) => can(item.permission))
         if (items.length === 0) return null
         const headingId = `nav-${group.label}`

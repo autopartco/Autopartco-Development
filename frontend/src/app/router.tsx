@@ -32,6 +32,9 @@ import {
   StoresPage,
   VerifyEmailPage,
 } from './lazy-pages'
+import { GuestOnly } from '@/features/auth/components/guest-only'
+import { RequirePermission } from '@/features/portal/components/require-permission'
+import { LegacyRedirect } from './legacy-redirect'
 import { PageFallback } from './page-fallback'
 import { RootLayout } from './root-layout'
 import { RouteError } from './route-error'
@@ -59,12 +62,14 @@ export const router = createBrowserRouter([
           { path: 'vender/registro', element: <SellerRegisterPage /> },
           // Cuentas (core/identity/web/AuthController).
           { path: 'ingresar', element: <LoginPage /> },
-          { path: 'registro', element: <RegisterPage /> },
-          { path: 'registro/cliente', element: <CustomerRegisterPage /> },
-          { path: 'recuperar-contrasena', element: <PasswordRecoveryPage /> },
-          { path: 'verificar-correo', element: <VerifyEmailPage /> },
+          // Solo invitados: con sesión activa se redirige al inicio.
+          { path: 'registro', element: <GuestOnly><RegisterPage /></GuestOnly> },
+          { path: 'registro/cliente', element: <GuestOnly><CustomerRegisterPage /></GuestOnly> },
+          { path: 'recuperar-contrasena', element: <GuestOnly><PasswordRecoveryPage /></GuestOnly> },
           // El correo de verificación del backend enlaza a `{APP_FRONTEND_BASE_URL}/verify-email?token=`.
           { path: 'verify-email', element: <VerifyEmailPage /> },
+          // Alias antiguo: conserva el `?token=` del enlace.
+          { path: 'verificar-correo', element: <LegacyRedirect to="/verify-email" /> },
           { path: '*', element: <NotFoundPage /> },
         ],
       },
@@ -88,17 +93,18 @@ export const router = createBrowserRouter([
         path: ':storeId',
         element: <PortalLayout />,
         children: [
+          // La sección por defecto no es fija: si no hay acceso a Inicio, RequirePermission redirige.
           { index: true, element: <Navigate to="inicio" replace /> },
-          { path: 'inicio', element: <PortalOverviewPage /> },
-          { path: 'productos', element: <PortalProductsPage /> },
-          { path: 'productos/nuevo', element: <PortalProductFormPage /> },
-          { path: 'productos/:productId', element: <PortalProductFormPage /> },
-          { path: 'pedidos', element: <PortalOrdersPage /> },
-          { path: 'pedidos/:saleId', element: <PortalOrderDetailPage /> },
-          { path: 'sucursales', element: <PortalBranchesPage /> },
-          { path: 'equipo', element: <PortalTeamPage /> },
-          { path: 'tienda', element: <PortalStorePage /> },
-          { path: 'plan', element: <PortalPlanPage /> },
+          { path: 'inicio', element: <RequirePermission permission="STORE_READ"><PortalOverviewPage /></RequirePermission> },
+          { path: 'productos', element: <RequirePermission permission="PRODUCT_READ"><PortalProductsPage /></RequirePermission> },
+          { path: 'productos/nuevo', element: <RequirePermission permission="PRODUCT_CREATE"><PortalProductFormPage /></RequirePermission> },
+          { path: 'productos/:productId', element: <RequirePermission permission="PRODUCT_READ"><PortalProductFormPage /></RequirePermission> },
+          { path: 'pedidos', element: <RequirePermission permission="ORDER_READ"><PortalOrdersPage /></RequirePermission> },
+          { path: 'pedidos/:saleId', element: <RequirePermission permission="ORDER_READ"><PortalOrderDetailPage /></RequirePermission> },
+          { path: 'sucursales', element: <RequirePermission permission="BRANCH_READ"><PortalBranchesPage /></RequirePermission> },
+          { path: 'equipo', element: <RequirePermission permission="COLLABORATOR_READ"><PortalTeamPage /></RequirePermission> },
+          { path: 'tienda', element: <RequirePermission permission="STORE_READ"><PortalStorePage /></RequirePermission> },
+          { path: 'plan', element: <RequirePermission permission="STORE_READ"><PortalPlanPage /></RequirePermission> },
           { path: '*', element: <Navigate to="inicio" replace /> },
         ],
       },
