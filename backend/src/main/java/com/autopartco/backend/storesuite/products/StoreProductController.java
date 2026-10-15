@@ -16,7 +16,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.autopartco.backend.core.catalog.ProductCreateRequest;
+import com.autopartco.backend.core.catalog.ProductListingRequest;
 import com.autopartco.backend.core.catalog.ProductPublicationRequest;
+import com.autopartco.backend.core.catalog.StoreProductDetail;
 import com.autopartco.backend.core.catalog.ProductResponse;
 import com.autopartco.backend.core.catalog.ProductUpdateRequest;
 import com.autopartco.backend.shared.web.ApiPaths;
@@ -34,6 +36,9 @@ public class StoreProductController {
     private final UpdateProduct updateProduct;
     private final PublishProduct publishProduct;
     private final DeleteProduct deleteProduct;
+    private final GetStoreProduct getStoreProduct;
+    private final AddProductListing addProductListing;
+    private final RemoveProductListing removeProductListing;
 
     @GetMapping("/products")
     public List<ProductResponse> list(@PathVariable UUID storeId, Authentication authentication) {
@@ -48,6 +53,37 @@ public class StoreProductController {
     ) {
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(createProduct.execute(storeId, authentication.getName(), request));
+    }
+
+    @GetMapping("/products/{productId}")
+    public StoreProductDetail detail(
+            @PathVariable UUID storeId,
+            @PathVariable UUID productId,
+            Authentication authentication
+    ) {
+        return getStoreProduct.execute(storeId, productId, authentication.getName());
+    }
+
+    @PostMapping("/products/{productId}/listings")
+    public ResponseEntity<StoreProductDetail> addListing(
+            @PathVariable UUID storeId,
+            @PathVariable UUID productId,
+            @Valid @RequestBody ProductListingRequest request,
+            Authentication authentication
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(addProductListing.execute(storeId, productId, authentication.getName(), request));
+    }
+
+    @DeleteMapping("/products/{productId}/listings/{branchId}")
+    public ResponseEntity<Void> removeListing(
+            @PathVariable UUID storeId,
+            @PathVariable UUID productId,
+            @PathVariable UUID branchId,
+            Authentication authentication
+    ) {
+        removeProductListing.execute(storeId, productId, branchId, authentication.getName());
+        return ResponseEntity.noContent().build();
     }
 
     @PatchMapping("/branches/{branchId}/products/{productId}")

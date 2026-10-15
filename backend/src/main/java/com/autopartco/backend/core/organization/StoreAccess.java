@@ -88,6 +88,13 @@ public class StoreAccess {
         }
     }
 
+    /** Indica si la persona es OWNER activo del almacén, sin lanzar excepción. */
+    @Transactional(readOnly = true)
+    public boolean isOwner(String email, UUID storeId) {
+        var account = findAccount(email);
+        return applicationAllowsAccess(storeId) && collaboratorRepository.isOwner(account.personId(), storeId);
+    }
+
     private boolean applicationAllowsAccess(UUID storeId) {
         return !applicationRepository.existsForStore(storeId)
                 || applicationRepository.isActive(storeId);

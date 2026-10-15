@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.autopartco.backend.core.inventory.internal.Inventory;
 import com.autopartco.backend.core.inventory.internal.InventoryRepository;
+import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
 
 import lombok.AllArgsConstructor;
@@ -47,5 +48,39 @@ public class StockService {
     @Transactional
     public void removeAllForProduct(UUID productId) {
         inventoryRepository.softDeleteAllForProduct(productId);
+    }
+
+    /** Agrega el producto a una sucursal; si ya está listado, {@code LISTING_ALREADY_EXISTS}. */
+    @Transactional
+    public void addListing(UUID branchId, UUID productId, Integer stock, BigDecimal price) {
+        if (!inventoryRepository.findListings(branchId, productId).isEmpty()) {
+            throw new ConflictException("LISTING_ALREADY_EXISTS", "El producto ya está listado en esa sucursal.");
+        }
+        if (inventoryRepository.restoreListing(branchId, productId, price, stock) == 0) {
+            createListing(branchId, productId, stock, price);
+        }
+    }
+
+    /** Borrado lógico del listado del producto en la sucursal; sin listado, {@code LISTING_NOT_FOUND}. */
+    @Transactional
+    public void removeListing(UUID storeId, UUID branchId, UUID productId) {
+        if (inventoryRepository.softDeleteListing(storeId, branchId, productId) == 0) {
+            throw new NotFoundException("LISTING_NOT_FOUND", "El producto no está listado en esa sucursal.");
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public long countListingsOfProduct(UUID productId) {
+        return inventoryRepository.countListingsOfProduct(productId);
+    }
+
+    /** Conteos de inventario del almacén: listados, agotados (stock ≤ 0) y con poco stock (0 &lt; stock ≤ 3). */
+    @Transactional(readOnly = true)
+    public StockSummary summaryForStore(UUID storeId) {
+        InventoryRepository.StockCounts counts = inventoryRepository.countStockForStore(storeId);
+        return new StockSummary(counts.getListings(), counts.getOutOfStock(), counts.getLowStock());
+    }
+
+    public record StockSummary(long listings, long outOfStock, long lowStock) {
     }
 }
