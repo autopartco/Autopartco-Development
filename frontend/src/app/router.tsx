@@ -115,7 +115,6 @@ export const router = createBrowserRouter([
       },
     ],
   },
-])
   {
     // Administración: solo ROLE_ROOT (la interfaz oculta; el servidor responde 403 a cualquier otro rol).
     path: 'admin',
@@ -131,3 +130,4 @@ export const router = createBrowserRouter([
       { path: '*', element: <Navigate to="solicitudes" replace /> },
     ],
   },
+])
