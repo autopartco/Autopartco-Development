@@ -53,7 +53,8 @@ class BackendApplicationTests {
 		assertNotNull(configuration);
 		assertTrue(configuration.getAllowedOrigins().contains("http://localhost:5173"));
 		assertTrue(configuration.getAllowedMethods().contains("POST"));
-		assertEquals(Boolean.FALSE, configuration.getAllowCredentials());
+		// La cookie HttpOnly del refresh token exige credenciales en CORS (orígenes explícitos, sin comodín).
+		assertEquals(Boolean.TRUE, configuration.getAllowCredentials());
 	}
 
 	@Test

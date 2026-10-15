@@ -11,6 +11,7 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -28,7 +29,9 @@ import com.autopartco.backend.storesuite.subscription.PaySubscriptionSimulated;
  * Cobro simulado y dashboard contra {@code autopartco_saas_test}. MUTA la BD (crea un pago): volver a sembrar con
  * {@code database/seeds/portal-dev/seed_portal_dev.sql} antes de repetir. Ejecutar solo, tras
  * {@code SaasPortalEndpointsDbTest}: {@code DB_NAME=autopartco_saas_test ./mvnw test -Dtest=SaasPaymentDbTest}.
+ * Solo corre con la variable de entorno {@code DB_NAME=autopartco_saas_test}: un {@code mvn install} normal la omite.
  */
+@EnabledIfEnvironmentVariable(named = "DB_NAME", matches = "autopartco_saas_test")
 @SpringBootTest
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class SaasPaymentDbTest {
