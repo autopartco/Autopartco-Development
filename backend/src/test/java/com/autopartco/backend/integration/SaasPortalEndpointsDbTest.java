@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.security.access.AccessDeniedException;
@@ -29,7 +30,9 @@ import com.autopartco.backend.storesuite.subscription.ListSubscriptionPayments;
  * Prueba de los casos de uso nuevos contra la BD de prueba {@code autopartco_saas_test}, sembrada con
  * {@code seed.sql} (fuera del repo). Ejecutar con {@code DB_NAME=autopartco_saas_test} y
  * {@code ./mvnw test -Dtest=SaasPortalEndpointsDbTest}. No prueba la capa HTTP: el módulo no tiene MockMvc.
+ * Solo corre con la variable de entorno {@code DB_NAME=autopartco_saas_test}: un {@code mvn install} normal la omite.
  */
+@EnabledIfEnvironmentVariable(named = "DB_NAME", matches = "autopartco_saas_test")
 @SpringBootTest
 class SaasPortalEndpointsDbTest {
     private static final String OWNER = "owner@test.co";
