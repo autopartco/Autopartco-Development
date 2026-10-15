@@ -53,7 +53,7 @@ public class Product extends BaseEntity {
     @Column(columnDefinition = "text")
     private String description;
 
-    /** Opcional. Único por almacén entre productos vigentes (índice parcial en BD y validación en ProductCatalog). */
+    /** Opcional y no único: identificador interno del vendedor; varios productos (de cualquier almacén) pueden compartirlo. */
     @Column(length = 100)
     private String sku;
 
