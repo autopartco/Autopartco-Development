@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.autopartco.backend.core.organization.StoreProfileResponse;
 import com.autopartco.backend.core.organization.StoreResponse;
 import com.autopartco.backend.core.organization.StoreStatusResponse;
 import com.autopartco.backend.core.organization.StoreUpdateRequest;
@@ -26,6 +27,12 @@ public class StoreProfileController {
     private final UpdateStoreProfile updateStoreProfile;
     private final GetStoreStatus getStoreStatus;
     private final ListMyStorePermissions listMyStorePermissions;
+    private final GetStoreProfile getStoreProfile;
+
+    @GetMapping("/{storeId}/profile")
+    public StoreProfileResponse profile(@PathVariable UUID storeId, Authentication authentication) {
+        return getStoreProfile.execute(storeId, authentication.getName());
+    }
 
     @PatchMapping("/{storeId}")
     public StoreResponse update(

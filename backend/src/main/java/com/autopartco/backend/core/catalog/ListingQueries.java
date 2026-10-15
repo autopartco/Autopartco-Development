@@ -81,6 +81,19 @@ public class ListingQueries {
               and b.id = ?
             """;
 
+    // Listados de un producto del almacén en cualquier sucursal (con su estado), por nombre de sucursal.
+    static final String STORE_PRODUCT_LISTINGS_SQL = """
+            select i.id as inventory_id, i.product_id, i.branch_id, b.store_id as branch_store_id,
+                   b.name as branch_name, bs.code as branch_state, i.price, i.stock
+            from inventory i
+            join branches b on b.id = i.branch_id and b.deleted_at is null
+            join states bs on bs.id = b.state and bs.deleted_at is null
+            where i.deleted_at is null
+              and i.product_id = ?
+              and b.store_id = ?
+            order by b.name
+            """;
+
     static final String PUBLISHED_LISTINGS_SQL = """
             select i.id, i.product_id, i.branch_id, b.store_id as branch_store_id, b.name as branch_name,
                    i.price, i.stock
@@ -98,7 +111,7 @@ public class ListingQueries {
               and ss.code = 'ACTIVE'
               and bs.code = 'ACTIVE'
               and i.stock > 0
-            order by p.name, s.bussnies_name, b.name
+            order by p.name, s.business_name, b.name
             """;
 
     static final String PUBLISHED_LISTING_SQL = """
@@ -119,7 +132,7 @@ public class ListingQueries {
               and ss.code = 'ACTIVE'
               and bs.code = 'ACTIVE'
               and i.stock > 0
-            order by i.price, s.bussnies_name, b.name
+            order by i.price, s.business_name, b.name
             """;
 
     private final JdbcTemplate jdbcTemplate;
@@ -146,6 +159,63 @@ public class ListingQueries {
         ListingRow row = DataAccessUtils.singleResult(
                 jdbcTemplate.query(STORE_LISTING_SQL, ListingQueries::mapRow, productId, storeId, branchId));
         return row == null ? Optional.empty() : Optional.of(toResponses(List.of(row)).getFirst());
+    }
+
+    /**
+     * Detalle de un producto del almacén con todos sus listados por sucursal. Si el producto no es del almacén,
+     * {@code PRODUCT_NOT_FOUND}. Es SQL nativo: tras escribir en la misma transacción, el llamador debe hacer
+     * {@code flush} antes.
+     */
+    @Transactional(readOnly = true)
+    public StoreProductDetail storeProductDetail(UUID storeId, UUID productId) {
+        productRepository.findOwned(storeId, productId)
+                .orElseThrow(() -> new NotFoundException("PRODUCT_NOT_FOUND", "No se encontró el repuesto."));
+        Product product = productRepository.findAllWithDetails(Set.of(productId)).stream()
+                .findFirst()
+                .orElseThrow(() -> new NotFoundException("PRODUCT_NOT_FOUND", "No se encontró el repuesto."));
+        List<DetailRow> rows = jdbcTemplate.query(
+                STORE_PRODUCT_LISTINGS_SQL,
+                (rs, rowNum) -> new DetailRow(
+                        mapRow(rs, rowNum),
+                        rs.getObject("inventory_id", UUID.class),
+                        rs.getString("branch_state")
+                ),
+                productId, storeId);
+        Set<UUID> existingCompatibilities = compatibilityService.existingAmong(Set.copyOf(product.getCompatibilityIds()));
+        List<ProductImageResponse> images = productImageRepository.findAllOfProducts(Set.of(productId)).stream()
+                .map(productImageMapper::toResponse)
+                .toList();
+        List<PromotionRule> activePromotions = priceCalculator.activeRulesAt(OffsetDateTime.now(ZoneOffset.UTC));
+        List<StoreProductDetail.Listing> listings = rows.stream()
+                .map(detail -> {
+                    ProductResponse listing = toResponse(detail.row(), product, existingCompatibilities, images, activePromotions);
+                    return new StoreProductDetail.Listing(
+                            detail.inventoryId(),
+                            detail.row().branchId(),
+                            detail.row().branchName(),
+                            detail.branchState(),
+                            listing.price(),
+                            listing.effectivePrice(),
+                            listing.appliedPromotionName(),
+                            listing.quantity()
+                    );
+                })
+                .toList();
+        return new StoreProductDetail(
+                product.getId(),
+                product.getStoreId(),
+                product.getName(),
+                product.getSku(),
+                product.getPartNumber(),
+                product.getDescription(),
+                product.getManufacturer().getId(),
+                product.getCategory().getId(),
+                product.getState().getCode(),
+                product.getAttributes(),
+                currentCompatibilities(product.getCompatibilityIds(), existingCompatibilities),
+                images,
+                listings
+        );
     }
 
     /** Listados visibles en el marketplace: producto, almacén y sucursal activos y con stock. */
@@ -246,6 +316,7 @@ public class ListingQueries {
                 row.branchId(),
                 row.branchName(),
                 product.getName(),
+                product.getSku(),
                 product.getPartNumber(),
                 product.getDescription(),
                 row.price(),
@@ -281,6 +352,10 @@ public class ListingQueries {
                 rs.getBigDecimal("price"),
                 rs.getObject("stock", Integer.class)
         );
+    }
+
+    /** Fila de listado con el id del inventario y el estado de la sucursal (detalle del producto). */
+    record DetailRow(ListingRow row, UUID inventoryId, String branchState) {
     }
 
     /** Fila de listado: un producto en una sucursal. */

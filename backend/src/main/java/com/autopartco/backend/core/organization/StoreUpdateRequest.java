@@ -17,10 +17,13 @@ public record StoreUpdateRequest(
         @Email(message = "El correo del almacén debe tener un formato válido.")
         @Size(max = 200, message = "El correo no puede superar 200 caracteres.")
         @Pattern(regexp = "(?s).*\\S.*", message = "El correo no puede estar vacío.")
-        String businessEmail
+        String businessEmail,
+
+        @Size(max = 1000, message = "La descripción no puede superar 1000 caracteres.")
+        String description
 ) {
     @AssertTrue(message = "Debe proporcionar al menos un dato permitido para actualizar.")
     public boolean hasChanges() {
-        return businessName != null || nit != null || businessEmail != null;
+        return businessName != null || nit != null || businessEmail != null || description != null;
     }
 }

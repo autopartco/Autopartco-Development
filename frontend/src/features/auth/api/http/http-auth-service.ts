@@ -57,6 +57,13 @@ interface Tokens {
   renewAt: number
 }
 
+let tokenProvider: (() => Promise<string | undefined>) | undefined
+
+/** Access token vigente para otros servicios http (portal). Sin sesión devuelve `undefined`. */
+export function getAccessToken(): Promise<string | undefined> {
+  return tokenProvider ? tokenProvider() : Promise.resolve(undefined)
+}
+
 export function createHttpAuthService(): AuthService {
   let tokens: Tokens | undefined
 
@@ -88,6 +95,8 @@ export function createHttpAuthService(): AuthService {
       return { name: email, email }
     }
   }
+
+  tokenProvider = accessToken
 
   return {
     simulated: false,

@@ -16,9 +16,10 @@ import jakarta.validation.constraints.Size;
 public record ProductCreateRequest(
         @NotNull UUID branchId,
         @NotBlank @Size(max = 200) String name,
+        @Size(max = 100) String sku,
         @Size(max = 50) String partNumber,
         @NotBlank String description,
-        @NotNull @DecimalMin("0.0") @Digits(integer = 10, fraction = 2) BigDecimal price,
+        @NotNull @DecimalMin("0.01") @Digits(integer = 10, fraction = 2) BigDecimal price,
         @NotNull @PositiveOrZero Integer quantity,
         @NotNull UUID manufacturerId,
         @NotNull UUID categoryId,

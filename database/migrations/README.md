@@ -76,6 +76,7 @@ Este directorio contiene las migraciones versionadas del esquema. Siguen la conv
 | `V202610141310__payment_risk` | Columnas de `payments`, `seller_payments.environment` (nullable) y `payment_risk_assessments` |
 | `V202610141320__analytics_phase2` | Demanda por vehículo, embudo de búsqueda, devoluciones, vistas materializadas (rotación, cohortes, RFM) y lead time de proveedores |
 | `V202610141330__phase_tenant_consistency` | Coherencia de `store_id`/`branch_id` desnormalizados en las tablas nuevas |
+| `V202610141400__seller_subscription_events_and_payments` | SaaS SA-D1: `seller_payments` con proveedor, snapshot y periodo; `seller_subscription_events` de solo inserción |
 
 Todas las de la fase 2 son transaccionales.
 
@@ -145,7 +146,7 @@ Todos llevan la cabecera `-- REQUIERE APROBACIÓN`, el plan de respaldo y su `PA
 | Archivo | Ref. | Qué hace | Requiere en backend |
 |---|---|---|---|
 | `PA_V202610140945__inventory_movements_constraints` | A4 | CHECK `movement_type IN ('IN','OUT')`, balance y dirección del motivo | `StockLedger` con IN/OUT |
-| `PA_V202610141110__timestamptz_existing_tables` | A3 | Todas las columnas TIMESTAMP de `public` pasan a TIMESTAMPTZ (UTC). Guarda y recrea las vistas dependientes. **Reescribe las tablas: con la app detenida** | `OffsetDateTime`/`Instant` y `hibernate.jdbc.time_zone: UTC` en el mismo despliegue |
+| `PA_V202610141110__timestamptz_existing_tables` | A3 | Todas las columnas TIMESTAMP de `public` pasan a TIMESTAMPTZ (`AT TIME ZONE public.legacy_source_tz()`; ejecutar con `autopartco.legacy_source_tz = 'America/Bogota'`). Guarda y recrea las vistas dependientes. **Reescribe las tablas: con la app detenida y respaldo previo** | Requiere en backend: la JVM con zona America/Bogota fijada en `BackendApplication.main` (ADR 0002) y `ddl-auto: validate`; no fijar `hibernate.jdbc.time_zone` |
 | `PA_V202610141500__contract_phase1_not_null` | A5 | NOT NULL en `inventory_movements.reason_code` y `order_details.product_id` | INSERT con esos campos |
 | `PA_V202610141510__database_roles` | A6 | Roles `autopartco_migrator/app/analyst/ml`, NOLOGIN y sin contraseñas. GRANT por esquema. Revoca UPDATE/DELETE en las tablas de solo inserción | `ddl-auto: validate` antes de usar `autopartco_app` |
 | `PA_V202610141520__retention_functions` | A9 | `detach_and_drop_partitions_older_than` y purgas de IP y de identity_links (dry-run por defecto) | `RetentionJob` |

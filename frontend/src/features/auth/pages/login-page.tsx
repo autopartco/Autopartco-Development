@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router'
+import { Link, Navigate, useLocation, useNavigate, useSearchParams } from 'react-router'
 import { FormAlert, PasswordField, TextField } from '@/components/common/form-fields'
 import { focusFirstError } from '../lib/account'
 import { Button } from '@/components/ui/button'
@@ -8,20 +8,20 @@ import { getAuthService } from '../api/auth-service'
 import { AuthShell, SimulatedNotice } from '../components/auth-shell'
 import { useSession, useSignOut } from '../hooks'
 import { compact, emailError, type FieldErrors } from '../lib/validation'
+import { safeReturnPath } from '../lib/return-path'
 import { setSession } from '../session-store'
 
 const FIELDS = ['email', 'password'] as const
 const fieldId = (field: string) => `ingreso-${field}`
 
-/** Solo rutas internas como destino de vuelta (evita redirecciones abiertas). */
-function safeReturnPath(value: unknown): string {
-  return typeof value === 'string' && value.startsWith('/') && !value.startsWith('//') ? value : '/'
-}
-
 export default function LoginPage() {
   const session = useSession()
   const navigate = useNavigate()
   const location = useLocation()
+  const [searchParams] = useSearchParams()
+  // Destino de vuelta: `?next=` (guardas de ruta) o `state.from`; solo rutas internas.
+  const returnTo = safeReturnPath(searchParams.get('next') ?? (location.state as { from?: unknown } | null)?.from)
+  const hasNext = searchParams.has('next') && returnTo !== '/'
   const { signOut, pending: signingOut } = useSignOut()
   const [errors, setErrors] = useState<FieldErrors>({})
   const [formError, setFormError] = useState<{ title: string; credentials?: boolean }>()
@@ -47,7 +47,7 @@ export default function LoginPage() {
     try {
       const service = await getAuthService()
       setSession(await service.login({ email, password }))
-      navigate(safeReturnPath((location.state as { from?: unknown } | null)?.from), { replace: true })
+      navigate(returnTo, { replace: true })
     } catch (error) {
       // El backend responde lo mismo si la contraseña no coincide, si la cuenta no está
       // verificada o si está bloqueada (no revela cuál): el mensaje cubre los tres casos.
@@ -64,6 +64,9 @@ export default function LoginPage() {
   }
 
   const crumbs = [{ label: 'Inicio', to: '/' }, { label: 'Ingresar' }]
+
+  // Ya hay sesión y venimos de una guarda de ruta: seguimos al destino sin pedir nada.
+  if (session && hasNext) return <Navigate to={returnTo} replace />
 
   if (session) {
     return (
@@ -90,7 +93,13 @@ export default function LoginPage() {
       crumbs={crumbs}
       label="Cuenta Autopartco"
       title="Ingresar"
-      description={<p>Entra con el correo y la contraseña de tu cuenta de cliente o de almacén.</p>}
+      description={
+        <p>
+          {hasNext
+            ? 'Ingresa para continuar donde ibas. Usa el correo y la contraseña de tu cuenta.'
+            : 'Entra con el correo y la contraseña de tu cuenta de cliente o de almacén.'}
+        </p>
+      }
     >
       <title>Ingresar | Autopartco</title>
       <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-5" aria-busy={submitting || undefined}>

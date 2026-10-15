@@ -37,13 +37,13 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class Store extends BaseEntity {
 
-    @Column(name = "bussnies_name", nullable = false, unique = true, length = 255)
+    @Column(name = "business_name", nullable = false, unique = true, length = 255)
     private String businessName;
 
     @Column(nullable = false, unique = true, length = 20)
     private String nit;
 
-    @Column(name = "bussnies_email", nullable = false, unique = true, length = 200)
+    @Column(name = "business_email", nullable = false, unique = true, length = 200)
     private String businessEmail;
 
     @ManyToOne(fetch = FetchType.LAZY)

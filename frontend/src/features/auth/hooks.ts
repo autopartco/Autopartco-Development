@@ -11,6 +11,26 @@ export function useSession(): Session | undefined {
   return useSyncExternalStore(subscribeSession, getSession, () => undefined)
 }
 
+/**
+ * Sesión más un indicador `ready`: `false` hasta que el servicio de cuentas cargó y pudo
+ * recuperar la sesión. Las guardas de ruta esperan a `ready` para no mandar a login por error.
+ */
+export function useSessionState(): { session: Session | undefined; ready: boolean } {
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    let active = true
+    getAuthService().then(
+      () => active && setReady(true),
+      () => active && setReady(true),
+    )
+    return () => {
+      active = false
+    }
+  }, [])
+  const session = useSyncExternalStore(subscribeSession, getSession, () => undefined)
+  return { session, ready }
+}
+
 /** Cierra la sesión (en el servidor si es real) y limpia la UI. */
 export function useSignOut() {
   const [pending, setPending] = useState(false)

@@ -39,7 +39,7 @@ spring:
     hibernate:
       ddl-auto: validate
     properties:
-      hibernate.jdbc.time_zone: UTC
+      # sin hibernate.jdbc.time_zone: ver ADR 0002
 ```
 
 ### 2.2 Convención de nombres
@@ -80,7 +80,7 @@ Reglas:
 ### 2.5 Política de tiempo (**requiere aprobación** para tablas existentes)
 
 - **Tablas nuevas:** siempre `TIMESTAMPTZ` y fechas de negocio en `DATE` calculadas en `America/Bogota`.
-- **Tablas existentes:** conversión `TIMESTAMP → TIMESTAMPTZ` en una migración propia (`V..__timestamptz_existing_tables.sql`) con `ALTER COLUMN ... TYPE timestamptz USING <col> AT TIME ZONE 'UTC'`. Es un **cambio de tipo y reescritura de tablas: requiere aprobación**. Va acompañada del cambio del backend de `LocalDateTime` a `OffsetDateTime`/`Instant` y de `hibernate.jdbc.time_zone: UTC`. Como la BD es desechable, no hace falta corregir datos históricos mal zonificados.
+- **Tablas existentes:** conversión `TIMESTAMP → TIMESTAMPTZ` en una migración propia (`V..__timestamptz_existing_tables.sql`) con `ALTER COLUMN ... TYPE timestamptz USING <col> AT TIME ZONE 'UTC'`. Es un **cambio de tipo y reescritura de tablas: requiere aprobación**. **Corrección (ADR [0002](0002-zona-horaria-y-timestamptz.md)):** no hace falta cambiar `LocalDateTime` (valida con `validate` sobre `timestamptz`) ni fijar `hibernate.jdbc.time_zone`, que no tiene efecto sobre `timestamptz`; se fija la zona de la JVM en `America/Bogota` y la migración usa `autopartco.legacy_source_tz = 'America/Bogota'`. Como la BD es desechable, no hace falta corregir datos históricos mal zonificados.
 
 ## 3. Alternativas consideradas
 
@@ -107,7 +107,7 @@ Reglas:
 **Orden de implementación**
 1. Usuario: aprueba la dependencia Flyway, la recreación de la BD desechable y, por separado, la conversión a `timestamptz`.
 2. `database`: `V202610140900__baseline_schema.sql` + `U...`, encabezado de obsolescencia en `init.sql`.
-3. `backend`: dependencias y recursos en `pom.xml`, configuración `spring.flyway.*`, `ddl-auto: validate`, `hibernate.jdbc.time_zone: UTC`; arranque de humo.
+3. `backend`: dependencias y recursos en `pom.xml`, configuración `spring.flyway.*`, `ddl-auto: validate`, zona de la JVM fija (ADR 0002); arranque de humo.
 4. `qa-seguridad`: comprueba que `clean-disabled: true` está activo, que no hay credenciales en las migraciones y que el arranque falla ante deriva (columna eliminada a propósito en una BD de prueba).
 
 ## 5. Decisiones que requieren aprobación (resumen)

@@ -1,4 +1,5 @@
-import { createBrowserRouter } from 'react-router'
+import { Suspense } from 'react'
+import { createBrowserRouter, Navigate } from 'react-router'
 import NotFoundPage from '@/features/marketplace/pages/not-found-page'
 import {
   CartPage,
@@ -10,6 +11,18 @@ import {
   LoginPage,
   OrderResultPage,
   PasswordRecoveryPage,
+  PortalBranchesPage,
+  PortalIndexPage,
+  PortalLayout,
+  PortalOrderDetailPage,
+  PortalOrdersPage,
+  PortalOverviewPage,
+  PortalPlanPage,
+  PortalProductFormPage,
+  PortalProductsPage,
+  PortalRoot,
+  PortalStorePage,
+  PortalTeamPage,
   ProductPage,
   RegisterPage,
   SearchPage,
@@ -18,6 +31,7 @@ import {
   StoresPage,
   VerifyEmailPage,
 } from './lazy-pages'
+import { PageFallback } from './page-fallback'
 import { RootLayout } from './root-layout'
 import { RouteError } from './route-error'
 
@@ -51,6 +65,38 @@ export const router = createBrowserRouter([
           // El correo de verificación del backend enlaza a `{APP_FRONTEND_BASE_URL}/verify-email?token=`.
           { path: 'verify-email', element: <VerifyEmailPage /> },
           { path: '*', element: <NotFoundPage /> },
+        ],
+      },
+    ],
+  },
+  {
+    // Portal del almacén: su propia carcasa (sin cabecera ni pie del marketplace) y sesión obligatoria.
+    // El cliente solo oculta navegación; cada petición la autoriza el servidor.
+    path: 'portal',
+    element: (
+      <Suspense fallback={<PageFallback />}>
+        <PortalRoot />
+      </Suspense>
+    ),
+    errorElement: <RouteError />,
+    children: [
+      { index: true, element: <PortalIndexPage /> },
+      {
+        path: ':storeId',
+        element: <PortalLayout />,
+        children: [
+          { index: true, element: <Navigate to="inicio" replace /> },
+          { path: 'inicio', element: <PortalOverviewPage /> },
+          { path: 'productos', element: <PortalProductsPage /> },
+          { path: 'productos/nuevo', element: <PortalProductFormPage /> },
+          { path: 'productos/:productId', element: <PortalProductFormPage /> },
+          { path: 'pedidos', element: <PortalOrdersPage /> },
+          { path: 'pedidos/:saleId', element: <PortalOrderDetailPage /> },
+          { path: 'sucursales', element: <PortalBranchesPage /> },
+          { path: 'equipo', element: <PortalTeamPage /> },
+          { path: 'tienda', element: <PortalStorePage /> },
+          { path: 'plan', element: <PortalPlanPage /> },
+          { path: '*', element: <Navigate to="inicio" replace /> },
         ],
       },
     ],
