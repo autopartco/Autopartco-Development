@@ -2,12 +2,10 @@ package com.autopartco.backend.core.catalog;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -35,7 +33,6 @@ import com.autopartco.backend.core.catalog.internal.ProductRepository;
 import com.autopartco.backend.core.inventory.StockService;
 import com.autopartco.backend.core.organization.BranchService;
 import com.autopartco.backend.core.vehicle.CompatibilityService;
-import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.persistence.State;
 import com.autopartco.backend.shared.persistence.StateRepository;
 
@@ -110,57 +107,35 @@ class ProductSkuTest {
         ArgumentCaptor<Product> captor = ArgumentCaptor.forClass(Product.class);
         verify(productRepository).save(captor.capture());
         assertNull(captor.getValue().getSku());
-        verify(productRepository, never()).skuInUse(any(), any(), any());
     }
 
     @Test
-    void skuRepetidoEnElMismoAlmacenLanzaConflicto() {
-        when(productRepository.skuInUse(STORE_A, "ABC-1", null)).thenReturn(true);
+    void skuNoEsUnicoNiSiquieraDentroDelMismoAlmacen() {
+        catalog.create(STORE_A, createRequest("ABC-1", new BigDecimal("10.00")));
+        catalog.create(STORE_A, createRequest("ABC-1", new BigDecimal("12.00")));
 
-        ConflictException ex = assertThrows(ConflictException.class,
-                () -> catalog.create(STORE_A, createRequest(" ABC-1 ", new BigDecimal("10.00"))));
-
-        assertEquals("PRODUCT_SKU_ALREADY_EXISTS", ex.getCode());
-        assertEquals("Ya existe un repuesto con ese SKU en el almacén.", ex.getMessage());
-        verify(productRepository, never()).save(any());
+        verify(productRepository, times(2)).save(any(Product.class));
     }
 
     @Test
     void mismoSkuEnOtroAlmacenEsValido() {
-        when(productRepository.skuInUse(STORE_A, "ABC-1", null)).thenReturn(true);
-        when(productRepository.skuInUse(STORE_B, "ABC-1", null)).thenReturn(false);
-
+        catalog.create(STORE_A, createRequest("ABC-1", new BigDecimal("10.00")));
         catalog.create(STORE_B, createRequest("ABC-1", new BigDecimal("10.00")));
 
         ArgumentCaptor<Product> captor = ArgumentCaptor.forClass(Product.class);
-        verify(productRepository).save(captor.capture());
-        assertEquals("ABC-1", captor.getValue().getSku());
+        verify(productRepository, times(2)).save(captor.capture());
+        assertEquals("ABC-1", captor.getAllValues().get(1).getSku());
     }
 
     @Test
-    void actualizarConSuPropioSkuNoChoca() {
-        Product existing = Product.builder().storeId(STORE_A).sku("ABC-1").build();
-        existing.setId(PRODUCT);
-        when(productRepository.findOwned(STORE_A, PRODUCT)).thenReturn(Optional.of(existing));
-        // La consulta excluye el propio producto, así que no hay otro con ese SKU.
-        when(productRepository.skuInUse(STORE_A, "ABC-1", PRODUCT)).thenReturn(false);
-
-        catalog.update(STORE_A, BRANCH, PRODUCT, updateRequest("ABC-1", null));
-
-        verify(productRepository).skuInUse(eq(STORE_A), eq("ABC-1"), eq(PRODUCT));
-        assertEquals("ABC-1", existing.getSku());
-    }
-
-    @Test
-    void actualizarConSkuDeOtroProductoLanzaConflicto() {
+    void actualizarConSkuDeOtroProductoEsValido() {
         Product existing = Product.builder().storeId(STORE_A).sku("OLD").build();
         existing.setId(PRODUCT);
         when(productRepository.findOwned(STORE_A, PRODUCT)).thenReturn(Optional.of(existing));
-        when(productRepository.skuInUse(STORE_A, "TAKEN", PRODUCT)).thenReturn(true);
 
-        assertThrows(ConflictException.class,
-                () -> catalog.update(STORE_A, BRANCH, PRODUCT, updateRequest("TAKEN", null)));
-        assertEquals("OLD", existing.getSku());
+        catalog.update(STORE_A, BRANCH, PRODUCT, updateRequest("TAKEN", null));
+
+        assertEquals("TAKEN", existing.getSku());
     }
 
     @Test

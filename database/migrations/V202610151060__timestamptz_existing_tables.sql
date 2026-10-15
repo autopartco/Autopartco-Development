@@ -1,4 +1,3 @@
--- REQUIERE APROBACIÓN (A3): cambio de tipo y reescritura de tablas
 -- =============================================================================
 -- V202610141110__timestamptz_existing_tables.sql
 -- Autopartco | PostgreSQL 16+ | ADR 0001 §2.5 / Diseño predictivo H4

@@ -1,4 +1,3 @@
--- REQUIERE APROBACIÓN (A5): contracción NOT NULL
 -- =============================================================================
 -- V202610141500__contract_phase1_not_null.sql
 -- Autopartco | PostgreSQL 16+ | Diseño predictivo §10.15 / §11 A5

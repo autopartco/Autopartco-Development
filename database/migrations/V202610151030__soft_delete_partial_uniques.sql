@@ -1,5 +1,4 @@
 -- flyway:executeInTransaction=false
--- REQUIERE APROBACIÓN: cambia la semántica de unicidad (elimina restricciones)
 -- =============================================================================
 -- V202610131025__soft_delete_partial_uniques.sql
 -- Autopartco | PostgreSQL 16+ | Auditoría puntos 6 y 21

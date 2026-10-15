@@ -50,7 +50,6 @@ public class ProductCatalog {
     public ProductResponse create(UUID storeId, ProductCreateRequest request) {
         branchService.requireActiveInStore(storeId, request.branchId());
         String sku = clean(request.sku());
-        requireSkuFree(storeId, sku, null);
         Product product = Product.builder()
                 .storeId(storeId)
                 .name(request.name().trim())
@@ -80,9 +79,7 @@ public class ProductCatalog {
         if (request.name() != null) product.setName(request.name().trim());
         if (request.sku() != null) {
             // Semántica existente: "" o solo espacios borra el SKU (igual que partNumber); null = no cambiar.
-            String sku = clean(request.sku());
-            requireSkuFree(storeId, sku, productId);
-            product.setSku(sku);
+            product.setSku(clean(request.sku()));
         }
         if (request.partNumber() != null) product.setPartNumber(clean(request.partNumber()));
         if (request.description() != null) product.setDescription(request.description().trim());
@@ -185,13 +182,6 @@ public class ProductCatalog {
     private State findState(String code) {
         return stateRepository.findByCode(code)
                 .orElseThrow(() -> new NotFoundException("PRODUCT_STATE_NOT_FOUND", "No está configurado el estado."));
-    }
-
-    /** El SKU es opcional; si se informa, no puede repetirse en otro producto del mismo almacén. */
-    private void requireSkuFree(UUID storeId, String sku, UUID excludeProductId) {
-        if (sku != null && productRepository.skuInUse(storeId, sku, excludeProductId)) {
-            throw new ConflictException("PRODUCT_SKU_ALREADY_EXISTS", "Ya existe un repuesto con ese SKU en el almacén.");
-        }
     }
 
     private String clean(String value) {

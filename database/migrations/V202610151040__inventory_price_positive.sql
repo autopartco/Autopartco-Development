@@ -1,4 +1,3 @@
--- REQUIERE APROBACIÓN + cambio de backend previo
 -- =============================================================================
 -- V202610131030__inventory_price_positive.sql
 -- Autopartco | PostgreSQL 16+ | Auditoría punto 18

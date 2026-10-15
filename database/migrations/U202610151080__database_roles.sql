@@ -1,4 +1,3 @@
--- REQUIERE APROBACIÓN (cambio de seguridad)
 -- =============================================================================
 -- U202610141510__database_roles.sql  (rollback de A6)
 -- Revoca los permisos y elimina los roles. Antes, la aplicación debe volver a

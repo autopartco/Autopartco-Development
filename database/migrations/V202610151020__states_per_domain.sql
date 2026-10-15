@@ -1,4 +1,3 @@
--- REQUIERE APROBACIÓN: restringe los estados permitidos por dominio
 -- =============================================================================
 -- V202610131020__states_per_domain.sql
 -- Autopartco | PostgreSQL 16+ | Auditoría punto 15
