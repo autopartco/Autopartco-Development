@@ -267,7 +267,7 @@ function ProductForm({
         disabled={pending}
       />
 
-      <div className="flex flex-wrap gap-2">
+      <div className="sticky bottom-0 z-10 -mx-4 flex flex-wrap gap-2 border-t border-border bg-background/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0">
         <Button type="submit" className="h-11 px-6" disabled={pending}>
           {pending ? 'Guardando…' : mode === 'create' ? 'Crear producto' : 'Guardar cambios'}
         </Button>

@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { toast } from 'sonner'
-import { InfoIcon, MailPlusIcon, MoreHorizontalIcon, RefreshCwIcon, UserRoundXIcon, UsersIcon } from 'lucide-react'
+import { InfoIcon, MailPlusIcon, MoreHorizontalIcon, RefreshCwIcon, SearchXIcon, UserRoundXIcon, UsersIcon } from 'lucide-react'
+import { ResultCount, SearchField } from '../components/search-field'
+import { normalizeText } from '../lib/fuzzy'
 import { DataTable, type DataColumn } from '@/components/common/data-table'
 import { EmptyState } from '@/components/common/states'
 import { Button } from '@/components/ui/button'
@@ -44,6 +46,11 @@ function TeamView({ staff }: { staff: Staff }) {
   const [busyId, setBusyId] = useState<string>()
   const usage = subscription?.usage.users
   const lacksRoles = subscription !== undefined && !subscription.capabilities.includes('CUSTOM_ROLES')
+  const [memberQuery, setMemberQuery] = useState('')
+  const members = useMemo(() => {
+    const term = normalizeText(memberQuery)
+    return staff.members.filter((member) => !term || normalizeText(`${member.name} ${member.surname} ${member.email}`).includes(term))
+  }, [staff.members, memberQuery])
 
   async function resend(invitation: StaffInvitation) {
     setBusyId(invitation.id)
@@ -123,7 +130,23 @@ function TeamView({ staff }: { staff: Staff }) {
         {staff.members.length === 0 ? (
           <EmptyState icon={<UsersIcon />} title="Aún no hay colaboradores" description="Cuando alguien acepte una invitación aparecerá aquí." className="py-8" />
         ) : (
-          <DataTable caption="Colaboradores del almacén" columns={MEMBER_COLUMNS} rows={staff.members} getRowId={(row) => row.id} />
+          <>
+            {staff.members.length > 5 ? (
+              <form role="search" aria-label="Buscar colaboradores" onSubmit={(event) => event.preventDefault()} className="max-w-md">
+                <SearchField value={memberQuery} onChange={setMemberQuery} placeholder="Nombre o correo" />
+              </form>
+            ) : null}
+            <ResultCount shown={members.length} total={staff.members.length} singular="colaborador" plural="colaboradores" />
+            {members.length === 0 ? (
+              <EmptyState icon={<SearchXIcon />} title="Nadie coincide con la búsqueda" description="Revisa el nombre o el correo." className="py-8">
+                <Button variant="outline" className="h-11 px-4" onClick={() => setMemberQuery('')}>
+                  Quitar búsqueda
+                </Button>
+              </EmptyState>
+            ) : (
+              <DataTable caption="Colaboradores del almacén" columns={MEMBER_COLUMNS} rows={members} getRowId={(row) => row.id} pageSize={10} />
+            )}
+          </>
         )}
       </section>
 

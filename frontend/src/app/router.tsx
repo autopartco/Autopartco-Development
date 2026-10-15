@@ -14,6 +14,7 @@ import {
   OrderResultPage,
   PasswordRecoveryPage,
   PortalBranchesPage,
+  PortalInventoryPage,
   PortalIndexPage,
   PortalLayout,
   PortalOrderDetailPage,
@@ -23,6 +24,7 @@ import {
   PortalPlanPage,
   PortalProductFormPage,
   PortalProductsPage,
+  PortalSalesPage,
   PortalRoot,
   PortalStorePage,
   PortalTeamPage,
@@ -101,6 +103,8 @@ export const router = createBrowserRouter([
           // La sección por defecto no es fija: si no hay acceso a Inicio, RequirePermission redirige.
           { index: true, element: <Navigate to="inicio" replace /> },
           { path: 'inicio', element: <RequirePermission permission="STORE_READ"><PortalOverviewPage /></RequirePermission> },
+          { path: 'ventas', element: <RequirePermission permission="ORDER_READ"><PortalSalesPage /></RequirePermission> },
+          { path: 'inventario', element: <RequirePermission permission="PRODUCT_READ"><PortalInventoryPage /></RequirePermission> },
           { path: 'productos', element: <RequirePermission permission="PRODUCT_READ"><PortalProductsPage /></RequirePermission> },
           { path: 'productos/nuevo', element: <RequirePermission permission="PRODUCT_CREATE"><PortalProductFormPage /></RequirePermission> },
           { path: 'productos/:productId', element: <RequirePermission permission="PRODUCT_READ"><PortalProductFormPage /></RequirePermission> },
@@ -115,7 +119,6 @@ export const router = createBrowserRouter([
       },
     ],
   },
-])
   {
     // Administración: solo ROLE_ROOT (la interfaz oculta; el servidor responde 403 a cualquier otro rol).
     path: 'admin',
@@ -131,3 +134,4 @@ export const router = createBrowserRouter([
       { path: '*', element: <Navigate to="solicitudes" replace /> },
     ],
   },
+])

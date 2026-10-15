@@ -1,5 +1,5 @@
 import { useId, useMemo, useState, type ReactNode } from 'react'
-import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon } from 'lucide-react'
+import { ArrowDownIcon, ArrowUpDownIcon, ArrowUpIcon, ChevronLeftIcon, ChevronRightIcon } from 'lucide-react'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { cn } from '@/lib/utils'
 
@@ -25,6 +25,8 @@ interface DataTableProps<T> {
   getRowId: (row: T) => string
   defaultSort?: { columnId: string; direction: 'asc' | 'desc' }
   className?: string
+  /** Con valor, la tabla pagina en el cliente (controles «Anterior / Siguiente» bajo la tabla). */
+  pageSize?: number
 }
 
 const collator = new Intl.Collator('es-CO', { numeric: true, sensitivity: 'base' })
@@ -34,8 +36,9 @@ const collator = new Intl.Collator('es-CO', { numeric: true, sensitivity: 'base'
  * Por debajo de 40rem de ancho (del contenedor, no de la pantalla) cada fila pasa a tarjeta y
  * cada celda muestra su encabezado; el scroll horizontal es alcanzable con teclado.
  */
-export function DataTable<T>({ caption, columns, rows, getRowId, defaultSort, className }: DataTableProps<T>) {
+export function DataTable<T>({ caption, columns, rows, getRowId, defaultSort, className, pageSize }: DataTableProps<T>) {
   const [sort, setSort] = useState(defaultSort)
+  const [page, setPage] = useState(0)
   const captionId = useId()
 
   const sorted = useMemo(() => {
@@ -51,7 +54,12 @@ export function DataTable<T>({ caption, columns, rows, getRowId, defaultSort, cl
     })
   }, [columns, rows, sort])
 
+  const pages = pageSize ? Math.max(1, Math.ceil(sorted.length / pageSize)) : 1
+  const current = Math.min(page, pages - 1)
+  const visible = pageSize ? sorted.slice(current * pageSize, (current + 1) * pageSize) : sorted
+
   function toggle(columnId: string) {
+    setPage(0)
     setSort((current) =>
       current?.columnId === columnId
         ? { columnId, direction: current.direction === 'asc' ? 'desc' : 'asc' }
@@ -62,6 +70,7 @@ export function DataTable<T>({ caption, columns, rows, getRowId, defaultSort, cl
   const sortedColumn = columns.find((column) => column.id === sort?.columnId)
 
   return (
+    <div className="flex flex-col gap-3">
     <div
       // Región enfocable para poder desplazar con teclado cuando la tabla no cabe.
       tabIndex={0}
@@ -107,7 +116,7 @@ export function DataTable<T>({ caption, columns, rows, getRowId, defaultSort, cl
           </TableRow>
         </TableHeader>
         <TableBody className="@max-[40rem]:block @max-[40rem]:space-y-3 @max-[40rem]:p-3">
-          {sorted.map((row) => (
+          {visible.map((row) => (
             <TableRow
               key={getRowId(row)}
               className="hover:bg-concrete/50 @max-[40rem]:mb-0 @max-[40rem]:block @max-[40rem]:overflow-hidden @max-[40rem]:rounded-lg @max-[40rem]:border @max-[40rem]:border-border @max-[40rem]:hover:bg-transparent"
@@ -148,6 +157,37 @@ export function DataTable<T>({ caption, columns, rows, getRowId, defaultSort, cl
       <p className="sr-only" aria-live="polite">
         {sortedColumn ? `Tabla ordenada por ${sortedColumn.header}, ${sort?.direction === 'asc' ? 'ascendente' : 'descendente'}.` : ''}
       </p>
+    </div>
+    {pageSize && pages > 1 ? (
+      <nav aria-label={`Paginación: ${caption}`} className="flex flex-wrap items-center justify-between gap-3 text-sm">
+        <p role="status" className="text-muted-foreground">
+          Mostrando {current * pageSize + 1} a {Math.min((current + 1) * pageSize, sorted.length)} de {sorted.length}
+        </p>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setPage(current - 1)}
+            disabled={current === 0}
+            className="inline-flex h-11 items-center gap-1 rounded-lg border border-input bg-card px-3 font-medium hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
+          >
+            <ChevronLeftIcon className="size-4" aria-hidden />
+            Anterior
+          </button>
+          <span className="px-1 text-muted-foreground tabular-nums">
+            Página {current + 1} de {pages}
+          </span>
+          <button
+            type="button"
+            onClick={() => setPage(current + 1)}
+            disabled={current >= pages - 1}
+            className="inline-flex h-11 items-center gap-1 rounded-lg border border-input bg-card px-3 font-medium hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
+          >
+            Siguiente
+            <ChevronRightIcon className="size-4" aria-hidden />
+          </button>
+        </div>
+      </nav>
+    ) : null}
     </div>
   )
 }

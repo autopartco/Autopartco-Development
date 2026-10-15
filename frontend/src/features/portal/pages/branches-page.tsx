@@ -1,6 +1,9 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import { MapPinIcon, MoreHorizontalIcon, PencilIcon, PlusIcon, PowerOffIcon } from 'lucide-react'
+import { MapPinIcon, MoreHorizontalIcon, PencilIcon, PlusIcon, PowerOffIcon, SearchXIcon } from 'lucide-react'
+import { SelectField } from '../components/form-controls'
+import { ResultCount, SearchField } from '../components/search-field'
+import { normalizeText } from '../lib/fuzzy'
 import { DataTable, type DataColumn } from '@/components/common/data-table'
 import { EmptyState } from '@/components/common/states'
 import { Button } from '@/components/ui/button'
@@ -22,6 +25,14 @@ function BranchesView({ branches }: { branches: Branch[] }) {
   const [sheetOpen, setSheetOpen] = useState(false)
   const [toDeactivate, setToDeactivate] = useState<Branch>()
   const usage = subscription?.usage.branches
+  const [q, setQ] = useState('')
+  const [state, setState] = useState('')
+  const filtered = useMemo(() => {
+    const term = normalizeText(q)
+    return branches.filter(
+      (branch) => (!state || branch.state === state) && (!term || normalizeText(`${branch.name} ${branch.location?.city ?? ''} ${branch.location?.department ?? ''}`).includes(term)),
+    )
+  }, [branches, q, state])
 
   const columns: DataColumn<Branch>[] = [
     {
@@ -109,7 +120,29 @@ function BranchesView({ branches }: { branches: Branch[] }) {
           className="max-w-md rounded-lg bg-card p-4 ring-1 ring-foreground/10"
         />
       ) : null}
-      <DataTable caption="Sucursales del almacén" columns={columns} rows={branches} getRowId={(row) => row.id} defaultSort={{ columnId: 'nombre', direction: 'asc' }} />
+      {branches.length > 4 ? (
+        <form role="search" aria-label="Filtrar sucursales" onSubmit={(event) => event.preventDefault()} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+          <SearchField value={q} onChange={setQ} placeholder="Nombre o ciudad" />
+          <SelectField id="filtro-estado-sucursal" label="Estado" placeholder="Todas" options={[{ value: 'ACTIVE', label: 'Activas' }, { value: 'INACTIVE', label: 'Inactivas' }]} value={state} onChange={(event) => setState(event.target.value)} />
+        </form>
+      ) : null}
+      <ResultCount shown={filtered.length} total={branches.length} singular="sucursal" plural="sucursales" />
+      {filtered.length === 0 ? (
+        <EmptyState icon={<SearchXIcon />} title="Ninguna sucursal coincide" description="Prueba con otro nombre o ciudad." className="py-8">
+          <Button
+            variant="outline"
+            className="h-11 px-4"
+            onClick={() => {
+              setQ('')
+              setState('')
+            }}
+          >
+            Quitar filtros
+          </Button>
+        </EmptyState>
+      ) : (
+        <DataTable caption="Sucursales del almacén" columns={columns} rows={filtered} getRowId={(row) => row.id} defaultSort={{ columnId: 'nombre', direction: 'asc' }} pageSize={10} />
+      )}
 
       <BranchSheet open={sheetOpen} onOpenChange={setSheetOpen} branch={editing} />
       <ConfirmDialog

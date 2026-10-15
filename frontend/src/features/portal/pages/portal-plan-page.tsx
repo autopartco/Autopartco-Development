@@ -17,6 +17,7 @@ import { StatusBadge } from '../components/status-badge'
 import { UsageMeter } from '../components/usage-meter'
 import { usePortal } from '../context'
 import { useStoreQuery } from '../hooks'
+import { Reveal, RevealGroup } from '../components/bento'
 import { capabilityLabel, formatDate, formatDays, SUBSCRIPTION_STATUS_LABEL, SUBSCRIPTION_STATUS_TONE } from '../lib/labels'
 
 function SummaryCard({ subscription }: { subscription: Subscription }) {
@@ -154,19 +155,21 @@ function PlanView({ subscription }: { subscription: Subscription }) {
         ) : plans.data === undefined ? (
           <CardsSkeleton count={3} label="Cargando planes" />
         ) : (
-          <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {plans.data
-              .toSorted((a, b) => a.monthlyPriceCop - b.monthlyPriceCop)
-              .map((plan) => (
-                <li key={plan.id}>
-                  <PlanCard
-                    plan={plan}
-                    current={plan.code === subscription.plan.code}
-                    action={<PlanAction plan={plan} subscription={subscription} onChoose={choose} />}
-                  />
-                </li>
-              ))}
-          </ul>
+          <RevealGroup>
+            <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {plans.data
+                .toSorted((a, b) => a.monthlyPriceCop - b.monthlyPriceCop)
+                .map((plan, index) => (
+                  <Reveal as="li" index={index} key={plan.id}>
+                    <PlanCard
+                      plan={plan}
+                      current={plan.code === subscription.plan.code}
+                      action={<PlanAction plan={plan} subscription={subscription} onChoose={choose} />}
+                    />
+                  </Reveal>
+                ))}
+            </ul>
+          </RevealGroup>
         )}
       </section>
 

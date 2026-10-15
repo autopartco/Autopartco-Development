@@ -15,6 +15,8 @@ import { PortalBrand, PortalHeader } from '../layout/portal-header'
 import { PortalNav } from '../layout/portal-nav'
 import { PlanBadge } from '../layout/plan-badge'
 import { StoreSwitcher } from '../layout/store-switcher'
+import { useCommandPalette } from '../lib/use-command-palette'
+import { CommandPalette, CommandPaletteButton } from './command-palette'
 import { ListSkeleton } from './list-skeleton'
 import { QueryError } from './query-boundary'
 import { SubscriptionBanner } from './subscription-banner'
@@ -95,6 +97,7 @@ export function PortalLayout() {
 function PortalShell({ storeId }: { storeId: string }) {
   const mainRef = useRef<HTMLElement>(null)
   useFocusMainOnNavigate(mainRef)
+  const palette = useCommandPalette()
 
   const stores = useAsync('portal:stores', async () => (await getPortalService()).myStores())
   const permissions = useAsync(`portal:${storeId}:permissions`, async () => (await getPortalService()).permissions(storeId))
@@ -173,7 +176,10 @@ function PortalShell({ storeId }: { storeId: string }) {
         >
           Saltar al contenido
         </a>
-        <PortalHeader start={<MobileMenu />} />
+        <PortalHeader
+          start={<MobileMenu />}
+          tools={permissions.status === 'success' && accessError === undefined && !inactive ? <CommandPaletteButton onClick={() => palette.setOpen(true)} /> : null}
+        />
         <div className="flex-1 lg:grid lg:grid-cols-[15rem_minmax(0,1fr)]">
           <aside className="hidden border-t border-asphalt-line bg-asphalt lg:block">
             <div className="sticky top-16 h-[calc(100svh-4rem)]">
@@ -202,6 +208,9 @@ function PortalShell({ storeId }: { storeId: string }) {
           </div>
         </div>
       </div>
+      {permissions.status === 'success' && accessError === undefined && !inactive ? (
+        <CommandPalette open={palette.open} onOpenChange={palette.setOpen} />
+      ) : null}
       <UpgradeDialog
         error={upgradeError}
         planName={subscription?.plan.name}
