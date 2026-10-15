@@ -13,8 +13,8 @@ export function getAuthService(): Promise<AuthService> {
     DATA_SOURCE === 'http'
       ? import('./http/http-auth-service').then((module) => module.createHttpAuthService())
       : import('./mock/mock-auth-service').then((module) => module.createMockAuthService())
-  ).then((service) => {
-    initSession(() => service.restore())
+  ).then(async (service) => {
+    await initSession(() => service.restore())
     return service
   })
   return servicePromise

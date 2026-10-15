@@ -24,10 +24,10 @@ export function subscribeSession(listener: () => void): () => void {
   return () => listeners.delete(listener)
 }
 
-/** Recupera una sesión al cargar la app (la llama el servicio una sola vez). */
-export function initSession(restore: () => Session | undefined): void {
+/** Recupera una sesión al cargar la app (la llama el servicio una sola vez). Espera a `restore` si es asíncrono. */
+export async function initSession(restore: () => Session | undefined | Promise<Session | undefined>): Promise<void> {
   if (initialized) return
   initialized = true
-  const restored = restore()
+  const restored = await restore()
   if (restored) setSession(restored)
 }

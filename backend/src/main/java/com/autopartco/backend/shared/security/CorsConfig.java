@@ -25,7 +25,8 @@ public class CorsConfig {
                 Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
         );
         configuration.setAllowedHeaders(Arrays.asList("*"));
-        configuration.setAllowCredentials(false);
+        // Necesario para que el navegador envíe la cookie del refresh token. Los orígenes son una lista explícita.
+        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/api/**", configuration);

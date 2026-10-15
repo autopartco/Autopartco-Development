@@ -51,6 +51,8 @@ export interface RequestOptions {
   /** Access token para rutas autenticadas. */
   token?: string
   signal?: AbortSignal
+  /** `include` envía la cookie de sesión al backend en otro puerto (login, refresh y logout). */
+  credentials?: RequestCredentials
 }
 
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
@@ -71,6 +73,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
       headers,
       body,
       signal: options.signal,
+      credentials: options.credentials,
     })
   } catch (cause) {
     throw new ApiError('No hay conexión con el servidor de Autopartco. Revisa tu internet e inténtalo de nuevo.', { cause })
