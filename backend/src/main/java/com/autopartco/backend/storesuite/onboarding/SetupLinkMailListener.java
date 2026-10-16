@@ -10,7 +10,7 @@ import com.autopartco.backend.core.notification.SellerSetupMailer;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-/** Envía el enlace de configuración solo si la transacción que emitió el token se confirmó. */
+/** Envía el correo de configuración solo si la transacción que lo pidió se confirmó. */
 @Component
 @AllArgsConstructor
 @Slf4j
@@ -21,7 +21,7 @@ class SetupLinkMailListener {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     void on(SetupLinkIssued event) {
         try {
-            sellerSetupMailer.send(event.applicantEmail(), event.applicantGivenName(), event.onboardingToken());
+            sellerSetupMailer.send(event.applicantEmail(), event.applicantGivenName());
         } catch (RuntimeException exception) {
             // Sin el objeto de la excepción: el mensaje del transporte puede incluir destinatario o enlace.
             log.error("Could not send seller setup link ({})", exception.getClass().getSimpleName());
