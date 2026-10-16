@@ -41,7 +41,45 @@ public class CompleteStoreSetup {
             String ipAddress,
             String userAgent
     ) {
-        StoreApplications.PendingSetup setup = storeApplications.lockForSetup(rawToken);
+        return complete(
+                storeApplications.lockForSetup(rawToken),
+                businessDescription,
+                logo,
+                banner,
+                ipAddress,
+                userAgent
+        );
+    }
+
+    /** Con la sesión de la dueña de la solicitud, sin token. Mismos efectos y respuesta que {@link #execute}. */
+    @Transactional
+    public StoreSetupResponse executeAuthenticated(
+            UUID applicationId,
+            String email,
+            String businessDescription,
+            MultipartFile logo,
+            MultipartFile banner,
+            String ipAddress,
+            String userAgent
+    ) {
+        return complete(
+                storeApplications.lockForOwnerSetup(applicationId, email),
+                businessDescription,
+                logo,
+                banner,
+                ipAddress,
+                userAgent
+        );
+    }
+
+    private StoreSetupResponse complete(
+            StoreApplications.PendingSetup setup,
+            String businessDescription,
+            MultipartFile logo,
+            MultipartFile banner,
+            String ipAddress,
+            String userAgent
+    ) {
         UUID storeId = setup.storeId();
         String newLogoPath = null;
         String newBannerPath = null;

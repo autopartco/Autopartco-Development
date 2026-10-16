@@ -1,10 +1,12 @@
 package com.autopartco.backend.core.organization;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.security.access.AccessDeniedException;
@@ -24,6 +26,7 @@ import com.autopartco.backend.core.organization.internal.StoreRepository;
 import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
+import com.autopartco.backend.shared.error.TooManyRequestsException;
 import com.autopartco.backend.shared.persistence.State;
 import com.autopartco.backend.shared.persistence.StateCodes;
 import com.autopartco.backend.shared.persistence.StateRepository;
@@ -40,6 +43,8 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor
 @Slf4j
 public class StoreApplications {
+    private static final Duration ONBOARDING_TOKEN_TTL = Duration.ofHours(48);
+    private static final Duration SETUP_LINK_COOLDOWN = Duration.ofMinutes(5);
 
     private final StoreApplicationRepository applicationRepository;
     private final StoreApplicationDocumentRepository documentRepository;
@@ -224,7 +229,7 @@ public class StoreApplications {
 
         String rawToken = TokenHashing.newToken();
         application.setOnboardingTokenHash(TokenHashing.sha256Hex(rawToken));
-        application.setOnboardingTokenExpiresAt(LocalDateTime.now().plusHours(48));
+        application.setOnboardingTokenExpiresAt(LocalDateTime.now().plus(ONBOARDING_TOKEN_TTL));
         application.setStatus(StoreApplicationStatus.CONFIGURATION_PENDING);
         return new Reviewed(toView(application, applicant), applicant.email(), applicant.givenName(), rawToken);
     }
@@ -257,6 +262,113 @@ public class StoreApplications {
                 application.getStore().getId(),
                 application.getApplicantAccountId()
         );
+    }
+
+    /**
+     * Como {@link #lockForSetup} pero con la sesión: bloquea la solicitud si es de la cuenta con ese correo y sigue
+     * en {@code CONFIGURATION_PENDING}, sin token.
+     *
+     * @throws NotFoundException {@code SELLER_APPLICATION_NOT_FOUND} (también si es de otra cuenta)
+     * @throws ConflictException {@code SELLER_SETUP_NOT_PENDING}, {@code SELLER_EMAIL_NOT_VERIFIED}
+     */
+    @Transactional
+    public PendingSetup lockForOwnerSetup(UUID applicationId, String email) {
+        StoreApplication application = lockOwned(applicationId, email);
+        requirePendingConfiguration(application);
+        if (!StateCodes.ACTIVE.equals(requireApplicant(application).stateCode())) {
+            throw new ConflictException(
+                    "SELLER_EMAIL_NOT_VERIFIED",
+                    "Verifica tu correo antes de terminar la configuración del almacén."
+            );
+        }
+        return new PendingSetup(
+                application.getId(),
+                application.getStore().getId(),
+                application.getApplicantAccountId()
+        );
+    }
+
+    /** Destinatario y token nuevo de un enlace de configuración reenviado. */
+    public record SetupLink(String applicantEmail, String applicantGivenName, String onboardingToken) {
+    }
+
+    /**
+     * Emite un token de configuración nuevo (48 h) para la solicitud de la cuenta con ese correo; el anterior deja
+     * de servir.
+     *
+     * @throws NotFoundException {@code SELLER_APPLICATION_NOT_FOUND} (también si es de otra cuenta)
+     * @throws ConflictException {@code SELLER_SETUP_NOT_PENDING}
+     * @throws TooManyRequestsException {@code SELLER_SETUP_LINK_COOLDOWN}
+     */
+    @Transactional
+    public SetupLink reissueOnboardingTokenForOwner(UUID applicationId, String email) {
+        StoreApplication application = lockOwned(applicationId, email);
+        requirePendingConfiguration(application);
+        requireCooldownElapsed(application);
+        return reissue(application);
+    }
+
+    /**
+     * Emite un token nuevo a partir del token anterior (vencido o no). Vacío si el token no corresponde a una
+     * solicitud {@code CONFIGURATION_PENDING} o si aún rige el enfriamiento: el llamador público no distingue.
+     */
+    @Transactional
+    public Optional<SetupLink> reissueOnboardingTokenByToken(String rawToken) {
+        if (rawToken == null || rawToken.isBlank()) {
+            return Optional.empty();
+        }
+        return applicationRepository.lockByOnboardingToken(TokenHashing.sha256Hex(rawToken))
+                .filter(application -> application.getStatus() == StoreApplicationStatus.CONFIGURATION_PENDING)
+                .filter(application -> !isCoolingDown(application))
+                .map(this::reissue);
+    }
+
+    private StoreApplication lockOwned(UUID applicationId, String email) {
+        StoreApplication application = applicationRepository.lockById(applicationId)
+                .orElseThrow(() -> new NotFoundException(
+                        "SELLER_APPLICATION_NOT_FOUND",
+                        "No se encontró la solicitud de vendedor."
+                ));
+        boolean owner = accountLookup.findById(application.getApplicantAccountId())
+                .map(applicant -> applicant.email().equalsIgnoreCase(email))
+                .orElse(false);
+        if (!owner) {
+            throw new NotFoundException("SELLER_APPLICATION_NOT_FOUND", "No se encontró la solicitud de vendedor.");
+        }
+        return application;
+    }
+
+    private void requirePendingConfiguration(StoreApplication application) {
+        if (application.getStatus() != StoreApplicationStatus.CONFIGURATION_PENDING) {
+            throw new ConflictException(
+                    "SELLER_SETUP_NOT_PENDING",
+                    "La solicitud no está pendiente de configuración."
+            );
+        }
+    }
+
+    /** El token se emite con vigencia {@link #ONBOARDING_TOKEN_TTL}: la emisión es {@code expiresAt - TTL}. */
+    private boolean isCoolingDown(StoreApplication application) {
+        LocalDateTime expiresAt = application.getOnboardingTokenExpiresAt();
+        return expiresAt != null
+                && LocalDateTime.now().isBefore(expiresAt.minus(ONBOARDING_TOKEN_TTL).plus(SETUP_LINK_COOLDOWN));
+    }
+
+    private void requireCooldownElapsed(StoreApplication application) {
+        if (isCoolingDown(application)) {
+            throw new TooManyRequestsException(
+                    "SELLER_SETUP_LINK_COOLDOWN",
+                    "Ya enviamos un enlace hace poco. Espera unos minutos antes de pedir otro."
+            );
+        }
+    }
+
+    private SetupLink reissue(StoreApplication application) {
+        AccountRef applicant = requireApplicant(application);
+        String rawToken = TokenHashing.newToken();
+        application.setOnboardingTokenHash(TokenHashing.sha256Hex(rawToken));
+        application.setOnboardingTokenExpiresAt(LocalDateTime.now().plus(ONBOARDING_TOKEN_TTL));
+        return new SetupLink(applicant.email(), applicant.givenName(), rawToken);
     }
 
     /**

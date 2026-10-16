@@ -4,12 +4,31 @@ import { FormAlert, PasswordField, TextField } from '@/components/common/form-fi
 import { focusFirstError } from '../lib/account'
 import { Button } from '@/components/ui/button'
 import { ApiError } from '@/lib/api'
+import { getSellerApplicationService } from '@/features/seller/api/seller-service'
+import { SELLER_SETUP_PATH } from '@/features/seller/hooks'
 import { getAuthService } from '../api/auth-service'
+import { accountKindOf } from '../lib/account-menu-items'
 import { AuthShell, SimulatedNotice } from '../components/auth-shell'
 import { useSession } from '../hooks'
 import { compact, emailError, type FieldErrors } from '../lib/validation'
 import { safeReturnPath } from '../lib/return-path'
 import { setSession } from '../session-store'
+
+/**
+ * Un cliente con solicitud aprobada pendiente de configurar va a terminarla, salvo que venga de una
+ * página concreta que no sea el portal. Si la consulta falla, sigue al destino normal.
+ */
+async function destinationAfterLogin(roles: readonly string[], returnTo: string): Promise<string> {
+  if (accountKindOf(roles) !== 'customer') return returnTo
+  if (returnTo !== '/' && !returnTo.startsWith('/portal')) return returnTo
+  try {
+    const applications = await (await getSellerApplicationService()).myApplications()
+    if (applications.some((application) => application.status === 'CONFIGURATION_PENDING')) return SELLER_SETUP_PATH
+  } catch {
+    // Sin solicitudes a la vista no se cambia el destino.
+  }
+  return returnTo
+}
 
 const FIELDS = ['email', 'password'] as const
 const fieldId = (field: string) => `ingreso-${field}`
@@ -45,8 +64,9 @@ export default function LoginPage() {
     setSubmitting(true)
     try {
       const service = await getAuthService()
-      setSession(await service.login({ email, password }))
-      navigate(returnTo, { replace: true })
+      const loggedIn = await service.login({ email, password })
+      setSession(loggedIn)
+      navigate(await destinationAfterLogin(loggedIn.roles, returnTo), { replace: true })
     } catch (error) {
       // El backend responde lo mismo si la contraseña no coincide, si la cuenta no está
       // verificada o si está bloqueada (no revela cuál): el mensaje cubre los tres casos.

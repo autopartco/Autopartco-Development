@@ -97,6 +97,9 @@ export interface SetupInput {
   banner?: File
 }
 
+/** Datos de la configuración sin el token (flujo con la sesión iniciada). */
+export type SetupDetails = Omit<SetupInput, 'token'>
+
 export interface SetupResult {
   storeId: string
   status: StoreApplicationStatus
@@ -113,4 +116,13 @@ export interface SellerApplicationService {
   myApplications(): Promise<MyStoreApplication[]>
   /** Configuración del almacén aprobado con el token del correo (`POST /store-applications/setup`). */
   completeSetup(input: SetupInput): Promise<SetupResult>
+  /**
+   * Configuración con la sesión iniciada, sin token (`POST /me/store-applications/{id}/setup`).
+   * Errores: 404 `SELLER_APPLICATION_NOT_FOUND`, 409 `SELLER_SETUP_NOT_PENDING` y `SELLER_EMAIL_NOT_VERIFIED`.
+   */
+  completeSetupAuthenticated(applicationId: string, input: SetupDetails): Promise<SetupResult>
+  /** Envía un enlace nuevo al correo (`POST /me/store-applications/{id}/setup-link`, 204). 429 `SELLER_SETUP_LINK_COOLDOWN`: espera 5 min. */
+  requestSetupLink(applicationId: string): Promise<void>
+  /** Igual con el token vencido (`POST /store-applications/setup/resend`, público): siempre 204. */
+  requestSetupLinkByToken(token: string): Promise<void>
 }

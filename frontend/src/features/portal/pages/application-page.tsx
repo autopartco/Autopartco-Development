@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { useAsync } from '@/lib/use-async'
 import { getSellerApplicationService } from '@/features/seller/api/seller-service'
 import type { MyStoreApplication, StoreApplicationStatus } from '@/features/seller/api/types'
-import { SELLER_CACHE_PREFIX } from '@/features/seller/hooks'
+import { SELLER_CACHE_PREFIX, SELLER_SETUP_PATH } from '@/features/seller/hooks'
 import { ListSkeleton } from '../components/list-skeleton'
 import { PageHeader } from '../components/page-header'
 import { QueryError } from '../components/query-boundary'
@@ -22,7 +22,7 @@ const STATUS: Record<StoreApplicationStatus, { label: string; tone: Tone; next: 
   CONFIGURATION_PENDING: {
     label: 'Falta configurar',
     tone: 'warning',
-    next: 'Aprobamos tu solicitud. Abre el enlace que te enviamos al correo para subir el logo y el banner de tu almacén.',
+    next: 'Aprobamos tu solicitud. Falta subir el logo y el banner y activar tu almacén; puedes hacerlo con tu cuenta o con el enlace del correo.',
   },
   ACTIVE: {
     label: 'Activo',
@@ -53,6 +53,11 @@ function ApplicationCard({ application }: { application: MyStoreApplication }) {
         </div>
       ) : null}
       <div className="flex flex-wrap gap-2">
+        {application.status === 'CONFIGURATION_PENDING' ? (
+          <Button className="h-11 px-5" nativeButton={false} render={<Link to={SELLER_SETUP_PATH} />}>
+            Continuar configuración
+          </Button>
+        ) : null}
         {application.status === 'ACTIVE' ? (
           <Button className="h-11 px-5" nativeButton={false} render={<Link to="/portal" />}>
             Ir a mi almacén
