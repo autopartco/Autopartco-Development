@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
-import { Link, Navigate, useNavigate, useSearchParams } from 'react-router'
-import { CheckIcon, MailIcon } from 'lucide-react'
+import { Link, Navigate, useNavigate } from 'react-router'
+import { CheckIcon } from 'lucide-react'
 import { FieldShell, FormAlert, INPUT_CLASS } from '@/components/common/form-fields'
 import { Button } from '@/components/ui/button'
-import { useSessionState } from '@/features/auth/hooks'
+import { useSessionState, useSignOut } from '@/features/auth/hooks'
 import { loginPathFor } from '@/features/auth/lib/return-path'
 import { ApiError } from '@/lib/api'
 import { cn } from '@/lib/utils'
 import { getSellerApplicationService } from '../api/seller-service'
 import { DOCUMENT_MAX_BYTES, type SetupDetails } from '../api/types'
-import { SELLER_APPLICATION_PATH, SELLER_SETUP_PATH, useSellerCta } from '../hooks'
+import { SELLER_SETUP_PATH, useSellerCta } from '../hooks'
 import { replaceSessionAfterSetup } from '../lib/replace-session'
 
 const IMAGE_ACCEPT = 'image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp'
@@ -20,7 +20,6 @@ const SHELL = 'mx-auto w-full max-w-xl px-4 py-10'
 /** Mensaje para el usuario según el código de error del backend al configurar el almacén. */
 function setupErrorMessage(error: unknown): string {
   if (error instanceof ApiError) {
-    if (error.code === 'SELLER_SETUP_TOKEN_INVALID') return 'El enlace venció o ya fue utilizado.'
     if (error.code === 'SELLER_EMAIL_NOT_VERIFIED') return 'Verifica tu correo antes de terminar la configuración del almacén.'
     if (error.code === 'SELLER_SETUP_NOT_PENDING') return 'Esta solicitud ya no está pendiente de configuración. Revisa su estado en tu portal.'
     if (error.code === 'SELLER_APPLICATION_NOT_FOUND') return 'No encontramos tu solicitud. Vuelve a iniciar sesión e inténtalo de nuevo.'
@@ -266,58 +265,9 @@ function SetupWizard({ submit }: WizardProps) {
   )
 }
 
-// ------------------------------------------------------------------ enlace vencido
+// ------------------------------------------------------------------ flujo con sesión
 
-/** Mensaje de espera/neutro tras pedir un enlace nuevo. */
-function linkErrorMessage(error: unknown): string {
-  if (error instanceof ApiError && error.code === 'SELLER_SETUP_LINK_COOLDOWN') {
-    return 'Ya te enviamos un enlace hace poco. Espera 5 minutos antes de pedir otro y revisa también tu carpeta de spam.'
-  }
-  return error instanceof ApiError ? error.message : 'No pudimos enviar el enlace. Inténtalo de nuevo.'
-}
-
-function ExpiredLink({ token, hasSession }: { token: string; hasSession: boolean }) {
-  const [sending, setSending] = useState(false)
-  const [notice, setNotice] = useState<{ tone: 'info' | 'error'; text: string }>()
-
-  async function resend() {
-    setSending(true)
-    setNotice(undefined)
-    try {
-      await (await getSellerApplicationService()).requestSetupLinkByToken(token)
-      // Respuesta neutra: no revela si el enlace correspondía a una solicitud.
-      setNotice({ tone: 'info', text: 'Si tu solicitud está pendiente de configurar, te enviamos un enlace nuevo al correo de tu cuenta. Puede tardar unos minutos.' })
-    } catch (error) {
-      setNotice({ tone: 'error', text: linkErrorMessage(error) })
-    } finally {
-      setSending(false)
-    }
-  }
-
-  return (
-    <Shell title="Este enlace ya no sirve">
-      <p className="mt-2 text-muted-foreground">Venció o ya se usó. Puedes terminar la configuración de dos maneras.</p>
-      <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-        <Button className="h-11 px-5" nativeButton={false} render={<Link to={hasSession ? SELLER_SETUP_PATH : loginPathFor(SELLER_SETUP_PATH)} replace />}>
-          Continuar con mi cuenta
-        </Button>
-        <Button variant="outline" className="h-11 gap-2 px-5" disabled={sending} onClick={() => void resend()}>
-          <MailIcon className="size-4" aria-hidden />
-          {sending ? 'Enviando…' : 'Enviarme un nuevo enlace'}
-        </Button>
-      </div>
-      <div aria-live="polite">
-        {notice ? (
-          <p className={cn('mt-4 text-sm', notice.tone === 'error' ? 'font-medium text-destructive' : 'text-muted-foreground')}>{notice.text}</p>
-        ) : null}
-      </div>
-      {!hasSession ? <p className="mt-4 text-sm text-muted-foreground">Con tu cuenta no necesitas el enlace del correo.</p> : null}
-    </Shell>
-  )
-}
-
-// ------------------------------------------------------------------ flujos
-
+/** Al terminar, reemplaza la sesión con los tokens nuevos (rol de gerente) y entra al portal. */
 function useFinish() {
   const navigate = useNavigate()
   return async function finish() {
@@ -326,45 +276,63 @@ function useFinish() {
   }
 }
 
-/** `?token=`: el enlace del correo de aprobación. */
-function TokenSetup({ token }: { token: string }) {
-  const { session } = useSessionState()
-  const finish = useFinish()
-  const [expired, setExpired] = useState(false)
+/** Cuenta con sesión que no es la solicitante: ofrece cambiar de cuenta y volver aquí. */
+function WrongAccount() {
+  const navigate = useNavigate()
+  const { signOut, pending } = useSignOut()
+  const headingRef = useRef<HTMLHeadingElement>(null)
+  useEffect(() => headingRef.current?.focus(), [])
 
-  if (expired) return <ExpiredLink token={token} hasSession={Boolean(session)} />
+  async function switchAccount() {
+    await signOut()
+    navigate(loginPathFor(SELLER_SETUP_PATH), { replace: true })
+  }
 
   return (
-    <Shell title="Configura tu almacén">
-      <SetupWizard
-        submit={async (details) => {
-          try {
-            await (await getSellerApplicationService()).completeSetup({ token, ...details })
-          } catch (error) {
-            if (error instanceof ApiError && error.code === 'SELLER_SETUP_TOKEN_INVALID') {
-              setExpired(true)
-              return
-            }
-            throw error
-          }
-          await finish()
-        }}
-      />
-    </Shell>
+    <div className={SHELL}>
+      <title>Configura tu almacén | Autopartco</title>
+      <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-semibold outline-none">
+        Esta cuenta no puede configurar el almacén
+      </h1>
+      <p className="mt-2 text-muted-foreground" role="status">
+        Esta cuenta no tiene una configuración de almacén pendiente. Si el enlace era de otra cuenta, cámbiala.
+      </p>
+      <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+        <Button className="h-11 px-5" disabled={pending} onClick={() => void switchAccount()}>
+          {pending ? 'Cerrando sesión…' : 'Cambiar de cuenta'}
+        </Button>
+        <Button variant="outline" className="h-11 px-5" nativeButton={false} render={<Link to="/" />}>
+          Ir al inicio
+        </Button>
+      </div>
+    </div>
   )
 }
 
-/** Sin token: la cuenta con sesión configura la solicitud `CONFIGURATION_PENDING` que le aprobaron. */
-function SessionSetup() {
+/**
+ * `/seller/setup`: exige sesión. La cuenta solicitante, con su solicitud `CONFIGURATION_PENDING`, completa
+ * marca y descripción, se activa y la sesión pasa a gerente del almacén. Un `?token=` de enlaces viejos
+ * se ignora y se borra de la URL: la identidad sale siempre de la sesión (ADR 0003).
+ */
+export default function SellerSetupPage() {
   const { session, ready } = useSessionState()
   const seller = useSellerCta()
   const finish = useFinish()
+
+  // Saca un `?token=` heredado de la barra y del historial. Se conserva history.state para no romper el router.
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).has('token')) {
+      window.history.replaceState(window.history.state, '', SELLER_SETUP_PATH)
+    }
+  }, [])
 
   if (!ready) return <Shell title="Configura tu almacén"><p className="mt-4 text-muted-foreground" role="status">Cargando…</p></Shell>
   if (!session) return <Navigate to={loginPathFor(SELLER_SETUP_PATH)} replace />
   if (seller.state === 'loading') {
     return <Shell title="Configura tu almacén"><p className="mt-4 text-muted-foreground" role="status">Buscando tu solicitud…</p></Shell>
   }
+  // Almacén ya activo (solicitud ACTIVE o rol de almacén): nada que configurar.
+  if (seller.state === 'manage') return <Navigate to="/portal" replace />
 
   const application = seller.application
   if (seller.state === 'review' && application?.status === 'CONFIGURATION_PENDING') {
@@ -379,52 +347,5 @@ function SessionSetup() {
       </Shell>
     )
   }
-
-  if (seller.state === 'review') {
-    return (
-      <Shell title="Tu solicitud sigue en revisión">
-        <p className="mt-2 text-muted-foreground">Cuando la aprobemos podrás terminar la configuración aquí.</p>
-        <Button className="mt-6 h-11 px-5" nativeButton={false} render={<Link to={SELLER_APPLICATION_PATH} />}>
-          Ver mi solicitud
-        </Button>
-      </Shell>
-    )
-  }
-  if (seller.state === 'manage') {
-    return (
-      <Shell title="Tu almacén ya está activo">
-        <p className="mt-2 text-muted-foreground">No hay nada más que configurar.</p>
-        <Button className="mt-6 h-11 px-5" nativeButton={false} render={<Link to="/portal" />}>
-          Ir a mi almacén
-        </Button>
-      </Shell>
-    )
-  }
-  return (
-    <Shell title="No hay configuración pendiente">
-      <p className="mt-2 text-muted-foreground">Tu cuenta no tiene un almacén aprobado por configurar.</p>
-      <Button className="mt-6 h-11 px-5" nativeButton={false} render={<Link to="/vender" />}>
-        Vende en Autopartco
-      </Button>
-    </Shell>
-  )
-}
-
-/**
- * `/seller/setup`: con `?token=` (enlace del correo) o sin token (exige sesión). En ambos casos el
- * almacén aprobado completa su marca y descripción, se activa y la sesión pasa a gerente del almacén.
- */
-export default function SellerSetupPage() {
-  const [params] = useSearchParams()
-  // El token se captura una sola vez en memoria: el estado sobrevive a re-renders aunque la URL cambie.
-  const [token] = useState(() => params.get('token')?.trim() ?? '')
-
-  // Saca el token de la barra y del historial. Se conserva history.state para no romper el índice del router.
-  useEffect(() => {
-    if (token && new URLSearchParams(window.location.search).has('token')) {
-      window.history.replaceState(window.history.state, '', SELLER_SETUP_PATH)
-    }
-  }, [token])
-
-  return token ? <TokenSetup token={token} /> : <SessionSetup />
+  return <WrongAccount />
 }

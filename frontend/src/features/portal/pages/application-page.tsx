@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { Link } from 'react-router'
-import { ArrowLeftIcon, FileClockIcon } from 'lucide-react'
+import { ArrowLeftIcon, FileClockIcon, MailIcon } from 'lucide-react'
+import { ApiError } from '@/lib/api'
 import { EmptyState } from '@/components/common/states'
 import { Button } from '@/components/ui/button'
 import { useAsync } from '@/lib/use-async'
@@ -22,7 +24,7 @@ const STATUS: Record<StoreApplicationStatus, { label: string; tone: Tone; next: 
   CONFIGURATION_PENDING: {
     label: 'Falta configurar',
     tone: 'warning',
-    next: 'Aprobamos tu solicitud. Falta subir el logo y el banner y activar tu almacén; puedes hacerlo con tu cuenta o con el enlace del correo.',
+    next: 'Aprobamos tu solicitud. Falta subir el logo y el banner y activar tu almacén; hazlo con la cuenta con la que solicitaste (el correo de aprobación solo te lleva aquí).',
   },
   ACTIVE: {
     label: 'Activo',
@@ -34,6 +36,43 @@ const STATUS: Record<StoreApplicationStatus, { label: string; tone: Tone; next: 
     tone: 'danger',
     next: 'Esta solicitud no fue aprobada. Puedes enviar una nueva con los datos y documentos corregidos.',
   },
+}
+
+/** Reenvía el correo de configuración con la sesión; respuesta neutra y espera si el servidor responde 429. */
+function ResendSetupEmail({ applicationId }: { applicationId: string }) {
+  const [sending, setSending] = useState(false)
+  const [notice, setNotice] = useState<{ error: boolean; text: string }>()
+
+  async function resend() {
+    setSending(true)
+    setNotice(undefined)
+    try {
+      await (await getSellerApplicationService()).requestSetupLink(applicationId)
+      setNotice({ error: false, text: 'Si tu solicitud sigue pendiente de configurar, te enviamos el correo. Puede tardar unos minutos; revisa también tu carpeta de spam.' })
+    } catch (error) {
+      const cooldown = error instanceof ApiError && error.code === 'SELLER_SETUP_LINK_COOLDOWN'
+      setNotice({
+        error: true,
+        text: cooldown
+          ? 'Ya te enviamos el correo hace poco. Espera 5 minutos antes de pedir otro y revisa tu carpeta de spam.'
+          : 'No pudimos reenviar el correo. Inténtalo de nuevo en unos minutos.',
+      })
+    } finally {
+      setSending(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-col items-start gap-2">
+      <Button variant="outline" className="h-11 gap-2 px-5" disabled={sending} onClick={() => void resend()}>
+        <MailIcon className="size-4" aria-hidden />
+        {sending ? 'Enviando…' : 'Reenviarme el correo de configuración'}
+      </Button>
+      <div aria-live="polite">
+        {notice ? <p className={notice.error ? 'text-sm font-medium text-destructive' : 'text-sm text-muted-foreground'}>{notice.text}</p> : null}
+      </div>
+    </div>
+  )
 }
 
 function ApplicationCard({ application }: { application: MyStoreApplication }) {
@@ -54,9 +93,12 @@ function ApplicationCard({ application }: { application: MyStoreApplication }) {
       ) : null}
       <div className="flex flex-wrap gap-2">
         {application.status === 'CONFIGURATION_PENDING' ? (
-          <Button className="h-11 px-5" nativeButton={false} render={<Link to={SELLER_SETUP_PATH} />}>
-            Continuar configuración
-          </Button>
+          <>
+            <Button className="h-11 px-5" nativeButton={false} render={<Link to={SELLER_SETUP_PATH} />}>
+              Continuar configuración
+            </Button>
+            <ResendSetupEmail applicationId={application.applicationId} />
+          </>
         ) : null}
         {application.status === 'ACTIVE' ? (
           <Button className="h-11 px-5" nativeButton={false} render={<Link to="/portal" />}>

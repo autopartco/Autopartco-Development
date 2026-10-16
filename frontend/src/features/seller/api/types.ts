@@ -89,16 +89,12 @@ export interface MyStoreApplication {
 /** Estados que el backend considera "en curso" (`StoreApplications.requireNoOpenApplication`). */
 export const OPEN_APPLICATION_STATUSES: readonly StoreApplicationStatus[] = ['PENDING_REVIEW', 'CONFIGURATION_PENDING', 'ACTIVE']
 
-export interface SetupInput {
-  /** Token de un solo uso del correo de aprobación (`/seller/setup?token=`). */
-  token: string
+/** Datos de la configuración del almacén (`POST /me/store-applications/{id}/setup`, multipart). */
+export interface SetupDetails {
   businessDescription?: string
   logo?: File
   banner?: File
 }
-
-/** Datos de la configuración sin el token (flujo con la sesión iniciada). */
-export type SetupDetails = Omit<SetupInput, 'token'>
 
 export interface SetupResult {
   storeId: string
@@ -114,15 +110,15 @@ export interface SellerApplicationService {
   applyAsCurrentUser(input: CurrentUserApplicationInput): Promise<CurrentUserApplicationResult>
   /** Solicitudes de la cuenta con sesión (`GET /me/store-applications`). */
   myApplications(): Promise<MyStoreApplication[]>
-  /** Configuración del almacén aprobado con el token del correo (`POST /store-applications/setup`). */
-  completeSetup(input: SetupInput): Promise<SetupResult>
   /**
-   * Configuración con la sesión iniciada, sin token (`POST /me/store-applications/{id}/setup`).
+   * Configuración con la sesión iniciada (`POST /me/store-applications/{id}/setup`); el servidor
+   * devuelve tokens nuevos por el cambio de rol.
    * Errores: 404 `SELLER_APPLICATION_NOT_FOUND`, 409 `SELLER_SETUP_NOT_PENDING` y `SELLER_EMAIL_NOT_VERIFIED`.
    */
   completeSetupAuthenticated(applicationId: string, input: SetupDetails): Promise<SetupResult>
-  /** Envía un enlace nuevo al correo (`POST /me/store-applications/{id}/setup-link`, 204). 429 `SELLER_SETUP_LINK_COOLDOWN`: espera 5 min. */
+  /**
+   * Reenvía el correo de configuración (`POST /me/store-applications/{id}/setup-link`, 204).
+   * 404 otra cuenta, 409 `SELLER_SETUP_NOT_PENDING`, 429 `SELLER_SETUP_LINK_COOLDOWN` (espera 5 min).
+   */
   requestSetupLink(applicationId: string): Promise<void>
-  /** Igual con el token vencido (`POST /store-applications/setup/resend`, público): siempre 204. */
-  requestSetupLinkByToken(token: string): Promise<void>
 }
