@@ -2,12 +2,11 @@ package com.autopartco.backend.core.organization;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.lenient;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,11 +30,11 @@ import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.shared.error.TooManyRequestsException;
 import com.autopartco.backend.shared.persistence.StateCodes;
 import com.autopartco.backend.shared.persistence.StateRepository;
-import com.autopartco.backend.shared.security.TokenHashing;
 
 @ExtendWith(MockitoExtension.class)
 class StoreApplicationsSetupLinkTest {
     private static final String OWNER_EMAIL = "ana@example.com";
+    private static final String ROOT_EMAIL = "root@example.com";
 
     @Mock
     private StoreApplicationRepository applicationRepository;
@@ -66,12 +65,11 @@ class StoreApplicationsSetupLinkTest {
                 .applicantAccountId(applicantId)
                 .store(store)
                 .status(StoreApplicationStatus.CONFIGURATION_PENDING)
-                .onboardingTokenHash(TokenHashing.sha256Hex("old-token"))
-                // emitido hace 1 hora: fuera del enfriamiento de 5 minutos
-                .onboardingTokenExpiresAt(LocalDateTime.now().plusHours(47))
                 .build();
         lenient().when(applicationRepository.lockById(application.getId())).thenReturn(Optional.of(application));
         lenient().when(accountLookup.findById(applicantId)).thenReturn(Optional.of(account(StateCodes.ACTIVE)));
+        lenient().when(accountLookup.findByEmail(ROOT_EMAIL)).thenReturn(Optional.of(
+                new AccountRef(UUID.randomUUID(), UUID.randomUUID(), ROOT_EMAIL, "Root", StateCodes.ACTIVE, "ROOT", "Root")));
     }
 
     @Test
@@ -127,93 +125,66 @@ class StoreApplicationsSetupLinkTest {
     }
 
     @Test
-    void reissueReplacesTheTokenSoThePreviousOneStopsMatching() {
-        String previousHash = application.getOnboardingTokenHash();
-
+    void setupLinkRequestForTheOwnerReturnsTheRecipientAndTouchesNoToken() {
         StoreApplications.SetupLink link =
-                storeApplications.reissueOnboardingTokenForOwner(application.getId(), OWNER_EMAIL);
+                storeApplications.requestSetupLinkForOwner(application.getId(), OWNER_EMAIL);
 
         assertEquals(OWNER_EMAIL, link.applicantEmail());
-        assertNotEquals(previousHash, application.getOnboardingTokenHash());
-        assertEquals(TokenHashing.sha256Hex(link.onboardingToken()), application.getOnboardingTokenHash());
-        assertNotEquals(TokenHashing.sha256Hex("old-token"), application.getOnboardingTokenHash());
-        assertTrue(application.getOnboardingTokenExpiresAt().isAfter(LocalDateTime.now().plusHours(47)));
+        assertEquals("Ana", link.applicantGivenName());
+        assertNull(application.getOnboardingTokenHash());
+        assertNull(application.getOnboardingTokenExpiresAt());
     }
 
     @Test
-    void afterAReissueLockForSetupRejectsThePreviousTokenAndAcceptsTheNewOne() {
-        // El repositorio simulado resuelve por hash contra el estado actual de la solicitud.
-        lenient().when(applicationRepository.lockByOnboardingToken(org.mockito.ArgumentMatchers.anyString()))
-                .thenAnswer(call -> call.getArgument(0).equals(application.getOnboardingTokenHash())
-                        ? Optional.of(application)
-                        : Optional.empty());
-        assertEquals(application.getId(), storeApplications.lockForSetup("old-token").applicationId());
-
-        StoreApplications.SetupLink link =
-                storeApplications.reissueOnboardingTokenForOwner(application.getId(), OWNER_EMAIL);
-
-        assertEquals("SELLER_SETUP_TOKEN_INVALID", assertThrows(
-                com.autopartco.backend.shared.error.BadRequestException.class,
-                () -> storeApplications.lockForSetup("old-token")
-        ).getCode());
-        assertEquals(application.getId(), storeApplications.lockForSetup(link.onboardingToken()).applicationId());
-    }
-
-    @Test
-    void reissueRightAfterTheLastEmailIsRejectedWithTheCooldownCode() {
-        application.setOnboardingTokenExpiresAt(LocalDateTime.now().plusHours(48).minusMinutes(1));
-        String hash = application.getOnboardingTokenHash();
+    void aSecondSetupLinkRequestInsideTheCooldownIsRejectedWithTheCooldownCode() {
+        storeApplications.requestSetupLinkForOwner(application.getId(), OWNER_EMAIL);
 
         TooManyRequestsException exception = assertThrows(
                 TooManyRequestsException.class,
-                () -> storeApplications.reissueOnboardingTokenForOwner(application.getId(), OWNER_EMAIL)
+                () -> storeApplications.requestSetupLinkForOwner(application.getId(), OWNER_EMAIL)
         );
 
         assertEquals("SELLER_SETUP_LINK_COOLDOWN", exception.getCode());
-        assertEquals(hash, application.getOnboardingTokenHash());
     }
 
     @Test
-    void reissueOfAnotherAccountOrNonPendingApplicationFails() {
+    void setupLinkRequestOfAnotherAccountOrNonPendingApplicationFailsWithoutStartingTheCooldown() {
         assertThrows(
                 NotFoundException.class,
-                () -> storeApplications.reissueOnboardingTokenForOwner(application.getId(), "otra@example.com")
+                () -> storeApplications.requestSetupLinkForOwner(application.getId(), "otra@example.com")
         );
         application.setStatus(StoreApplicationStatus.PENDING_REVIEW);
         assertThrows(
                 ConflictException.class,
-                () -> storeApplications.reissueOnboardingTokenForOwner(application.getId(), OWNER_EMAIL)
+                () -> storeApplications.requestSetupLinkForOwner(application.getId(), OWNER_EMAIL)
         );
-    }
-
-    @Test
-    void reissueByExpiredTokenStillWorks() {
-        application.setOnboardingTokenExpiresAt(LocalDateTime.now().minusHours(3));
-        org.mockito.Mockito.when(applicationRepository.lockByOnboardingToken(TokenHashing.sha256Hex("old-token")))
-                .thenReturn(Optional.of(application));
-
-        Optional<StoreApplications.SetupLink> link = storeApplications.reissueOnboardingTokenByToken("old-token");
-
-        assertTrue(link.isPresent());
-        assertEquals(TokenHashing.sha256Hex(link.get().onboardingToken()), application.getOnboardingTokenHash());
-    }
-
-    @Test
-    void reissueByTokenIsEmptyForUnknownTokensNonPendingApplicationsAndCooldown() {
-        org.mockito.Mockito.when(applicationRepository.lockByOnboardingToken(TokenHashing.sha256Hex("unknown")))
-                .thenReturn(Optional.empty());
-        assertFalse(storeApplications.reissueOnboardingTokenByToken("unknown").isPresent());
-        assertFalse(storeApplications.reissueOnboardingTokenByToken(" ").isPresent());
-        assertFalse(storeApplications.reissueOnboardingTokenByToken(null).isPresent());
-
-        org.mockito.Mockito.when(applicationRepository.lockByOnboardingToken(TokenHashing.sha256Hex("old-token")))
-                .thenReturn(Optional.of(application));
-        application.setStatus(StoreApplicationStatus.ACTIVE);
-        assertFalse(storeApplications.reissueOnboardingTokenByToken("old-token").isPresent());
-
         application.setStatus(StoreApplicationStatus.CONFIGURATION_PENDING);
-        application.setOnboardingTokenExpiresAt(LocalDateTime.now().plusHours(48).minusMinutes(1));
-        assertFalse(storeApplications.reissueOnboardingTokenByToken("old-token").isPresent());
+        assertEquals(OWNER_EMAIL, storeApplications.requestSetupLinkForOwner(application.getId(), OWNER_EMAIL)
+                .applicantEmail());
+    }
+
+    @Test
+    void approvingMovesToConfigurationPendingWithoutGeneratingAToken() {
+        application.setStatus(StoreApplicationStatus.PENDING_REVIEW);
+
+        StoreApplications.Reviewed reviewed = storeApplications.review(
+                application.getId(), ROOT_EMAIL, new StoreApplicationReviewRequest(true, null));
+
+        assertTrue(reviewed.approved());
+        assertEquals(StoreApplicationStatus.CONFIGURATION_PENDING, application.getStatus());
+        assertNull(application.getOnboardingTokenHash());
+        assertNull(application.getOnboardingTokenExpiresAt());
+    }
+
+    @Test
+    void rejectingIsNotApproved() {
+        application.setStatus(StoreApplicationStatus.PENDING_REVIEW);
+
+        StoreApplications.Reviewed reviewed = storeApplications.review(
+                application.getId(), ROOT_EMAIL, new StoreApplicationReviewRequest(false, "no"));
+
+        assertFalse(reviewed.approved());
+        assertEquals(StoreApplicationStatus.REJECTED, application.getStatus());
     }
 
     private AccountRef account(String stateCode) {

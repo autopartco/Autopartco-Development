@@ -66,7 +66,7 @@ export const router = createBrowserRouter([
           // Almacenes: landing y solicitud (POST /store-applications).
           { path: 'vender', element: <SellPage /> },
           { path: 'vender/registro', element: <SellerRegisterPage /> },
-          // Enlace del correo de aprobación: `/seller/setup?token=` (ver ReviewStoreApplication).
+          // Enlace del correo de aprobación (sin token): la página exige sesión y redirige a /ingresar si no hay.
           { path: 'seller/setup', element: <SellerSetupPage /> },
           // Cuentas (core/identity/web/AuthController).
           { path: 'ingresar', element: <LoginPage /> },

@@ -49,10 +49,8 @@ function multipart(request: unknown, documents: Partial<Record<SellerDocumentKey
   return form
 }
 
-function setupForm(input: { businessDescription?: string; logo?: File; banner?: File }, token?: string): FormData {
-  // El token va como campo de formulario: el backend lo lee con @RequestParam.
+function setupForm(input: { businessDescription?: string; logo?: File; banner?: File }): FormData {
   const form = new FormData()
-  if (token) form.append('token', token)
   if (input.businessDescription?.trim()) form.append('businessDescription', input.businessDescription.trim())
   if (input.logo) form.append('logo', input.logo, input.logo.name)
   if (input.banner) form.append('banner', input.banner, input.banner.name)
@@ -103,12 +101,6 @@ export function createHttpSellerApplicationService(): SellerApplicationService {
       }
     },
 
-    async completeSetup(input) {
-      const form = setupForm(input, input.token)
-      const dto = await apiRequest<StoreSetupDto>('/store-applications/setup', { method: 'POST', body: form })
-      return { storeId: dto.storeId, status: dto.status, trialEndsAt: dto.trialEndsAt }
-    },
-
     async completeSetupAuthenticated(applicationId, input) {
       const dto = await portalRequest<StoreSetupDto>(`/me/store-applications/${encodeURIComponent(applicationId)}/setup`, {
         method: 'POST',
@@ -119,10 +111,6 @@ export function createHttpSellerApplicationService(): SellerApplicationService {
 
     async requestSetupLink(applicationId) {
       await portalRequest<void>(`/me/store-applications/${encodeURIComponent(applicationId)}/setup-link`, { method: 'POST' })
-    },
-
-    async requestSetupLinkByToken(token) {
-      await apiRequest<void>('/store-applications/setup/resend', { method: 'POST', body: { token } })
     },
 
     async myApplications() {

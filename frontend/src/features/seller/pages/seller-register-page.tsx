@@ -703,8 +703,8 @@ function NotEligible({ kind }: { kind: 'store' | 'other' }) {
  * - Cliente: `POST /me/store-applications` con su cuenta; si ya tiene una solicitud en curso
  *   (`GET /me/store-applications`), muestra su estado en vez del formulario.
  * - Gerente de almacén u otra cuenta: no hay formulario.
- * TODO(flujo): `/store-applications/setup` (logo y banner con el token del correo de
- * aprobación) y la elección o pago del plan quedan fuera.
+ * TODO(flujo): la elección o pago del plan queda fuera. La configuración del almacén (logo y
+ * banner) se hace en `/seller/setup` con la sesión de la cuenta solicitante.
  */
 export default function SellerRegisterPage() {
   const { session, ready } = useSessionState()

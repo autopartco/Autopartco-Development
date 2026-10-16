@@ -13,13 +13,16 @@ const SEEDED_STORE_ID = '00000000-0000-4000-8000-000000000002'
  * Para probar el error de correo repetido, usa `existe@autopartco.co`. La solicitud con
  * sesión se recuerda solo en memoria, para ver el estado "en revisión" al volver.
  *
- * Cómo probar la configuración del almacén (`/seller/setup`):
- * - Con token: `/seller/setup?token=cualquiera` configura; `?token=vencido` muestra la pantalla de
- *   enlace vencido. «Enviarme un nuevo enlace» responde siempre igual; repetirlo antes de 5 minutos
- *   simula el 429 `SELLER_SETUP_LINK_COOLDOWN`.
- * - Con sesión: ingresa con un correo que empiece por `pendiente` (p. ej. `pendiente@autopartco.co`).
- *   Esa cuenta es cliente y tiene una solicitud `CONFIGURATION_PENDING`, así que el ingreso lleva a
- *   `/seller/setup`. Al terminar pasa a gerente (cierra sesión para volver a empezar).
+ * Cómo probar la configuración del almacén (`/seller/setup`, solo con sesión):
+ * - Sin sesión: abre `/seller/setup` (también con `?token=x`, que se ignora y se borra de la URL):
+ *   redirige a `/ingresar?next=/seller/setup` y, tras ingresar con `pendiente@...`, vuelve a configurar.
+ * - Con otra cuenta: ingresa con un cliente sin solicitud (cualquier correo que no empiece por
+ *   `pendiente`) y abre `/seller/setup`: aviso de cuenta sin configuración pendiente y «Cambiar de cuenta».
+ * - Con cuenta pendiente: ingresa con un correo que empiece por `pendiente` (p. ej.
+ *   `pendiente@autopartco.co`). Es cliente con una solicitud `CONFIGURATION_PENDING`, así que el ingreso
+ *   lleva a `/seller/setup`. Al terminar pasa a gerente (cierra sesión para repetir) y `/seller/setup` va a `/portal`.
+ * - Reenvío del correo: «Reenviarme el correo de configuración» en `/portal/solicitud` con la cuenta
+ *   pendiente; repetirlo antes de 5 minutos simula el 429 `SELLER_SETUP_LINK_COOLDOWN`.
  */
 export function createMockSellerApplicationService(): SellerApplicationService {
   const mine: MyStoreApplication[] = []
@@ -105,21 +108,6 @@ export function createMockSellerApplicationService(): SellerApplicationService {
       return [...seeded(), ...mine].map((application) => ({ ...application }))
     },
 
-    async completeSetup(input) {
-      await simulateLatency(900)
-      if (!input.token.trim() || input.token.trim() === 'vencido') {
-        throw new ApiError('El enlace de configuración venció o ya fue utilizado.', {
-          status: 400,
-          code: 'SELLER_SETUP_TOKEN_INVALID',
-        })
-      }
-      return {
-        storeId: crypto.randomUUID(),
-        status: 'ACTIVE',
-        trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      }
-    },
-
     async completeSetupAuthenticated(applicationId) {
       await simulateLatency(900)
       requireOwnPending(applicationId)
@@ -135,12 +123,6 @@ export function createMockSellerApplicationService(): SellerApplicationService {
       await simulateLatency(600)
       requireOwnPending(applicationId)
       throttle(applicationId)
-    },
-
-    async requestSetupLinkByToken(token) {
-      await simulateLatency(600)
-      // El endpoint real siempre responde 204; aquí solo se simula el enfriamiento para poder probar el 429.
-      if (token.trim()) throttle(`token:${token.trim()}`)
     },
   }
 }

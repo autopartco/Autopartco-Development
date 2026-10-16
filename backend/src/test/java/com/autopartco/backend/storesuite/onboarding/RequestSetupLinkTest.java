@@ -11,7 +11,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -32,8 +31,6 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.support.AbstractPlatformTransactionManager;
 import org.springframework.transaction.support.DefaultTransactionStatus;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.validation.BeanPropertyBindingResult;
-import org.springframework.validation.BindingResult;
 
 import com.autopartco.backend.core.notification.SellerSetupMailer;
 import com.autopartco.backend.core.organization.StoreApplications;
@@ -54,18 +51,18 @@ class RequestSetupLinkTest {
     private final UUID applicationId = UUID.randomUUID();
 
     @Test
-    void ownerRequestPublishesTheNewTokenForTheMailer() {
-        when(storeApplications.reissueOnboardingTokenForOwner(applicationId, "ana@example.com"))
-                .thenReturn(new StoreApplications.SetupLink("ana@example.com", "Ana", "new-token"));
+    void ownerRequestPublishesTheMailEventWithoutToken() {
+        when(storeApplications.requestSetupLinkForOwner(applicationId, "ana@example.com"))
+                .thenReturn(new StoreApplications.SetupLink("ana@example.com", "Ana"));
 
         requestSetupLink.forOwner(applicationId, "ana@example.com");
 
-        verify(events).publishEvent(new SetupLinkIssued("ana@example.com", "Ana", "new-token"));
+        verify(events).publishEvent(new SetupLinkIssued("ana@example.com", "Ana"));
     }
 
     @Test
     void ownerRequestInsideTheCooldownPublishesNothingAndMapsTo429() {
-        when(storeApplications.reissueOnboardingTokenForOwner(applicationId, "ana@example.com"))
+        when(storeApplications.requestSetupLinkForOwner(applicationId, "ana@example.com"))
                 .thenThrow(new TooManyRequestsException("SELLER_SETUP_LINK_COOLDOWN", "Espera"));
 
         TooManyRequestsException exception = assertThrows(
@@ -80,45 +77,10 @@ class RequestSetupLinkTest {
     }
 
     @Test
-    void publicRequestWithAKnownTokenPublishesTheNewOne() {
-        when(storeApplications.reissueOnboardingTokenByToken("old"))
-                .thenReturn(Optional.of(new StoreApplications.SetupLink("ana@example.com", "Ana", "new-token")));
+    void theEventNeverPrintsTheRecipient() {
+        String text = new SetupLinkIssued("ana@example.com", "Ana").toString();
 
-        requestSetupLink.byToken("old");
-
-        verify(events).publishEvent(new SetupLinkIssued("ana@example.com", "Ana", "new-token"));
-    }
-
-    @Test
-    void publicRequestWithAnUnknownTokenDoesNothingAndDoesNotFail() {
-        when(storeApplications.reissueOnboardingTokenByToken("unknown")).thenReturn(Optional.empty());
-
-        assertDoesNotThrow(() -> requestSetupLink.byToken("unknown"));
-
-        verifyNoInteractions(events);
-    }
-
-    @Test
-    void theEventNeverPrintsTheTokenNorTheRecipient() {
-        String text = new SetupLinkIssued("ana@example.com", "Ana", "secret-token").toString();
-
-        assertFalse(text.contains("secret-token"));
         assertFalse(text.contains("ana@example.com"));
-    }
-
-    @Test
-    void controllerAlwaysAnswers204AndOnlyActsOnAValidBody() {
-        var controller = new StoreApplicationController(null, null, requestSetupLink, null, null);
-        when(storeApplications.reissueOnboardingTokenByToken("x")).thenReturn(Optional.empty());
-
-        assertEquals(HttpStatus.NO_CONTENT, controller.resendSetupLinkByToken(new SetupLinkResendRequest("x"), noErrors()).getStatusCode());
-        verify(storeApplications).reissueOnboardingTokenByToken("x");
-
-        BindingResult invalid = noErrors();
-        invalid.reject("NotBlank");
-        assertEquals(HttpStatus.NO_CONTENT, controller.resendSetupLinkByToken(new SetupLinkResendRequest(null), invalid).getStatusCode());
-        assertEquals(HttpStatus.NO_CONTENT, controller.resendSetupLinkByToken(null, noErrors()).getStatusCode());
-        Mockito.verifyNoMoreInteractions(storeApplications);
     }
 
     @Test
@@ -129,31 +91,26 @@ class RequestSetupLinkTest {
             context.register(TxConfig.class, SetupLinkMailListener.class);
             context.refresh();
             TransactionTemplate tx = new TransactionTemplate(context.getBean(PlatformTransactionManager.class));
-            SetupLinkIssued event = new SetupLinkIssued("ana@example.com", "Ana", "new-token");
+            SetupLinkIssued event = new SetupLinkIssued("ana@example.com", "Ana");
 
             tx.executeWithoutResult(status -> {
                 context.publishEvent(event);
-                verify(mailer, never()).send(any(), any(), any());
+                verify(mailer, never()).send(any(), any());
                 status.setRollbackOnly();
             });
-            verify(mailer, never()).send(any(), any(), any());
+            verify(mailer, never()).send(any(), any());
 
             tx.executeWithoutResult(status -> context.publishEvent(event));
-            verify(mailer).send("ana@example.com", "Ana", "new-token");
+            verify(mailer).send("ana@example.com", "Ana");
         }
     }
 
     @Test
     void mailFailuresAfterCommitAreSwallowed() {
         SellerSetupMailer mailer = Mockito.mock(SellerSetupMailer.class);
-        doThrow(new IllegalStateException("smtp ana@example.com new-token")).when(mailer).send(any(), any(), any());
+        doThrow(new IllegalStateException("smtp ana@example.com")).when(mailer).send(any(), any());
 
-        assertDoesNotThrow(() -> new SetupLinkMailListener(mailer)
-                .on(new SetupLinkIssued("ana@example.com", "Ana", "new-token")));
-    }
-
-    private static BindingResult noErrors() {
-        return new BeanPropertyBindingResult(new SetupLinkResendRequest("x"), "request");
+        assertDoesNotThrow(() -> new SetupLinkMailListener(mailer).on(new SetupLinkIssued("ana@example.com", "Ana")));
     }
 
     @Configuration

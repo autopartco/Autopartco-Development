@@ -14,7 +14,7 @@ import lombok.AllArgsConstructor;
 
 /**
  * Revisión de una solicitud de almacén por root. Si se aprueba, envía al solicitante el enlace de configuración
- * ({@code /seller/setup?token=...}) dentro de la misma transacción.
+ * ({@code /seller/setup}, sin token) dentro de la misma transacción.
  */
 @Service
 @AllArgsConstructor
@@ -30,12 +30,8 @@ public class ReviewStoreApplication {
             StoreApplicationReviewRequest request
     ) {
         StoreApplications.Reviewed reviewed = storeApplications.review(applicationId, reviewerEmail, request);
-        if (reviewed.onboardingToken() != null) {
-            sellerSetupMailer.send(
-                    reviewed.applicantEmail(),
-                    reviewed.applicantGivenName(),
-                    reviewed.onboardingToken()
-            );
+        if (reviewed.approved()) {
+            sellerSetupMailer.send(reviewed.applicantEmail(), reviewed.applicantGivenName());
         }
         return StoreApplicationResponse.from(reviewed.application(), planService);
     }

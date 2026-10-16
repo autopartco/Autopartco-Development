@@ -1,12 +1,12 @@
 package com.autopartco.backend.storesuite.onboarding;
 
 /**
- * Se emitió un token de configuración nuevo y hay que enviarlo por correo. Se publica dentro de la transacción y se
- * atiende tras el commit, fuera del hilo de la petición. El token en claro no aparece en {@code toString}.
+ * Hay que reenviar el correo de configuración. Se publica dentro de la transacción y se atiende tras el commit,
+ * fuera del hilo de la petición. Los datos personales no aparecen en {@code toString}.
  */
-record SetupLinkIssued(String applicantEmail, String applicantGivenName, String onboardingToken) {
+record SetupLinkIssued(String applicantEmail, String applicantGivenName) {
     @Override
     public String toString() {
-        return "SetupLinkIssued[applicantEmail=***, applicantGivenName=***, onboardingToken=***]";
+        return "SetupLinkIssued[applicantEmail=***, applicantGivenName=***]";
     }
 }

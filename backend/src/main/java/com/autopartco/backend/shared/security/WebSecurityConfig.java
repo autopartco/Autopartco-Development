@@ -69,10 +69,8 @@ public class WebSecurityConfig {
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/password-recovery/reset"),
                 // core.billing: webhook de Wompi (se valida con firma).
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/webhooks/wompi"),
-                // storesuite.onboarding: solicitud de almacén y configuración con token.
+                // storesuite.onboarding: solicitud de almacén (la configuración exige sesión: /me/store-applications).
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/store-applications"),
-                new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/store-applications/setup"),
-                new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/store-applications/setup/resend"),
                 // storesuite.staff: invitaciones con token.
                 new PublicRoute(HttpMethod.GET, ApiPaths.BASE + "/staff-invitations/preview"),
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/staff-invitations/accept"),

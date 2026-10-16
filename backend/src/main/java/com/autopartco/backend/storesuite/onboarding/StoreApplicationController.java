@@ -12,11 +12,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
@@ -31,9 +29,8 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 
 /**
- * Onboarding de almacén: registro público de vendedor ({@code POST /store-applications}), configuración con el
- * token de onboarding ({@code POST /store-applications/setup}, público) y las solicitudes de la cuenta
- * autenticada ({@code /me/store-applications}).
+ * Onboarding de almacén: registro público de vendedor ({@code POST /store-applications}) y las solicitudes de la
+ * cuenta autenticada, incluida su configuración ({@code /me/store-applications}).
  */
 @RestController
 @RequestMapping(ApiPaths.BASE)
@@ -58,36 +55,6 @@ public class StoreApplicationController {
                         request,
                         documents(identityDocument, rut, legalRepresentativeId, certificateOfExistence)
                 ));
-    }
-
-    @PostMapping(value = "/store-applications/setup", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public StoreSetupResponse completeSetup(
-            @RequestParam String token,
-            @RequestParam(required = false) String businessDescription,
-            @RequestPart(name = "logo", required = false) MultipartFile logo,
-            @RequestPart(name = "banner", required = false) MultipartFile banner,
-            HttpServletRequest request
-    ) {
-        return completeStoreSetup.execute(
-                token,
-                businessDescription,
-                logo,
-                banner,
-                request.getRemoteAddr(),
-                request.getHeader("User-Agent") == null ? "" : request.getHeader("User-Agent")
-        );
-    }
-
-    /** Siempre 204 (cuerpo ausente, vacío o inválido incluido): no revela si el token existe. */
-    @PostMapping("/store-applications/setup/resend")
-    public ResponseEntity<Void> resendSetupLinkByToken(
-            @Valid @RequestBody(required = false) SetupLinkResendRequest request,
-            BindingResult validation
-    ) {
-        if (request != null && !validation.hasErrors()) {
-            requestSetupLink.byToken(request.token());
-        }
-        return ResponseEntity.noContent().build();
     }
 
     @PostMapping(value = "/me/store-applications/{applicationId}/setup", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
