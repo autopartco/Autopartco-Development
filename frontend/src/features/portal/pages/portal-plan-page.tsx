@@ -19,7 +19,7 @@ import { UsageMeter } from '../components/usage-meter'
 import { usePortal } from '../context'
 import { useStoreQuery } from '../hooks'
 import { Reveal, RevealGroup } from '../components/bento'
-import { isCustomPlan, planCapabilities, sortPlans } from '../lib/plan-capabilities'
+import { isCustomPlan, planCapabilities, plansForDisplay } from '../lib/plan-capabilities'
 import { cn } from '@/lib/utils'
 import { formatDate, formatDays, SUBSCRIPTION_STATUS_LABEL, SUBSCRIPTION_STATUS_TONE } from '../lib/labels'
 
@@ -129,7 +129,13 @@ function PlanAction({
 
   if (isCustomPlan(plan)) return <SalesButton />
   if (!subscription.canManage) return <p className="text-sm text-muted-foreground">Solo el propietario puede cambiar el plan.</p>
-  if (free) return <p className="text-sm text-muted-foreground">Es la prueba inicial: no se paga.</p>
+  if (free) {
+    return (
+      <p className="text-sm text-muted-foreground">
+        {plan.code === 'TRY' ? 'Es la prueba inicial: no se paga.' : 'Este plan no se contrata en línea. Escríbenos y te ayudamos.'}
+      </p>
+    )
+  }
   if (subscription.paymentMode === 'NONE') {
     return <p className="text-sm text-muted-foreground">El pago en línea no está disponible por ahora. Escríbenos y te ayudamos.</p>
   }
@@ -224,7 +230,7 @@ function PlanView({ subscription }: { subscription: Subscription }) {
           <>
             <RevealGroup>
               <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
-                {sortPlans(plans.data).map((plan, index) => (
+                {plansForDisplay(plans.data).map((plan, index) => (
                   <Reveal as="li" index={index} key={plan.id}>
                     <PlanCard
                       plan={plan}
@@ -237,7 +243,7 @@ function PlanView({ subscription }: { subscription: Subscription }) {
               </ul>
             </RevealGroup>
             <h3 className="mt-2 text-lg font-extrabold tracking-tight">Cupos y funciones lado a lado</h3>
-            <PlanComparisonTable plans={sortPlans(plans.data)} currentCode={subscription.plan.code} />
+            <PlanComparisonTable plans={plansForDisplay(plans.data)} currentCode={subscription.plan.code} />
           </>
         )}
       </section>

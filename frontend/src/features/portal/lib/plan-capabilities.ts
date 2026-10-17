@@ -95,6 +95,31 @@ export function sortPlans(plans: Plan[]): Plan[] {
   return plans.toSorted((a, b) => rank(a) - rank(b) || a.monthlyPriceCop - b.monthlyPriceCop)
 }
 
+/**
+ * Empresarial sintético: solo para mostrar tarjeta y columna. No existe en la BD, nunca se contrata
+ * (no hay checkout) y no tiene ningún efecto en permisos ni cupos reales.
+ */
+const SYNTHETIC_ENTERPRISE: Plan = {
+  id: 'synthetic-enterprise',
+  code: 'ENTERPRISE',
+  name: 'Empresarial',
+  description: 'Sin límites, con integraciones y acompañamiento.',
+  monthlyPriceCop: 0,
+  currency: 'COP',
+  features: [],
+  recommended: false,
+  enabled: false,
+  maxBranches: null,
+  maxProducts: null,
+  maxUsers: null,
+  capabilities: Object.values(CAPABILITY_CATALOG).map((info) => info.key),
+}
+
+/** Ordena los planes de la API y añade Empresarial (informativo) si el servidor no lo devuelve. */
+export function plansForDisplay(plans: Plan[]): Plan[] {
+  return sortPlans(plans.some((plan) => plan.code === 'ENTERPRISE') ? plans : [...plans, SYNTHETIC_ENTERPRISE])
+}
+
 /** Anual = 10 × mensual («2 meses gratis»). */
 export function annualPriceCop(plan: Plan): number {
   return plan.monthlyPriceCop * 10
