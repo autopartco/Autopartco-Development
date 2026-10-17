@@ -16,13 +16,15 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.NotFoundException;
+import com.autopartco.backend.shared.web.PageResponse;
 
 import lombok.AllArgsConstructor;
 
 /**
  * Lecturas del pedido desde el punto de vista del comprador, con {@link JdbcClient}. Siempre filtra por la persona
- * dueña del pedido; un pedido ajeno se trata igual que uno inexistente. B2 añadirá aquí el listado y el detalle.
+ * dueña del pedido; un pedido ajeno se trata igual que uno inexistente.
  */
 @Service
 @AllArgsConstructor
@@ -104,11 +106,147 @@ public class BuyerOrderQueries {
             ORDER BY product.name, product.id
             """;
 
+    static final int MAX_PAGE_SIZE = 50;
+
+    static final String COUNT_SQL = """
+            SELECT count(*)
+            FROM orders customer_order
+            WHERE customer_order.person_id = :personId
+              AND customer_order.deleted_at IS NULL
+            """;
+
+    static final String PAGE_SQL = """
+            SELECT customer_order.id AS order_id,
+                   customer_order.order_number,
+                   order_state.code AS order_status,
+                   customer_order.created_at,
+                   (SELECT payment_record.currency
+                    FROM payments payment_record
+                    WHERE payment_record.order_id = customer_order.id
+                    ORDER BY payment_record.created_at DESC
+                    LIMIT 1) AS currency,
+                   COALESCE((SELECT sum(sale.total)
+                             FROM sales sale
+                             WHERE sale.order_id = customer_order.id
+                               AND sale.deleted_at IS NULL), 0) AS total,
+                   COALESCE((SELECT sum(detail.units)
+                             FROM order_details detail
+                             WHERE detail.order_id = customer_order.id
+                               AND detail.deleted_at IS NULL), 0) AS item_count
+            FROM orders customer_order
+            JOIN states order_state ON order_state.id = customer_order.state_id
+            WHERE customer_order.person_id = :personId
+              AND customer_order.deleted_at IS NULL
+            ORDER BY customer_order.created_at DESC, customer_order.id DESC
+            LIMIT :limit OFFSET :offset
+            """;
+
+    static final String PAGE_SALES_SQL = """
+            SELECT sale.order_id,
+                   sale.id AS sale_id,
+                   branch.store_id,
+                   store.business_name AS store_name,
+                   sale_state.code AS sale_status
+            FROM sales sale
+            JOIN branches branch ON branch.id = sale.branch_id
+            JOIN store ON store.id = branch.store_id
+            JOIN states sale_state ON sale_state.id = sale.state_id
+            WHERE sale.order_id IN (:orderIds)
+              AND sale.deleted_at IS NULL
+            ORDER BY store.business_name, branch.name, sale.id
+            """;
+
+    static final String SHIPMENTS_SQL = """
+            SELECT shipment.id AS shipment_id,
+                   shipment.sale_id,
+                   shipment.carrier,
+                   shipment.tracking_number,
+                   shipment_state.code AS shipment_status,
+                   shipment.shipped_at,
+                   shipment.delivered_at
+            FROM shipments shipment
+            JOIN sales sale ON sale.id = shipment.sale_id
+            JOIN shipment_statuses shipment_state ON shipment_state.id = shipment.shipment_status_id
+            WHERE sale.order_id = :orderId
+              AND sale.deleted_at IS NULL
+            """;
+
+    static final String SHIPMENT_EVENTS_SQL = """
+            SELECT shipment_event.shipment_id,
+                   event_state.code AS event_status,
+                   shipment_event.notes,
+                   shipment_event.event_at
+            FROM shipment_events shipment_event
+            JOIN shipments shipment ON shipment.id = shipment_event.shipment_id
+            JOIN sales sale ON sale.id = shipment.sale_id
+            JOIN shipment_statuses event_state ON event_state.id = shipment_event.shipment_status_id
+            WHERE sale.order_id = :orderId
+              AND sale.deleted_at IS NULL
+            ORDER BY shipment_event.event_at, shipment_event.id
+            """;
+
     private final JdbcClient jdbcClient;
 
-    /** Pedido de esa persona con la forma del contrato; si no existe o es ajeno, {@code ORDER_NOT_FOUND}. */
+    /**
+     * Recibo del checkout: pedido de esa persona con la forma del contrato y sin envíos ({@code shipment} nulo); si no
+     * existe o es ajeno, {@code ORDER_NOT_FOUND}.
+     */
     @Transactional(readOnly = true)
     public BuyerOrderResponse receipt(UUID personId, UUID orderId) {
+        return load(personId, orderId, false);
+    }
+
+    /** Detalle de "Mis pedidos": el recibo más el envío (con sus eventos) de cada venta que lo tenga. */
+    @Transactional(readOnly = true)
+    public BuyerOrderResponse detail(UUID personId, UUID orderId) {
+        return load(personId, orderId, true);
+    }
+
+    /** Pedidos de la persona, del más reciente al más antiguo. {@code page} desde 1; {@code size} entre 1 y 50. */
+    @Transactional(readOnly = true)
+    public PageResponse<BuyerOrderSummary> list(UUID personId, int page, int size) {
+        if (page < 1) {
+            throw new BadRequestException("VALIDATION_ERROR", "La página debe ser mayor o igual a 1.");
+        }
+        if (size < 1 || size > MAX_PAGE_SIZE) {
+            throw new BadRequestException("VALIDATION_ERROR",
+                    "El tamaño de página debe estar entre 1 y " + MAX_PAGE_SIZE + ".");
+        }
+        long total = jdbcClient.sql(COUNT_SQL).param("personId", personId).query(Long.class).single();
+        if (total == 0) {
+            return PageResponse.of(List.of(), page, size, 0);
+        }
+        List<SummaryRow> rows = jdbcClient.sql(PAGE_SQL)
+                .param("personId", personId)
+                .param("limit", size)
+                .param("offset", (long) (page - 1) * size)
+                .query(BuyerOrderQueries::mapSummary)
+                .list();
+        Map<UUID, List<BuyerOrderSummary.SaleRef>> salesByOrder = new LinkedHashMap<>();
+        if (!rows.isEmpty()) {
+            List<UUID> orderIds = rows.stream().map(SummaryRow::orderId).toList();
+            jdbcClient.sql(PAGE_SALES_SQL)
+                    .param("orderIds", orderIds)
+                    .query(BuyerOrderQueries::mapSaleRef)
+                    .list()
+                    .forEach(ref -> salesByOrder.computeIfAbsent(ref.orderId(), ignored -> new ArrayList<>())
+                            .add(ref.ref()));
+        }
+        List<BuyerOrderSummary> items = rows.stream()
+                .map(row -> new BuyerOrderSummary(
+                        row.orderId(),
+                        row.orderNumber(),
+                        row.status(),
+                        row.createdAt(),
+                        row.currency() == null ? DEFAULT_CURRENCY : row.currency(),
+                        money(row.total()),
+                        row.itemCount(),
+                        List.copyOf(salesByOrder.getOrDefault(row.orderId(), List.of()))))
+                .toList();
+        return PageResponse.of(items, page, size, total);
+    }
+
+    private BuyerOrderResponse load(UUID personId, UUID orderId, boolean withShipments) {
         OrderRow order = jdbcClient.sql(ORDER_SQL)
                 .param("orderId", orderId)
                 .param("personId", personId)
@@ -126,6 +264,10 @@ public class BuyerOrderQueries {
                 .param("orderId", orderId)
                 .query(BuyerOrderQueries::mapItem)
                 .list();
+
+        Map<UUID, BuyerOrderResponse.Shipment> shipmentsBySale = withShipments
+                ? loadShipments(orderId)
+                : Map.of();
 
         Map<UUID, List<BuyerOrderResponse.Item>> itemsBySale = new LinkedHashMap<>();
         for (ItemRow item : itemRows) {
@@ -148,7 +290,8 @@ public class BuyerOrderQueries {
                     money(sale.subtotal()),
                     money(sale.shippingCost()),
                     money(sale.total()),
-                    List.copyOf(itemsBySale.getOrDefault(sale.saleId(), List.of()))
+                    List.copyOf(itemsBySale.getOrDefault(sale.saleId(), List.of())),
+                    shipmentsBySale.get(sale.saleId())
             ));
         }
         subtotal = money(subtotal);
@@ -167,6 +310,75 @@ public class BuyerOrderQueries {
                 order.address(),
                 List.copyOf(sales)
         );
+    }
+
+    private Map<UUID, BuyerOrderResponse.Shipment> loadShipments(UUID orderId) {
+        List<ShipmentRow> shipments = jdbcClient.sql(SHIPMENTS_SQL)
+                .param("orderId", orderId)
+                .query(BuyerOrderQueries::mapShipment)
+                .list();
+        if (shipments.isEmpty()) {
+            return Map.of();
+        }
+        Map<UUID, List<BuyerOrderResponse.Shipment.Event>> eventsByShipment = new LinkedHashMap<>();
+        jdbcClient.sql(SHIPMENT_EVENTS_SQL)
+                .param("orderId", orderId)
+                .query(BuyerOrderQueries::mapEvent)
+                .list()
+                .forEach(event -> eventsByShipment.computeIfAbsent(event.shipmentId(), ignored -> new ArrayList<>())
+                        .add(event.event()));
+        Map<UUID, BuyerOrderResponse.Shipment> bySale = new LinkedHashMap<>();
+        for (ShipmentRow row : shipments) {
+            bySale.put(row.saleId(), new BuyerOrderResponse.Shipment(
+                    row.carrier(),
+                    row.trackingNumber(),
+                    row.status(),
+                    row.shippedAt(),
+                    row.deliveredAt(),
+                    List.copyOf(eventsByShipment.getOrDefault(row.shipmentId(), List.of()))));
+        }
+        return bySale;
+    }
+
+    private static SummaryRow mapSummary(ResultSet result, int row) throws SQLException {
+        return new SummaryRow(
+                result.getObject("order_id", UUID.class),
+                result.getLong("order_number"),
+                result.getString("order_status"),
+                localDateTime(result, "created_at"),
+                result.getString("currency"),
+                result.getBigDecimal("total"),
+                result.getInt("item_count"));
+    }
+
+    private static SaleRefRow mapSaleRef(ResultSet result, int row) throws SQLException {
+        return new SaleRefRow(
+                result.getObject("order_id", UUID.class),
+                new BuyerOrderSummary.SaleRef(
+                        result.getObject("sale_id", UUID.class),
+                        result.getObject("store_id", UUID.class),
+                        result.getString("store_name"),
+                        result.getString("sale_status")));
+    }
+
+    private static ShipmentRow mapShipment(ResultSet result, int row) throws SQLException {
+        return new ShipmentRow(
+                result.getObject("shipment_id", UUID.class),
+                result.getObject("sale_id", UUID.class),
+                result.getString("carrier"),
+                result.getString("tracking_number"),
+                result.getString("shipment_status"),
+                localDateTime(result, "shipped_at"),
+                localDateTime(result, "delivered_at"));
+    }
+
+    private static EventRow mapEvent(ResultSet result, int row) throws SQLException {
+        return new EventRow(
+                result.getObject("shipment_id", UUID.class),
+                new BuyerOrderResponse.Shipment.Event(
+                        result.getString("event_status"),
+                        result.getString("notes"),
+                        localDateTime(result, "event_at")));
     }
 
     private static OrderRow mapOrder(ResultSet result, int row) throws SQLException {
@@ -259,5 +471,33 @@ public class BuyerOrderQueries {
     }
 
     private record ItemRow(UUID saleId, BuyerOrderResponse.Item item) {
+    }
+
+    private record SummaryRow(
+            UUID orderId,
+            long orderNumber,
+            String status,
+            LocalDateTime createdAt,
+            String currency,
+            BigDecimal total,
+            int itemCount
+    ) {
+    }
+
+    private record SaleRefRow(UUID orderId, BuyerOrderSummary.SaleRef ref) {
+    }
+
+    private record ShipmentRow(
+            UUID shipmentId,
+            UUID saleId,
+            String carrier,
+            String trackingNumber,
+            String status,
+            LocalDateTime shippedAt,
+            LocalDateTime deliveredAt
+    ) {
+    }
+
+    private record EventRow(UUID shipmentId, BuyerOrderResponse.Shipment.Event event) {
     }
 }

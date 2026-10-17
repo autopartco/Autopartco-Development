@@ -49,8 +49,22 @@ public record BuyerOrderResponse(
             BigDecimal subtotal,
             BigDecimal shippingCost,
             BigDecimal total,
-            List<Item> items
+            List<Item> items,
+            Shipment shipment
     ) {
+    }
+
+    /** Envío de una venta; {@code null} si no tiene (siempre {@code null} en el recibo del checkout). */
+    public record Shipment(
+            String carrier,
+            String trackingNumber,
+            String status,
+            LocalDateTime shippedAt,
+            LocalDateTime deliveredAt,
+            List<Event> events
+    ) {
+        public record Event(String status, String notes, LocalDateTime occurredAt) {
+        }
     }
 
     public record Item(

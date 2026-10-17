@@ -15,12 +15,15 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 import com.autopartco.backend.core.order.RecordingJdbcClient.Statement;
+import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.NotFoundException;
+import com.autopartco.backend.shared.web.PageResponse;
 
 class BuyerOrderQueriesTest {
     private static final UUID PERSON_ID = UUID.randomUUID();
     private static final UUID OTHER_PERSON_ID = UUID.randomUUID();
     private static final UUID ORDER_ID = UUID.randomUUID();
+    private static final UUID SHIPMENT_ID = UUID.randomUUID();
     private static final UUID SALE_A = UUID.randomUUID();
     private static final UUID SALE_B = UUID.randomUUID();
     private static final UUID STORE_A = UUID.randomUUID();
@@ -93,7 +96,145 @@ class BuyerOrderQueriesTest {
         assertThat(jdbc.statements().getFirst().param("personId")).isEqualTo(OTHER_PERSON_ID);
     }
 
+    @Test
+    void receiptHasNoShipmentsAndSkipsShipmentQueries() {
+        RecordingJdbcClient jdbc = new RecordingJdbcClient().onRows(BuyerOrderQueriesTest::ownOrderRows);
+
+        BuyerOrderResponse order = new BuyerOrderQueries(jdbc.client()).receipt(PERSON_ID, ORDER_ID);
+
+        assertThat(order.sales()).extracting(BuyerOrderResponse.Sale::shipment).containsOnlyNulls();
+        assertThat(jdbc.statements()).hasSize(3);
+    }
+
+    @Test
+    void detailAddsShipmentWithEventsOrderedAndNullWhenThereIsNone() {
+        RecordingJdbcClient jdbc = new RecordingJdbcClient().onRows(BuyerOrderQueriesTest::ownOrderRows);
+
+        BuyerOrderResponse order = new BuyerOrderQueries(jdbc.client()).detail(PERSON_ID, ORDER_ID);
+
+        BuyerOrderResponse.Shipment shipment = order.sales().getFirst().shipment();
+        assertThat(shipment.carrier()).isEqualTo("SIMULATED");
+        assertThat(shipment.trackingNumber()).isEqualTo("AP-000123");
+        assertThat(shipment.status()).isEqualTo("IN_TRANSIT");
+        assertThat(shipment.shippedAt()).isEqualTo(CREATED_AT);
+        assertThat(shipment.deliveredAt()).isNull();
+        assertThat(shipment.events()).containsExactly(
+                new BuyerOrderResponse.Shipment.Event("DISPATCHED", null, CREATED_AT));
+        assertThat(order.sales().get(1).shipment()).isNull();
+        assertThat(jdbc.statements()).anySatisfy(statement -> {
+            assertThat(statement.sql()).isEqualTo(BuyerOrderQueries.SHIPMENT_EVENTS_SQL)
+                    .contains("ORDER BY shipment_event.event_at");
+            assertThat(statement.param("orderId")).isEqualTo(ORDER_ID);
+        });
+    }
+
+    @Test
+    void detailOfAnotherPersonIsOrderNotFound() {
+        RecordingJdbcClient jdbc = new RecordingJdbcClient().onRows(statement -> List.of());
+
+        assertThatThrownBy(() -> new BuyerOrderQueries(jdbc.client()).detail(OTHER_PERSON_ID, ORDER_ID))
+                .isInstanceOfSatisfying(NotFoundException.class,
+                        error -> assertThat(error.getCode()).isEqualTo("ORDER_NOT_FOUND"));
+        assertThat(jdbc.statements()).hasSize(1);
+    }
+
+    @Test
+    void listBuildsSummariesFilteredByPersonNewestFirst() {
+        RecordingJdbcClient jdbc = new RecordingJdbcClient()
+                .onScalar(statement -> 11L)
+                .onRows(BuyerOrderQueriesTest::pageRows);
+
+        PageResponse<BuyerOrderSummary> page = new BuyerOrderQueries(jdbc.client()).list(PERSON_ID, 2, 10);
+
+        assertThat(page.page()).isEqualTo(2);
+        assertThat(page.size()).isEqualTo(10);
+        assertThat(page.total()).isEqualTo(11L);
+        assertThat(page.totalPages()).isEqualTo(2);
+        BuyerOrderSummary summary = page.items().getFirst();
+        assertThat(summary.orderNumber()).isEqualTo(1042L);
+        assertThat(summary.currency()).isEqualTo("COP");
+        assertThat(summary.total()).isEqualTo(new BigDecimal("230000.00"));
+        assertThat(summary.itemCount()).isEqualTo(3);
+        assertThat(summary.sales()).containsExactly(
+                new BuyerOrderSummary.SaleRef(SALE_A, STORE_A, "Repuestos El Cruce", "SHIPPED"));
+
+        assertThat(jdbc.statements()).allSatisfy(statement -> assertThat(statement.sql()).doesNotContain("SELECT *"));
+        Statement count = jdbc.statements().getFirst();
+        assertThat(count.sql()).contains("person_id = :personId").contains("deleted_at IS NULL");
+        assertThat(count.param("personId")).isEqualTo(PERSON_ID);
+        Statement pageQuery = jdbc.statements().get(1);
+        assertThat(pageQuery.sql()).contains("customer_order.person_id = :personId")
+                .contains("ORDER BY customer_order.created_at DESC");
+        assertThat(pageQuery.param("limit")).isEqualTo(10);
+        assertThat(pageQuery.param("offset")).isEqualTo(10L);
+        assertThat(jdbc.statements().get(2).param("orderIds")).isEqualTo(List.of(ORDER_ID));
+    }
+
+    @Test
+    void listWithNoOrdersSkipsThePageQuery() {
+        RecordingJdbcClient jdbc = new RecordingJdbcClient().onScalar(statement -> 0L);
+
+        PageResponse<BuyerOrderSummary> page = new BuyerOrderQueries(jdbc.client()).list(PERSON_ID, 1, 10);
+
+        assertThat(page.items()).isEmpty();
+        assertThat(page.total()).isZero();
+        assertThat(page.totalPages()).isZero();
+        assertThat(jdbc.statements()).hasSize(1);
+    }
+
+    @Test
+    void listRejectsInvalidPagination() {
+        BuyerOrderQueries queries = new BuyerOrderQueries(new RecordingJdbcClient().client());
+
+        assertThatThrownBy(() -> queries.list(PERSON_ID, 1, 51)).isInstanceOfSatisfying(BadRequestException.class,
+                error -> assertThat(error.getCode()).isEqualTo("VALIDATION_ERROR"));
+        assertThatThrownBy(() -> queries.list(PERSON_ID, 1, 0)).isInstanceOf(BadRequestException.class);
+        assertThatThrownBy(() -> queries.list(PERSON_ID, 0, 10)).isInstanceOf(BadRequestException.class);
+    }
+
+    private static List<ResultSet> pageRows(Statement statement) {
+        if (statement.sql().equals(BuyerOrderQueries.PAGE_SQL)) {
+            Map<String, Object> order = new HashMap<>();
+            order.put("order_id", ORDER_ID);
+            order.put("order_number", 1042L);
+            order.put("order_status", "CONFIRMED");
+            order.put("created_at", Timestamp.valueOf(CREATED_AT));
+            order.put("currency", null);
+            order.put("total", new BigDecimal("230000"));
+            order.put("item_count", 3);
+            return List.of(RecordingJdbcClient.row(order));
+        }
+        if (statement.sql().equals(BuyerOrderQueries.PAGE_SALES_SQL)) {
+            return List.of(RecordingJdbcClient.row(Map.of(
+                    "order_id", ORDER_ID,
+                    "sale_id", SALE_A,
+                    "store_id", STORE_A,
+                    "store_name", "Repuestos El Cruce",
+                    "sale_status", "SHIPPED")));
+        }
+        throw new IllegalStateException("Unexpected query: " + statement.sql());
+    }
+
     private static List<ResultSet> ownOrderRows(Statement statement) {
+        if (statement.sql().equals(BuyerOrderQueries.SHIPMENTS_SQL)) {
+            Map<String, Object> shipment = new HashMap<>();
+            shipment.put("shipment_id", SHIPMENT_ID);
+            shipment.put("sale_id", SALE_A);
+            shipment.put("carrier", "SIMULATED");
+            shipment.put("tracking_number", "AP-000123");
+            shipment.put("shipment_status", "IN_TRANSIT");
+            shipment.put("shipped_at", Timestamp.valueOf(CREATED_AT));
+            shipment.put("delivered_at", null);
+            return List.of(RecordingJdbcClient.row(shipment));
+        }
+        if (statement.sql().equals(BuyerOrderQueries.SHIPMENT_EVENTS_SQL)) {
+            Map<String, Object> event = new HashMap<>();
+            event.put("shipment_id", SHIPMENT_ID);
+            event.put("event_status", "DISPATCHED");
+            event.put("notes", null);
+            event.put("event_at", Timestamp.valueOf(CREATED_AT));
+            return List.of(RecordingJdbcClient.row(event));
+        }
         if (statement.sql().equals(BuyerOrderQueries.ORDER_SQL)) {
             if (!PERSON_ID.equals(statement.param("personId"))) {
                 return List.of();
