@@ -1,3 +1,4 @@
+import { formatNumber } from '@/lib/format'
 import type { Capacity, OrderStatus, ShipmentStatus, StorePermission, SubscriptionStatus } from '../api/types'
 
 export type Tone = 'neutral' | 'success' | 'warning' | 'danger' | 'info'
@@ -160,11 +161,11 @@ export function usagePercent(used: number, limit: number | null): number | null 
 export function usageText(used: number, limit: number | null, capacity: Capacity): string {
   const names = CAPACITY_LABEL[capacity]
   const noun = (count: number) => (count === 1 ? names.singular : names.plural)
-  return limit === null ? `${used} ${noun(used)} · sin límite` : `${used} de ${limit} ${noun(limit)}`
+  return limit === null ? `${formatNumber(used)} ${noun(used)} · sin límite` : `${formatNumber(used)} de ${formatNumber(limit)} ${noun(limit)}`
 }
 
 export function limitText(limit: number | null, capacity: Capacity): string {
   const names = CAPACITY_LABEL[capacity]
   if (limit === null) return `${names.plural.charAt(0).toUpperCase()}${names.plural.slice(1)} ilimitados`
-  return `${limit} ${limit === 1 ? names.singular : names.plural}`
+  return `${formatNumber(limit)} ${limit === 1 ? names.singular : names.plural}`
 }
