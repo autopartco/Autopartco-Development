@@ -106,6 +106,9 @@ GRANT USAGE ON ALL SEQUENCES IN SCHEMA ml TO autopartco_app, autopartco_ml;
 GRANT SELECT ON ALL TABLES IN SCHEMA ml TO autopartco_analyst;
 GRANT INSERT, UPDATE ON ALL TABLES IN SCHEMA ml TO autopartco_ml;
 
+-- Necesario para ALTER DEFAULT PRIVILEGES FOR ROLE cuando el ejecutor no es superusuario (Supabase).
+GRANT autopartco_migrator TO CURRENT_USER;
+
 -- Privilegios por defecto para objetos que cree el migrador en el futuro.
 ALTER DEFAULT PRIVILEGES FOR ROLE autopartco_migrator IN SCHEMA public
     GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO autopartco_app;
