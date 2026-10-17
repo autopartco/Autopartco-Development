@@ -36,20 +36,21 @@ function menuLinkClass({ isActive }: { isActive: boolean }) {
   )
 }
 
-/** Acceso destacado a almacenes (desde md; solo icono hasta 2xl): registrar, ver la solicitud o ir al portal según la cuenta. */
+/** Acceso destacado a almacenes (desde md, con texto): registrar, ver la solicitud o ir al portal según la cuenta. */
 function SellerHeaderLink() {
   const cta = useSellerCta()
   if (cta.state === 'loading') return null
-  const label = cta.state === 'learn' ? 'Vender' : cta.state === 'review' ? 'Mi solicitud' : cta.label
+  const label =
+    cta.state === 'learn' ? 'Vender' : cta.state === 'review' ? 'Mi solicitud' : cta.state === 'register' ? 'Registrar almacén' : cta.label
   return (
     <Link
       to={cta.to}
       aria-label={label}
       title={label}
-      className="hidden h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg px-2.5 text-sm font-semibold text-white transition-colors hover:bg-header-hover md:inline-flex lg:h-10 2xl:px-3"
+      className="hidden h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg px-2.5 text-sm font-semibold text-white transition-colors hover:bg-header-hover md:inline-flex lg:h-10"
     >
       <StoreIcon className="size-4 text-brand-on-asphalt" aria-hidden />
-      <span className="hidden 2xl:inline">{label}</span>
+      <span className="hidden whitespace-nowrap md:inline">{label}</span>
     </Link>
   )
 }
@@ -108,17 +109,17 @@ function MobileMenu({ className }: { className?: string }) {
 
 /**
  * Cabecera carbón. En móvil y tablet son dos filas (logo y acciones: ciudad, cuenta y menú; buscador a
- * todo el ancho) y desde xl una sola. El buscador va justo después del logo en
+ * todo el ancho) y desde 2xl una sola. El buscador va justo después del logo en
  * el orden del documento: es lo primero que se usa.
  */
 export function SiteHeader() {
   return (
     <header className="surface-asphalt sticky top-0 z-40 bg-header">
-      <Container className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 [grid-template-areas:'logo_actions'_'search_search'] xl:h-16 xl:grid-cols-[auto_minmax(0,1fr)_auto] xl:gap-x-8 xl:[grid-template-areas:'logo_search_actions']">
-        <div className="flex h-14 min-w-0 items-center [grid-area:logo] xl:h-auto">
+      <Container className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 [grid-template-areas:'logo_actions'_'search_search'] 2xl:h-16 2xl:grid-cols-[auto_minmax(0,1fr)_auto] 2xl:gap-x-8 2xl:[grid-template-areas:'logo_search_actions']">
+        <div className="flex h-14 min-w-0 items-center [grid-area:logo] 2xl:h-auto">
           <Logo tone="dark" />
         </div>
-        <SearchBar tone="dark" shortcut className="pb-3 [grid-area:search] xl:max-w-2xl xl:pb-0" />
+        <SearchBar tone="dark" shortcut className="pb-3 [grid-area:search] 2xl:max-w-2xl 2xl:pb-0" />
         <div className="flex items-center gap-0.5 [grid-area:actions]">
           {/* Enlaces desde lg; por debajo van en el menú para dejar sitio a la ciudad y a la cuenta. */}
           <nav aria-label="Principal" className="hidden items-center gap-0.5 lg:flex">
