@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { FormAlert, TextField } from '@/components/common/form-fields'
 import { Button } from '@/components/ui/button'
 import { ApiError } from '@/lib/api'
+import { useSubmitOnce } from '@/lib/use-submit-once'
 import type { PersonAddressDto, PersonAddressRequestDto } from '../api/types'
 import { getAddressService } from '../api/checkout-service'
 
@@ -42,7 +43,8 @@ interface AddressFormProps {
 export function AddressForm({ makeDefault, onCreated, onCancel }: AddressFormProps) {
   const [errors, setErrors] = useState<Errors>({})
   const [formError, setFormError] = useState<string>()
-  const [submitting, setSubmitting] = useState(false)
+  const submit = useSubmitOnce((input: PersonAddressRequestDto) => getAddressService().then((service) => service.create(input)))
+  const submitting = submit.pending
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -69,17 +71,16 @@ export function AddressForm({ makeDefault, onCreated, onCancel }: AddressFormPro
         postalCode: read('postalCode') || undefined,
       },
     }
-    setSubmitting(true)
-    try {
-      const created = await (await getAddressService()).create(input)
-      onCreated(created)
-    } catch (error) {
+    // ÚNICA escritura de este formulario: la dirección se crea al pulsar «Guardar dirección».
+    const result = await submit.run(input)
+    if (result.status === 'ok') {
+      onCreated(result.value)
+    } else if (result.status === 'error') {
+      const error = result.error
       const serverErrors = error instanceof ApiError ? pickServerErrors(error.fieldErrors) : {}
       setErrors(serverErrors)
       if (Object.keys(serverErrors).length > 0) focusFirst(serverErrors)
       else setFormError(error instanceof ApiError ? error.message : 'No pudimos guardar la dirección. Inténtalo de nuevo.')
-    } finally {
-      setSubmitting(false)
     }
   }
 

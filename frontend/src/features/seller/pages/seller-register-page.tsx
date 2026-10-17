@@ -10,7 +10,11 @@ import { ACCOUNT_FIELDS, readAccount, readPasswordConfirm, validateAccount } fro
 import { AuthShell, SimulatedNotice } from '@/features/auth/components/auth-shell'
 import { CheckEmail } from '@/features/auth/components/check-email'
 import { compact, emailError, requiredText, type FieldErrors } from '@/features/auth/lib/validation'
+import { UnsavedChangesDialog } from '@/components/common/unsaved-changes-dialog'
 import { ApiError } from '@/lib/api'
+import { useFormTouched } from '@/lib/use-form-touched'
+import { useSubmitOnce } from '@/lib/use-submit-once'
+import { useUnsavedChanges } from '@/lib/use-unsaved-changes'
 import { cn } from '@/lib/utils'
 import { invalidateAsync } from '@/lib/use-async'
 import { getSellerApplicationService } from '../api/seller-service'
@@ -180,7 +184,19 @@ function ApplicationForm({ mode, notice }: { mode: FormMode; notice?: ReactNode 
   const [documentErrors, setDocumentErrors] = useState<Partial<Record<SellerDocumentKey, string>>>({})
   const [legalTypeError, setLegalTypeError] = useState<string>()
   const [formError, setFormError] = useState<FormError>()
-  const [submitting, setSubmitting] = useState(false)
+  const send = useSubmitOnce(
+    async ({ account, store, documents }: { account: ReturnType<typeof readAccount> | undefined; store: StoreRegistration; documents: Partial<Record<SellerDocumentKey, File>> }) => {
+      const service = await getSellerApplicationService()
+      if (mode.kind === 'public' && account) {
+        return { kind: 'public' as const, result: await service.submit({ account, store, legalType, documents }) }
+      }
+      return { kind: 'current-user' as const, result: await service.applyAsCurrentUser({ store, legalType, documents }) }
+    },
+  )
+  const submitting = send.pending
+  // Guardia de cambios sin guardar: formulario no controlado (y archivos elegidos solo en local).
+  const form = useFormTouched()
+  const blocker = useUnsavedChanges(form.touched && !submitting)
   const alertRef = useRef<HTMLDivElement>(null)
   const required = REQUIRED_DOCUMENTS[legalType]
 
@@ -283,15 +299,16 @@ function ApplicationForm({ mode, notice }: { mode: FormMode; notice?: ReactNode 
       return
     }
 
-    setSubmitting(true)
-    try {
-      const service = await getSellerApplicationService()
-      if (mode.kind === 'public' && account) {
-        mode.onResult(await service.submit({ account, store, legalType, documents }))
-      } else if (mode.kind === 'current-user') {
-        mode.onResult(await service.applyAsCurrentUser({ store, legalType, documents }), store.businessName)
-      }
-    } catch (error) {
+    // ÚNICA escritura: un solo multipart (datos + documentos) al pulsar «Enviar solicitud».
+    // Los archivos se eligieron y validaron en local; no se subió nada al elegirlos.
+    const outcome = await send.run({ account, store, documents })
+    if (outcome.status === 'ok') {
+      form.clear()
+      const done = outcome.value
+      if (done.kind === 'public' && mode.kind === 'public') mode.onResult(done.result)
+      else if (done.kind === 'current-user' && mode.kind === 'current-user') mode.onResult(done.result, store.businessName)
+    } else if (outcome.status === 'error') {
+      const error = outcome.error
       if (!(error instanceof ApiError)) {
         showFormError({ title: 'No pudimos enviar la solicitud. Revisa tu conexión e inténtalo de nuevo.' })
         return
@@ -317,13 +334,11 @@ function ApplicationForm({ mode, notice }: { mode: FormMode; notice?: ReactNode 
       }
       // SELLER_DOCUMENTS_INCOMPLETE, UNSUPPORTED_FILE_TYPE, tamaño excedido u otros: mensaje del servidor.
       showFormError({ title: error.message })
-    } finally {
-      setSubmitting(false)
     }
   }
 
   return (
-    <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-8" aria-busy={submitting || undefined}>
+    <form noValidate onSubmit={handleSubmit} {...form.formProps} className="flex flex-col gap-8" aria-busy={submitting || undefined}>
       {formError ? (
         <FormAlert ref={alertRef} title={formError.title}>
           {formError.body}
@@ -415,6 +430,14 @@ function ApplicationForm({ mode, notice }: { mode: FormMode; notice?: ReactNode 
                     type="file"
                     accept={DOCUMENT_ACCEPT}
                     required
+                    // Validación local al elegir el archivo (tamaño); no se sube nada hasta «Enviar solicitud».
+                    onChange={(event) => {
+                      const file = event.target.files?.[0]
+                      setDocumentErrors((current) => ({
+                        ...current,
+                        [key]: file && file.size > DOCUMENT_MAX_BYTES ? `El archivo pesa ${megabytes(file.size)}; el máximo es 10 MB.` : undefined,
+                      }))
+                    }}
                     aria-invalid={documentErrors[key] ? true : undefined}
                     aria-describedby={describedBy}
                     className={cn(
@@ -456,6 +479,7 @@ function ApplicationForm({ mode, notice }: { mode: FormMode; notice?: ReactNode 
         ) : null}
         <SimulatedNotice />
       </div>
+      <UnsavedChangesDialog blocker={blocker} />
     </form>
   )
 }

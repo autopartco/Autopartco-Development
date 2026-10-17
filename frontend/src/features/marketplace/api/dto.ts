@@ -7,8 +7,12 @@
 /** core/catalog/ProductImageResponse.java */
 export interface ProductImageResponseDto {
   id: string
-  /** URL pública absoluta del almacenamiento. */
+  /** Original (detalle). */
   url: string
+  /** Variante pequeña (400 px). Puede faltar en servidores antiguos. */
+  thumbUrl?: string | null
+  /** Variante de tarjeta (800 px). */
+  cardUrl?: string | null
   /** Componente `isMain` del record; algunas configuraciones de Jackson lo serializan como `main`. */
   isMain?: boolean
   main?: boolean
@@ -31,10 +35,15 @@ export interface ProductResponseDto {
   appliedPromotionName: string | null
   quantity: number | null
   manufacturerId: string | null
+  /** Visible aunque el fabricante esté pendiente de aprobación. */
+  manufacturerName: string | null
+  manufacturerApproved: boolean | null
   categoryId: string | null
   state: string | null
   attributes: Record<string, unknown> | null
-  compatibilityIds: string[] | null
+  /** Producto que no depende del vehículo (sin reglas). */
+  universal: boolean | null
+  vehicleRules: VehicleRuleResponseDto[] | null
   images: ProductImageResponseDto[] | null
 }
 
@@ -49,17 +58,31 @@ export interface CategoryOptionDto {
   code: string
 }
 
-export interface CompatibilityOptionDto {
-  id: string
-  make: string
-  model: string
-  version: string | null
-}
-
 export interface ProductOptionsResponseDto {
   manufacturers: ManufacturerOptionDto[]
   categories: CategoryOptionDto[]
-  compatibilities: CompatibilityOptionDto[]
+}
+
+/** Regla de compatibilidad con nombres; los niveles «todos» vienen en `null`. */
+export interface VehicleRuleResponseDto {
+  makeId: string
+  makeName: string
+  modelId: string | null
+  modelName: string | null
+  versionId: string | null
+  versionLabel: string | null
+}
+
+/** GET /marketplace/vehicles/makes, /makes/{id}/models */
+export interface VehicleNameOptionDto {
+  id: string
+  name: string
+}
+
+/** GET /marketplace/vehicles/models/{id}/versions */
+export interface VehicleVersionOptionDto {
+  id: string
+  label: string
 }
 
 /** core/organization/StoreResponse.java */

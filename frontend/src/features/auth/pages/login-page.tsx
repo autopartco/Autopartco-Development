@@ -4,6 +4,7 @@ import { FormAlert, PasswordField, TextField } from '@/components/common/form-fi
 import { focusFirstError } from '../lib/account'
 import { Button } from '@/components/ui/button'
 import { ApiError } from '@/lib/api'
+import { useSubmitOnce } from '@/lib/use-submit-once'
 import { getSellerApplicationService } from '@/features/seller/api/seller-service'
 import { SELLER_SETUP_PATH } from '@/features/seller/hooks'
 import { getAuthService } from '../api/auth-service'
@@ -43,7 +44,8 @@ export default function LoginPage() {
   const hasNext = searchParams.has('next') && returnTo !== '/'
   const [errors, setErrors] = useState<FieldErrors>({})
   const [formError, setFormError] = useState<{ title: string; credentials?: boolean }>()
-  const [submitting, setSubmitting] = useState(false)
+  const login = useSubmitOnce(async (credentials: { email: string; password: string }) => (await getAuthService()).login(credentials))
+  const submitting = login.pending
   const alertRef = useRef<HTMLDivElement>(null)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -61,13 +63,13 @@ export default function LoginPage() {
       focusFirstError(FIELDS, next, fieldId)
       return
     }
-    setSubmitting(true)
-    try {
-      const service = await getAuthService()
-      const loggedIn = await service.login({ email, password })
-      setSession(loggedIn)
-      navigate(await destinationAfterLogin(loggedIn.roles, returnTo), { replace: true })
-    } catch (error) {
+    // ÚNICA escritura: el ingreso ocurre al pulsar «Ingresar»; el candado evita el doble envío.
+    const result = await login.run({ email, password })
+    if (result.status === 'ok') {
+      setSession(result.value)
+      navigate(await destinationAfterLogin(result.value.roles, returnTo), { replace: true })
+    } else if (result.status === 'error') {
+      const error = result.error
       // El backend responde lo mismo si la contraseña no coincide, si la cuenta no está
       // verificada o si está bloqueada (no revela cuál): el mensaje cubre los tres casos.
       if (error instanceof ApiError && error.code === 'UNAUTHORIZED') {
@@ -77,8 +79,6 @@ export default function LoginPage() {
         if (error instanceof ApiError) setErrors(error.fieldErrors)
       }
       requestAnimationFrame(() => alertRef.current?.focus())
-    } finally {
-      setSubmitting(false)
     }
   }
 

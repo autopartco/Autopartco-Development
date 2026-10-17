@@ -2,7 +2,11 @@ import { useRef, useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
 import { FormAlert } from '@/components/common/form-fields'
 import { Button } from '@/components/ui/button'
+import { UnsavedChangesDialog } from '@/components/common/unsaved-changes-dialog'
 import { ApiError } from '@/lib/api'
+import { useFormTouched } from '@/lib/use-form-touched'
+import { useSubmitOnce } from '@/lib/use-submit-once'
+import { useUnsavedChanges } from '@/lib/use-unsaved-changes'
 import { getAuthService } from '../api/auth-service'
 import type { RegistrationResult } from '../api/types'
 import { AccountFields } from '../components/account-fields'
@@ -23,8 +27,12 @@ const FIELD_BY_CODE: Record<string, string> = {
 export default function CustomerRegisterPage() {
   const [errors, setErrors] = useState<FieldErrors>({})
   const [formError, setFormError] = useState<string>()
-  const [submitting, setSubmitting] = useState(false)
   const [result, setResult] = useState<RegistrationResult>()
+  const register = useSubmitOnce(async (account: ReturnType<typeof readAccount>) => (await getAuthService()).register(account))
+  const submitting = register.pending
+  // Guardia de cambios sin guardar: formulario no controlado, basta saber que se escribió algo.
+  const form = useFormTouched()
+  const blocker = useUnsavedChanges(form.touched && !submitting && !result)
   const alertRef = useRef<HTMLDivElement>(null)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -38,11 +46,12 @@ export default function CustomerRegisterPage() {
       focusFirstError(ACCOUNT_FIELDS, next, (field) => `${PREFIX}${field}`)
       return
     }
-    setSubmitting(true)
-    try {
-      const service = await getAuthService()
-      setResult(await service.register(account))
-    } catch (error) {
+    // ÚNICA escritura: la cuenta se crea al pulsar «Crear cuenta»; el candado evita el doble envío.
+    const outcome = await register.run(account)
+    if (outcome.status === 'ok') {
+      setResult(outcome.value)
+    } else if (outcome.status === 'error') {
+      const error = outcome.error
       if (error instanceof ApiError) {
         const field = error.code ? FIELD_BY_CODE[error.code] : undefined
         const serverErrors = field ? { [field]: error.message } : error.fieldErrors
@@ -56,8 +65,6 @@ export default function CustomerRegisterPage() {
         setFormError('No pudimos crear la cuenta. Inténtalo de nuevo.')
       }
       requestAnimationFrame(() => alertRef.current?.focus())
-    } finally {
-      setSubmitting(false)
     }
   }
 
@@ -79,7 +86,7 @@ export default function CustomerRegisterPage() {
           </Button>
         </CheckEmail>
       ) : (
-        <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-6" aria-busy={submitting || undefined}>
+        <form noValidate onSubmit={handleSubmit} {...form.formProps} className="flex flex-col gap-6" aria-busy={submitting || undefined}>
           {formError ? <FormAlert ref={alertRef} title={formError} /> : null}
           <p className="text-sm text-muted-foreground">Todos los campos son obligatorios.</p>
           <AccountFields prefix={PREFIX} errors={errors} />
@@ -95,6 +102,7 @@ export default function CustomerRegisterPage() {
             </p>
           </div>
           <SimulatedNotice />
+          <UnsavedChangesDialog blocker={blocker} />
         </form>
       )}
     </AuthShell>

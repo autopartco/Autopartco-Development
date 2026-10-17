@@ -8,7 +8,7 @@ import {
   type ProductQuery,
   type StoreSummary,
 } from '../types'
-import { MOCK_BRANDS, MOCK_CATEGORIES, MOCK_PRODUCTS, MOCK_STORES } from './mock-data'
+import { MOCK_BRANDS, MOCK_CATEGORIES, MOCK_PRODUCTS, MOCK_STORES, MOCK_VEHICLE_CATALOG, ruleMatches } from './mock-data'
 
 /**
  * Implementación simulada: búsqueda, filtros, orden y paginación en el cliente,
@@ -45,7 +45,7 @@ const searchIndex = new Map(
           product.partNumber,
           product.brand?.name,
           product.category?.name,
-          ...product.compatibilities.map((fit) => `${fit.make} ${fit.model}`),
+          ...product.vehicleRules.map((rule) => `${rule.makeName} ${rule.modelName ?? ''}`),
         ]
           .filter(Boolean)
           .join(' '),
@@ -73,16 +73,19 @@ function matchesFilters(product: Product, query: ProductQuery): boolean {
   if (query.maxPrice !== undefined && product.price > query.maxPrice) return false
   if (query.inStockOnly && product.availability?.status === 'out_of_stock') return false
   if (query.recommendedOnly && !product.store?.recommended) return false
-  if (query.make || query.model || query.year) {
-    const fits = product.compatibilities.some(
-      (fit) =>
-        (!query.make || fit.make === query.make) &&
-        (!query.model || fit.model === query.model) &&
-        (!query.year || ((fit.yearFrom ?? 0) <= query.year && query.year <= (fit.yearTo ?? 9999))),
-    )
-    if (!fits) return false
-  }
+  // Como el servidor: los universales aparecen siempre; el resto, si alguna regla cubre el vehículo.
+  if (query.makeId && !product.universal && !product.vehicleRules.some((rule) => ruleMatches(rule, query))) return false
   return true
+}
+
+/** 400 `VEHICLE_FILTER_INVALID`: el modelo exige la marca y la versión exige el modelo. */
+function assertVehicleFilter(query: ProductQuery): void {
+  if ((query.modelId && !query.makeId) || (query.versionId && !query.modelId)) {
+    throw new MarketplaceError('El filtro de vehículo no es válido: elige primero la marca y luego el modelo.', {
+      status: 400,
+      code: 'VEHICLE_FILTER_INVALID',
+    })
+  }
 }
 
 function search(query: ProductQuery): ProductPage {
@@ -114,29 +117,15 @@ function search(query: ProductQuery): ProductPage {
 }
 
 function filterOptions(): FilterOptions {
-  const makes = new Map<string, Set<string>>()
-  const years = new Set<number>()
   let min = Number.POSITIVE_INFINITY
   let max = 0
   for (const product of MOCK_PRODUCTS) {
     min = Math.min(min, product.price)
     max = Math.max(max, product.price)
-    for (const fit of product.compatibilities) {
-      const models = makes.get(fit.make) ?? new Set<string>()
-      models.add(fit.model)
-      makes.set(fit.make, models)
-      if (fit.yearFrom && fit.yearTo) {
-        for (let year = fit.yearFrom; year <= fit.yearTo; year += 1) years.add(year)
-      }
-    }
   }
   return {
     categories: MOCK_CATEGORIES,
     brands: MOCK_BRANDS,
-    vehicles: [...makes.entries()]
-      .map(([make, models]) => ({ make, models: [...models].toSorted() }))
-      .toSorted((a, b) => a.make.localeCompare(b.make, 'es')),
-    years: [...years].toSorted((a, b) => b - a),
     priceRange: { min, max },
   }
 }
@@ -156,12 +145,32 @@ export function createMockMarketplaceService(): MarketplaceService {
       textSearch: true,
       sorting: true,
       pagination: true,
-      filters: new Set(['category', 'brand', 'vehicle', 'year', 'price', 'availability', 'recommendedStore', 'store']),
+      filters: new Set(['category', 'brand', 'vehicle', 'price', 'availability', 'recommendedStore', 'store']),
     },
 
     async searchProducts(query) {
       await simulateNetwork()
+      assertVehicleFilter(query)
       return search(query)
+    },
+
+    async listVehicleMakes() {
+      await simulateNetwork()
+      return MOCK_VEHICLE_CATALOG.map(({ id, name }) => ({ id, name })).toSorted((a, b) => a.name.localeCompare(b.name, 'es'))
+    },
+
+    async listVehicleModels(makeId) {
+      await simulateNetwork()
+      const make = MOCK_VEHICLE_CATALOG.find((item) => item.id === makeId)
+      if (!make) throw new MarketplaceError('No encontramos esa marca.', { status: 404, code: 'VEHICLE_MAKE_NOT_FOUND' })
+      return make.models.map(({ id, name }) => ({ id, name })).toSorted((a, b) => a.name.localeCompare(b.name, 'es'))
+    },
+
+    async listVehicleVersions(modelId) {
+      await simulateNetwork()
+      const model = MOCK_VEHICLE_CATALOG.flatMap((make) => make.models).find((item) => item.id === modelId)
+      if (!model) throw new MarketplaceError('No encontramos ese modelo.', { status: 404, code: 'VEHICLE_MODEL_NOT_FOUND' })
+      return model.versions.map(({ id, label }) => ({ id, name: label }))
     },
 
     async getProduct(id) {

@@ -4,7 +4,7 @@
  * Los precios son de referencia en COP y no representan ofertas reales.
  */
 import { PLACEHOLDER_IMAGES } from '@/lib/images'
-import type { AvailabilityStatus, Brand, Category, Product, StoreSummary, VehicleFit } from '../types'
+import type { AvailabilityStatus, Brand, Category, Product, StoreSummary, VehicleRule } from '../types'
 
 export const MOCK_CATEGORIES: Category[] = [
   { id: 'cat-frenos', slug: 'frenos', name: 'Frenos', description: 'Pastillas, discos, bandas y líquido de frenos.' },
@@ -34,22 +34,73 @@ export const MOCK_BRANDS: Brand[] = [
   { id: 'walker', name: 'Walker' },
 ]
 
+/** Catálogo de vehículos en cascada (marca > modelo > versión) que sirve el mock. */
+export interface MockVehicleMake {
+  id: string
+  name: string
+  models: { id: string; name: string; versions: { id: string; label: string }[] }[]
+}
+
+function mockModel(id: string, name: string, versions: string[]) {
+  return { id, name, versions: versions.map((label, index) => ({ id: `vr-${id.slice(3)}-${index + 1}`, label })) }
+}
+
+export const MOCK_VEHICLE_CATALOG: MockVehicleMake[] = [
+  { id: 'mk-chevrolet', name: 'Chevrolet', models: [mockModel('md-spark', 'Spark GT', ['1.2']), mockModel('md-sail', 'Sail', ['1.4'])] },
+  {
+    id: 'mk-renault',
+    name: 'Renault',
+    models: [mockModel('md-logan', 'Logan', ['1.6 8V', '1.6 16V']), mockModel('md-sandero', 'Sandero', ['1.6']), mockModel('md-duster', 'Duster', ['1.6 4x2', '2.0 4x4'])],
+  },
+  { id: 'mk-mazda', name: 'Mazda', models: [mockModel('md-mazda2', 'Mazda 2', ['1.5']), mockModel('md-mazda3', 'Mazda 3', ['2.0'])] },
+  { id: 'mk-kia', name: 'Kia', models: [mockModel('md-picanto', 'Picanto', ['Ion 1.0']), mockModel('md-rio', 'Rio', ['1.4'])] },
+  { id: 'mk-toyota', name: 'Toyota', models: [mockModel('md-hilux', 'Hilux', ['2.5 diésel', '2.8 diésel'])] },
+  { id: 'mk-nissan', name: 'Nissan', models: [mockModel('md-march', 'March', ['1.6'])] },
+  { id: 'mk-suzuki', name: 'Suzuki', models: [mockModel('md-swift', 'Swift', ['1.2'])] },
+]
+
+/** Regla con nombres a partir de un id de marca (`mk-`), modelo (`md-`) o versión (`vr-`). */
+function ruleFor(id: string): VehicleRule {
+  for (const make of MOCK_VEHICLE_CATALOG) {
+    const base = { makeId: make.id, makeName: make.name, modelId: null, modelName: null, versionId: null, versionLabel: null }
+    if (make.id === id) return base
+    for (const model of make.models) {
+      if (model.id === id) return { ...base, modelId: model.id, modelName: model.name }
+      const version = model.versions.find((candidate) => candidate.id === id)
+      if (version) return { ...base, modelId: model.id, modelName: model.name, versionId: version.id, versionLabel: version.label }
+    }
+  }
+  throw new Error(`Vehículo simulado desconocido: ${id}`)
+}
+
+/**
+ * Reglas de compatibilidad de los datos de ejemplo: modelo completo, salvo `duster` (solo la versión
+ * 2.0 4x4) y `hilux` (todos los Toyota), para mostrar las tres granularidades.
+ */
 const VEHICLES = {
-  spark: { id: 'veh-spark', make: 'Chevrolet', model: 'Spark GT', version: '1.2', yearFrom: 2011, yearTo: 2018 },
-  sail: { id: 'veh-sail', make: 'Chevrolet', model: 'Sail', version: '1.4', yearFrom: 2013, yearTo: 2020 },
-  logan: { id: 'veh-logan', make: 'Renault', model: 'Logan', version: '1.6 8V', yearFrom: 2008, yearTo: 2020 },
-  sandero: { id: 'veh-sandero', make: 'Renault', model: 'Sandero', version: '1.6', yearFrom: 2009, yearTo: 2020 },
-  duster: { id: 'veh-duster', make: 'Renault', model: 'Duster', version: '2.0 4x4', yearFrom: 2012, yearTo: 2022 },
-  mazda2: { id: 'veh-mazda2', make: 'Mazda', model: 'Mazda 2', version: '1.5', yearFrom: 2015, yearTo: 2022 },
-  mazda3: { id: 'veh-mazda3', make: 'Mazda', model: 'Mazda 3', version: '2.0', yearFrom: 2014, yearTo: 2019 },
-  picanto: { id: 'veh-picanto', make: 'Kia', model: 'Picanto', version: 'Ion 1.0', yearFrom: 2011, yearTo: 2017 },
-  rio: { id: 'veh-rio', make: 'Kia', model: 'Rio', version: '1.4', yearFrom: 2012, yearTo: 2017 },
-  hilux: { id: 'veh-hilux', make: 'Toyota', model: 'Hilux', version: '2.5 diésel', yearFrom: 2006, yearTo: 2015 },
-  march: { id: 'veh-march', make: 'Nissan', model: 'March', version: '1.6', yearFrom: 2012, yearTo: 2020 },
-  swift: { id: 'veh-swift', make: 'Suzuki', model: 'Swift', version: '1.2', yearFrom: 2018, yearTo: 2023 },
-} satisfies Record<string, VehicleFit>
+  spark: ruleFor('md-spark'),
+  sail: ruleFor('md-sail'),
+  logan: ruleFor('md-logan'),
+  sandero: ruleFor('md-sandero'),
+  duster: ruleFor('vr-duster-2'),
+  mazda2: ruleFor('md-mazda2'),
+  mazda3: ruleFor('md-mazda3'),
+  picanto: ruleFor('md-picanto'),
+  rio: ruleFor('md-rio'),
+  hilux: ruleFor('mk-toyota'),
+  march: ruleFor('md-march'),
+  swift: ruleFor('md-swift'),
+} satisfies Record<string, VehicleRule>
 
 type VehicleKey = keyof typeof VEHICLES
+
+/** Cobertura de una regla sobre el filtro: nivel ausente en el filtro = sin restricción; regla con nivel `null` cubre todo bajo ella. */
+export function ruleMatches(rule: VehicleRule, filter: { makeId?: string; modelId?: string; versionId?: string }): boolean {
+  if (filter.makeId && rule.makeId !== filter.makeId) return false
+  if (filter.modelId && rule.modelId !== null && rule.modelId !== filter.modelId) return false
+  if (filter.versionId && rule.versionId !== null && rule.versionId !== filter.versionId) return false
+  return true
+}
 
 export const MOCK_STORES: StoreSummary[] = [
   { id: 'store-la13', name: 'Repuestos La 13', city: 'Bogotá', recommended: true },
@@ -162,6 +213,9 @@ const SEEDS: Seed[] = [
   { name: 'Pastillas de freno delanteras', ref: 'IB-1023', category: 'frenos', brand: 'incolbestos', price: 69900, store: 'santander', fits: ['spark', 'picanto'], stock: 18, specs: { Posición: 'Delantera', Material: 'Semimetálica', Juego: '4 pastillas' } },
   { name: 'Pastillas de freno delanteras', ref: 'IB-1023', category: 'frenos', brand: 'incolbestos', price: 75000, store: 'costa', fits: ['spark', 'picanto'], stock: 3, specs: { Posición: 'Delantera', Material: 'Semimetálica', Juego: '4 pastillas' } },
   { name: 'Pastillas de freno delanteras', ref: 'IB-1023', category: 'frenos', brand: 'incolbestos', price: 66500, store: 'eje', fits: ['spark', 'picanto'], stock: 8, specs: { Posición: 'Delantera', Material: 'Semimetálica', Juego: '4 pastillas' } },
+
+  // Universal con fabricante pendiente de aprobación: la marca se muestra igual. Al final para no mover los id anteriores.
+  { name: 'Aditivo limpiainyectores', ref: 'TL-300', category: 'motor', brand: 'tecnolub', price: 34900, store: 'eje', fits: [], stock: 25, specs: { Contenido: '355 ml' } },
 ]
 
 function availabilityStatus(stock: number): AvailabilityStatus {
@@ -170,7 +224,9 @@ function availabilityStatus(stock: number): AvailabilityStatus {
 }
 
 const categoryBySlug = new Map(MOCK_CATEGORIES.map((category) => [category.slug, category]))
-const brandById = new Map(MOCK_BRANDS.map((brand) => [brand.id, brand]))
+/** Fabricantes que un almacén registró y aún no aprueba un administrador: se ven por nombre, pero no se listan como filtro. */
+const PENDING_BRANDS: Brand[] = [{ id: 'tecnolub', name: 'TecnoLub Andina', approved: false }]
+const brandById = new Map([...MOCK_BRANDS, ...PENDING_BRANDS].map((brand) => [brand.id, brand]))
 const storeById = new Map(MOCK_STORES.map((store) => [store.id, store]))
 
 export const MOCK_PRODUCTS: Product[] = SEEDS.map((seed, index) => {
@@ -179,7 +235,7 @@ export const MOCK_PRODUCTS: Product[] = SEEDS.map((seed, index) => {
   const category = categoryBySlug.get(seed.category)
   const brand = brandById.get(seed.brand)
   const fits = seed.fits.map((key) => VEHICLES[key])
-  const fitText = fits.map((fit) => `${fit.make} ${fit.model}`).join(', ')
+  const fitText = fits.map((fit) => [fit.makeName, fit.modelName].filter(Boolean).join(' ')).join(', ')
   return {
     id,
     listingKey: `${id}:${storeId}`,
@@ -193,12 +249,13 @@ export const MOCK_PRODUCTS: Product[] = SEEDS.map((seed, index) => {
     listPrice: seed.discount ? seed.price : undefined,
     discountAmount: seed.discount,
     promotionName: seed.promo,
-    images: [PLACEHOLDER_IMAGES.product, PLACEHOLDER_IMAGES.category],
+    images: [PLACEHOLDER_IMAGES.product, PLACEHOLDER_IMAGES.category].map((url) => ({ url, thumbUrl: url, cardUrl: url })),
     category,
-    brand,
+    brand: brand ? { ...brand, approved: brand.approved ?? true } : undefined,
     store: storeById.get(storeId),
     availability: { status: availabilityStatus(seed.stock), quantity: seed.stock, branchName: BRANCHES[storeId] },
-    compatibilities: fits,
+    universal: fits.length === 0,
+    vehicleRules: fits,
     specifications: [
       ...(brand ? [{ label: 'Marca', value: brand.name }] : []),
       { label: 'Referencia', value: seed.ref },

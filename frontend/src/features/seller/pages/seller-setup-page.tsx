@@ -5,7 +5,10 @@ import { FieldShell, FormAlert, INPUT_CLASS } from '@/components/common/form-fie
 import { Button } from '@/components/ui/button'
 import { useSessionState, useSignOut } from '@/features/auth/hooks'
 import { loginPathFor } from '@/features/auth/lib/return-path'
+import { UnsavedChangesDialog } from '@/components/common/unsaved-changes-dialog'
 import { ApiError } from '@/lib/api'
+import { useSubmitOnce } from '@/lib/use-submit-once'
+import { useUnsavedChanges } from '@/lib/use-unsaved-changes'
 import { cn } from '@/lib/utils'
 import { getSellerApplicationService } from '../api/seller-service'
 import { DOCUMENT_MAX_BYTES, type SetupDetails } from '../api/types'
@@ -49,8 +52,8 @@ function Shell({ title, children }: { title: string; children: ReactNode }) {
 // ------------------------------------------------------------------ asistente por pasos
 
 interface WizardProps {
-  /** Envía la configuración. Si falla, lanza el error y el asistente lo muestra. */
-  submit: (details: SetupDetails) => Promise<void>
+  /** Envía la configuración. Si falla, lanza el error y el asistente lo muestra. Llama a `onSaved` al guardar, antes de navegar. */
+  submit: (details: SetupDetails, onSaved: () => void) => Promise<void>
 }
 
 /**
@@ -64,7 +67,15 @@ function SetupWizard({ submit }: WizardProps) {
   const [banner, setBanner] = useState<File>()
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [formError, setFormError] = useState<string>()
-  const [submitting, setSubmitting] = useState(false)
+  const saved = useRef(false)
+  const send = useSubmitOnce((details: SetupDetails) =>
+    submit(details, () => {
+      saved.current = true
+    }),
+  )
+  const submitting = send.pending
+  // Guardia de cambios sin guardar; `saved` lo apaga justo tras la escritura, antes de navegar al portal.
+  const blocker = useUnsavedChanges(() => (logo !== undefined || banner !== undefined || description.trim() !== '') && !saved.current)
   const headingRef = useRef<HTMLHeadingElement>(null)
   const alertRef = useRef<HTMLDivElement>(null)
   const moved = useRef(false)
@@ -103,14 +114,12 @@ function SetupWizard({ submit }: WizardProps) {
       return
     }
     setFormError(undefined)
-    setSubmitting(true)
-    try {
-      await submit({ businessDescription: description, logo, banner })
-    } catch (error) {
-      setFormError(setupErrorMessage(error))
+    // ÚNICA escritura: logo, banner y descripción viajan juntos al pulsar «Activar mi almacén».
+    // Los archivos se eligieron y validaron en local; no se subió nada al elegirlos.
+    const result = await send.run({ businessDescription: description, logo, banner })
+    if (result.status === 'error') {
+      setFormError(setupErrorMessage(result.error))
       requestAnimationFrame(() => alertRef.current?.focus())
-    } finally {
-      setSubmitting(false)
     }
   }
 
@@ -260,6 +269,7 @@ function SetupWizard({ submit }: WizardProps) {
             </Button>
           )}
         </div>
+        <UnsavedChangesDialog blocker={blocker} />
       </form>
     </>
   )
@@ -339,8 +349,9 @@ export default function SellerSetupPage() {
     return (
       <Shell title="Configura tu almacén">
         <SetupWizard
-          submit={async (details) => {
+          submit={async (details, onSaved) => {
             await (await getSellerApplicationService()).completeSetupAuthenticated(application.applicationId, details)
+            onSaved()
             await finish()
           }}
         />

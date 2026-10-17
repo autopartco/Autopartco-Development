@@ -44,10 +44,12 @@ function Field({ label, children, note, className }: { label: string; children: 
 }
 
 function vehicleList(product: Product): string | undefined {
-  const models = product.compatibilities.map((fit) => fit.model)
-  if (models.length === 0) return undefined
-  if (models.length === 1) return models[0]
-  return `${models.slice(0, -1).join(', ')} y ${models[models.length - 1]}`
+  if (product.universal) return 'Cualquier vehículo (universal)'
+  // Nivel más específico de cada regla: versión, modelo o, si es «todos», la marca.
+  const names = product.vehicleRules.map((rule) => rule.modelName ?? `${rule.makeName} (todos los modelos)`)
+  if (names.length === 0) return undefined
+  if (names.length === 1) return names[0]
+  return `${names.slice(0, -1).join(', ')} y ${names[names.length - 1]}`
 }
 
 /** Línea tipo zona de lectura mecánica de un pasaporte. Decorativa. */
@@ -107,7 +109,7 @@ function PassportCard({ reference }: { reference: ReferenceOffers }) {
 
       <div className="grid gap-6 pt-6 sm:grid-cols-[8.5rem_minmax(0,1fr)]">
         <SmartImage
-          src={featured.images[0]}
+          src={featured.images[0]?.thumbUrl}
           alt=""
           width={272}
           height={340}
