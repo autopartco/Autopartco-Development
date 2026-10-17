@@ -1,5 +1,5 @@
 import { useMemo } from 'react'
-import { Link, useSearchParams } from 'react-router'
+import { Link, useNavigate, useSearchParams } from 'react-router'
 import { ClipboardListIcon, SearchXIcon } from 'lucide-react'
 import { DataTable, type DataColumn } from '@/components/common/data-table'
 import { EmptyState } from '@/components/common/states'
@@ -24,6 +24,7 @@ const STATUS_OPTIONS = (Object.keys(ORDER_STATUS_LABEL) as OrderStatus[])
 function OrdersView({ rows }: { rows: OrderSummary[] }) {
   const { storeId } = usePortal()
   const base = `/portal/${encodeURIComponent(storeId)}`
+  const navigate = useNavigate()
   const [params, setParams] = useSearchParams()
   const estado = params.get('estado') ?? ''
   const q = params.get('q') ?? ''
@@ -122,6 +123,7 @@ function OrdersView({ rows }: { rows: OrderSummary[] }) {
           getRowId={(row) => row.saleId}
           defaultSort={{ columnId: 'fecha', direction: 'desc' }}
           pageSize={10}
+          onRowClick={(row) => navigate(`${base}/pedidos/${encodeURIComponent(row.saleId)}`)}
         />
       )}
     </div>

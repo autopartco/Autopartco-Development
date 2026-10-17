@@ -27,7 +27,15 @@ interface DataTableProps<T> {
   className?: string
   /** Con valor, la tabla pagina en el cliente (controles «Anterior / Siguiente» bajo la tabla). */
   pageSize?: number
+  /**
+   * Fila completa clicable (ratón/tacto). No sustituye al enlace de la fila: el destino accesible
+   * por teclado debe seguir siendo un `<a>` dentro de la fila. Los clics en enlaces, botones y
+   * campos de la fila no la activan.
+   */
+  onRowClick?: (row: T) => void
 }
+
+const INTERACTIVE = 'a,button,input,select,textarea,label,summary,[role="button"],[role="link"],[data-row-click-ignore]'
 
 const collator = new Intl.Collator('es-CO', { numeric: true, sensitivity: 'base' })
 
@@ -36,7 +44,7 @@ const collator = new Intl.Collator('es-CO', { numeric: true, sensitivity: 'base'
  * Por debajo de 40rem de ancho (del contenedor, no de la pantalla) cada fila pasa a tarjeta y
  * cada celda muestra su encabezado; el scroll horizontal es alcanzable con teclado.
  */
-export function DataTable<T>({ caption, columns, rows, getRowId, defaultSort, className, pageSize }: DataTableProps<T>) {
+export function DataTable<T>({ caption, columns, rows, getRowId, defaultSort, className, pageSize, onRowClick }: DataTableProps<T>) {
   const [sort, setSort] = useState(defaultSort)
   const [page, setPage] = useState(0)
   const captionId = useId()
@@ -119,7 +127,17 @@ export function DataTable<T>({ caption, columns, rows, getRowId, defaultSort, cl
           {visible.map((row) => (
             <TableRow
               key={getRowId(row)}
-              className="hover:bg-concrete/50 @max-[40rem]:mb-0 @max-[40rem]:block @max-[40rem]:overflow-hidden @max-[40rem]:rounded-lg @max-[40rem]:border @max-[40rem]:border-border @max-[40rem]:hover:bg-transparent"
+              onClick={
+                onRowClick
+                  ? (event) => {
+                      if (event.defaultPrevented || (event.target as HTMLElement).closest(INTERACTIVE)) return
+                      // Selección de texto en curso: no navegar.
+                      if (window.getSelection()?.toString()) return
+                      onRowClick(row)
+                    }
+                  : undefined
+              }
+              className={cn(onRowClick && 'cursor-pointer', 'hover:bg-concrete/50@max-[40rem]:mb-0 @max-[40rem]:block @max-[40rem]:overflow-hidden @max-[40rem]:rounded-lg @max-[40rem]:border @max-[40rem]:border-border @max-[40rem]:hover:bg-transparent')}
             >
               {columns.map((column) => {
                 const content = column.cell(row)

@@ -64,8 +64,9 @@ interface MenuOptions {
   root?: boolean
 }
 
+const MY_ORDERS: AccountMenuLink = { key: 'mis-pedidos', label: 'Mis pedidos', to: '/mis-pedidos', icon: PackageIcon }
 const CART: AccountMenuLink = { key: 'carrito', label: 'Carrito', to: '/carrito', icon: ShoppingCartIcon }
-const MARKETPLACE: AccountMenuLink = { key: 'marketplace', label: 'Ir al marketplace', to: '/', icon: ShoppingBagIcon }
+const MARKETPLACE: AccountMenuLink = { key: 'marketplace', label: 'Ir al marketplace', to: '/buscar', icon: ShoppingBagIcon }
 
 function storeSections(storeId: string): AccountMenuLink[] {
   const base = `/portal/${encodeURIComponent(storeId)}`
@@ -100,7 +101,7 @@ export function accountMenuGroups({ kind, area, storeId, can, sellerApplicationT
       seller.push({ key: 'solicitud-almacen', label: 'Ver mi solicitud de almacén', to: sellerApplicationTo, icon: FileClockIcon })
     }
     if (seller.length > 0) groups.push(seller)
-    groups.push(area === 'portal' ? [MARKETPLACE, CART] : [CART])
+    groups.push(area === 'portal' ? [MARKETPLACE, MY_ORDERS, CART] : [MY_ORDERS, CART])
   } else {
     if (root) groups.push([{ key: 'administracion', label: 'Administración', to: '/admin', icon: ShieldCheckIcon }])
     // Admin u otro rol sin menú propio: solo la salida del portal.
