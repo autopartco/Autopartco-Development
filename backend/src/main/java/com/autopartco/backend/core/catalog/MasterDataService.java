@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.core.catalog.internal.Category;
@@ -59,6 +60,9 @@ public class MasterDataService {
 
     @Transactional
     public ManufacturerResponse createManufacturer(ManufacturerRequest request) {
+        if (request.name() == null) {
+            throw new BadRequestException("MANUFACTURER_NAME_REQUIRED", "El nombre es obligatorio.");
+        }
         String name = request.name().trim();
         if (manufacturerRepository.nameExists(name)) {
             throw new ConflictException("MANUFACTURER_ALREADY_EXISTS", "Ya existe un fabricante con ese nombre.");
@@ -69,11 +73,20 @@ public class MasterDataService {
     @Transactional
     public ManufacturerResponse updateManufacturer(UUID id, ManufacturerRequest request) {
         Manufacturer manufacturer = findManufacturer(id);
-        String name = request.name().trim();
-        if (manufacturerRepository.nameUsedByOther(name, id)) {
-            throw new ConflictException("MANUFACTURER_ALREADY_EXISTS", "Ya existe un fabricante con ese nombre.");
+        if (request.name() != null) {
+            String name = request.name().trim();
+            if (manufacturerRepository.nameUsedByOther(name, id)) {
+                throw new ConflictException("MANUFACTURER_ALREADY_EXISTS", "Ya existe un fabricante con ese nombre.");
+            }
+            manufacturer.setName(name);
         }
-        manufacturer.setName(name);
+        if (request.approved() != null) {
+            if (!request.approved()) {
+                throw new BadRequestException("INVALID_MANUFACTURER_STATE",
+                        "Un fabricante solo puede aprobarse; para retirarlo, elimínalo.");
+            }
+            manufacturer.setApproved(true);
+        }
         return toResponse(manufacturer);
     }
 
@@ -100,6 +113,7 @@ public class MasterDataService {
     }
 
     private ManufacturerResponse toResponse(Manufacturer manufacturer) {
-        return new ManufacturerResponse(manufacturer.getId(), manufacturer.getName());
+        return new ManufacturerResponse(manufacturer.getId(), manufacturer.getName(), manufacturer.isApproved(),
+                manufacturer.getSuggestedByStoreId());
     }
 }

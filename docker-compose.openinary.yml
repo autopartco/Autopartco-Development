@@ -1,0 +1,24 @@
+# OPCIONAL, solo desarrollo: Openinary autoalojado (alternativa a IMAGE_PROVIDER=wsrv|cloudinary).
+# Uso: define las variables STORAGE_* en el shell o en un .env.openinary (ignorado por git) y ejecuta
+#   docker compose -f docker-compose.openinary.yml --env-file .env.openinary up -d
+# Luego IMAGE_PROVIDER=openinary y OPENINARY_URL=http://localhost:3000 en el .env raíz.
+# Storage S3 de Supabase: STORAGE_ENDPOINT=https://<proyecto>.supabase.co/storage/v1/s3, claves S3 generadas en el panel.
+# Verificar al levantar que la ruta /t/<transformaciones>/<ruta> coincide con la clave del bucket
+# (hoy products/{id}/{uuid}.ext, sin el nombre del bucket).
+services:
+  openinary:
+    image: openinary/openinary:latest
+    platform: linux/amd64
+    ports:
+      - "3000:3000"
+    volumes:
+      - openinary-db:/app/data
+    environment:
+      STORAGE_REGION: ${STORAGE_REGION:-us-east-1}
+      STORAGE_ACCESS_KEY_ID: ${STORAGE_ACCESS_KEY_ID:?define STORAGE_ACCESS_KEY_ID}
+      STORAGE_SECRET_ACCESS_KEY: ${STORAGE_SECRET_ACCESS_KEY:?define STORAGE_SECRET_ACCESS_KEY}
+      STORAGE_BUCKET_NAME: ${STORAGE_BUCKET_NAME:-products-images}
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT:?define STORAGE_ENDPOINT}
+
+volumes:
+  openinary-db:

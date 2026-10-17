@@ -89,7 +89,9 @@ public class PriceCalculator {
             case "categoryId" -> subject.categoryId();
             case "manufacturerId", "brandId" -> subject.manufacturerId();
             case "storeId" -> subject.storeId();
-            case "compatibilityIds" -> List.copyOf(subject.compatibilityIds());
+            // "compatibilityIds" se mantiene como alias: ahora compara contra ids de marca/modelo/versión de las
+            // reglas de vehículo (los ids de la tabla compatibilities ya no se asignan a productos).
+            case "vehicleIds", "compatibilityIds" -> List.copyOf(subject.vehicleIds());
             default -> customAttributeValue(promotion.attributeKey(), subject.attributes());
         };
         if (value == null) {

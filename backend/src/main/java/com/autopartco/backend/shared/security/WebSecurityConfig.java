@@ -82,7 +82,11 @@ public class WebSecurityConfig {
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/products"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/products/*"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/product-options"),
-                new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/product-options/*")
+                new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/product-options/*"),
+                // marketplace: catálogo de vehículos en cascada.
+                new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/vehicles/makes"),
+                new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/vehicles/makes/*/models"),
+                new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/vehicles/models/*/versions")
         );
 
         @Bean

@@ -1,11 +1,9 @@
 package com.autopartco.backend.core.catalog.internal;
 
-import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Set;
 import java.util.UUID;
 
 import org.hibernate.annotations.JdbcTypeCode;
@@ -16,9 +14,7 @@ import org.hibernate.type.SqlTypes;
 import com.autopartco.backend.shared.persistence.BaseEntity;
 import com.autopartco.backend.shared.persistence.State;
 
-import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
-import jakarta.persistence.ElementCollection;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -60,6 +56,11 @@ public class Product extends BaseEntity {
     @Column(name = "part_number", length = 50)
     private String partNumber;
 
+    /** Producto universal: sin reglas de vehículo; el marketplace lo muestra con cualquier filtro por vehículo. */
+    @Column(name = "is_universal", nullable = false)
+    @Builder.Default
+    private boolean universal = false;
+
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(columnDefinition = "jsonb", nullable = false)
     @Builder.Default
@@ -77,15 +78,8 @@ public class Product extends BaseEntity {
     @JoinColumn(name = "state_id", nullable = false)
     private State state;
 
-    /**
-     * IDs de {@code compatibilities} (dominio vehicle; R1). Es la tabla de unión tal cual: puede contener IDs de
-     * compatibilidades borradas lógicamente, que {@code ListingQueries} filtra con {@code CompatibilityService}.
-     */
-    @Builder.Default
-    @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(name = "product_compatibilities", joinColumns = @JoinColumn(name = "product_id"))
-    @Column(name = "compatibility_id")
-    private Set<UUID> compatibilityIds = new HashSet<>();
+    // Compatibilidades: product_vehicle_rules (ProductVehicleRule). La tabla product_compatibilities se conserva en
+    // BD (expand/contract) pero ya no se mapea: nada debe escribirla.
 
     @Builder.Default
     @OneToMany(mappedBy = "product", fetch = FetchType.LAZY)

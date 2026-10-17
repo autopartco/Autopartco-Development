@@ -375,7 +375,7 @@ class PlaceMarketplaceOrderTest {
         listings.put(new ListingKey(productId, branchId), new ProductResponse(
                 productId, UUID.randomUUID(), branchId, "Sede", "Repuesto", "BP-1", null, null,
                 new BigDecimal(price), new BigDecimal(effectivePrice), null, null, 10,
-                null, null, "ACTIVE", Map.of(), null, List.of()));
+                null, null, false, null, "ACTIVE", false, Map.of(), List.of(), List.of()));
     }
 
     private UUID stock(UUID productId, UUID branchId, int units, String price) {

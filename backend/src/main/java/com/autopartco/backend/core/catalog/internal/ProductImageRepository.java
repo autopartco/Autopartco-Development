@@ -39,6 +39,10 @@ public interface ProductImageRepository extends JpaRepository<ProductImage, UUID
     void clearMainImage(@Param("productId") UUID productId);
 
     @Modifying
+    @Query("update ProductImage i set i.isMain = true where i.id = :imageId and i.product.id = :productId")
+    void markMain(@Param("productId") UUID productId, @Param("imageId") UUID imageId);
+
+    @Modifying
     @Query("delete from ProductImage i where i.product.id = :productId")
     void deleteAllForProduct(@Param("productId") UUID productId);
 }

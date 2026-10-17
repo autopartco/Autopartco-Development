@@ -10,6 +10,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -32,7 +33,6 @@ import com.autopartco.backend.core.catalog.internal.Product;
 import com.autopartco.backend.core.catalog.internal.ProductRepository;
 import com.autopartco.backend.core.inventory.StockService;
 import com.autopartco.backend.core.organization.BranchService;
-import com.autopartco.backend.core.vehicle.CompatibilityService;
 import com.autopartco.backend.shared.persistence.State;
 import com.autopartco.backend.shared.persistence.StateRepository;
 
@@ -53,7 +53,8 @@ class ProductSkuTest {
     @Mock private ManufacturerRepository manufacturerRepository;
     @Mock private CategoryRepository categoryRepository;
     @Mock private StateRepository stateRepository;
-    @Mock private CompatibilityService compatibilityService;
+    @Mock private ProductVehicleRules vehicleRules;
+    @Mock private StoreManufacturers storeManufacturers;
     @Mock private BranchService branchService;
     @Mock private StockService stockService;
     @Mock private ProductImages productImages;
@@ -64,8 +65,14 @@ class ProductSkuTest {
     @BeforeEach
     void setUp() {
         catalog = new ProductCatalog(productRepository, manufacturerRepository, categoryRepository, stateRepository,
-                compatibilityService, branchService, stockService, productImages, listingQueries);
-        when(manufacturerRepository.findById(any())).thenReturn(Optional.of(mock(Manufacturer.class)));
+                branchService, stockService, productImages, listingQueries, vehicleRules, storeManufacturers);
+        when(productImages.planGallery(any(), any(), any(), any(), any()))
+                .thenReturn(new ProductImages.GalleryPlan(List.of(), List.of(), List.of(), null));
+        when(productImages.validateAll(any())).thenReturn(List.of());
+        when(vehicleRules.normalize(any())).thenReturn(List.of());
+        when(productRepository.lockOwned(any(), any())).thenAnswer(inv -> productRepository.findOwned(
+                inv.getArgument(0), inv.getArgument(1)));
+        when(manufacturerRepository.findVisibleToStore(any(UUID.class), any(UUID.class))).thenReturn(Optional.of(mock(Manufacturer.class)));
         when(categoryRepository.findById(any())).thenReturn(Optional.of(mock(Category.class)));
         when(stateRepository.findByCode(any())).thenReturn(Optional.of(mock(State.class)));
         when(productRepository.save(any(Product.class))).thenAnswer(inv -> {
@@ -78,7 +85,7 @@ class ProductSkuTest {
 
     private static ProductCreateRequest createRequest(String sku, BigDecimal price) {
         return new ProductCreateRequest(BRANCH, "Filtro", sku, null, "desc", price, 1, UUID.randomUUID(),
-                UUID.randomUUID(), Set.of(UUID.randomUUID()), Map.of());
+                UUID.randomUUID(), null, null, List.of(), null, Map.of(), null, false);
     }
 
     @Test
@@ -102,7 +109,7 @@ class ProductSkuTest {
 
     @Test
     void skuVacioSeNormalizaANullEnCreate() {
-        catalog.create(STORE_A, createRequest("   ", new BigDecimal("10.00")));
+        catalog.create(STORE_A, createRequest("   ", new BigDecimal("10.00")), List.of(), true);
 
         ArgumentCaptor<Product> captor = ArgumentCaptor.forClass(Product.class);
         verify(productRepository).save(captor.capture());
@@ -110,17 +117,25 @@ class ProductSkuTest {
     }
 
     @Test
+    void productoNuevoSeCreaSinPublicar() {
+        catalog.create(STORE_A, createRequest("ABC-1", new BigDecimal("10.00")), List.of(), true);
+
+        verify(stateRepository).findByCode("INACTIVE");
+        verify(stateRepository, times(0)).findByCode("ACTIVE");
+    }
+
+    @Test
     void skuNoEsUnicoNiSiquieraDentroDelMismoAlmacen() {
-        catalog.create(STORE_A, createRequest("ABC-1", new BigDecimal("10.00")));
-        catalog.create(STORE_A, createRequest("ABC-1", new BigDecimal("12.00")));
+        catalog.create(STORE_A, createRequest("ABC-1", new BigDecimal("10.00")), List.of(), true);
+        catalog.create(STORE_A, createRequest("ABC-1", new BigDecimal("12.00")), List.of(), true);
 
         verify(productRepository, times(2)).save(any(Product.class));
     }
 
     @Test
     void mismoSkuEnOtroAlmacenEsValido() {
-        catalog.create(STORE_A, createRequest("ABC-1", new BigDecimal("10.00")));
-        catalog.create(STORE_B, createRequest("ABC-1", new BigDecimal("10.00")));
+        catalog.create(STORE_A, createRequest("ABC-1", new BigDecimal("10.00")), List.of(), true);
+        catalog.create(STORE_B, createRequest("ABC-1", new BigDecimal("10.00")), List.of(), true);
 
         ArgumentCaptor<Product> captor = ArgumentCaptor.forClass(Product.class);
         verify(productRepository, times(2)).save(captor.capture());
@@ -133,7 +148,7 @@ class ProductSkuTest {
         existing.setId(PRODUCT);
         when(productRepository.findOwned(STORE_A, PRODUCT)).thenReturn(Optional.of(existing));
 
-        catalog.update(STORE_A, BRANCH, PRODUCT, updateRequest("TAKEN", null));
+        catalog.update(STORE_A, BRANCH, PRODUCT, updateRequest("TAKEN", null), List.of(), true);
 
         assertEquals("TAKEN", existing.getSku());
     }
@@ -144,13 +159,14 @@ class ProductSkuTest {
         existing.setId(PRODUCT);
         when(productRepository.findOwned(STORE_A, PRODUCT)).thenReturn(Optional.of(existing));
 
-        catalog.update(STORE_A, BRANCH, PRODUCT, updateRequest("  ", null));
+        catalog.update(STORE_A, BRANCH, PRODUCT, updateRequest("  ", null), List.of(), true);
 
         assertNull(existing.getSku());
     }
 
     private static ProductUpdateRequest updateRequest(String sku, BigDecimal price) {
-        return new ProductUpdateRequest(null, sku, null, null, price, null, null, null, null, null);
+        return new ProductUpdateRequest(null, sku, null, null, price, null, null, null, null, null, null, null, null, null,
+                null, null, null);
     }
 
     private static void assertFalse(boolean value) {

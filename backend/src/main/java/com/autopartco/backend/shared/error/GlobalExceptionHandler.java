@@ -8,7 +8,10 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -148,6 +151,38 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(new ErrorResponse(error));
+    }
+
+    /** Falta una parte obligatoria del multipart (p. ej. {@code data}). */
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<ErrorResponse> handleMissingPart(MissingServletRequestPartException exception) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(new ApiError(
+                        "MISSING_REQUEST_PART",
+                        "Falta la parte «" + exception.getRequestPartName() + "» de la solicitud.",
+                        null
+                )));
+    }
+
+    /** Parámetro de ruta o consulta con tipo inválido (p. ej. un UUID mal formado). */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponse> handleTypeMismatch(MethodArgumentTypeMismatchException exception) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ErrorResponse(new ApiError(
+                        "INVALID_PARAMETER",
+                        "El parámetro «" + exception.getName() + "» no es válido.",
+                        null
+                )));
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public ResponseEntity<ErrorResponse> handleUnsupportedMediaType(HttpMediaTypeNotSupportedException exception) {
+        return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+                .body(new ErrorResponse(new ApiError(
+                        "UNSUPPORTED_MEDIA_TYPE",
+                        "Tipo de contenido no admitido.",
+                        null
+                )));
     }
 
     @ExceptionHandler({PayloadTooLargeException.class, MaxUploadSizeExceededException.class})

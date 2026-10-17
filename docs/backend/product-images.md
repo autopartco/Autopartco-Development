@@ -38,7 +38,22 @@ Todos los endpoints usan el prefijo `/api/v1`.
 | `DELETE` | `/stores/{storeId}/products/{productId}/images/{imageId}` | Elimina la imagen; si era la principal, promueve otra automáticamente. |
 | `DELETE` | `/stores/{storeId}/products/{productId}` | Eliminación lógica del producto, imágenes e inventario; limpia los archivos de Storage. |
 
-Las respuestas de producto incluyen una lista `images` ordenada por `displayOrder`, con `id`, `url`, `isMain`, `displayOrder` y `createdAt`. La imagen principal se mantiene única mediante una restricción de PostgreSQL.
+Las respuestas de producto incluyen una lista `images` ordenada por `displayOrder`, con `id`, `url`, `thumbUrl`, `cardUrl`, `isMain`, `displayOrder` y `createdAt`. La imagen principal se mantiene única mediante una restricción de PostgreSQL.
+
+La creación y edición de productos suben las imágenes junto con los datos en un único `multipart` (ver `PLAN.md`): parte `data` (JSON) y partes `images` / `newImages`. Los endpoints por imagen de la tabla anterior siguen disponibles.
+
+## Miniaturas (`thumbUrl` 400 px, `cardUrl` 800 px)
+
+`url` es siempre el original. `thumbUrl` y `cardUrl` las genera `ImageUrls` según `IMAGE_PROVIDER`; sin proveedor valen lo mismo que `url`. Si el proveedor está mal configurado o es desconocido, se degrada a la URL pública de Supabase.
+
+| `IMAGE_PROVIDER` | Costo / alojamiento | URL | Notas |
+| --- | --- | --- | --- |
+| `none` (defecto) | — | URL pública de Supabase | Sin transformación. |
+| `wsrv` | Gratis, sin cuenta ni alojamiento | `https://wsrv.nl/?url={urlPública}&w=&h=&fit=cover&output=webp&q=80` | Servicio comunitario sin SLA. Recomendado para desarrollo y arranque. |
+| `cloudinary` | Plan gratis, cuenta (`CLOUDINARY_CLOUD_NAME`) | `https://res.cloudinary.com/{cloud}/image/fetch/w_,h_,c_fill,f_auto,q_auto/{urlPública}` | Recomendado para producción. Puede exigir permitir el dominio de Supabase en la configuración de «fetch». |
+| `openinary` | Gratis pero autoalojado (`OPENINARY_URL`) | `{base}/t/w_,h_,c_fill,f_webp/{ruta}` | Opcional; ver `docker-compose.openinary.yml`. |
+
+Con `wsrv`, `cloudinary` y `openinary` el bucket debe ser público. Las transformaciones nativas de Supabase son de pago (plan Pro) y no se usan. Además, el frontend comprime a WebP en el navegador antes de subir.
 
 ## Inicialización y prueba
 

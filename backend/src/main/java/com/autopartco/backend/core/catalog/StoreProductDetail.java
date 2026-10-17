@@ -3,7 +3,6 @@ package com.autopartco.backend.core.catalog;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 /** Detalle de un producto del almacén con sus listados por sucursal (cualquier estado de la sucursal). */
@@ -15,10 +14,13 @@ public record StoreProductDetail(
         String partNumber,
         String description,
         UUID manufacturerId,
+        String manufacturerName,
+        boolean manufacturerApproved,
         UUID categoryId,
         String state,
+        boolean universal,
         Map<String, Object> attributes,
-        Set<UUID> compatibilityIds,
+        List<VehicleRuleResponse> vehicleRules,
         List<ProductImageResponse> images,
         List<Listing> listings
 ) {

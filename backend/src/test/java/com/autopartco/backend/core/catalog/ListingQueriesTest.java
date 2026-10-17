@@ -2,7 +2,9 @@ package com.autopartco.backend.core.catalog;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.eq;
@@ -10,7 +12,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
-import java.util.HashSet;
+
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -62,6 +64,8 @@ class ListingQueriesTest {
             + "join manufacturers m on m.id = p.manufacturer_id and m.deleted_at is null "
             + "join categories c on c.id = p.category_id and c.deleted_at is null "
             + "join states ps on ps.id = p.state_id and ps.deleted_at is null ";
+    /** Los joins públicos tampoco filtran por aprobación: un producto con fabricante pendiente propio se publica. */
+    private static final String PUBLIC_PRODUCT_JOINS = PRODUCT_JOINS;
     private static final String PUBLISHED_FILTER = "and ps.code = 'ACTIVE' and ss.code = 'ACTIVE' "
             + "and bs.code = 'ACTIVE' and i.stock > 0 ";
 
@@ -82,6 +86,8 @@ class ListingQueriesTest {
     @Mock
     private CompatibilityService compatibilityService;
     @Mock
+    private ProductVehicleRules vehicleRules;
+    @Mock
     private PromotionRepository promotionRepository;
 
     private ListingQueries queries;
@@ -89,8 +95,15 @@ class ListingQueriesTest {
     @BeforeEach
     void setUp() {
         queries = new ListingQueries(jdbcTemplate, productRepository, productImageRepository, productImageMapper,
-                manufacturerRepository, categoryRepository, compatibilityService,
+                manufacturerRepository, categoryRepository, compatibilityService, vehicleRules,
                 new PriceCalculator(promotionRepository));
+    }
+
+    @Test
+    void consultasPublicasNoFiltranPorAprobacionDelFabricante() {
+        org.junit.jupiter.api.Assertions.assertFalse(ListingQueries.PUBLISHED_LISTINGS_SQL.contains("approved"));
+        org.junit.jupiter.api.Assertions.assertFalse(ListingQueries.PUBLISHED_LISTING_SQL.contains("approved"));
+        org.junit.jupiter.api.Assertions.assertFalse(ListingQueries.PURCHASABLE_LISTINGS_SQL.contains("approved"));
     }
 
     @Test
@@ -107,24 +120,25 @@ class ListingQueriesTest {
 
     @Test
     void publishedListingsKeepTheFiltersAndOrderOfFindPublished() {
-        assertThat(normalize(ListingQueries.PUBLISHED_LISTINGS_SQL)).endsWith(PUBLISHED_JOINS + PRODUCT_JOINS
+        assertThat(normalize(ListingQueries.PUBLISHED_LISTINGS_SQL)).endsWith(PUBLISHED_JOINS + PUBLIC_PRODUCT_JOINS
                 + "where i.deleted_at is null " + PUBLISHED_FILTER
                 + "order by p.name, s.business_name, b.name");
     }
 
     @Test
     void publishedListingKeepsTheFiltersAndOrderOfFindPublishedByProductId() {
-        assertThat(normalize(ListingQueries.PUBLISHED_LISTING_SQL)).endsWith(PUBLISHED_JOINS + PRODUCT_JOINS
+        assertThat(normalize(ListingQueries.PUBLISHED_LISTING_SQL)).endsWith(PUBLISHED_JOINS + PUBLIC_PRODUCT_JOINS
                 + "where i.deleted_at is null and p.id = ? " + PUBLISHED_FILTER
                 + "order by i.price, s.business_name, b.name");
     }
 
     @Test
-    void mapsRowsInSqlOrderWithCurrentCompatibilitiesAndBestPromotion() {
-        UUID liveCompatibility = UUID.randomUUID();
-        UUID deletedCompatibility = UUID.randomUUID();
-        Product zeta = product("Zeta", Set.of(liveCompatibility, deletedCompatibility));
-        Product alpha = product("Alpha", Set.of());
+    void mapsRowsInSqlOrderWithVehicleRulesManufacturerNameAndBestPromotion() {
+        Product zeta = product("Zeta");
+        zeta.getManufacturer().setName("Marca Pendiente");
+        zeta.getManufacturer().setApproved(false);
+        Product alpha = product("Alpha");
+        VehicleRuleResponse bmwTodos = new VehicleRuleResponse(UUID.randomUUID(), "BMW", null, null, null, null);
         UUID branchId = UUID.randomUUID();
         UUID branchStoreId = UUID.randomUUID();
         List<ListingRow> rows = List.of(
@@ -133,7 +147,7 @@ class ListingQueriesTest {
         when(jdbcTemplate.query(eq(ListingQueries.STORE_LISTINGS_SQL), any(RowMapper.class), eq(STORE_ID)))
                 .thenReturn((List) rows);
         when(productRepository.findAllWithDetails(anyCollection())).thenReturn(List.of(alpha, zeta));
-        when(compatibilityService.existingAmong(anyCollection())).thenReturn(Set.of(liveCompatibility));
+        when(vehicleRules.forProducts(anyCollection())).thenReturn(Map.of(zeta.getId(), List.of(bmwTodos)));
         when(productImageRepository.findAllOfProducts(anyCollection()))
                 .thenReturn(List.of());
         when(promotionRepository.findActiveAt(any())).thenReturn(List.of());
@@ -148,7 +162,64 @@ class ListingQueriesTest {
         assertEquals(new BigDecimal("100.00"), first.effectivePrice());
         assertEquals(3, first.quantity());
         assertEquals("ACTIVE", first.state());
-        assertEquals(Set.of(liveCompatibility), first.compatibilityIds());
+        assertEquals(List.of(bmwTodos), first.vehicleRules());
+        // Marca visible en el marketplace aunque el fabricante esté pendiente.
+        assertEquals("Marca Pendiente", first.manufacturerName());
+        assertFalse(first.manufacturerApproved());
+        assertEquals(List.of(), responses.get(1).vehicleRules());
+        assertTrue(responses.get(1).manufacturerApproved());
+    }
+
+    @Test
+    void publishedListingsByVehicleOnlyReadVehicleRulesWithAllWildcards() {
+        UUID make = UUID.randomUUID();
+        UUID model = UUID.randomUUID();
+        UUID version = UUID.randomUUID();
+        ArgumentCaptor<String> sql = ArgumentCaptor.forClass(String.class);
+        when(jdbcTemplate.query(sql.capture(), any(RowMapper.class), eq(make), eq(model), eq(version)))
+                .thenReturn(List.of());
+
+        assertThat(queries.publishedListings(new VehicleFilter(make, model, version))).isEmpty();
+
+        String normalized = normalize(sql.getValue());
+        assertThat(normalized)
+                .contains(PUBLISHED_FILTER.strip())
+                .contains("and (p.is_universal or exists (select 1 from product_vehicle_rules r where r.product_id = p.id "
+                        + "and r.deleted_at is null and r.make_id = ? "
+                        + "and (r.model_id is null or r.model_id = ?) "
+                        + "and (r.version_id is null or r.version_id = ?) ))")
+                .doesNotContain("product_compatibilities")
+                .endsWith("order by p.name, s.business_name, b.name");
+    }
+
+    @Test
+    void publishedListingsByMakeOnlyDoNotFilterModelOrVersion() {
+        UUID make = UUID.randomUUID();
+        ArgumentCaptor<String> sql = ArgumentCaptor.forClass(String.class);
+        when(jdbcTemplate.query(sql.capture(), any(RowMapper.class), eq(make))).thenReturn(List.of());
+
+        queries.publishedListings(new VehicleFilter(make, null, null));
+
+        assertThat(normalize(sql.getValue())).contains("r.make_id = ?").doesNotContain("r.model_id")
+                .doesNotContain("r.version_id");
+    }
+
+    @Test
+    void vehicleFilterRequiresParentLevels() {
+        UUID id = UUID.randomUUID();
+        assertEquals("VEHICLE_FILTER_INVALID", assertThrows(
+                com.autopartco.backend.shared.error.BadRequestException.class,
+                () -> new VehicleFilter(null, id, null)).getCode());
+        assertThrows(com.autopartco.backend.shared.error.BadRequestException.class,
+                () -> new VehicleFilter(id, null, id));
+    }
+
+    @Test
+    void publishedListingsWithoutFilterKeepTheOriginalQuery() {
+        when(jdbcTemplate.query(eq(ListingQueries.PUBLISHED_LISTINGS_SQL), any(RowMapper.class)))
+                .thenReturn(List.of());
+
+        assertThat(queries.publishedListings(VehicleFilter.none())).isEmpty();
     }
 
     @Test
@@ -157,7 +228,8 @@ class ListingQueriesTest {
                 .thenReturn(List.of());
 
         assertThat(queries.storeListings(STORE_ID)).isEmpty();
-        verifyNoInteractions(productRepository, productImageRepository, compatibilityService, promotionRepository);
+        verifyNoInteractions(productRepository, productImageRepository, compatibilityService, vehicleRules,
+                promotionRepository);
     }
 
     @Test
@@ -172,13 +244,12 @@ class ListingQueriesTest {
 
     @Test
     void appliesTheActivePromotionOfTheProductStore() {
-        Product product = product("Filtro", Set.of());
+        Product product = product("Filtro");
         UUID branchId = UUID.randomUUID();
         when(jdbcTemplate.query(eq(ListingQueries.PUBLISHED_LISTING_SQL), any(RowMapper.class), eq(product.getId())))
                 .thenReturn((List) List.of(new ListingRow(
                         product.getId(), branchId, STORE_ID, "Norte", new BigDecimal("80.00"), 2)));
         when(productRepository.findAllWithDetails(anyCollection())).thenReturn(List.of(product));
-        when(compatibilityService.existingAmong(anyCollection())).thenReturn(Set.of());
         when(productImageRepository.findAllOfProducts(anyCollection()))
                 .thenReturn(List.of());
         when(promotionRepository.findActiveAt(any())).thenReturn(List.of(
@@ -202,7 +273,7 @@ class ListingQueriesTest {
     @Test
     void purchasableListingsWithoutKeysDoNotQuery() {
         assertThat(queries.purchasableListings(List.of())).isEmpty();
-        verifyNoInteractions(jdbcTemplate, productRepository, productImageRepository, compatibilityService,
+        verifyNoInteractions(jdbcTemplate, productRepository, productImageRepository, compatibilityService, vehicleRules,
                 promotionRepository);
     }
 
@@ -229,7 +300,7 @@ class ListingQueriesTest {
                 .contains("ss.code = 'ACTIVE'")
                 .contains("bs.code = 'ACTIVE'")
                 .contains("where i.deleted_at is null")
-                .contains(PUBLISHED_JOINS.replace("from inventory i ", "") + PRODUCT_JOINS)
+                .contains(PUBLISHED_JOINS.replace("from inventory i ", "") + PUBLIC_PRODUCT_JOINS)
                 .contains("join (values (?::uuid, ?::uuid), (?::uuid, ?::uuid)) as k(product_id, branch_id) "
                         + "on k.product_id = i.product_id and k.branch_id = i.branch_id");
         assertThat(args.getAllValues()).containsExactly(productA, branchA, productB, branchB);
@@ -237,7 +308,7 @@ class ListingQueriesTest {
 
     @Test
     void purchasableListingsApplyTheActivePromotionLikePublishedListing() {
-        Product product = product("Filtro", Set.of());
+        Product product = product("Filtro");
         UUID branchId = UUID.randomUUID();
         UUID missingProduct = UUID.randomUUID();
         when(jdbcTemplate.query(any(String.class), any(RowMapper.class), eq(product.getId()), eq(branchId),
@@ -245,7 +316,6 @@ class ListingQueriesTest {
                 .thenReturn((List) List.of(new ListingRow(
                         product.getId(), branchId, STORE_ID, "Norte", new BigDecimal("80.00"), 0)));
         when(productRepository.findAllWithDetails(anyCollection())).thenReturn(List.of(product));
-        when(compatibilityService.existingAmong(anyCollection())).thenReturn(Set.of());
         when(productImageRepository.findAllOfProducts(anyCollection())).thenReturn(List.of());
         when(promotionRepository.findActiveAt(any())).thenReturn(List.of(
                 Promotion.builder()
@@ -269,11 +339,45 @@ class ListingQueriesTest {
         assertEquals(0, listing.quantity());
     }
 
-    private Product product(String name, Set<UUID> compatibilityIds) {
+    @Test
+    void omiteFilasDeProductosBorradosEnCarrera() {
+        Product vivo = product("Vivo");
+        UUID borrado = UUID.randomUUID();
+        UUID branchId = UUID.randomUUID();
+        when(jdbcTemplate.query(eq(ListingQueries.STORE_LISTINGS_SQL), any(RowMapper.class), eq(STORE_ID)))
+                .thenReturn((List) List.of(
+                        new ListingRow(borrado, branchId, STORE_ID, "Centro", new BigDecimal("10.00"), 1),
+                        new ListingRow(vivo.getId(), branchId, STORE_ID, "Centro", new BigDecimal("20.00"), 1)));
+        when(productRepository.findAllWithDetails(anyCollection())).thenReturn(List.of(vivo));
+        when(vehicleRules.forProducts(anyCollection())).thenReturn(Map.of());
+        when(productImageRepository.findAllOfProducts(anyCollection())).thenReturn(List.of());
+        when(promotionRepository.findActiveAt(any())).thenReturn(List.of());
+
+        assertThat(queries.storeListings(STORE_ID)).extracting(ProductResponse::name).containsExactly("Vivo");
+    }
+
+    @Test
+    void publishedListingDeProductoBorradoEnCarreraEsNotFound() {
+        UUID productId = UUID.randomUUID();
+        when(jdbcTemplate.query(eq(ListingQueries.PUBLISHED_LISTING_SQL), any(RowMapper.class), eq(productId)))
+                .thenReturn((List) List.of(new ListingRow(
+                        productId, UUID.randomUUID(), STORE_ID, "Norte", new BigDecimal("5.00"), 1)));
+        when(productRepository.findAllWithDetails(anyCollection())).thenReturn(List.of());
+        when(vehicleRules.forProducts(anyCollection())).thenReturn(Map.of());
+        when(productImageRepository.findAllOfProducts(anyCollection())).thenReturn(List.of());
+        when(promotionRepository.findActiveAt(any())).thenReturn(List.of());
+
+        assertEquals("PRODUCT_NOT_FOUND",
+                assertThrows(NotFoundException.class, () -> queries.publishedListing(productId)).getCode());
+    }
+
+    private Product product(String name) {
         Category category = new Category();
         category.setId(UUID.randomUUID());
         Manufacturer manufacturer = new Manufacturer();
         manufacturer.setId(UUID.randomUUID());
+        manufacturer.setName("Bosch");
+        manufacturer.setApproved(true);
         State state = new State();
         state.setCode("ACTIVE");
         Product product = new Product();
@@ -284,7 +388,6 @@ class ListingQueriesTest {
         product.setManufacturer(manufacturer);
         product.setState(state);
         product.setAttributes(Map.of());
-        product.setCompatibilityIds(new HashSet<>(compatibilityIds));
         return product;
     }
 
