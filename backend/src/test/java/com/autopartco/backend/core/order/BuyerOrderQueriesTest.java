@@ -74,8 +74,8 @@ class BuyerOrderQueriesTest {
                 .contains("LIMIT 1");
         assertThat(header.param("personId")).isEqualTo(PERSON_ID);
         assertThat(header.param("orderId")).isEqualTo(ORDER_ID);
-        assertThat(jdbc.statements().get(1).sql()).contains("store.bussnies_name AS store_name")
-                .contains("ORDER BY store.bussnies_name, branch.name");
+        assertThat(jdbc.statements().get(1).sql()).contains("store.business_name AS store_name")
+                .contains("ORDER BY store.business_name, branch.name");
         assertThat(jdbc.statements().get(2).sql()).contains("ORDER BY product.name");
     }
 

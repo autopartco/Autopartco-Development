@@ -73,7 +73,7 @@ public class BuyerOrderQueries {
     static final String SALES_SQL = """
             SELECT sale.id AS sale_id,
                    branch.store_id,
-                   store.bussnies_name AS store_name,
+                   store.business_name AS store_name,
                    branch.id AS branch_id,
                    branch.name AS branch_name,
                    sale_state.code AS sale_status,
@@ -86,7 +86,7 @@ public class BuyerOrderQueries {
             JOIN states sale_state ON sale_state.id = sale.state_id
             WHERE sale.order_id = :orderId
               AND sale.deleted_at IS NULL
-            ORDER BY store.bussnies_name, branch.name, sale.id
+            ORDER BY store.business_name, branch.name, sale.id
             """;
 
     static final String ITEMS_SQL = """
