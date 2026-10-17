@@ -27,8 +27,11 @@ spring:
 
   servlet:
     multipart:
+      # 10MB por archivo: los documentos de la solicitud de vendedor admiten hasta 10MB. Las imágenes de producto
+      # se limitan a 5MB en ProductImageValidator (413 PRODUCT_IMAGE_TOO_LARGE).
       max-file-size: 10MB
-      max-request-size: 35MB
+      # Alta/edición atómica de producto: parte data + hasta 10 imágenes de 5MB.
+      max-request-size: 55MB
 
   jpa:
     hibernate:
@@ -40,12 +43,24 @@ spring:
 
 server:
   port: "${SERVER_PORT:8081}"
+  tomcat:
+    # Partes por petición multipart (archivos + campos). El alta de producto usa data + hasta 10 imágenes.
+    max-part-count: 20
 
 supabase:
   url: "${SUPABASE_URL:}"
   service-key: "${SUPABASE_SERVICE_KEY:${SUPABASE_SECRET_KEY:}}"
   bucket: "${SUPABASE_BUCKET:${SUPABASE_BUCKET_PRODUCTS_IMGS:products-images}}"
   business-bucket: "${SUPABASE_BUCKET_BUSINESS:bussniess}"
+
+image:
+  # Proveedor de miniaturas: none (URL pública de Supabase) | wsrv | cloudinary | openinary. Ver docs/backend/product-images.md.
+  provider: "${IMAGE_PROVIDER:none}"
+  cloudinary:
+    cloud-name: "${CLOUDINARY_CLOUD_NAME:}"
+
+openinary:
+  base-url: "${OPENINARY_URL:}"
 
 wompi:
   public-key: "${WOMPI_PUBLIC_KEY:}"

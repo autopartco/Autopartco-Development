@@ -184,11 +184,70 @@ export interface Dashboard {
 
 export interface ProductImage {
   id: string
+  /** Original. */
   url: string
+  /** Variante de 400 px (listados pequeños). */
+  thumbUrl: string
+  /** Variante de 800 px (tarjetas). */
+  cardUrl: string
   isMain: boolean
   displayOrder: number
   createdAt: string
 }
+
+/** Elemento del catálogo de vehículos en cascada (`GET /marketplace/vehicles/...`). */
+export interface VehicleMake {
+  id: string
+  name: string
+}
+export interface VehicleModel {
+  id: string
+  name: string
+}
+export interface VehicleVersion {
+  id: string
+  label: string
+}
+
+/** Regla de entrada: nivel ausente = «todos»; `versionId` exige `modelId`. */
+export interface VehicleRuleInput {
+  makeId: string
+  modelId?: string
+  versionId?: string
+}
+
+/** `VehicleRuleResponse`: la regla con nombres legibles; los niveles «todos» vienen en `null`. */
+export interface VehicleRule {
+  makeId: string
+  makeName: string
+  modelId: string | null
+  modelName: string | null
+  versionId: string | null
+  versionLabel: string | null
+}
+
+/** Detalle de `VEHICLE_RULE_INVALID` (400): `index` es la posición en `vehicleRules`. */
+export interface VehicleRuleErrorDetail {
+  index: number
+  field: string
+  code: string
+  message: string
+}
+
+/** Detalle de `PRODUCT_NOT_PUBLISHABLE` (409): qué falta para publicar. */
+export type PublishBlockerCode = 'NO_IMAGES' | 'NO_VEHICLES' | 'MANUFACTURER_INVALID' | 'SUBSCRIPTION_INACTIVE'
+export interface PublishBlocker {
+  code: PublishBlockerCode
+  message: string
+}
+
+/** Códigos de error de producto que las pantallas distinguen (`ApiError.code`). */
+export type ProductErrorCode =
+  | 'VEHICLE_RULE_INVALID'
+  | 'PRODUCT_NOT_PUBLISHABLE'
+  | 'MANUFACTURER_SIMILAR'
+  | 'MANUFACTURER_PENDING_LIMIT'
+  | 'MANUFACTURER_NAME_UNAVAILABLE'
 
 /** `ProductResponse`: una fila por (producto, sucursal). */
 export interface ProductRow {
@@ -206,10 +265,15 @@ export interface ProductRow {
   appliedPromotionName: string | null
   quantity: number
   manufacturerId: string
+  /** Visible aunque el fabricante esté pendiente de aprobación. */
+  manufacturerName: string
+  manufacturerApproved: boolean
   categoryId: string
   state: 'ACTIVE' | 'INACTIVE'
   attributes: Record<string, unknown>
-  compatibilityIds: string[]
+  /** No depende del vehículo: aparece en cualquier búsqueda por vehículo y no lleva reglas. */
+  universal: boolean
+  vehicleRules: VehicleRule[]
   images: ProductImage[]
 }
 
@@ -217,10 +281,31 @@ export interface ProductRow {
 export interface ProductOptions {
   manufacturers: { id: string; name: string }[]
   categories: { id: string; code: string }[]
-  compatibilities: { id: string; make: string; model: string; version: string }[]
 }
 
-/** `ProductCreateRequest`. */
+/** `StoreManufacturerResponse`: fabricante aprobado o pendiente de revisión propio del almacén. */
+export interface StoreManufacturer {
+  id: string
+  name: string
+  approved: boolean
+}
+
+/** `ManufacturerSearchResult`: coincidencia aproximada, `similarity` entre 0 y 1. */
+export interface ManufacturerMatch extends StoreManufacturer {
+  similarity: number
+}
+
+/** `StoreManufacturerRequest`. */
+export interface ManufacturerCreateInput {
+  name: string
+  /** `true` cuando el usuario confirma que no es ninguno de los parecidos. */
+  confirmNew?: boolean
+}
+
+/**
+ * Parte `data` de `POST /stores/{id}/products` (multipart). Exactamente uno de `manufacturerId` /
+ * `newManufacturerName`. Las imágenes viajan aparte (`images`, orden = orden de galería).
+ */
 export interface ProductCreateInput {
   branchId: string
   name: string
@@ -229,12 +314,22 @@ export interface ProductCreateInput {
   description: string
   price: number
   quantity: number
-  manufacturerId: string
   categoryId: string
-  compatibilityIds: string[]
+  manufacturerId?: string
+  newManufacturerName?: string
+  /** `true` cuando el usuario confirmó que el fabricante nuevo no es ninguno de los parecidos. */
+  confirmNewManufacturer?: boolean
+  /** Con `universal: true` no se envían reglas (400 `VALIDATION_ERROR` si llegan). */
+  universal: boolean
+  vehicleRules: VehicleRuleInput[]
+  attributes?: Record<string, unknown>
+  /** Posición en `images` de la imagen principal. */
+  mainImageIndex?: number
+  /** Crear y publicar en la misma petición. */
+  publish: boolean
 }
 
-/** `ProductUpdateRequest`: solo los campos presentes cambian. */
+/** Parte `data` de `PATCH …/products/{productId}` (multipart): solo los campos presentes cambian. */
 export interface ProductUpdateInput {
   name?: string
   sku?: string
@@ -242,9 +337,21 @@ export interface ProductUpdateInput {
   description?: string
   price?: number
   quantity?: number
-  manufacturerId?: string
   categoryId?: string
-  compatibilityIds?: string[]
+  manufacturerId?: string
+  newManufacturerName?: string
+  confirmNewManufacturer?: boolean
+  /** Pasar a `true` borra las reglas del servidor. */
+  universal?: boolean
+  /** Reemplaza el conjunto completo de reglas. */
+  vehicleRules?: VehicleRuleInput[]
+  attributes?: Record<string, unknown>
+  publish?: boolean
+  removeImageIds?: string[]
+  /** Ids existentes y `new:<i>` (índice en `newImages`), en el orden final de la galería. */
+  imageOrder?: string[]
+  /** Id existente o `new:<i>`. */
+  mainImage?: string
 }
 
 // ---------------------------------------------------------------- pedidos

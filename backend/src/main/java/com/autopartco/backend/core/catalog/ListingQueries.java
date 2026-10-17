@@ -7,7 +7,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -47,9 +46,11 @@ import lombok.AllArgsConstructor;
  * <p>Las consultas reproducen exactamente el SQL que Hibernate generaba para el JPQL de
  * {@code InventoryRepository} ({@code findAllInStore}, {@code findPublished}, {@code findPublishedByProductId} y
  * {@code findInStore}): mismos {@code join} internos, con el {@code deleted_at is null} que Hibernate añadía por
- * {@code @SQLRestriction} a cada tabla unida, mismos filtros y mismo orden. El {@code left join} de compatibilidades
- * no se replica: no cambia el conjunto de filas ({@code distinct}) y las compatibilidades borradas se excluyen con
- * {@link CompatibilityService#existingAmong}.</p>
+ * {@code @SQLRestriction} a cada tabla unida, mismos filtros y mismo orden.</p>
+ *
+ * <p>Compatibilidad: solo {@code product_vehicle_rules} ({@link ProductVehicleRules}); la tabla
+ * {@code product_compatibilities} ya no se lee ni se escribe. El filtro por vehículo del marketplace añade un
+ * {@code exists} sobre las reglas vigentes ({@link #publishedListings(VehicleFilter)}).</p>
  */
 @Service
 @AllArgsConstructor
@@ -97,7 +98,7 @@ public class ListingQueries {
             order by b.name
             """;
 
-    static final String PUBLISHED_LISTINGS_SQL = """
+    static final String PUBLISHED_LISTINGS_WHERE_SQL = """
             select i.id, i.product_id, i.branch_id, b.store_id as branch_store_id, b.name as branch_name,
                    i.price, i.stock
             from inventory i
@@ -114,7 +115,31 @@ public class ListingQueries {
               and ss.code = 'ACTIVE'
               and bs.code = 'ACTIVE'
               and i.stock > 0
+            """;
+
+    static final String PUBLISHED_LISTINGS_ORDER_SQL = """
             order by p.name, s.business_name, b.name
+            """;
+
+    static final String PUBLISHED_LISTINGS_SQL = PUBLISHED_LISTINGS_WHERE_SQL + PUBLISHED_LISTINGS_ORDER_SQL;
+
+    /**
+     * Filtro por vehículo: el producto es universal o tiene alguna regla vigente que cubre el vehículo (misma marca y, por nivel,
+     * regla «todos» ({@code null}) o el mismo id). Solo lee {@code product_vehicle_rules}.
+     */
+    static final String VEHICLE_MATCH_MAKE_SQL = """
+              and (p.is_universal or exists (select 1 from product_vehicle_rules r
+                          where r.product_id = p.id and r.deleted_at is null
+                            and r.make_id = ?
+            """;
+    static final String VEHICLE_MATCH_MODEL_SQL = """
+                            and (r.model_id is null or r.model_id = ?)
+            """;
+    static final String VEHICLE_MATCH_VERSION_SQL = """
+                            and (r.version_id is null or r.version_id = ?)
+            """;
+    static final String VEHICLE_MATCH_END_SQL = """
+                         ))
             """;
 
     static final String PUBLISHED_LISTING_SQL = """
@@ -172,6 +197,7 @@ public class ListingQueries {
     private final ManufacturerRepository manufacturerRepository;
     private final CategoryRepository categoryRepository;
     private final CompatibilityService compatibilityService;
+    private final ProductVehicleRules vehicleRules;
     private final PriceCalculator priceCalculator;
 
     /** Todos los listados de los productos del almacén (cualquier estado), por nombre de producto y sucursal. */
@@ -188,7 +214,7 @@ public class ListingQueries {
     public Optional<ProductResponse> storeListing(UUID storeId, UUID branchId, UUID productId) {
         ListingRow row = DataAccessUtils.singleResult(
                 jdbcTemplate.query(STORE_LISTING_SQL, ListingQueries::mapRow, productId, storeId, branchId));
-        return row == null ? Optional.empty() : Optional.of(toResponses(List.of(row)).getFirst());
+        return row == null ? Optional.empty() : toResponses(List.of(row)).stream().findFirst();
     }
 
     /**
@@ -211,14 +237,14 @@ public class ListingQueries {
                         rs.getString("branch_state")
                 ),
                 productId, storeId);
-        Set<UUID> existingCompatibilities = compatibilityService.existingAmong(Set.copyOf(product.getCompatibilityIds()));
+        List<VehicleRuleResponse> rules = vehicleRules.forProduct(productId);
         List<ProductImageResponse> images = productImageRepository.findAllOfProducts(Set.of(productId)).stream()
                 .map(productImageMapper::toResponse)
                 .toList();
         List<PromotionRule> activePromotions = priceCalculator.activeRulesAt(OffsetDateTime.now(ZoneOffset.UTC));
         List<StoreProductDetail.Listing> listings = rows.stream()
                 .map(detail -> {
-                    ProductResponse listing = toResponse(detail.row(), product, existingCompatibilities, images, activePromotions);
+                    ProductResponse listing = toResponse(detail.row(), product, rules, images, activePromotions);
                     return new StoreProductDetail.Listing(
                             detail.inventoryId(),
                             detail.row().branchId(),
@@ -239,10 +265,13 @@ public class ListingQueries {
                 product.getPartNumber(),
                 product.getDescription(),
                 product.getManufacturer().getId(),
+                product.getManufacturer().getName(),
+                product.getManufacturer().isApproved(),
                 product.getCategory().getId(),
                 product.getState().getCode(),
+                product.isUniversal(),
                 product.getAttributes(),
-                currentCompatibilities(product.getCompatibilityIds(), existingCompatibilities),
+                rules,
                 images,
                 listings
         );
@@ -251,7 +280,31 @@ public class ListingQueries {
     /** Listados visibles en el marketplace: producto, almacén y sucursal activos y con stock. */
     @Transactional(readOnly = true)
     public List<ProductResponse> publishedListings() {
-        return toResponses(jdbcTemplate.query(PUBLISHED_LISTINGS_SQL, ListingQueries::mapRow));
+        return publishedListings(VehicleFilter.none());
+    }
+
+    /**
+     * Listados visibles en el marketplace filtrados por vehículo: solo productos con una regla de
+     * {@code product_vehicle_rules} que cubra el vehículo (una regla con modelo/versión nulos cubre todo bajo ella).
+     */
+    @Transactional(readOnly = true)
+    public List<ProductResponse> publishedListings(VehicleFilter filter) {
+        if (filter == null || filter.isEmpty()) {
+            return toResponses(jdbcTemplate.query(PUBLISHED_LISTINGS_SQL, ListingQueries::mapRow));
+        }
+        StringBuilder sql = new StringBuilder(PUBLISHED_LISTINGS_WHERE_SQL).append(VEHICLE_MATCH_MAKE_SQL);
+        List<Object> args = new java.util.ArrayList<>();
+        args.add(filter.makeId());
+        if (filter.modelId() != null) {
+            sql.append(VEHICLE_MATCH_MODEL_SQL);
+            args.add(filter.modelId());
+        }
+        if (filter.versionId() != null) {
+            sql.append(VEHICLE_MATCH_VERSION_SQL);
+            args.add(filter.versionId());
+        }
+        sql.append(VEHICLE_MATCH_END_SQL).append(PUBLISHED_LISTINGS_ORDER_SQL);
+        return toResponses(jdbcTemplate.query(sql.toString(), ListingQueries::mapRow, args.toArray()));
     }
 
     /** El listado publicado más barato del producto; si no hay ninguno, {@code PRODUCT_NOT_FOUND}. */
@@ -259,7 +312,7 @@ public class ListingQueries {
     public ProductResponse publishedListing(UUID productId) {
         return jdbcTemplate.query(PUBLISHED_LISTING_SQL, ListingQueries::mapRow, productId).stream()
                 .findFirst()
-                .map(row -> toResponses(List.of(row)).getFirst())
+                .flatMap(row -> toResponses(List.of(row)).stream().findFirst())
                 .orElseThrow(() -> new NotFoundException("PRODUCT_NOT_FOUND", "No se encontró el repuesto."));
     }
 
@@ -291,12 +344,12 @@ public class ListingQueries {
 
     @Transactional(readOnly = true)
     public ProductOptionsResponse options() {
-        return new ProductOptionsResponse(manufacturers(), categories(), compatibilities());
+        return new ProductOptionsResponse(manufacturers(), categories());
     }
 
     @Transactional(readOnly = true)
     public List<ProductOptionsResponse.ManufacturerOption> manufacturers() {
-        return manufacturerRepository.findAllByOrderByNameAsc().stream()
+        return manufacturerRepository.findAllByApprovedTrueOrderByNameAsc().stream()
                 .map(item -> new ProductOptionsResponse.ManufacturerOption(item.getId(), item.getName()))
                 .toList();
     }
@@ -308,6 +361,11 @@ public class ListingQueries {
                 .toList();
     }
 
+    /**
+     * Lista completa de la tabla {@code compatibilities}. Obsoleta: los productos ya no se asocian a compatibilidades
+     * sino a reglas de vehículo; se conserva solo para clientes antiguos hasta retirar la tabla.
+     */
+    @Deprecated
     @Transactional(readOnly = true)
     public List<ProductOptionsResponse.CompatibilityOption> compatibilities() {
         return compatibilityService.options().stream()
@@ -323,9 +381,7 @@ public class ListingQueries {
         Set<UUID> productIds = rows.stream().map(ListingRow::productId).collect(Collectors.toSet());
         Map<UUID, Product> productsById = productRepository.findAllWithDetails(productIds).stream()
                 .collect(Collectors.toMap(Product::getId, Function.identity()));
-        Set<UUID> existingCompatibilities = compatibilityService.existingAmong(productsById.values().stream()
-                .flatMap(product -> product.getCompatibilityIds().stream())
-                .collect(Collectors.toSet()));
+        Map<UUID, List<VehicleRuleResponse>> rulesByProduct = vehicleRules.forProducts(productIds);
         Map<UUID, List<ProductImageResponse>> imagesByProduct = productImageRepository
                 .findAllOfProducts(productIds)
                 .stream()
@@ -334,11 +390,13 @@ public class ListingQueries {
                         Collectors.mapping(productImageMapper::toResponse, Collectors.toList())
                 ));
         List<PromotionRule> activePromotions = priceCalculator.activeRulesAt(OffsetDateTime.now(ZoneOffset.UTC));
+        // Si el producto se borró (lógico) entre la consulta y la carga, se omite la fila en vez de fallar.
         return rows.stream()
+                .filter(row -> productsById.get(row.productId()) != null)
                 .map(row -> toResponse(
                         row,
                         productsById.get(row.productId()),
-                        existingCompatibilities,
+                        rulesByProduct.getOrDefault(row.productId(), List.of()),
                         imagesByProduct.getOrDefault(row.productId(), List.of()),
                         activePromotions))
                 .toList();
@@ -347,11 +405,10 @@ public class ListingQueries {
     private ProductResponse toResponse(
             ListingRow row,
             Product product,
-            Set<UUID> existingCompatibilities,
+            List<VehicleRuleResponse> rules,
             List<ProductImageResponse> images,
             List<PromotionRule> activePromotions
     ) {
-        Set<UUID> compatibilityIds = currentCompatibilities(product.getCompatibilityIds(), existingCompatibilities);
         PriceQuote quote = priceCalculator.bestPrice(new PricingSubject(
                 row.price(),
                 product.getId(),
@@ -364,7 +421,7 @@ public class ListingQueries {
                 product.getPartNumber(),
                 product.getState().getCode(),
                 product.getAttributes(),
-                compatibilityIds
+                ProductVehicleRules.vehicleIds(rules)
         ), activePromotions);
         return new ProductResponse(
                 product.getId(),
@@ -381,22 +438,15 @@ public class ListingQueries {
                 quote.promotionName(),
                 row.stock(),
                 product.getManufacturer().getId(),
+                product.getManufacturer().getName(),
+                product.getManufacturer().isApproved(),
                 product.getCategory().getId(),
                 product.getState().getCode(),
+                product.isUniversal(),
                 product.getAttributes(),
-                compatibilityIds,
+                rules,
                 images
         );
-    }
-
-    private static Set<UUID> currentCompatibilities(Collection<UUID> ids, Set<UUID> existing) {
-        Set<UUID> result = new HashSet<>();
-        for (UUID id : ids) {
-            if (existing.contains(id)) {
-                result.add(id);
-            }
-        }
-        return result;
     }
 
     private static ListingRow mapRow(ResultSet rs, int rowNum) throws SQLException {

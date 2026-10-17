@@ -25,6 +25,9 @@ class OrderPlacementTest {
     private static final UUID INVENTORY_A1 = UUID.randomUUID();
     private static final UUID INVENTORY_A2 = UUID.randomUUID();
     private static final UUID INVENTORY_B1 = UUID.randomUUID();
+    private static final UUID PRODUCT_A1 = UUID.randomUUID();
+    private static final UUID PRODUCT_A2 = UUID.randomUUID();
+    private static final UUID PRODUCT_B1 = UUID.randomUUID();
 
     @Test
     void placeApprovedInsertsInOrderWithStatusCodes() {
@@ -66,6 +69,10 @@ class OrderPlacementTest {
         assertThat(detailA1.param("orderId")).isEqualTo(ORDER_ID);
         assertThat(detailA1.param("saleId")).isEqualTo(SALE_A);
         assertThat(detailA1.param("inventoryId")).isEqualTo(INVENTORY_A1);
+        assertThat(OrderPlacement.INSERT_ORDER_DETAIL_SQL).contains("product_id", ":productId");
+        assertThat(detailA1.param("productId")).isEqualTo(PRODUCT_A1);
+        assertThat(statements.get(4).param("productId")).isEqualTo(PRODUCT_A2);
+        assertThat(statements.get(6).param("productId")).isEqualTo(PRODUCT_B1);
         assertThat(detailA1.param("units")).isEqualTo(2);
         assertThat(detailA1.param("unitPrice")).isEqualTo(new BigDecimal("80000.00"));
         assertThat(statements.get(6).param("saleId")).isEqualTo(SALE_B);
@@ -178,10 +185,10 @@ class OrderPlacementTest {
                 List.of(
                         new NewOrder.NewSale(BRANCH_A, new BigDecimal("180000.00"), new BigDecimal("0.00"),
                                 new BigDecimal("180000.00"), List.of(
-                                        new NewOrder.NewLine(INVENTORY_A1, 2, new BigDecimal("80000.00")),
-                                        new NewOrder.NewLine(INVENTORY_A2, 1, new BigDecimal("20000.00")))),
+                                        new NewOrder.NewLine(INVENTORY_A1, PRODUCT_A1, 2, new BigDecimal("80000.00")),
+                                        new NewOrder.NewLine(INVENTORY_A2, PRODUCT_A2, 1, new BigDecimal("20000.00")))),
                         new NewOrder.NewSale(BRANCH_B, new BigDecimal("50000.50"), new BigDecimal("0.00"),
                                 new BigDecimal("50000.50"), List.of(
-                                        new NewOrder.NewLine(INVENTORY_B1, 1, new BigDecimal("50000.50"))))));
+                                        new NewOrder.NewLine(INVENTORY_B1, PRODUCT_B1, 1, new BigDecimal("50000.50"))))));
     }
 }

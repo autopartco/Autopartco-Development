@@ -9,6 +9,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
+import { useSubmitOnce } from '@/lib/use-submit-once'
 import { actionErrorMessage } from '../lib/errors'
 
 interface ConfirmDialogProps {
@@ -28,20 +29,16 @@ interface ConfirmDialogProps {
  * diálogo y vuelve al botón que lo abrió (lo gestiona Base UI). No se cierra mientras trabaja.
  */
 export function ConfirmDialog({ open, onOpenChange, title, description, confirmLabel, destructive, onConfirm }: ConfirmDialogProps) {
-  const [pending, setPending] = useState(false)
+  // Candado síncrono: un segundo clic en el mismo tick no repite la acción.
+  const confirm = useSubmitOnce(onConfirm)
+  const pending = confirm.pending
   const [error, setError] = useState<string>()
 
   async function handleConfirm() {
-    setPending(true)
     setError(undefined)
-    try {
-      await onConfirm()
-      onOpenChange(false)
-    } catch (cause) {
-      setError(actionErrorMessage(cause, 'No pudimos completar la acción. Inténtalo de nuevo.'))
-    } finally {
-      setPending(false)
-    }
+    const result = await confirm.run()
+    if (result.status === 'ok') onOpenChange(false)
+    else if (result.status === 'error') setError(actionErrorMessage(result.error, 'No pudimos completar la acción. Inténtalo de nuevo.'))
   }
 
   return (

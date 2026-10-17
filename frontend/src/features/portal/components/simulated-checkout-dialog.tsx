@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ApiError, detailNumber, detailText } from '@/lib/api'
 import { formatCOP } from '@/lib/format'
+import { useSubmitOnce } from '@/lib/use-submit-once'
 import { getSubscriptionService } from '../api/subscription-service'
 import type { Plan, SimulatedPaymentResult, Subscription } from '../api/types'
 import { actionErrorMessage } from '../lib/errors'
@@ -43,7 +44,6 @@ function CheckoutForm({ storeId, plan, subscription, onPaid, onClose }: Omit<Che
   const [clientRequestId] = useState(() => crypto.randomUUID())
   const [months, setMonths] = useState('1')
   const [simulateRejection, setSimulateRejection] = useState(false)
-  const [pending, setPending] = useState(false)
   const [error, setError] = useState<{ title: string; detail?: string }>()
   const alertRef = useRef<HTMLDivElement>(null)
 
@@ -58,10 +58,8 @@ function CheckoutForm({ storeId, plan, subscription, onPaid, onClose }: Omit<Che
     requestAnimationFrame(() => alertRef.current?.focus())
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (pending) return
-    setPending(true)
+  // ÚNICA escritura (pago o redirección a Wompi): solo al pulsar el botón; candado síncrono contra doble envío.
+  const payOnce = useSubmitOnce(async () => {
     setError(undefined)
     try {
       const service = await getSubscriptionService()
@@ -110,13 +108,17 @@ function CheckoutForm({ storeId, plan, subscription, onPaid, onClose }: Omit<Che
       } else {
         fail('No se pudo procesar el pago', actionErrorMessage(cause, 'Inténtalo de nuevo en unos minutos.'))
       }
-    } finally {
-      setPending(false)
     }
+  })
+  const pending = payOnce.pending
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    void payOnce.run()
   }
 
   return (
-    <form onSubmit={(event) => void handleSubmit(event)} noValidate className="flex flex-col gap-4" aria-busy={pending || undefined}>
+    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4" aria-busy={pending || undefined}>
       <DialogHeader>
         <DialogTitle>Pagar el plan {plan.name}</DialogTitle>
         <DialogDescription>

@@ -1,11 +1,12 @@
 import { PLACEHOLDER_IMAGES } from '@/lib/images'
 import type {
   CategoryOptionDto,
-  CompatibilityOptionDto,
   ProductImageResponseDto,
   ProductOptionsResponseDto,
   ProductResponseDto,
   StoreResponseDto,
+  VehicleNameOptionDto,
+  VehicleVersionOptionDto,
 } from '../dto'
 import {
   MarketplaceError,
@@ -13,8 +14,9 @@ import {
   type FilterOptions,
   type MarketplaceService,
   type Product,
+  type ProductImage,
+  type ProductQuery,
   type StoreSummary,
-  type VehicleFit,
 } from '../types'
 
 /**
@@ -28,6 +30,9 @@ const PATHS = {
   product: (id: string) => `/marketplace/products/${encodeURIComponent(id)}`,
   options: '/marketplace/product-options',
   categories: '/marketplace/product-options/categories',
+  vehicleMakes: '/marketplace/vehicles/makes',
+  vehicleModels: (makeId: string) => `/marketplace/vehicles/makes/${encodeURIComponent(makeId)}/models`,
+  vehicleVersions: (modelId: string) => `/marketplace/vehicles/models/${encodeURIComponent(modelId)}/versions`,
   stores: '/marketplace/stores',
   storeAsset: (storeId: string, assetType: 'logo' | 'banner') =>
     `/marketplace/stores/${encodeURIComponent(storeId)}/brand/${assetType}`,
@@ -44,23 +49,33 @@ function toCategory(dto: CategoryOptionDto): Category {
   return { id: dto.id, slug: dto.code.toLowerCase(), name: humanizeCode(dto.code) }
 }
 
-function toVehicleFit(dto: CompatibilityOptionDto): VehicleFit {
-  // TODO(api): CompatibilityOption no tiene rango de años; sin él no hay filtro por año.
-  return { id: dto.id, make: dto.make, model: dto.model, version: dto.version ?? undefined }
-}
-
-function imageUrls(images: ProductImageResponseDto[] | null): string[] {
-  if (!images || images.length === 0) return [PLACEHOLDER_IMAGES.product]
+/** Listados usan `cardUrl`/`thumbUrl`; el detalle usa `url`. Si falta una variante se cae a la siguiente. */
+function toImages(images: ProductImageResponseDto[] | null): ProductImage[] {
+  if (!images || images.length === 0) {
+    return [{ url: PLACEHOLDER_IMAGES.product, thumbUrl: PLACEHOLDER_IMAGES.product, cardUrl: PLACEHOLDER_IMAGES.product }]
+  }
   const isMain = (image: ProductImageResponseDto) => (image.isMain ?? image.main ? 1 : 0)
   return images
     .toSorted((a, b) => isMain(b) - isMain(a) || a.displayOrder - b.displayOrder)
-    .map((image) => image.url)
+    .map((image) => ({
+      url: image.url,
+      thumbUrl: image.thumbUrl || image.cardUrl || image.url,
+      cardUrl: image.cardUrl || image.thumbUrl || image.url,
+    }))
+}
+
+/** Query string del filtro por vehículo; el servidor valida la jerarquía (400 `VEHICLE_FILTER_INVALID`). */
+function vehicleQuery(query?: Pick<ProductQuery, 'makeId' | 'modelId' | 'versionId'>): string {
+  const params = new URLSearchParams()
+  if (query?.makeId) params.set('makeId', query.makeId)
+  if (query?.modelId) params.set('modelId', query.modelId)
+  if (query?.versionId) params.set('versionId', query.versionId)
+  const qs = params.toString()
+  return qs ? `?${qs}` : ''
 }
 
 interface Lookups {
-  manufacturers: Map<string, { id: string; name: string }>
   categories: Map<string, Category>
-  compatibilities: Map<string, VehicleFit>
   stores: Map<string, StoreSummary>
 }
 
@@ -75,10 +90,14 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
       throw new MarketplaceError('No hay conexión con el servidor de Autopartco.', { cause })
     }
     if (!response.ok) {
-      const body = (await response.json().catch(() => null)) as { message?: string; code?: string } | null
-      throw new MarketplaceError(body?.message ?? `El servidor respondió ${response.status}.`, {
+      const body = (await response.json().catch(() => null)) as {
+        message?: string
+        code?: string
+        error?: { message?: string; code?: string }
+      } | null
+      throw new MarketplaceError(body?.error?.message ?? body?.message ?? `El servidor respondió ${response.status}.`, {
         status: response.status,
-        code: body?.code,
+        code: body?.error?.code ?? body?.code,
       })
     }
     return (await response.json()) as T
@@ -96,9 +115,7 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
       get<ProductOptionsResponseDto>(PATHS.options),
       get<StoreResponseDto[]>(PATHS.stores),
     ]).then(([options, stores]) => ({
-      manufacturers: new Map(options.manufacturers.map((item) => [item.id, item])),
       categories: new Map(options.categories.map((item) => [item.id, toCategory(item)])),
-      compatibilities: new Map(options.compatibilities.map((item) => [item.id, toVehicleFit(item)])),
       stores: new Map(stores.map((item) => [item.id, toStore(item)])),
     }))
     lookupsPromise.catch(() => {
@@ -120,9 +137,12 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
       listPrice: discount ? dto.price : undefined,
       discountAmount: discount,
       promotionName: dto.appliedPromotionName ?? undefined,
-      images: imageUrls(dto.images),
+      images: toImages(dto.images),
       category: dto.categoryId ? maps.categories.get(dto.categoryId) : undefined,
-      brand: dto.manufacturerId ? maps.manufacturers.get(dto.manufacturerId) : undefined,
+      // La marca sale del propio producto: se ve aunque el fabricante esté pendiente de aprobación.
+      brand: dto.manufacturerName
+        ? { id: dto.manufacturerId ?? dto.manufacturerName, name: dto.manufacturerName, approved: dto.manufacturerApproved ?? undefined }
+        : undefined,
       store: maps.stores.get(dto.storeId) ?? { id: dto.storeId, name: 'Tienda Autopartco' },
       availability:
         dto.quantity === null
@@ -132,10 +152,8 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
               quantity: dto.quantity,
               branchName: dto.branchName ?? undefined,
             },
-      compatibilities: (dto.compatibilityIds ?? []).flatMap((id) => {
-        const fit = maps.compatibilities.get(id)
-        return fit ? [fit] : []
-      }),
+      universal: dto.universal === true,
+      vehicleRules: dto.universal ? [] : (dto.vehicleRules ?? []),
       specifications: Object.entries(dto.attributes ?? {})
         .filter(([, value]) => value !== null && value !== undefined && value !== '')
         .map(([label, value]) => ({ label: humanizeCode(label), value: String(value) })),
@@ -144,19 +162,17 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
 
   return {
     capabilities: {
-      // TODO(api): no hay búsqueda por texto, filtros, orden ni paginación en el servidor.
-      // Contrato sugerido: GET /marketplace/products?q=&categoryId=&manufacturerId=&compatibilityId=
-      //   &year=&minPrice=&maxPrice=&inStock=&recommendedStore=&storeId=&sort=&page=&size=
-      //   -> { items: ProductResponse[], total, page, size }.
+      // El servidor solo filtra por vehículo (makeId/modelId/versionId); los universales aparecen siempre.
+      // TODO(api): no hay búsqueda por texto, otros filtros, orden ni paginación en el servidor.
       textSearch: false,
       sorting: false,
       pagination: false,
-      filters: new Set(),
+      filters: new Set(['vehicle']),
     },
 
-    async searchProducts() {
-      // TODO(api): se ignoran los parámetros de búsqueda; el endpoint devuelve el catálogo publicado completo.
-      const [listings, maps] = await Promise.all([get<ProductResponseDto[]>(PATHS.products), lookups()])
+    async searchProducts(query) {
+      // TODO(api): solo se envía el filtro por vehículo; el endpoint devuelve el resto del catálogo publicado completo.
+      const [listings, maps] = await Promise.all([get<ProductResponseDto[]>(`${PATHS.products}${vehicleQuery(query)}`), lookups()])
       const items = listings.map((dto) => toProduct(dto, maps))
       return { items, total: items.length, page: 1, pageSize: Math.max(items.length, 1), totalPages: 1 }
     },
@@ -173,18 +189,24 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
 
     async getFilterOptions(): Promise<FilterOptions> {
       const options = await get<ProductOptionsResponseDto>(PATHS.options)
-      const makes = new Map<string, Set<string>>()
-      for (const fit of options.compatibilities) {
-        const models = makes.get(fit.make) ?? new Set<string>()
-        models.add(fit.model)
-        makes.set(fit.make, models)
-      }
       return {
         categories: options.categories.map(toCategory),
         brands: options.manufacturers,
-        vehicles: [...makes.entries()].map(([make, models]) => ({ make, models: [...models].toSorted() })),
-        // TODO(api): faltan años de compatibilidad y rango de precios publicados.
+        // TODO(api): falta el rango de precios publicados.
       }
+    },
+
+    async listVehicleMakes() {
+      return get<VehicleNameOptionDto[]>(PATHS.vehicleMakes)
+    },
+
+    async listVehicleModels(makeId) {
+      return get<VehicleNameOptionDto[]>(PATHS.vehicleModels(makeId))
+    },
+
+    async listVehicleVersions(modelId) {
+      const versions = await get<VehicleVersionOptionDto[]>(PATHS.vehicleVersions(modelId))
+      return versions.map((version) => ({ id: version.id, name: version.label }))
     },
 
     async getCategories() {

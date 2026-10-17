@@ -139,7 +139,7 @@ class PlaceMarketplaceOrderTest {
 
         NewOrder.NewSale sale1 = order.sales().get(0);
         assertThat(sale1.branchId()).isEqualTo(BRANCH_1);
-        assertThat(sale1.lines()).containsExactly(new NewOrder.NewLine(inv1, 2, new BigDecimal("90000.00")));
+        assertThat(sale1.lines()).containsExactly(new NewOrder.NewLine(inv1, PRODUCT_1, 2, new BigDecimal("90000.00")));
         assertThat(sale1.subtotal()).isEqualByComparingTo("180000.00");
         assertThat(sale1.shippingCost()).isEqualByComparingTo("0.00");
         assertThat(sale1.total()).isEqualByComparingTo("180000.00");
@@ -147,8 +147,8 @@ class PlaceMarketplaceOrderTest {
         NewOrder.NewSale sale2 = order.sales().get(1);
         assertThat(sale2.branchId()).isEqualTo(BRANCH_2);
         assertThat(sale2.lines()).containsExactly(
-                new NewOrder.NewLine(inv2, 1, new BigDecimal("50000.00")),
-                new NewOrder.NewLine(inv3, 3, new BigDecimal("10000.25")));
+                new NewOrder.NewLine(inv2, PRODUCT_2, 1, new BigDecimal("50000.00")),
+                new NewOrder.NewLine(inv3, PRODUCT_3, 3, new BigDecimal("10000.25")));
         assertThat(sale2.subtotal()).isEqualByComparingTo("80000.75");
         assertThat(sale2.total()).isEqualByComparingTo("80000.75");
         assertThat(sale2.total().scale()).isEqualTo(2);
@@ -375,7 +375,7 @@ class PlaceMarketplaceOrderTest {
         listings.put(new ListingKey(productId, branchId), new ProductResponse(
                 productId, UUID.randomUUID(), branchId, "Sede", "Repuesto", "BP-1", null, null,
                 new BigDecimal(price), new BigDecimal(effectivePrice), null, null, 10,
-                null, null, "ACTIVE", Map.of(), null, List.of()));
+                null, null, false, null, "ACTIVE", false, Map.of(), List.of(), List.of()));
     }
 
     private UUID stock(UUID productId, UUID branchId, int units, String price) {

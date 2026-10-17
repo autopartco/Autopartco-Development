@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -13,7 +14,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.autopartco.backend.core.catalog.ProductCreateRequest;
 import com.autopartco.backend.core.catalog.ProductListingRequest;
@@ -45,7 +48,23 @@ public class StoreProductController {
         return listStoreProducts.execute(storeId, authentication.getName());
     }
 
-    @PostMapping("/products")
+    /**
+     * Alta atómica: parte {@code data} (application/json, {@link ProductCreateRequest}) y parte {@code images}
+     * (0..10 archivos; el orden es el de la galería).
+     */
+    @PostMapping(value = "/products", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ProductResponse> createMultipart(
+            @PathVariable UUID storeId,
+            @Valid @RequestPart("data") ProductCreateRequest request,
+            @RequestPart(value = "images", required = false) List<MultipartFile> images,
+            Authentication authentication
+    ) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(createProduct.execute(storeId, authentication.getName(), request, images));
+    }
+
+    /** Alta sin imágenes con cuerpo JSON (compatibilidad); mismas reglas que el multipart. */
+    @PostMapping(value = "/products", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<ProductResponse> create(
             @PathVariable UUID storeId,
             @Valid @RequestBody ProductCreateRequest request,
@@ -86,7 +105,24 @@ public class StoreProductController {
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/branches/{branchId}/products/{productId}")
+    /**
+     * Edición atómica: parte {@code data} (application/json, {@link ProductUpdateRequest}) y parte {@code newImages}
+     * (archivos referenciados como {@code new:<i>} en {@code imageOrder}/{@code mainImage}).
+     */
+    @PatchMapping(value = "/branches/{branchId}/products/{productId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ProductResponse updateMultipart(
+            @PathVariable UUID storeId,
+            @PathVariable UUID branchId,
+            @PathVariable UUID productId,
+            @Valid @RequestPart("data") ProductUpdateRequest request,
+            @RequestPart(value = "newImages", required = false) List<MultipartFile> newImages,
+            Authentication authentication
+    ) {
+        return updateProduct.execute(storeId, branchId, productId, authentication.getName(), request, newImages);
+    }
+
+    /** Edición sin imágenes nuevas con cuerpo JSON (compatibilidad); mismas reglas que el multipart. */
+    @PatchMapping(value = "/branches/{branchId}/products/{productId}", consumes = MediaType.APPLICATION_JSON_VALUE)
     public ProductResponse update(
             @PathVariable UUID storeId,
             @PathVariable UUID branchId,

@@ -21,9 +21,9 @@ const NAV = [
 /** Enlace de la cabecera oscura: la página activa se marca con un tramo del hilo rojo. */
 function navClass({ isActive }: { isActive: boolean }) {
   return cn(
-    'relative inline-flex h-11 items-center rounded-lg px-3 text-sm font-medium transition-colors lg:h-10',
+    'relative inline-flex h-11 shrink-0 items-center whitespace-nowrap rounded-lg px-2 text-sm font-medium transition-colors lg:h-10',
     'hover:bg-header-hover hover:text-white',
-    'after:absolute after:inset-x-3 after:bottom-1 after:h-0.5 after:origin-left after:scale-x-0 after:rounded-full after:bg-thread-on-asphalt after:transition-transform after:duration-200 after:ease-out-snap',
+    'after:absolute after:inset-x-2 after:bottom-1 after:h-0.5 after:origin-left after:scale-x-0 after:rounded-full after:bg-thread-on-asphalt after:transition-transform after:duration-200 after:ease-out-snap',
     isActive ? 'text-white after:scale-x-100' : 'text-asphalt-muted',
   )
 }
@@ -47,7 +47,7 @@ function SellerHeaderLink() {
       to={cta.to}
       aria-label={label}
       title={label}
-      className="hidden h-11 min-w-11 items-center justify-center gap-1.5 rounded-lg px-2.5 text-sm font-semibold text-white transition-colors hover:bg-header-hover md:inline-flex lg:h-10"
+      className="hidden h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-lg px-2 text-sm font-semibold text-white transition-colors hover:bg-header-hover md:inline-flex lg:h-10"
     >
       <StoreIcon className="size-4 text-brand-on-asphalt" aria-hidden />
       <span className="hidden whitespace-nowrap md:inline">{label}</span>
@@ -109,32 +109,32 @@ function MobileMenu({ className }: { className?: string }) {
 
 /**
  * Cabecera carbón. En móvil y tablet son dos filas (logo y acciones: ciudad, cuenta y menú; buscador a
- * todo el ancho) y desde 2xl una sola. El buscador va justo después del logo en
- * el orden del documento: es lo primero que se usa.
+ * todo el ancho) y desde xl una sola: logo, buscador, navegación y acciones. El buscador va justo
+ * después del logo en el orden del documento: es lo primero que se usa.
  */
 export function SiteHeader() {
   return (
     <header className="surface-asphalt sticky top-0 z-40 bg-header">
-      <Container className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 [grid-template-areas:'logo_actions'_'search_search'] 2xl:h-16 2xl:grid-cols-[auto_minmax(0,1fr)_auto] 2xl:gap-x-8 2xl:[grid-template-areas:'logo_search_actions']">
-        <div className="flex h-14 min-w-0 items-center [grid-area:logo] 2xl:h-auto">
+      <Container className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 [grid-template-areas:'logo_actions'_'search_search'] xl:h-16 xl:grid-cols-[auto_minmax(0,1fr)_auto_auto] xl:gap-x-4 xl:[grid-template-areas:'logo_search_nav_actions'] 2xl:gap-x-6">
+        <div className="flex h-14 min-w-0 items-center [grid-area:logo] xl:h-auto">
           <Logo tone="dark" />
         </div>
-        <SearchBar tone="dark" shortcut className="pb-3 [grid-area:search] 2xl:max-w-2xl 2xl:pb-0" />
+        <SearchBar tone="dark" shortcut className="pb-3 [grid-area:search] xl:min-w-48 xl:max-w-2xl xl:pb-0" />
+        {/* Enlaces desde xl, en la misma fila; por debajo van en el menú para dejar sitio a la ciudad y a la cuenta. */}
+        <nav aria-label="Principal" className="hidden items-center gap-0 [grid-area:nav] xl:flex">
+          {NAV.map((item) => (
+            <NavLink key={item.to} to={item.to} className={navClass}>
+              {item.label}
+            </NavLink>
+          ))}
+        </nav>
         <div className="flex items-center gap-0.5 [grid-area:actions]">
-          {/* Enlaces desde lg; por debajo van en el menú para dejar sitio a la ciudad y a la cuenta. */}
-          <nav aria-label="Principal" className="hidden items-center gap-0.5 lg:flex">
-            {NAV.map((item) => (
-              <NavLink key={item.to} to={item.to} className={navClass}>
-                {item.label}
-              </NavLink>
-            ))}
-          </nav>
           <SellerHeaderLink />
-          <span className="mx-1.5 hidden h-5 w-px bg-white/15 lg:block" aria-hidden />
+          <span className="mx-1.5 hidden h-5 w-px bg-white/15 xl:block" aria-hidden />
           <CityPicker />
           <CartIndicator />
           <HeaderAccount />
-          <MobileMenu className="lg:hidden" />
+          <MobileMenu className="xl:hidden" />
         </div>
       </Container>
     </header>

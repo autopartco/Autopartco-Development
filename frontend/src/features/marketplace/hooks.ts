@@ -31,6 +31,38 @@ export function useFilterOptions() {
   return useMarketplace('filter-options', (service) => service.getFilterOptions())
 }
 
+const NO_VEHICLE_KEY = 'vehicles:none'
+
+/** Catálogo de vehículos en cascada: cada nivel se pide al elegir el anterior y queda en caché. */
+export function useVehicleMakes() {
+  return useMarketplace('vehicles:makes', (service) => service.listVehicleMakes())
+}
+
+export function useVehicleModels(makeId: string | undefined) {
+  return useMarketplace(makeId ? `vehicles:models:${makeId}` : NO_VEHICLE_KEY, (service) =>
+    makeId ? service.listVehicleModels(makeId) : Promise.resolve([]),
+  )
+}
+
+export function useVehicleVersions(modelId: string | undefined) {
+  return useMarketplace(modelId ? `vehicles:versions:${modelId}` : NO_VEHICLE_KEY, (service) =>
+    modelId ? service.listVehicleVersions(modelId) : Promise.resolve([]),
+  )
+}
+
+/** «Renault Duster 2.0 4x4» a partir de los ids del filtro; `undefined` mientras se resuelven los nombres. */
+export function useVehicleFilterLabel(selection: { makeId?: string; modelId?: string; versionId?: string }): string | undefined {
+  const makes = useVehicleMakes()
+  const models = useVehicleModels(selection.makeId)
+  const versions = useVehicleVersions(selection.modelId)
+  if (!selection.makeId) return undefined
+  const make = makes.data?.find((item) => item.id === selection.makeId)
+  if (!make) return undefined
+  const model = selection.modelId && !models.isStale ? models.data?.find((item) => item.id === selection.modelId) : undefined
+  const version = selection.versionId && !versions.isStale ? versions.data?.find((item) => item.id === selection.versionId) : undefined
+  return [make.name, model?.name, version?.name].filter(Boolean).join(' ')
+}
+
 export function useCategories() {
   return useMarketplace('categories', (service) => service.getCategories())
 }

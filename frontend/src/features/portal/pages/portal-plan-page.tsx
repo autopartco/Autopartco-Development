@@ -13,6 +13,8 @@ import { PaymentsTable } from '../components/payments-table'
 import { PlanCard, type Billing } from '../components/plan-card'
 import { PlanComparisonTable } from '../components/plan-comparison-table'
 import { QueryBoundary, QueryError } from '../components/query-boundary'
+import { QuoteRequestDialog } from '../components/quote-request-dialog'
+import type { QuoteContext } from '../lib/quote-request'
 import { CheckoutDialog } from '../components/simulated-checkout-dialog'
 import { StatusBadge } from '../components/status-badge'
 import { UsageMeter } from '../components/usage-meter'
@@ -75,18 +77,14 @@ function SummaryCard({ subscription }: { subscription: Subscription }) {
   )
 }
 
-/** Correo de ventas público (`VITE_SALES_EMAIL`); sin él no se inventa ningún contacto. */
-const SALES_EMAIL = (import.meta.env.VITE_SALES_EMAIL as string | undefined)?.trim()
-
-function SalesButton() {
-  if (!SALES_EMAIL) {
-    return <p className="text-sm text-muted-foreground">Escríbenos por soporte y armamos un plan a tu medida.</p>
-  }
-  const subject = encodeURIComponent('Plan Empresarial de Autopartco')
+function QuoteAction({ onRequest }: { onRequest: () => void }) {
   return (
-    <Button variant="outline" className="h-11 w-full px-4" nativeButton={false} render={<a href={`mailto:${SALES_EMAIL}?subject=${subject}`} />}>
-      Hablar con ventas
-    </Button>
+    <>
+      <p className="text-sm text-muted-foreground">Cuéntanos el tamaño de tu operación y te enviamos una cotización.</p>
+      <Button variant="outline" className="h-11 w-full px-4" onClick={onRequest}>
+        Solicitar cotización
+      </Button>
+    </>
   )
 }
 
@@ -119,15 +117,17 @@ function PlanAction({
   plan,
   subscription,
   onChoose,
+  onRequestQuote,
 }: {
   plan: Plan
   subscription: Subscription
   onChoose: (plan: Plan) => void
+  onRequestQuote: () => void
 }) {
   const isCurrent = plan.id === subscription.plan.id || plan.code === subscription.plan.code
   const free = plan.monthlyPriceCop === 0
 
-  if (isCustomPlan(plan)) return <SalesButton />
+  if (isCustomPlan(plan)) return <QuoteAction onRequest={onRequestQuote} />
   if (!subscription.canManage) return <p className="text-sm text-muted-foreground">Solo el propietario puede cambiar el plan.</p>
   if (free) {
     return (
@@ -155,7 +155,18 @@ function PlanAction({
 }
 
 function PlanView({ subscription }: { subscription: Subscription }) {
-  const { storeId, applySubscription, invalidateStore } = usePortal()
+  const { storeId, store, applySubscription, invalidateStore } = usePortal()
+  const [quoteOpen, setQuoteOpen] = useState(false)
+  const quoteContext: QuoteContext = {
+    storeName: store?.businessName ?? `Almacén ${storeId}`,
+    storeId,
+    planName: subscription.plan.name,
+    usage: [
+      { label: 'Sedes', ...subscription.usage.branches },
+      { label: 'Productos', ...subscription.usage.products },
+      { label: 'Usuarios', ...subscription.usage.users },
+    ],
+  }
   const plans = useAsync('portal:plans', async () => (await getSubscriptionService()).plans())
   const payments = useStoreQuery('payments', async (id) => (await getSubscriptionService()).payments(id))
   const [billing, setBilling] = useState<Billing>('MONTHLY')
@@ -236,7 +247,7 @@ function PlanView({ subscription }: { subscription: Subscription }) {
                       plan={plan}
                       billing={billing}
                       current={plan.code === subscription.plan.code}
-                      action={<PlanAction plan={plan} subscription={subscription} onChoose={choose} />}
+                      action={<PlanAction plan={plan} subscription={subscription} onChoose={choose} onRequestQuote={() => setQuoteOpen(true)} />}
                     />
                   </Reveal>
                 ))}
@@ -257,6 +268,7 @@ function PlanView({ subscription }: { subscription: Subscription }) {
         </QueryBoundary>
       </section>
 
+      <QuoteRequestDialog open={quoteOpen} onOpenChange={setQuoteOpen} context={quoteContext} />
       <CheckoutDialog open={open} onOpenChange={setOpen} storeId={storeId} plan={chosen} subscription={subscription} onPaid={handlePaid} />
     </div>
   )

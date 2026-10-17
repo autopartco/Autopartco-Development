@@ -63,8 +63,8 @@ public class OrderPlacement {
             """;
 
     static final String INSERT_ORDER_DETAIL_SQL = """
-            INSERT INTO order_details (order_id, sale_id, inventory_id, units, unit_price)
-            VALUES (:orderId, :saleId, :inventoryId, :units, :unitPrice)
+            INSERT INTO order_details (order_id, sale_id, inventory_id, product_id, units, unit_price)
+            VALUES (:orderId, :saleId, :inventoryId, :productId, :units, :unitPrice)
             """;
 
     static final String INSERT_PAYMENT_SQL = """
@@ -153,6 +153,7 @@ public class OrderPlacement {
                         .param("orderId", orderId)
                         .param("saleId", saleId)
                         .param("inventoryId", line.inventoryId())
+                        .param("productId", line.productId())
                         .param("units", line.units())
                         .param("unitPrice", line.unitPrice())
                         .update();

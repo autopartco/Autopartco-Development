@@ -9,6 +9,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
+import { useSubmitOnce } from '@/lib/use-submit-once'
 import { TextAreaField } from '@/features/portal/components/form-controls'
 import { actionErrorMessage } from '@/features/portal/lib/errors'
 import { REVIEW_NOTES_MAX, type StoreApplication } from '../api/types'
@@ -31,7 +32,8 @@ export function ReviewDialog({ application, approved, open, onOpenChange, onSubm
   const [notes, setNotes] = useState('')
   const [fieldError, setFieldError] = useState<string>()
   const [error, setError] = useState<string>()
-  const [pending, setPending] = useState(false)
+  const send = useSubmitOnce(onSubmit)
+  const pending = send.pending
 
   function reset(next: boolean) {
     if (pending) return
@@ -56,15 +58,13 @@ export function ReviewDialog({ application, approved, open, onOpenChange, onSubm
     }
     setFieldError(undefined)
     setError(undefined)
-    setPending(true)
-    try {
-      await onSubmit(clean)
+    // ÚNICA escritura: la decisión se guarda al pulsar el botón final.
+    const result = await send.run(clean)
+    if (result.status === 'ok') {
       setNotes('')
       onOpenChange(false)
-    } catch (cause) {
-      setError(actionErrorMessage(cause, 'No pudimos guardar la revisión. Inténtalo de nuevo.'))
-    } finally {
-      setPending(false)
+    } else if (result.status === 'error') {
+      setError(actionErrorMessage(result.error, 'No pudimos guardar la revisión. Inténtalo de nuevo.'))
     }
   }
 

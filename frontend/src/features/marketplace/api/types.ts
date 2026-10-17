@@ -15,15 +15,31 @@ export interface Category {
 export interface Brand {
   id: string
   name: string
+  /** `false` = fabricante pendiente de aprobación: su nombre se muestra igual, con un aviso. */
+  approved?: boolean
 }
 
-export interface VehicleFit {
+/** Regla de compatibilidad: un nivel en `null` significa «todos» (todos los modelos / todas las versiones). */
+export interface VehicleRule {
+  makeId: string
+  makeName: string
+  modelId: string | null
+  modelName: string | null
+  versionId: string | null
+  versionLabel: string | null
+}
+
+/** Opción del catálogo de vehículos en cascada (marca, modelo o versión). */
+export interface VehicleOption {
   id: string
-  make: string
-  model: string
-  version?: string
-  yearFrom?: number
-  yearTo?: number
+  name: string
+}
+
+/** Variantes de una imagen: miniatura (400), tarjeta (800) y original para el detalle. */
+export interface ProductImage {
+  url: string
+  thumbUrl: string
+  cardUrl: string
 }
 
 export interface StoreSummary {
@@ -68,12 +84,14 @@ export interface Product {
   listPrice?: number
   discountAmount?: number
   promotionName?: string
-  images: string[]
+  images: ProductImage[]
   category?: Category
   brand?: Brand
   store?: StoreSummary
   availability?: Availability
-  compatibilities: VehicleFit[]
+  /** No depende del vehículo: aparece en cualquier búsqueda por vehículo. */
+  universal: boolean
+  vehicleRules: VehicleRule[]
   specifications: Specification[]
 }
 
@@ -84,9 +102,10 @@ export interface ProductQuery {
   category?: string
   brands: string[]
   store?: string
-  make?: string
-  model?: string
-  year?: number
+  /** Filtro por vehículo: el modelo exige la marca y la versión exige el modelo. */
+  makeId?: string
+  modelId?: string
+  versionId?: string
   minPrice?: number
   maxPrice?: number
   inStockOnly: boolean
@@ -104,16 +123,9 @@ export interface ProductPage {
   totalPages: number
 }
 
-export interface VehicleMakeOption {
-  make: string
-  models: string[]
-}
-
 export interface FilterOptions {
   categories: Category[]
   brands: Brand[]
-  vehicles: VehicleMakeOption[]
-  years?: number[]
   priceRange?: { min: number; max: number }
 }
 
@@ -121,7 +133,6 @@ export type FilterKey =
   | 'category'
   | 'brand'
   | 'vehicle'
-  | 'year'
   | 'price'
   | 'availability'
   | 'recommendedStore'
@@ -144,6 +155,10 @@ export interface MarketplaceService {
   getProduct(id: string): Promise<Product>
   getRelatedProducts(product: Product, limit: number): Promise<Product[]>
   getFilterOptions(): Promise<FilterOptions>
+  /** Catálogo de vehículos en cascada (público). */
+  listVehicleMakes(): Promise<VehicleOption[]>
+  listVehicleModels(makeId: string): Promise<VehicleOption[]>
+  listVehicleVersions(modelId: string): Promise<VehicleOption[]>
   getCategories(): Promise<Category[]>
   listStores(): Promise<StoreSummary[]>
 }

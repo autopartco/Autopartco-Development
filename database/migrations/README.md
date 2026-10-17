@@ -77,6 +77,8 @@ Este directorio contiene las migraciones versionadas del esquema. Siguen la conv
 | `V202610141320__analytics_phase2` | Demanda por vehículo, embudo de búsqueda, devoluciones, vistas materializadas (rotación, cohortes, RFM) y lead time de proveedores |
 | `V202610141330__phase_tenant_consistency` | Coherencia de `store_id`/`branch_id` desnormalizados en las tablas nuevas |
 | `V202610141400__seller_subscription_events_and_payments` | SaaS SA-D1: `seller_payments` con proveedor, snapshot y periodo; `seller_subscription_events` de solo inserción |
+| `V202610171000__product_vehicle_rules` | Registro de productos v2 (expand): `product_vehicle_rules` con reglas Marca→Modelo→Versión («todos» = NULL), FK compuestas, único parcial e índice de matching. Migra `product_compatibilities` a reglas exactas; la tabla vieja se conserva. Rollback destructivo (guard) |
+| `V202610172000__product_universal` | `products.is_universal BOOLEAN NOT NULL DEFAULT false`: producto universal sin reglas de vehículo (invariante validada en backend). Rollback destructivo (guard) |
 
 Todas las de la fase 2 son transaccionales.
 
@@ -85,6 +87,7 @@ Todas las de la fase 2 son transaccionales.
 - `R__seed_geo_divipola.sql`: los 33 departamentos (32 + Bogotá D.C.). Los municipios se cargan con `pending-approval/load_divipola_municipalities.sql` desde el CSV oficial del DANE (A10).
 - `R__seed_holidays_co.sql`: festivos nacionales 2020-2035 y fechas comerciales. Vuelve a poblar `dim_date`.
 - `R__seed_planes_comerciales.sql`: planes `BASIC` (Esencial, 49.900), `BUSINESS` (Negocio, 149.900, único `recommended`) y `PRO` (299.900) con límites y capabilities. Requiere `V202610130905`. **No siembra `ENTERPRISE`** (con precio 0 se contrataría gratis) ni toca `TRY`. **El precio de un plan con suscripciones de pago activas no cambia** (aviso con `RAISE NOTICE`).
+- `R__seed_catalog_master_co.sql`: datos maestros del catálogo (12 categorías, 15 fabricantes, 10 marcas de vehículos con 3 modelos, 2 versiones y sus compatibilidades). Alimenta `GET /api/v1/marketplace/product-options`. Idempotente (`ON CONFLICT DO NOTHING`).
 
 ## 3. Cómo aplicar
 
@@ -115,6 +118,7 @@ done
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 --single-transaction -f R__seed_geo_divipola.sql
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 --single-transaction -f R__seed_holidays_co.sql
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 --single-transaction -f R__seed_planes_comerciales.sql
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 --single-transaction -f R__seed_catalog_master_co.sql
 psql "$DATABASE_URL" -c "ANALYZE;"
 ```
 

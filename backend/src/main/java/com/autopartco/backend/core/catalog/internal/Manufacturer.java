@@ -1,5 +1,7 @@
 package com.autopartco.backend.core.catalog.internal;
 
+import java.util.UUID;
+
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
@@ -9,6 +11,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -25,6 +28,15 @@ import lombok.experimental.SuperBuilder;
 @SuperBuilder
 public class Manufacturer extends BaseEntity {
 
-    @Column(nullable = false, unique = true, length = 100)
+    /** La unicidad la garantiza el índice parcial sobre {@code immutable_unaccent(lower(name))}. */
+    @Column(nullable = false, length = 100)
     private String name;
+
+    /** {@code false} = sugerido por un almacén y pendiente de moderación. */
+    @Column(nullable = false)
+    @Builder.Default
+    private boolean approved = true;
+
+    @Column(name = "suggested_by_store_id")
+    private UUID suggestedByStoreId;
 }

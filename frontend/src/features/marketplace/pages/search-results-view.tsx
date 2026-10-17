@@ -29,7 +29,7 @@ import { ActiveFilters } from '../components/active-filters'
 import { FiltersPanel } from '../components/filters-panel'
 import { ProductCard, ProductGrid, ProductGridSkeleton } from '../components/product-card'
 import { ResultsPagination } from '../components/results-pagination'
-import { useCapabilities, useFilterOptions, useProductQueryState, useProductSearch, useStores } from '../hooks'
+import { useCapabilities, useFilterOptions, useProductQueryState, useProductSearch, useStores, useVehicleFilterLabel } from '../hooks'
 import { categoryPath } from '../lib/paths'
 import { countActiveFilters, SORT_LABELS } from '../lib/product-query'
 import { useStoreDistances } from '@/features/location/hooks'
@@ -39,9 +39,9 @@ const CLEARED_FILTERS: Partial<ProductQuery> = {
   category: undefined,
   brands: [],
   store: undefined,
-  make: undefined,
-  model: undefined,
-  year: undefined,
+  makeId: undefined,
+  modelId: undefined,
+  versionId: undefined,
   minPrice: undefined,
   maxPrice: undefined,
   inStockOnly: false,
@@ -225,6 +225,7 @@ export function SearchResultsView({ fixedCategory }: { fixedCategory?: string })
   const capabilities = useCapabilities()
   const options = useFilterOptions()
   const stores = useStores()
+  const vehicleLabel = useVehicleFilterLabel(query)
   const result = useProductSearch(query)
   const distances = useStoreDistances()
 
@@ -276,17 +277,18 @@ export function SearchResultsView({ fixedCategory }: { fixedCategory?: string })
         className="mb-6 sm:mb-8"
       />
 
-      {query.make ? (
+      {query.makeId ? (
         <div className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border-l-4 border-brand bg-concrete px-4 py-3">
           <CarFrontIcon className="size-5 text-brand" aria-hidden />
           <p className="min-w-0 flex-1 text-sm">
             Mostrando repuestos publicados como compatibles con{' '}
-            <strong className="font-semibold">{[query.make, query.model, query.year].filter(Boolean).join(' ')}</strong>
+            <strong className="font-semibold">{vehicleLabel ?? 'tu vehículo'}</strong>.{' '}
+            <span className="text-muted-foreground">Los repuestos universales aparecen siempre.</span>
           </p>
           <Button
             variant="link"
             className="h-10 px-0"
-            onClick={() => update({ make: undefined, model: undefined, year: undefined })}
+            onClick={() => update({ makeId: undefined, modelId: undefined, versionId: undefined })}
           >
             Ver para cualquier vehículo
           </Button>

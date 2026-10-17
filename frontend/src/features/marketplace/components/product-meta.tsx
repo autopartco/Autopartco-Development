@@ -1,8 +1,8 @@
-import { AwardIcon, CarFrontIcon } from 'lucide-react'
+import { AwardIcon, CarFrontIcon, GlobeIcon } from 'lucide-react'
 import { formatCOP, formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
-import type { Availability, Product, StoreSummary, VehicleFit } from '../api/types'
-import { vehicleLabel } from '../lib/paths'
+import type { Availability, Brand, Product, StoreSummary } from '../api/types'
+import { ruleLabel } from '../lib/paths'
 
 /** Precio que devuelve el servicio; si hay promoción, muestra el precio anterior. */
 export function Price({ product, size = 'md' }: { product: Product; size?: 'md' | 'lg' }) {
@@ -57,22 +57,54 @@ export function AvailabilityLabel({
   )
 }
 
-/** "Aplica para Chevrolet Spark GT 2011–2018 y 1 vehículo más". */
-export function FitmentLine({ fits, className }: { fits: VehicleFit[]; className?: string }) {
-  const [first, ...rest] = fits
-  if (!first) return null
+/** Etiqueta «Universal»: el repuesto no depende del vehículo y sale en cualquier búsqueda por vehículo. */
+export function UniversalTag({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex w-fit shrink-0 items-center gap-1 rounded-full bg-concrete px-2 py-0.5 text-xs leading-tight font-semibold text-foreground',
+        className,
+      )}
+    >
+      <GlobeIcon className="size-3.5" aria-hidden />
+      Universal
+    </span>
+  )
+}
+
+/** Marca del fabricante; si aún no está aprobado se muestra igual, con un aviso discreto. */
+export function BrandName({ brand, className }: { brand: Brand; className?: string }) {
+  return (
+    <span className={cn('inline-flex flex-wrap items-baseline gap-x-1.5', className)}>
+      <span className="font-semibold text-foreground">{brand.name}</span>
+      {brand.approved === false ? <span className="text-xs font-normal text-muted-foreground">(fabricante en revisión)</span> : null}
+    </span>
+  )
+}
+
+/** «Universal: sirve para cualquier vehículo» o «Aplica para Renault · Duster · todas las versiones y 1 regla más». */
+export function FitmentLine({ product, className }: { product: Pick<Product, 'universal' | 'vehicleRules'>; className?: string }) {
+  const [first, ...rest] = product.vehicleRules
+  if (!product.universal && !first) return null
   return (
     <p className={cn('flex items-start gap-1.5 text-sm text-foreground/80', className)}>
       <CarFrontIcon className="mt-0.5 size-4 shrink-0 text-brand" aria-hidden />
-      <span>
-        Aplica para {vehicleLabel(first)}
-        {rest.length > 0 ? (
-          <span className="text-muted-foreground">
-            {' '}
-            y {rest.length} {rest.length === 1 ? 'vehículo más' : 'vehículos más'}
-          </span>
-        ) : null}
-      </span>
+      {product.universal || !first ? (
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+          <UniversalTag />
+          <span className="text-muted-foreground">Sirve para cualquier vehículo</span>
+        </span>
+      ) : (
+        <span>
+          Aplica para {ruleLabel(first)}
+          {rest.length > 0 ? (
+            <span className="text-muted-foreground">
+              {' '}
+              y {rest.length} {rest.length === 1 ? 'regla más' : 'reglas más'}
+            </span>
+          ) : null}
+        </span>
+      )}
     </p>
   )
 }

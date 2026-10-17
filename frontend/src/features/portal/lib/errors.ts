@@ -88,3 +88,25 @@ export const PLAN_ERROR_CODES = [
 export function isPlanError(error: unknown): error is ApiError {
   return error instanceof ApiError && error.status === 409 && PLAN_ERROR_CODES.some((code) => code === error.code)
 }
+
+const BLOCKER_CODES = ['NO_IMAGES', 'NO_VEHICLES', 'MANUFACTURER_INVALID', 'SUBSCRIPTION_INACTIVE'] as const
+type BlockerCode = (typeof BLOCKER_CODES)[number]
+
+export const PUBLISH_BLOCKER_TEXT: Record<BlockerCode, string> = {
+  NO_IMAGES: 'Agrega al menos una imagen.',
+  NO_VEHICLES: 'Indica los vehículos compatibles o marca el producto como universal.',
+  MANUFACTURER_INVALID: 'Revisa el fabricante del producto.',
+  SUBSCRIPTION_INACTIVE: 'Tu suscripción no está activa.',
+}
+
+/** Lo que falta para publicar según `PRODUCT_NOT_PUBLISHABLE` (409); `undefined` si el error es otro. */
+export function publishBlockers(error: unknown): { code: BlockerCode; message: string }[] | undefined {
+  if (!(error instanceof ApiError) || error.code !== 'PRODUCT_NOT_PUBLISHABLE') return undefined
+  const details: unknown[] = Array.isArray(error.details) ? error.details : []
+  return details.flatMap((item) => {
+    if (!item || typeof item !== 'object') return []
+    const { code, message } = item as { code?: unknown; message?: unknown }
+    const known = BLOCKER_CODES.find((candidate) => candidate === code)
+    return known ? [{ code: known, message: typeof message === 'string' && message ? message : PUBLISH_BLOCKER_TEXT[known] }] : []
+  })
+}

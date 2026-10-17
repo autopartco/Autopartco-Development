@@ -147,12 +147,10 @@ export function FiltersPanel({ query, options, capabilities, onChange, fixedCate
 
   return (
     <div className="flex flex-col">
-      {supports.has('vehicle') && options.vehicles.length > 0 ? (
+      {supports.has('vehicle') ? (
         <FilterSection title="Tu vehículo">
           <VehiclePicker
-            vehicles={options.vehicles}
-            years={supports.has('year') ? options.years : undefined}
-            value={{ make: query.make, model: query.model, year: query.year }}
+            value={{ makeId: query.makeId, modelId: query.modelId, versionId: query.versionId }}
             onChange={(vehicle) => onChange(vehicle)}
           />
         </FilterSection>

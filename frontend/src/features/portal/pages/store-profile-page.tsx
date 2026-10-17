@@ -3,7 +3,11 @@ import { toast } from 'sonner'
 import { FormAlert, TextField } from '@/components/common/form-fields'
 import { Button } from '@/components/ui/button'
 import { ApiError } from '@/lib/api'
+import { UnsavedChangesDialog } from '@/components/common/unsaved-changes-dialog'
 import { invalidateAsync } from '@/lib/use-async'
+import { useDraftForm, type FieldErrors } from '@/lib/use-draft-form'
+import { useSubmitOnce } from '@/lib/use-submit-once'
+import { useUnsavedChanges } from '@/lib/use-unsaved-changes'
 import { getPortalService } from '../api/portal-service'
 import type { StoreProfile, StoreProfileUpdate } from '../api/types'
 import { TextAreaField } from '../components/form-controls'
@@ -14,28 +18,20 @@ import { StatusBadge } from '../components/status-badge'
 import { usePortal } from '../context'
 import { useStoreQuery } from '../hooks'
 import { actionErrorMessage } from '../lib/errors'
-import { EMAIL_PATTERN, focusById, type FieldErrors } from '../lib/forms'
+import { EMAIL_PATTERN, focusById } from '../lib/forms'
 
 const FIELDS = ['businessName', 'businessEmail', 'description'] as const
 type Field = (typeof FIELDS)[number]
 const fieldId = (field: Field) => `tienda-${field}`
 const DESCRIPTION_MAX = 1000
 
-function ProfileForm({ profile }: { profile: StoreProfile }) {
-  const { storeId, can, invalidateStore } = usePortal()
-  const editable = can('STORE_UPDATE')
-  const [values, setValues] = useState({
-    businessName: profile.businessName,
-    businessEmail: profile.businessEmail,
-    description: profile.description ?? '',
-  })
-  const [touched, setTouched] = useState<Partial<Record<Field, boolean>>>({})
-  const [submitted, setSubmitted] = useState(false)
-  const [serverErrors, setServerErrors] = useState<FieldErrors>({})
-  const [formError, setFormError] = useState<string>()
-  const [pending, setPending] = useState(false)
-  const alertRef = useRef<HTMLDivElement>(null)
+interface Values {
+  businessName: string
+  businessEmail: string
+  description: string
+}
 
+function validate(values: Values): FieldErrors {
   const errors: FieldErrors = {}
   if (!values.businessName.trim()) errors.businessName = 'El nombre del almacén no puede estar vacío.'
   else if (values.businessName.trim().length > 255) errors.businessName = 'El nombre no puede superar 255 caracteres.'
@@ -43,33 +39,42 @@ function ProfileForm({ profile }: { profile: StoreProfile }) {
   else if (!EMAIL_PATTERN.test(values.businessEmail.trim())) errors.businessEmail = 'El correo debe tener un formato válido, por ejemplo ventas@tualmacen.co.'
   else if (values.businessEmail.trim().length > 200) errors.businessEmail = 'El correo no puede superar 200 caracteres.'
   if (values.description.length > DESCRIPTION_MAX) errors.description = `La descripción no puede superar ${DESCRIPTION_MAX} caracteres.`
+  return errors
+}
 
-  const dirty =
-    values.businessName.trim() !== profile.businessName ||
-    values.businessEmail.trim() !== profile.businessEmail ||
-    values.description.trim() !== (profile.description ?? '')
+function ProfileForm({ profile }: { profile: StoreProfile }) {
+  const { storeId, can, invalidateStore } = usePortal()
+  const editable = can('STORE_UPDATE')
+  const draft = useDraftForm<Values>({
+    initial: { businessName: profile.businessName, businessEmail: profile.businessEmail, description: profile.description ?? '' },
+    validate,
+  })
+  const { values } = draft
+  const submit = useSubmitOnce(async (input: StoreProfileUpdate) => (await getPortalService()).updateProfile(storeId, input))
+  const blocker = useUnsavedChanges(draft.isDirty && !submit.pending)
+  const [formError, setFormError] = useState<string>()
+  const alertRef = useRef<HTMLDivElement>(null)
 
-  const shown = (field: Field) => serverErrors[field] ?? (submitted || touched[field] ? errors[field] : undefined)
+  const dirty = draft.isDirty
+
   const bind = (field: Field) => ({
     id: fieldId(field),
     value: values[field],
-    error: shown(field),
+    error: draft.errorFor(field),
     readOnly: !editable,
-    onBlur: () => setTouched((current) => ({ ...current, [field]: true })),
+    onBlur: () => draft.touch(field),
   })
   function change(field: Field, value: string) {
-    setValues((current) => ({ ...current, [field]: value }))
-    if (serverErrors[field]) setServerErrors(({ [field]: _removed, ...rest }) => rest)
+    draft.set(field, value)
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (pending || !editable) return
-    setSubmitted(true)
+    if (!editable) return
     setFormError(undefined)
-    const first = FIELDS.find((field) => errors[field])
-    if (first) {
-      focusById(fieldId(first))
+    const check = draft.validateAll()
+    if (!check.valid) {
+      focusById(check.firstInvalid ? fieldId(check.firstInvalid as Field) : undefined)
       return
     }
     const input: StoreProfileUpdate = {}
@@ -80,28 +85,28 @@ function ProfileForm({ profile }: { profile: StoreProfile }) {
       toast.info('No hay cambios para guardar.')
       return
     }
-    setPending(true)
-    try {
-      await (await getPortalService()).updateProfile(storeId, input)
+    // ÚNICA escritura: un PATCH al pulsar «Guardar cambios».
+    const result = await submit.run(input)
+    if (result.status === 'ok') {
+      draft.markSaved()
       invalidateStore()
       // La lista de tiendas (selector de la barra superior) también muestra el nombre.
       invalidateAsync('portal:stores')
       toast.success('Guardamos los datos de tu tienda.')
-    } catch (error) {
+    } else if (result.status === 'error') {
+      const error = result.error
       if (error instanceof ApiError && Object.keys(error.fieldErrors).length > 0) {
-        setServerErrors(error.fieldErrors)
+        draft.setServerErrors(error.fieldErrors)
         const target = FIELDS.find((field) => error.fieldErrors[field])
         if (target) requestAnimationFrame(() => focusById(fieldId(target)))
       }
       setFormError(actionErrorMessage(error, 'No pudimos guardar los datos de la tienda. Inténtalo de nuevo.'))
       requestAnimationFrame(() => alertRef.current?.focus())
-    } finally {
-      setPending(false)
     }
   }
 
   return (
-    <form noValidate onSubmit={(event) => void handleSubmit(event)} className="flex max-w-2xl flex-col gap-5" aria-busy={pending || undefined}>
+    <form noValidate onSubmit={(event) => void handleSubmit(event)} className="flex max-w-2xl flex-col gap-5" aria-busy={submit.pending || undefined}>
       {!editable ? (
         <p role="note" className="rounded-lg bg-concrete p-3 text-sm">
           Estás en modo de solo lectura: tu rol no puede editar los datos de la tienda.
@@ -132,14 +137,15 @@ function ProfileForm({ profile }: { profile: StoreProfile }) {
       </div>
       {editable ? (
         <div className="sticky bottom-0 z-10 -mx-4 flex flex-wrap items-center gap-3 border-t border-border bg-background/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0">
-          <Button type="submit" className="h-11 px-6" disabled={pending || !dirty}>
-            {pending ? 'Guardando…' : 'Guardar cambios'}
+          <Button type="submit" className="h-11 px-6" disabled={submit.pending || !dirty}>
+            {submit.pending ? 'Guardando…' : 'Guardar cambios'}
           </Button>
           <p role="status" className="text-sm text-muted-foreground">
             {dirty ? 'Tienes cambios sin guardar.' : 'Sin cambios por guardar.'}
           </p>
         </div>
       ) : null}
+      <UnsavedChangesDialog blocker={blocker} />
     </form>
   )
 }

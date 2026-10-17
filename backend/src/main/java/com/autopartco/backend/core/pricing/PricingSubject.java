@@ -12,7 +12,7 @@ import java.util.UUID;
  * @param price precio base del listado (inventario)
  * @param storeId almacén dueño del producto
  * @param stateCode código de estado del producto
- * @param compatibilityIds compatibilidades vigentes del producto
+ * @param vehicleIds ids de marca, modelo y versión mencionados en las reglas de vehículo vigentes del producto
  */
 public record PricingSubject(
         BigDecimal price,
@@ -26,6 +26,6 @@ public record PricingSubject(
         String partNumber,
         String stateCode,
         Map<String, Object> attributes,
-        Set<UUID> compatibilityIds
+        Set<UUID> vehicleIds
 ) {
 }

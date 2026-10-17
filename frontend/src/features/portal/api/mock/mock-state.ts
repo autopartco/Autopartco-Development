@@ -10,6 +10,7 @@ import type {
   Plan,
   ProductOptions,
   ProductRow,
+  VehicleRule,
   StaffInvitation,
   StaffMember,
   StorePermission,
@@ -150,20 +151,45 @@ export const MOCK_OPTIONS: ProductOptions = {
     { id: 'cat-electrico', code: 'ELECTRICO_Y_ENCENDIDO' },
     { id: 'cat-embrague', code: 'EMBRAGUE_Y_TRANSMISION' },
   ],
-  compatibilities: [
-    { id: 'veh-spark', make: 'Chevrolet', model: 'Spark GT', version: '1.2' },
-    { id: 'veh-sail', make: 'Chevrolet', model: 'Sail', version: '1.4' },
-    { id: 'veh-logan', make: 'Renault', model: 'Logan', version: '1.6 8V' },
-    { id: 'veh-sandero', make: 'Renault', model: 'Sandero', version: '1.6' },
-    { id: 'veh-duster', make: 'Renault', model: 'Duster', version: '2.0 4x4' },
-    { id: 'veh-mazda2', make: 'Mazda', model: 'Mazda 2', version: '1.5' },
-    { id: 'veh-mazda3', make: 'Mazda', model: 'Mazda 3', version: '2.0' },
-    { id: 'veh-picanto', make: 'Kia', model: 'Picanto', version: 'Ion 1.0' },
-    { id: 'veh-rio', make: 'Kia', model: 'Rio', version: '1.4' },
-    { id: 'veh-hilux', make: 'Toyota', model: 'Hilux', version: '2.5 diésel' },
-    { id: 'veh-march', make: 'Nissan', model: 'March', version: '1.6' },
-    { id: 'veh-swift', make: 'Suzuki', model: 'Swift', version: '1.2' },
-  ],
+}
+
+/** Catálogo pequeño y coherente de vehículos (marca > modelo > versión) para el selector de reglas. */
+export interface MockVehicleMake {
+  id: string
+  name: string
+  models: { id: string; name: string; versions: { id: string; label: string }[] }[]
+}
+
+function mockModel(id: string, name: string, versions: string[]) {
+  return { id, name, versions: versions.map((label, index) => ({ id: `vr-${id.slice(3)}-${index + 1}`, label })) }
+}
+
+export const MOCK_VEHICLES: MockVehicleMake[] = [
+  { id: 'mk-chevrolet', name: 'Chevrolet', models: [mockModel('md-spark', 'Spark GT', ['1.2']), mockModel('md-sail', 'Sail', ['1.4'])] },
+  {
+    id: 'mk-renault',
+    name: 'Renault',
+    models: [mockModel('md-logan', 'Logan', ['1.6 8V', '1.6 16V']), mockModel('md-sandero', 'Sandero', ['1.6']), mockModel('md-duster', 'Duster', ['1.6 4x2', '2.0 4x4'])],
+  },
+  { id: 'mk-mazda', name: 'Mazda', models: [mockModel('md-mazda2', 'Mazda 2', ['1.5']), mockModel('md-mazda3', 'Mazda 3', ['2.0'])] },
+  { id: 'mk-kia', name: 'Kia', models: [mockModel('md-picanto', 'Picanto', ['Ion 1.0']), mockModel('md-rio', 'Rio', ['1.4'])] },
+  { id: 'mk-toyota', name: 'Toyota', models: [mockModel('md-hilux', 'Hilux', ['2.5 diésel', '2.8 diésel'])] },
+  { id: 'mk-nissan', name: 'Nissan', models: [mockModel('md-march', 'March', ['1.6'])] },
+  { id: 'mk-suzuki', name: 'Suzuki', models: [mockModel('md-swift', 'Swift', ['1.2'])] },
+]
+
+/** Regla con nombres a partir de un id de marca (`mk-`), modelo (`md-`) o versión (`vr-`) del catálogo simulado. */
+export function mockRuleFor(id: string): VehicleRule {
+  for (const make of MOCK_VEHICLES) {
+    const base = { makeId: make.id, makeName: make.name, modelId: null, modelName: null, versionId: null, versionLabel: null }
+    if (make.id === id) return base
+    for (const model of make.models) {
+      if (model.id === id) return { ...base, modelId: model.id, modelName: model.name }
+      const version = model.versions.find((candidate) => candidate.id === id)
+      if (version) return { ...base, modelId: model.id, modelName: model.name, versionId: version.id, versionLabel: version.label }
+    }
+  }
+  throw new Error(`Vehículo simulado desconocido: ${id}`)
 }
 
 // ------------------------------------------------------------------ tiendas
@@ -243,6 +269,7 @@ interface ProductSeed {
   man: string
   cat: string
   fits: string[]
+  universal?: boolean
   state?: 'ACTIVE' | 'INACTIVE'
   discount?: number
   withImage?: boolean
@@ -268,12 +295,17 @@ function product(storeId: string, branchId: string, branchName: string, index: n
     categoryId: seed.cat,
     state: seed.state ?? 'ACTIVE',
     attributes: {},
-    compatibilityIds: seed.fits,
+    manufacturerName: MOCK_OPTIONS.manufacturers.find((item) => item.id === seed.man)?.name ?? '',
+    manufacturerApproved: true,
+    universal: seed.universal ?? false,
+    vehicleRules: seed.universal ? [] : seed.fits.map(mockRuleFor),
     images: seed.withImage
       ? [
           {
             id: `img-${index}`,
             url: PLACEHOLDER_IMAGES.product,
+            thumbUrl: PLACEHOLDER_IMAGES.product,
+            cardUrl: PLACEHOLDER_IMAGES.product,
             isMain: true,
             displayOrder: 0,
             createdAt: isoFromNow(-20),
@@ -284,22 +316,23 @@ function product(storeId: string, branchId: string, branchName: string, index: n
 }
 
 const SEEDS_A: ProductSeed[] = [
-  { name: 'Pastillas de freno delanteras', sku: 'PF-001', ref: 'D1234', price: 85000, qty: 14, man: 'man-brembo', cat: 'cat-frenos', fits: ['veh-spark', 'veh-sail'], withImage: true },
-  { name: 'Disco de freno ventilado', sku: 'DF-014', ref: 'BD-5521', price: 142000, qty: 6, man: 'man-brembo', cat: 'cat-frenos', fits: ['veh-logan', 'veh-sandero'] },
-  { name: 'Amortiguador delantero derecho', sku: 'AM-203', ref: 'G8112', price: 178000, qty: 2, man: 'man-monroe', cat: 'cat-suspension', fits: ['veh-mazda3'], withImage: true },
-  { name: 'Kit de distribución con bomba de agua', sku: 'KD-077', ref: 'K015607', price: 389000, qty: 4, man: 'man-gates', cat: 'cat-motor', fits: ['veh-logan', 'veh-sandero', 'veh-duster'], discount: 20000 },
-  { name: 'Bujía de iridio (juego x4)', sku: 'BJ-310', ref: 'ILKR7B11', price: 168000, qty: 0, man: 'man-ngk', cat: 'cat-electrico', fits: ['veh-mazda2', 'veh-swift'] },
-  { name: 'Filtro de aceite', sku: 'FA-008', ref: 'W712/95', price: 28500, qty: 48, man: 'man-mann', cat: 'cat-filtros', fits: ['veh-spark', 'veh-picanto', 'veh-rio'], withImage: true },
-  { name: 'Filtro de aire', sku: 'FA-009', ref: 'C2774', price: 39900, qty: 22, man: 'man-mann', cat: 'cat-filtros', fits: ['veh-sail'] },
-  { name: 'Kit de embrague completo', sku: 'KE-120', ref: '620 3098 00', price: 465000, qty: 3, man: 'man-sachs', cat: 'cat-embrague', fits: ['veh-hilux'] },
-  { name: 'Rótula inferior', sku: 'RT-045', ref: 'K80301', price: 74000, qty: 9, man: 'man-monroe', cat: 'cat-suspension', fits: ['veh-march', 'veh-rio'], state: 'INACTIVE' },
-  { name: 'Bandas de freno traseras', sku: 'BF-052', ref: 'BF-0312', price: 52000, qty: 11, man: 'man-incolbestos', cat: 'cat-frenos', fits: ['veh-picanto'] },
+  { name: 'Pastillas de freno delanteras', sku: 'PF-001', ref: 'D1234', price: 85000, qty: 14, man: 'man-brembo', cat: 'cat-frenos', fits: ['md-spark', 'md-sail'], withImage: true },
+  { name: 'Disco de freno ventilado', sku: 'DF-014', ref: 'BD-5521', price: 142000, qty: 6, man: 'man-brembo', cat: 'cat-frenos', fits: ['md-logan', 'md-sandero'] },
+  { name: 'Amortiguador delantero derecho', sku: 'AM-203', ref: 'G8112', price: 178000, qty: 2, man: 'man-monroe', cat: 'cat-suspension', fits: ['md-mazda3'], withImage: true },
+  { name: 'Kit de distribución con bomba de agua', sku: 'KD-077', ref: 'K015607', price: 389000, qty: 4, man: 'man-gates', cat: 'cat-motor', fits: ['md-logan', 'md-sandero', 'md-duster'], discount: 20000 },
+  { name: 'Bujía de iridio (juego x4)', sku: 'BJ-310', ref: 'ILKR7B11', price: 168000, qty: 0, man: 'man-ngk', cat: 'cat-electrico', fits: ['md-mazda2', 'md-swift'] },
+  { name: 'Filtro de aceite', sku: 'FA-008', ref: 'W712/95', price: 28500, qty: 48, man: 'man-mann', cat: 'cat-filtros', fits: ['md-spark', 'md-picanto', 'md-rio'], withImage: true },
+  { name: 'Filtro de aire', sku: 'FA-009', ref: 'C2774', price: 39900, qty: 22, man: 'man-mann', cat: 'cat-filtros', fits: ['md-sail'] },
+  { name: 'Kit de embrague completo', sku: 'KE-120', ref: '620 3098 00', price: 465000, qty: 3, man: 'man-sachs', cat: 'cat-embrague', fits: ['md-hilux'] },
+  { name: 'Rótula inferior', sku: 'RT-045', ref: 'K80301', price: 74000, qty: 9, man: 'man-monroe', cat: 'cat-suspension', fits: ['md-march', 'md-rio'], state: 'INACTIVE' },
+  { name: 'Aceite de motor 10W-40 (galón)', sku: 'AC-040', ref: '10W40-GL', price: 96000, qty: 30, man: 'man-mann', cat: 'cat-motor', fits: [], universal: true, withImage: true },
+  { name: 'Bandas de freno traseras', sku: 'BF-052', ref: 'BF-0312', price: 52000, qty: 11, man: 'man-incolbestos', cat: 'cat-frenos', fits: ['mk-kia'] },
 ]
 
 const SEEDS_B: ProductSeed[] = [
-  { name: 'Amortiguador trasero', sku: 'AT-11', ref: 'MN-3340', price: 210000, qty: 5, man: 'man-monroe', cat: 'cat-suspension', fits: ['veh-duster'] },
-  { name: 'Pastillas de freno traseras', sku: 'PT-12', ref: 'D2231', price: 76000, qty: 1, man: 'man-brembo', cat: 'cat-frenos', fits: ['veh-sandero'] },
-  { name: 'Terminal de dirección', sku: 'TD-13', ref: 'TD-904', price: 58000, qty: 0, man: 'man-monroe', cat: 'cat-suspension', fits: ['veh-logan'] },
+  { name: 'Amortiguador trasero', sku: 'AT-11', ref: 'MN-3340', price: 210000, qty: 5, man: 'man-monroe', cat: 'cat-suspension', fits: ['md-duster'] },
+  { name: 'Pastillas de freno traseras', sku: 'PT-12', ref: 'D2231', price: 76000, qty: 1, man: 'man-brembo', cat: 'cat-frenos', fits: ['md-sandero'] },
+  { name: 'Terminal de dirección', sku: 'TD-13', ref: 'TD-904', price: 58000, qty: 0, man: 'man-monroe', cat: 'cat-suspension', fits: ['md-logan'] },
 ]
 
 function lineItems(products: ProductRow[], picks: [number, number][]): OrderItem[] {

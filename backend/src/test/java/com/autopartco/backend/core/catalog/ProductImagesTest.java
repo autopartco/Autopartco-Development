@@ -93,6 +93,8 @@ class ProductImagesTest {
             return new ProductImageResponse(
                     UUID.randomUUID(),
                     "https://images.example/" + image.getStoragePath(),
+                    null,
+                    null,
                     image.isMain(),
                     image.getDisplayOrder(),
                     null

@@ -38,7 +38,7 @@ public record NewOrder(
     ) {
     }
 
-    /** Una línea de detalle: listado de inventario, unidades y precio unitario efectivo cobrado. */
-    public record NewLine(UUID inventoryId, int units, BigDecimal unitPrice) {
+    /** Una línea de detalle: listado de inventario, producto, unidades y precio unitario efectivo cobrado. */
+    public record NewLine(UUID inventoryId, UUID productId, int units, BigDecimal unitPrice) {
     }
 }

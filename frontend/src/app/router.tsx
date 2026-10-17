@@ -11,7 +11,9 @@ import {
   CustomerRegisterPage,
   HomePage,
   LoginPage,
+  OrderDetailPage,
   OrderResultPage,
+  OrdersPage,
   PasswordRecoveryPage,
   PortalApplicationPage,
   PortalBranchesPage,
@@ -38,6 +40,7 @@ import {
   StoresPage,
   VerifyEmailPage,
 } from './lazy-pages'
+import { RequireSession } from '@/features/auth/components/require-session'
 import { GuestOnly } from '@/features/auth/components/guest-only'
 import { RequirePermission } from '@/features/portal/components/require-permission'
 import { LegacyRedirect } from './legacy-redirect'
@@ -63,6 +66,9 @@ export const router = createBrowserRouter([
           { path: 'carrito', element: <CartPage /> },
           { path: 'checkout', element: <CheckoutPage /> },
           { path: 'pedido/:id/resultado', element: <OrderResultPage /> },
+          // Mis pedidos (GET /me/orders): exigen sesión; el servidor solo devuelve los del titular.
+          { path: 'mis-pedidos', element: <RequireSession fallback={<PageFallback />}><OrdersPage /></RequireSession> },
+          { path: 'mis-pedidos/:id', element: <RequireSession fallback={<PageFallback />}><OrderDetailPage /></RequireSession> },
           // Almacenes: landing y solicitud (POST /store-applications).
           { path: 'vender', element: <SellPage /> },
           { path: 'vender/registro', element: <SellerRegisterPage /> },

@@ -1,11 +1,15 @@
 package com.autopartco.backend.core.catalog;
 
 import java.math.BigDecimal;
-import java.util.Set;
-import java.util.UUID;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
+/**
+ * Listado de un producto en una sucursal (panel del almacén y marketplace). {@code manufacturerName} se muestra
+ * aunque el fabricante esté pendiente de aprobación ({@code manufacturerApproved=false}); no se exponen más datos
+ * del fabricante pendiente.
+ */
 public record ProductResponse(
         UUID id,
         UUID storeId,
@@ -21,10 +25,13 @@ public record ProductResponse(
         String appliedPromotionName,
         Integer quantity,
         UUID manufacturerId,
+        String manufacturerName,
+        boolean manufacturerApproved,
         UUID categoryId,
         String state,
+        boolean universal,
         Map<String, Object> attributes,
-        Set<UUID> compatibilityIds,
+        List<VehicleRuleResponse> vehicleRules,
         List<ProductImageResponse> images
 ) {
 }

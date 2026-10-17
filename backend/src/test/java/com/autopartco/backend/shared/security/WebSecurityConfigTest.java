@@ -95,6 +95,9 @@ class WebSecurityConfigTest {
                 Arguments.of(HttpMethod.GET, BASE + "/marketplace/product-options/manufacturers"),
                 Arguments.of(HttpMethod.GET, BASE + "/marketplace/product-options/categories"),
                 Arguments.of(HttpMethod.GET, BASE + "/marketplace/product-options/compatibilities"),
+                Arguments.of(HttpMethod.GET, BASE + "/marketplace/vehicles/makes"),
+                Arguments.of(HttpMethod.GET, BASE + "/marketplace/vehicles/makes/" + ID + "/models"),
+                Arguments.of(HttpMethod.GET, BASE + "/marketplace/vehicles/models/" + ID + "/versions"),
                 Arguments.of(HttpMethod.GET, "/actuator/health"));
     }
 
@@ -126,6 +129,8 @@ class WebSecurityConfigTest {
                 Arguments.of(HttpMethod.POST, BASE + "/marketplace/products"),
                 Arguments.of(HttpMethod.GET, BASE + "/marketplace/products/" + ID + "/extra"),
                 Arguments.of(HttpMethod.DELETE, BASE + "/plans"),
+                Arguments.of(HttpMethod.POST, BASE + "/marketplace/vehicles/makes"),
+                Arguments.of(HttpMethod.GET, BASE + "/marketplace/vehicles/makes/" + ID),
                 Arguments.of(HttpMethod.GET, BASE + "/store-applications"),
                 Arguments.of(HttpMethod.POST, BASE + "/store-applications/setup"),
                 Arguments.of(HttpMethod.POST, BASE + "/store-applications/setup/resend"),
@@ -172,7 +177,10 @@ class WebSecurityConfigTest {
                         "GET /api/v1/marketplace/products",
                         "GET /api/v1/marketplace/products/*",
                         "GET /api/v1/marketplace/product-options",
-                        "GET /api/v1/marketplace/product-options/*");
+                        "GET /api/v1/marketplace/product-options/*",
+                        "GET /api/v1/marketplace/vehicles/makes",
+                        "GET /api/v1/marketplace/vehicles/makes/*/models",
+                        "GET /api/v1/marketplace/vehicles/models/*/versions");
     }
 
     @ParameterizedTest(name = "{0} {1}")

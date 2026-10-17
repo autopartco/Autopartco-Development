@@ -8,9 +8,10 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useSession } from '@/features/auth/hooks'
 import { setSession } from '@/features/auth/session-store'
 import { formatCOP } from '@/lib/format'
+import { useSubmitOnce } from '@/lib/use-submit-once'
 import { cn } from '@/lib/utils'
 import { getAddressService, getCheckoutService } from '../api/checkout-service'
-import type { PaymentMethodCode, PersonAddressDto, SimulatedOutcome } from '../api/types'
+import type { PaymentMethodCode, PersonAddressDto, PlaceOrderRequestDto, SimulatedOutcome } from '../api/types'
 import { AddressSelector } from '../components/address-selector'
 import { CheckoutSummary, PayButton, type LineIssue } from '../components/checkout-summary'
 import { PaymentMethodPicker, focusMethodPicker } from '../components/payment-method-picker'
@@ -99,7 +100,8 @@ function CheckoutView() {
   const [selectedId, setSelectedId] = useState<string>()
   const [method, setMethod] = useState<PaymentMethodCode>('SIMULATED_CARD')
   const [outcome, setOutcome] = useState<SimulatedOutcome>('APPROVED')
-  const [busy, setBusy] = useState(false)
+  const place = useSubmitOnce(async (input: PlaceOrderRequestDto) => (await getCheckoutService()).placeOrder(input))
+  const busy = place.pending
   const [placed, setPlaced] = useState(false)
   const [problem, setProblem] = useState<CheckoutProblem>()
   const [addressNotice, setAddressNotice] = useState<string>()
@@ -123,25 +125,25 @@ function CheckoutView() {
   }, [problem])
 
   const pay = useCallback(async () => {
-    if (busy || placed || !addressId || lines.length === 0) return
-    setBusy(true)
+    if (placed || !addressId || lines.length === 0) return
     setProblem(undefined)
     setAddressNotice(undefined)
-    try {
-      const service = await getCheckoutService()
-      const order = await service.placeOrder({
-        clientRequestId: requestId.current,
-        addressId,
-        paymentMethod: method,
-        simulatedOutcome: outcome,
-        items: lines.map(({ productId, branchId, quantity }) => ({ productId, branchId, quantity })),
-      })
+    // ÚNICA escritura de la página: el pedido se crea al pulsar «Pagar»; el candado evita el doble envío.
+    const result = await place.run({
+      clientRequestId: requestId.current,
+      addressId,
+      paymentMethod: method,
+      simulatedOutcome: outcome,
+      items: lines.map(({ productId, branchId, quantity }) => ({ productId, branchId, quantity })),
+    })
+    if (result.status === 'ok') {
+      const order = result.value
       setPlaced(true)
       saveOrderResult(order)
       clearCart()
       navigate(orderResultPath(order.orderId), { state: { order } })
-    } catch (error) {
-      const next = classifyCheckoutError(error)
+    } else if (result.status === 'error') {
+      const next = classifyCheckoutError(result.error)
       if (next.kind === 'unauthorized') {
         setSession(undefined)
         navigate('/ingresar', { replace: true, state: { from: checkoutPath() } })
@@ -156,10 +158,8 @@ function CheckoutView() {
       } else {
         setProblem(next)
       }
-    } finally {
-      setBusy(false)
     }
-  }, [addressId, addresses, busy, lines, method, navigate, outcome, placed])
+  }, [addressId, addresses, lines, method, navigate, outcome, place, placed])
 
   function adjustQuantities() {
     if (problem?.kind !== 'stock') return
