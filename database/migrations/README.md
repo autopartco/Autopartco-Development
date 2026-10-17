@@ -84,6 +84,7 @@ Todas las de la fase 2 son transaccionales.
 
 - `R__seed_geo_divipola.sql`: los 33 departamentos (32 + Bogotá D.C.). Los municipios se cargan con `pending-approval/load_divipola_municipalities.sql` desde el CSV oficial del DANE (A10).
 - `R__seed_holidays_co.sql`: festivos nacionales 2020-2035 y fechas comerciales. Vuelve a poblar `dim_date`.
+- `R__seed_planes_comerciales.sql`: planes `BASIC` (Esencial, 49.900), `BUSINESS` (Negocio, 149.900, único `recommended`) y `PRO` (299.900) con límites y capabilities. Requiere `V202610130905`. **No siembra `ENTERPRISE`** (con precio 0 se contrataría gratis) ni toca `TRY`. **El precio de un plan con suscripciones de pago activas no cambia** (aviso con `RAISE NOTICE`).
 
 ## 3. Cómo aplicar
 
@@ -113,7 +114,20 @@ for f in $(ls V*.sql | sort); do
 done
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 --single-transaction -f R__seed_geo_divipola.sql
 psql "$DATABASE_URL" -v ON_ERROR_STOP=1 --single-transaction -f R__seed_holidays_co.sql
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 --single-transaction -f R__seed_planes_comerciales.sql
 psql "$DATABASE_URL" -c "ANALYZE;"
+```
+
+Solo la semilla de planes, desde la raíz del repositorio (desarrollo):
+
+```bash
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 --single-transaction -f database/migrations/R__seed_planes_comerciales.sql
+```
+
+Verificación (esperado: `TRY`, `BASIC`, `BUSINESS`, `PRO` y un solo `recommended = t`, en `BUSINESS`):
+
+```sql
+SELECT code, monthly_price_cop, recommended, enabled FROM seller_plans ORDER BY monthly_price_cop;
 ```
 
 Para un rollback, aplique los `U` en **orden inverso**. Si el `U` es destructivo:
