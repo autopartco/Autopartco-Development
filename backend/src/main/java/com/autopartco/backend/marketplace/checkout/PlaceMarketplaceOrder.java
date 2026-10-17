@@ -160,7 +160,7 @@ public class PlaceMarketplaceOrder {
             BigDecimal lineTotal = unitPrice.multiply(BigDecimal.valueOf(item.quantity()))
                     .setScale(2, RoundingMode.HALF_UP);
             linesByBranch.computeIfAbsent(item.branchId(), branchId -> new ArrayList<>())
-                    .add(new NewOrder.NewLine(decrements.get(key).inventoryId(), item.quantity(), unitPrice));
+                    .add(new NewOrder.NewLine(decrements.get(key).inventoryId(), item.productId(), item.quantity(), unitPrice));
             subtotalByBranch.merge(item.branchId(), lineTotal, BigDecimal::add);
         }
         List<NewOrder.NewSale> sales = new ArrayList<>();
