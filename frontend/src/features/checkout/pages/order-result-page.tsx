@@ -141,7 +141,10 @@ export default function OrderResultPage() {
           )}
 
           <div className="flex flex-wrap gap-2">
-            <Button className="h-11 px-5" nativeButton={false} render={<Link to="/buscar" />}>
+            <Button className="h-11 px-5" nativeButton={false} render={<Link to="/mis-pedidos" />}>
+              Ver mis pedidos
+            </Button>
+            <Button variant="outline" className="h-11 px-5" nativeButton={false} render={<Link to="/buscar" />}>
               Seguir comprando
             </Button>
             <Button variant="outline" className="h-11 px-5" nativeButton={false} render={<Link to="/" />}>

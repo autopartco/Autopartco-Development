@@ -12,9 +12,9 @@ import { formatCOP } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { isNotFoundError, type Product } from '../api/types'
 import { ProductCard, ProductGrid } from '../components/product-card'
-import { AvailabilityLabel, Price, RECOMMENDED_EXPLANATION, RecommendedMark } from '../components/product-meta'
+import { AvailabilityLabel, BrandName, Price, RECOMMENDED_EXPLANATION, RecommendedMark, UniversalTag } from '../components/product-meta'
 import { useProduct, useRelatedProducts } from '../hooks'
-import { categoryPath, storeProductsPath } from '../lib/paths'
+import { categoryPath, ruleLabel, storeProductsPath } from '../lib/paths'
 import { NotFoundContent } from './not-found-page'
 import { useNearbyStores, useStoreDistances } from '@/features/location/hooks'
 import { formatKm } from '@/features/location/lib/geo'
@@ -28,7 +28,7 @@ function Gallery({ product }: { product: Product }) {
       <div className="relative aspect-[4/3] overflow-hidden rounded-xl bg-concrete outline outline-1 -outline-offset-1 outline-black/10">
         <AnimatePresence initial={false} mode="popLayout">
           <m.div
-            key={current}
+            key={current?.url}
             className="absolute inset-0"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -36,7 +36,7 @@ function Gallery({ product }: { product: Product }) {
             transition={{ duration: 0.2 }}
           >
             <SmartImage
-              src={current}
+              src={current?.url}
               alt={`${product.name}, imagen ${index + 1} de ${images.length}`}
               width={800}
               height={600}
@@ -51,7 +51,7 @@ function Gallery({ product }: { product: Product }) {
         // Rejilla de ancho fijo: las miniaturas se encogen con la pantalla en vez de desbordarla.
         <ul className="grid grid-cols-4 gap-2 sm:grid-cols-5" aria-label="Imágenes del repuesto">
           {images.map((image, imageIndex) => (
-            <li key={`${image}-${imageIndex}`}>
+            <li key={`${image.url}-${imageIndex}`}>
               <button
                 type="button"
                 onClick={() => setIndex(imageIndex)}
@@ -62,7 +62,7 @@ function Gallery({ product }: { product: Product }) {
                   imageIndex === index ? 'ring-brand' : 'hover:ring-border',
                 )}
               >
-                <SmartImage src={image} alt="" width={96} height={72} frameClassName="aspect-[4/3] w-full" />
+                <SmartImage src={image.thumbUrl} alt="" width={96} height={72} frameClassName="aspect-[4/3] w-full" />
               </button>
             </li>
           ))}
@@ -162,53 +162,31 @@ function CompatibilityTable({ product }: { product: Product }) {
     <section aria-labelledby="compatibilidad" className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
         <p className="label-mono text-muted-foreground tabular-nums">
-          {fitsLabel(product.compatibilities.length)}
+          {product.universal ? 'Producto universal' : fitsLabel(product.vehicleRules.length)}
         </p>
         <h2 id="compatibilidad" className="text-block-title">
-          Vehículos compatibles
+          {product.universal ? 'Compatibilidad' : 'Vehículos compatibles'}
         </h2>
       </div>
-      {/* Móvil: una ficha por vehículo, sin tabla que obligue a desplazarse de lado. */}
-      <ul className="flex flex-col divide-y divide-border rounded-xl bg-card shadow-[0_0_0_1px_rgb(0_0_0/0.07)] sm:hidden">
-        {product.compatibilities.map((fit) => (
-          <li key={fit.id} className="flex flex-col gap-1 px-4 py-3">
-            <p className="font-semibold">
-              {fit.make} {fit.model}
-            </p>
-            <p className="flex flex-wrap gap-x-4 gap-y-0.5 text-sm text-muted-foreground">
-              <span>Versión: {fit.version ?? 'sin dato'}</span>
-              <span className="tabular-nums">
-                Años: {fit.yearFrom && fit.yearTo ? `${fit.yearFrom} a ${fit.yearTo}` : 'sin dato'}
-              </span>
-            </p>
-          </li>
-        ))}
-      </ul>
-      <div className="hidden overflow-x-auto rounded-xl bg-card shadow-[0_0_0_1px_rgb(0_0_0/0.07)] sm:block">
-        <table className="w-full text-left text-sm">
-          <caption className="sr-only">Vehículos para los que aplica {product.name}</caption>
-          <thead className="label-mono text-muted-foreground">
-            <tr>
-              <th scope="col" className="px-4 py-3 font-normal">Marca</th>
-              <th scope="col" className="px-4 py-3 font-normal">Modelo</th>
-              <th scope="col" className="px-4 py-3 font-normal">Versión</th>
-              <th scope="col" className="px-4 py-3 font-normal">Años</th>
-            </tr>
-          </thead>
-          <tbody>
-            {product.compatibilities.map((fit) => (
-              <tr key={fit.id} className="border-t border-border">
-                <td className="px-4 py-3">{fit.make}</td>
-                <td className="px-4 py-3 font-medium">{fit.model}</td>
-                <td className="px-4 py-3 text-muted-foreground">{fit.version ?? 'Sin dato'}</td>
-                <td className="px-4 py-3 tabular-nums">
-                  {fit.yearFrom && fit.yearTo ? `${fit.yearFrom} a ${fit.yearTo}` : 'Sin dato'}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {product.universal ? (
+        <div className="flex flex-col gap-2 rounded-xl bg-card px-4 py-3 shadow-[0_0_0_1px_rgb(0_0_0/0.07)]">
+          <UniversalTag />
+          <p className="text-sm text-foreground/85">
+            Este repuesto no depende del vehículo: sirve para cualquier marca y modelo, por eso aparece en todas las búsquedas por vehículo.
+          </p>
+        </div>
+      ) : (
+        <ul
+          className="flex flex-col divide-y divide-border rounded-xl bg-card shadow-[0_0_0_1px_rgb(0_0_0/0.07)]"
+          aria-label={`Vehículos para los que aplica ${product.name}`}
+        >
+          {product.vehicleRules.map((rule) => (
+            <li key={`${rule.makeId}:${rule.modelId ?? ''}:${rule.versionId ?? ''}`} className="px-4 py-3 font-medium">
+              {ruleLabel(rule)}
+            </li>
+          ))}
+        </ul>
+      )}
       {/*
        * Honestidad: el catálogo todavía no informa si cada compatibilidad está
        * confirmada por catálogo, declarada por la tienda o inferida. Lo decimos.
@@ -216,8 +194,8 @@ function CompatibilityTable({ product }: { product: Product }) {
       <p className="flex items-start gap-2 text-sm text-muted-foreground">
         <InfoIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
         <span>
-          Aún no indicamos si cada vehículo de esta lista está confirmado por catálogo o lo declaró la tienda. Confirma
-          la referencia antes de comprar: algunas piezas cambian según el motor o la versión.
+          Aún no indicamos si esta compatibilidad está confirmada por catálogo o la declaró la tienda. Confirma la
+          referencia antes de comprar: algunas piezas cambian según el motor o la versión.
         </span>
       </p>
     </section>
@@ -225,7 +203,7 @@ function CompatibilityTable({ product }: { product: Product }) {
 }
 
 function fitsLabel(count: number): string {
-  return count === 1 ? '1 vehículo publicado' : `${count} vehículos publicados`
+  return count === 1 ? '1 regla publicada' : `${count} reglas publicadas`
 }
 
 function ProductDetail({ product }: { product: Product }) {
@@ -236,7 +214,8 @@ function ProductDetail({ product }: { product: Product }) {
     crumbs.push({ label: product.category.name, to: categoryPath(product.category.slug) })
   }
   crumbs.push({ label: product.name })
-  const fitCount = product.compatibilities.length
+  const fitCount = product.vehicleRules.length
+  const hasFitment = product.universal || fitCount > 0
 
   return (
     <Container className="py-6 sm:py-8">
@@ -251,20 +230,20 @@ function ProductDetail({ product }: { product: Product }) {
         <div className="flex min-w-0 flex-col gap-6">
           <div className="flex flex-col gap-3">
             <p className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              {product.brand ? <span className="text-sm font-semibold">{product.brand.name}</span> : null}
+              {product.brand ? <BrandName brand={product.brand} className="text-sm" /> : null}
               {product.partNumber ? (
                 <span className="label-mono text-muted-foreground tabular-nums">Ref. {product.partNumber}</span>
               ) : null}
               {product.partNumber ? <CopyReference value={product.partNumber} /> : null}
             </p>
             <h1 className="text-page-title">{product.name}</h1>
-            {fitCount > 0 ? (
+            {hasFitment ? (
               <a
                 href="#compatibilidad"
                 className="flex min-h-10 w-fit items-center gap-1.5 text-sm font-medium text-brand underline-offset-4 hover:underline"
               >
                 <CarFrontIcon className="size-4" aria-hidden />
-                Ver {fitCount} {fitCount === 1 ? 'vehículo publicado' : 'vehículos publicados'}
+                {product.universal ? 'Universal: sirve para cualquier vehículo' : `Ver ${fitCount} ${fitCount === 1 ? 'regla de compatibilidad' : 'reglas de compatibilidad'}`}
               </a>
             ) : null}
           </div>
@@ -274,7 +253,7 @@ function ProductDetail({ product }: { product: Product }) {
 
       <div className="mt-14 grid gap-12 sm:mt-20 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-12">
         <div className="flex min-w-0 flex-col gap-12">
-          {fitCount > 0 ? <CompatibilityTable product={product} /> : null}
+          {hasFitment ? <CompatibilityTable product={product} /> : null}
           {product.description ? (
             <section aria-labelledby="descripcion" className="flex flex-col gap-3">
               <h2 id="descripcion" className="text-block-title">

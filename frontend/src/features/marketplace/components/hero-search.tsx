@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router'
 import { SearchIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { useCapabilities, useFilterOptions } from '../hooks'
+import { useCapabilities } from '../hooks'
 import { searchUrl } from '../lib/product-query'
 import { PhotoSearchButton } from './photo-search'
 import { VehiclePicker, type VehicleValue } from './vehicle-picker'
@@ -17,15 +17,13 @@ export function HeroSearch({ className }: { className?: string }) {
   const id = useId()
   const navigate = useNavigate()
   const capabilities = useCapabilities()
-  const options = useFilterOptions()
   const [vehicle, setVehicle] = useState<VehicleValue>({})
   const showVehicle = capabilities === undefined || capabilities.filters.has('vehicle')
-  const vehicles = options.data?.vehicles ?? []
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const q = String(new FormData(event.currentTarget).get('q') ?? '').trim()
-    navigate(searchUrl({ q, make: vehicle.make, model: vehicle.model }))
+    navigate(searchUrl({ q, makeId: vehicle.makeId, modelId: vehicle.modelId, versionId: vehicle.versionId }))
   }
 
   const submit = (
@@ -70,11 +68,9 @@ export function HeroSearch({ className }: { className?: string }) {
             <fieldset className="min-w-0">
               <legend className="sr-only">Vehículo (opcional)</legend>
               <VehiclePicker
-                vehicles={vehicles}
                 value={vehicle}
                 onChange={setVehicle}
-                disabled={vehicles.length === 0}
-                className="grid-cols-2 [&_[data-slot=select-trigger]]:h-11 [&_label]:text-xs [&_label]:font-normal [&_label]:text-muted-foreground"
+                className="grid-cols-1 sm:grid-cols-3 [&_[data-slot=select-trigger]]:h-11 [&_label]:text-xs [&_label]:font-normal [&_label]:text-muted-foreground"
               />
             </fieldset>
             {submit}

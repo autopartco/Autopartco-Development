@@ -3,6 +3,7 @@ import { XIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatCOP } from '@/lib/format'
 import type { FilterOptions, ProductQuery, StoreSummary } from '../api/types'
+import { useVehicleFilterLabel } from '../hooks'
 
 interface Chip {
   key: string
@@ -15,13 +16,11 @@ function buildChips(
   options: FilterOptions | undefined,
   stores: StoreSummary[] | undefined,
   fixedCategory: boolean,
+  vehicleLabel: string | undefined,
 ): Chip[] {
   const chips: Chip[] = []
-  if (query.make) {
-    const vehicle = [query.make, query.model, query.year].filter(Boolean).join(' ')
-    chips.push({ key: 'vehicle', label: vehicle, patch: { make: undefined, model: undefined, year: undefined } })
-  } else if (query.year) {
-    chips.push({ key: 'year', label: `Año ${query.year}`, patch: { year: undefined } })
+  if (query.makeId) {
+    chips.push({ key: 'vehicle', label: vehicleLabel ?? 'Vehículo', patch: { makeId: undefined, modelId: undefined, versionId: undefined } })
   }
   if (query.category && !fixedCategory) {
     const name = options?.categories.find((category) => category.slug === query.category)?.name ?? query.category
@@ -64,7 +63,8 @@ interface ActiveFiltersProps {
 
 /** Filtros aplicados como fichas removibles, con acción para limpiarlos todos. */
 export function ActiveFilters({ query, options, stores, fixedCategory = false, onChange, onClear }: ActiveFiltersProps) {
-  const chips = buildChips(query, options, stores, fixedCategory)
+  const vehicleLabel = useVehicleFilterLabel(query)
+  const chips = buildChips(query, options, stores, fixedCategory, vehicleLabel)
   if (chips.length === 0) return null
   return (
     <div className="flex flex-wrap items-center gap-2">

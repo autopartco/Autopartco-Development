@@ -1,60 +1,71 @@
 import { useId } from 'react'
 import { OptionSelect } from '@/components/common/option-select'
 import { cn } from '@/lib/utils'
-import type { VehicleMakeOption } from '../api/types'
+import { useVehicleMakes, useVehicleModels, useVehicleVersions } from '../hooks'
 
 export interface VehicleValue {
-  make?: string
-  model?: string
-  year?: number
+  makeId?: string
+  modelId?: string
+  versionId?: string
 }
 
 interface VehiclePickerProps {
-  vehicles: VehicleMakeOption[]
-  /** Años disponibles; si el servicio no los informa, no se muestra el selector de año. */
-  years?: number[]
   value: VehicleValue
   onChange: (value: VehicleValue) => void
   className?: string
   disabled?: boolean
 }
 
-/** Marca, modelo y (si hay datos) año del vehículo. El modelo depende de la marca. */
-export function VehiclePicker({ vehicles, years, value, onChange, className, disabled }: VehiclePickerProps) {
+/**
+ * Marca → Modelo → Versión en cascada. Cada nivel consulta el catálogo al elegir el anterior (con caché
+ * en memoria) y se bloquea mientras no hay nivel superior, así que no hay combinaciones incoherentes.
+ * El filtrado lo hace el servidor: aquí solo se arman `makeId`/`modelId`/`versionId`.
+ */
+export function VehiclePicker({ value, onChange, className, disabled }: VehiclePickerProps) {
   const id = useId()
-  const models = vehicles.find((option) => option.make === value.make)?.models ?? []
-  const showYear = Boolean(years && years.length > 0)
+  const makes = useVehicleMakes()
+  const models = useVehicleModels(value.makeId)
+  const versions = useVehicleVersions(value.modelId)
+
+  const modelsLoading = Boolean(value.makeId) && (models.status === 'loading' || models.isStale)
+  const versionsLoading = Boolean(value.modelId) && (versions.status === 'loading' || versions.isStale)
+  const modelOptions = value.makeId && !models.isStale ? (models.data ?? []) : []
+  const versionOptions = value.modelId && !versions.isStale ? (versions.data ?? []) : []
+  const failed = makes.status === 'error' || (Boolean(value.makeId) && models.status === 'error') || (Boolean(value.modelId) && versions.status === 'error')
 
   return (
     <div className={cn('grid gap-3', className)}>
       <OptionSelect
         id={`${id}-make`}
         label="Marca del vehículo"
-        emptyLabel="Todas las marcas"
-        value={value.make ?? ''}
-        disabled={disabled}
-        options={vehicles.map((option) => ({ value: option.make, label: option.make }))}
-        onValueChange={(make) => onChange({ make: make || undefined, model: undefined, year: value.year })}
+        emptyLabel={makes.status === 'loading' ? 'Cargando marcas…' : 'Todas las marcas'}
+        value={value.makeId ?? ''}
+        disabled={disabled || makes.status !== 'success'}
+        options={(makes.data ?? []).map((make) => ({ value: make.id, label: make.name }))}
+        onValueChange={(makeId) => onChange({ makeId: makeId || undefined, modelId: undefined, versionId: undefined })}
       />
       <OptionSelect
         id={`${id}-model`}
         label="Modelo"
-        emptyLabel={value.make ? 'Todos los modelos' : 'Elige la marca'}
-        value={value.model ?? ''}
-        disabled={disabled || !value.make}
-        options={models.map((model) => ({ value: model, label: model }))}
-        onValueChange={(model) => onChange({ ...value, model: model || undefined })}
+        emptyLabel={!value.makeId ? 'Elige la marca' : modelsLoading ? 'Cargando modelos…' : 'Todos los modelos'}
+        value={value.modelId ?? ''}
+        disabled={disabled || !value.makeId || modelsLoading}
+        options={modelOptions.map((model) => ({ value: model.id, label: model.name }))}
+        onValueChange={(modelId) => onChange({ makeId: value.makeId, modelId: modelId || undefined, versionId: undefined })}
       />
-      {showYear ? (
-        <OptionSelect
-          id={`${id}-year`}
-          label="Año"
-          emptyLabel="Cualquier año"
-          value={value.year ? String(value.year) : ''}
-          disabled={disabled}
-          options={(years ?? []).map((year) => ({ value: String(year), label: String(year) }))}
-          onValueChange={(year) => onChange({ ...value, year: year ? Number(year) : undefined })}
-        />
+      <OptionSelect
+        id={`${id}-version`}
+        label="Versión"
+        emptyLabel={!value.modelId ? 'Elige el modelo' : versionsLoading ? 'Cargando versiones…' : 'Todas las versiones'}
+        value={value.versionId ?? ''}
+        disabled={disabled || !value.modelId || versionsLoading}
+        options={versionOptions.map((version) => ({ value: version.id, label: version.name }))}
+        onValueChange={(versionId) => onChange({ ...value, versionId: versionId || undefined })}
+      />
+      {failed ? (
+        <p role="alert" className="text-xs text-destructive">
+          No pudimos cargar los vehículos. Revisa tu conexión e inténtalo de nuevo.
+        </p>
       ) : null}
     </div>
   )

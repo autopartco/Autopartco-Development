@@ -80,10 +80,11 @@ public class EmailService {
                 Hola %s,
 
                 Revisamos y aprobamos tu solicitud para vender en Autopartco.
-                Para terminar de configurar tu almacén, abre este enlace:
+                Para terminar de configurar tu almacén, abre este enlace e inicia sesión
+                con la cuenta con la que hiciste la solicitud:
                 %s
 
-                El enlace es personal y de un solo uso.
+                Por seguridad, solo esa cuenta puede completar la configuración.
                 """.formatted(fullName, setupLink));
 
         mailSender.send(message);

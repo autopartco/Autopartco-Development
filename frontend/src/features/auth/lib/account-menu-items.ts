@@ -5,6 +5,7 @@ import {
   LayoutDashboardIcon,
   PackageIcon,
   ShoppingBagIcon,
+  SettingsIcon,
   ShieldCheckIcon,
   ShoppingCartIcon,
   StoreIcon,
@@ -57,12 +58,15 @@ interface MenuOptions {
   can?: (permission: string) => boolean
   /** Ruta de la solicitud de almacén en curso del cliente; sin ella no se muestra la opción. */
   sellerApplicationTo?: string
+  /** Ruta para terminar la configuración de una solicitud aprobada (`CONFIGURATION_PENDING`); sin ella no se muestra. */
+  sellerSetupTo?: string
   /** Cuenta ROOT: ofrece el servicio de administración (`/admin`). El servidor sigue decidiendo. */
   root?: boolean
 }
 
+const MY_ORDERS: AccountMenuLink = { key: 'mis-pedidos', label: 'Mis pedidos', to: '/mis-pedidos', icon: PackageIcon }
 const CART: AccountMenuLink = { key: 'carrito', label: 'Carrito', to: '/carrito', icon: ShoppingCartIcon }
-const MARKETPLACE: AccountMenuLink = { key: 'marketplace', label: 'Ir al marketplace', to: '/', icon: ShoppingBagIcon }
+const MARKETPLACE: AccountMenuLink = { key: 'marketplace', label: 'Ir al marketplace', to: '/buscar', icon: ShoppingBagIcon }
 
 function storeSections(storeId: string): AccountMenuLink[] {
   const base = `/portal/${encodeURIComponent(storeId)}`
@@ -78,7 +82,7 @@ function storeSections(storeId: string): AccountMenuLink[] {
  * Grupos de enlaces (se separan con una línea). "Cerrar sesión" no va aquí: cada menú
  * lo añade al final porque su comportamiento depende del área.
  */
-export function accountMenuGroups({ kind, area, storeId, can, sellerApplicationTo, root }: MenuOptions): AccountMenuLink[][] {
+export function accountMenuGroups({ kind, area, storeId, can, sellerApplicationTo, sellerSetupTo, root }: MenuOptions): AccountMenuLink[][] {
   const groups: AccountMenuLink[][] = []
 
   if (kind === 'store') {
@@ -89,12 +93,15 @@ export function accountMenuGroups({ kind, area, storeId, can, sellerApplicationT
     ])
     groups.push(area === 'portal' ? [MARKETPLACE, CART] : [CART])
   } else if (kind === 'customer') {
-    if (sellerApplicationTo) {
-      groups.push([
-        { key: 'solicitud-almacen', label: 'Ver mi solicitud de almacén', to: sellerApplicationTo, icon: FileClockIcon },
-      ])
+    const seller: AccountMenuLink[] = []
+    if (sellerSetupTo) {
+      seller.push({ key: 'configuracion-almacen', label: 'Terminar configuración', to: sellerSetupTo, icon: SettingsIcon })
     }
-    groups.push(area === 'portal' ? [MARKETPLACE, CART] : [CART])
+    if (sellerApplicationTo) {
+      seller.push({ key: 'solicitud-almacen', label: 'Ver mi solicitud de almacén', to: sellerApplicationTo, icon: FileClockIcon })
+    }
+    if (seller.length > 0) groups.push(seller)
+    groups.push(area === 'portal' ? [MARKETPLACE, MY_ORDERS, CART] : [MY_ORDERS, CART])
   } else {
     if (root) groups.push([{ key: 'administracion', label: 'Administración', to: '/admin', icon: ShieldCheckIcon }])
     // Admin u otro rol sin menú propio: solo la salida del portal.

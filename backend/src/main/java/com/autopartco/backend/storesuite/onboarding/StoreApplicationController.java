@@ -29,9 +29,8 @@ import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 
 /**
- * Onboarding de almacén: registro público de vendedor ({@code POST /store-applications}), configuración con el
- * token de onboarding ({@code POST /store-applications/setup}, público) y las solicitudes de la cuenta
- * autenticada ({@code /me/store-applications}).
+ * Onboarding de almacén: registro público de vendedor ({@code POST /store-applications}) y las solicitudes de la
+ * cuenta autenticada, incluida su configuración ({@code /me/store-applications}).
  */
 @RestController
 @RequestMapping(ApiPaths.BASE)
@@ -39,6 +38,7 @@ import lombok.AllArgsConstructor;
 public class StoreApplicationController {
     private final SubmitStoreApplication submitStoreApplication;
     private final CompleteStoreSetup completeStoreSetup;
+    private final RequestSetupLink requestSetupLink;
     private final ListMyApplications listMyApplications;
     private final DownloadMyApplicationDocument downloadMyApplicationDocument;
 
@@ -57,22 +57,30 @@ public class StoreApplicationController {
                 ));
     }
 
-    @PostMapping(value = "/store-applications/setup", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public StoreSetupResponse completeSetup(
-            @RequestParam String token,
+    @PostMapping(value = "/me/store-applications/{applicationId}/setup", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public StoreSetupResponse completeSetupAuthenticated(
+            @PathVariable UUID applicationId,
             @RequestParam(required = false) String businessDescription,
             @RequestPart(name = "logo", required = false) MultipartFile logo,
             @RequestPart(name = "banner", required = false) MultipartFile banner,
+            Authentication authentication,
             HttpServletRequest request
     ) {
-        return completeStoreSetup.execute(
-                token,
+        return completeStoreSetup.executeAuthenticated(
+                applicationId,
+                authentication.getName(),
                 businessDescription,
                 logo,
                 banner,
                 request.getRemoteAddr(),
                 request.getHeader("User-Agent") == null ? "" : request.getHeader("User-Agent")
         );
+    }
+
+    @PostMapping("/me/store-applications/{applicationId}/setup-link")
+    public ResponseEntity<Void> resendSetupLink(@PathVariable UUID applicationId, Authentication authentication) {
+        requestSetupLink.forOwner(applicationId, authentication.getName());
+        return ResponseEntity.noContent().build();
     }
 
     @PostMapping(value = "/me/store-applications", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

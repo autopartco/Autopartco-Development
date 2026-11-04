@@ -5,7 +5,8 @@ import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, Di
 import { ApiError, detailNumber, detailText } from '@/lib/api'
 import { formatNumber } from '@/lib/format'
 import type { Capacity } from '../api/types'
-import { capabilityLabel, CAPACITY_LABEL, formatDate } from '../lib/labels'
+import { CAPACITY_LABEL, formatDate } from '../lib/labels'
+import { capabilityInfo, PLAN_NAME } from '../lib/plan-capabilities'
 
 interface UpgradeDialogProps {
   /** Error 409 de plan que originó el diálogo; `undefined` lo mantiene cerrado. */
@@ -53,9 +54,11 @@ function copyFor(error: ApiError, planName: string | undefined): Copy {
 
   if (error.code === 'SELLER_PLAN_FEATURE_UNAVAILABLE') {
     const capability = detailText(error, 'capability')
+    const info = capability ? capabilityInfo(capability) : undefined
+    const minPlan = info?.minPlanCode ? PLAN_NAME[info.minPlanCode] : undefined
     return {
       title: 'Esta función no está en tu plan',
-      description: `${capability ? capabilityLabel(capability) : 'Esta función'} no está incluida en el plan ${plan}. Cambia de plan para activarla.`,
+      description: `${info ? info.label : 'Esta función'} no está incluida en el plan ${plan}.${minPlan ? ` Disponible en el plan ${minPlan}.` : ''} Cambia de plan para activarla.`,
       rows: [],
       cta: 'Comparar planes',
     }

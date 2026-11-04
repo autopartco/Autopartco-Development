@@ -4,6 +4,7 @@ import { TruckIcon } from 'lucide-react'
 import { FormAlert, TextField } from '@/components/common/form-fields'
 import { Button } from '@/components/ui/button'
 import { ApiError } from '@/lib/api'
+import { useSubmitOnce } from '@/lib/use-submit-once'
 import { getOrderService } from '../api/order-service'
 import type { OrderDetail, ShipmentStatus } from '../api/types'
 import { usePortal } from '../context'
@@ -19,7 +20,8 @@ function ShipmentCreateForm({ order }: { order: OrderDetail }) {
   const [carrier, setCarrier] = useState('')
   const [tracking, setTracking] = useState('')
   const [submitted, setSubmitted] = useState(false)
-  const [pending, setPending] = useState(false)
+  const submit = useSubmitOnce((input: { carrier: string; trackingNumber: string }) => getOrderService().then((service) => service.createShipment(storeId, order.saleId, input)))
+  const pending = submit.pending
   const [formError, setFormError] = useState<string>()
   const [serverErrors, setServerErrors] = useState<Record<string, string>>({})
   const alertRef = useRef<HTMLDivElement>(null)
@@ -32,24 +34,22 @@ function ShipmentCreateForm({ order }: { order: OrderDetail }) {
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (pending) return
     setSubmitted(true)
     setFormError(undefined)
     if (errors.carrier || errors.trackingNumber) {
       focusById(errors.carrier ? 'envio-carrier' : 'envio-tracking')
       return
     }
-    setPending(true)
-    try {
-      await (await getOrderService()).createShipment(storeId, order.saleId, { carrier: carrier.trim(), trackingNumber: tracking.trim() })
+    // ÚNICA escritura: el envío se registra al pulsar el botón.
+    const result = await submit.run({ carrier: carrier.trim(), trackingNumber: tracking.trim() })
+    if (result.status === 'ok') {
       invalidateStore()
       toast.success('Envío registrado. El cliente recibirá un aviso.')
-    } catch (cause) {
+    } else if (result.status === 'error') {
+      const cause = result.error
       if (cause instanceof ApiError && Object.keys(cause.fieldErrors).length > 0) setServerErrors(cause.fieldErrors)
       setFormError(actionErrorMessage(cause, 'No pudimos registrar el envío.'))
       requestAnimationFrame(() => alertRef.current?.focus())
-    } finally {
-      setPending(false)
     }
   }
 

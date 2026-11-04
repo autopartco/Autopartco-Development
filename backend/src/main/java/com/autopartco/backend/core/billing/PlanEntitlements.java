@@ -106,6 +106,20 @@ public class PlanEntitlements {
         findAccess(storeId).ifPresent(this::requireNotExpired);
     }
 
+    /**
+     * Igual que {@link #requireSubscriptionActive} pero sin lanzar: {@code false} si la solicitud no está activa o la
+     * prueba/suscripción venció. Sin suscripción registrada, {@code true} (mismo criterio que los demás chequeos).
+     * Requisito de publicación {@code SUBSCRIPTION_INACTIVE}.
+     */
+    @Transactional(readOnly = true)
+    public boolean isSubscriptionActive(UUID storeId) {
+        try {
+            return findAccess(storeId).map(access -> !access.subscriptionExpired()).orElse(true);
+        } catch (ConflictException notActive) {
+            return false;
+        }
+    }
+
     private Optional<Access> findAccess(UUID storeId) {
         return subscriptionRepository.findByStoreId(storeId)
                 .map(this::accessFor);

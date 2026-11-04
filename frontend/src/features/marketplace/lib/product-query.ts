@@ -8,9 +8,9 @@ export const QUERY_PARAMS = {
   category: 'categoria',
   brands: 'marca',
   store: 'tienda',
-  make: 'vehiculo',
-  model: 'modelo',
-  year: 'anio',
+  makeId: 'vehiculo',
+  modelId: 'modelo',
+  versionId: 'version',
   minPrice: 'precio_min',
   maxPrice: 'precio_max',
   inStockOnly: 'disponible',
@@ -40,14 +40,18 @@ function text(value: string | null): string | undefined {
 
 export function parseProductQuery(params: URLSearchParams, fixedCategory?: string): ProductQuery {
   const sort = params.get(QUERY_PARAMS.sort) as SortOption | null
+  // Jerarquía válida: sin marca no hay modelo y sin modelo no hay versión (el servidor respondería 400).
+  const makeId = text(params.get(QUERY_PARAMS.makeId))
+  const modelId = makeId ? text(params.get(QUERY_PARAMS.modelId)) : undefined
+  const versionId = modelId ? text(params.get(QUERY_PARAMS.versionId)) : undefined
   return {
     q: text(params.get(QUERY_PARAMS.q)) ?? '',
     category: fixedCategory ?? text(params.get(QUERY_PARAMS.category)),
     brands: (params.get(QUERY_PARAMS.brands) ?? '').split(',').filter(Boolean),
     store: text(params.get(QUERY_PARAMS.store)),
-    make: text(params.get(QUERY_PARAMS.make)),
-    model: text(params.get(QUERY_PARAMS.model)),
-    year: positiveInt(params.get(QUERY_PARAMS.year)),
+    makeId,
+    modelId,
+    versionId,
     minPrice: positiveInt(params.get(QUERY_PARAMS.minPrice)),
     maxPrice: positiveInt(params.get(QUERY_PARAMS.maxPrice)),
     inStockOnly: params.get(QUERY_PARAMS.inStockOnly) === '1',
@@ -68,9 +72,9 @@ export function toSearchParams(query: ProductQuery, options: { omitCategory?: bo
   if (!options.omitCategory) set(QUERY_PARAMS.category, query.category)
   if (query.brands.length > 0) set(QUERY_PARAMS.brands, query.brands.join(','))
   set(QUERY_PARAMS.store, query.store)
-  set(QUERY_PARAMS.make, query.make)
-  set(QUERY_PARAMS.model, query.model)
-  set(QUERY_PARAMS.year, query.year)
+  set(QUERY_PARAMS.makeId, query.makeId)
+  set(QUERY_PARAMS.modelId, query.modelId)
+  set(QUERY_PARAMS.versionId, query.versionId)
   set(QUERY_PARAMS.minPrice, query.minPrice)
   set(QUERY_PARAMS.maxPrice, query.maxPrice)
   if (query.inStockOnly) set(QUERY_PARAMS.inStockOnly, 1)
@@ -90,9 +94,7 @@ export function countActiveFilters(query: ProductQuery, options: { fixedCategory
   let count = query.brands.length
   if (query.category && !options.fixedCategory) count += 1
   if (query.store) count += 1
-  if (query.make) count += 1
-  if (query.model) count += 1
-  if (query.year) count += 1
+  if (query.makeId) count += 1
   if (query.minPrice !== undefined || query.maxPrice !== undefined) count += 1
   if (query.inStockOnly) count += 1
   if (query.recommendedOnly) count += 1

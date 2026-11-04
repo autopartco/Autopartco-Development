@@ -12,6 +12,8 @@ import type { AuthService, Session } from '../types'
  * - `cliente...` -> `["ROLE_CUSTOMER"]` (cliente del marketplace).
  * - `root...` -> `["ROLE_ROOT"]` (servicio de administración `/admin`).
  * - `admin...` -> `["ROLE_ADMIN"]` (rol sin menú propio: se degrada a datos y salir).
+ * - `pendiente...` -> `["ROLE_CUSTOMER"]` con una solicitud de almacén `CONFIGURATION_PENDING` (ver
+ *   `seller/api/mock`): sirve para probar «Terminar configuración». Al configurar pasa a gerente.
  * - Cualquier otro -> `["ROLE_CUSTOMER","ROLE_STORE_MANAGER"]` (gerente de almacén; así el portal
  *   simulado sigue funcionando con cualquier correo, como antes).
  *
@@ -21,6 +23,25 @@ import type { AuthService, Session } from '../types'
  * - Verificar o restablecer con el token `vencido` -> token expirado.
  */
 const STORAGE_KEY = 'autopartco:sesion-simulada'
+/** Marca que la cuenta simulada pasó a gerente de almacén (equivale al token nuevo tras configurar). */
+const PROMOTED_KEY = 'autopartco:sesion-simulada-gerente'
+
+/** Simula el cambio de rol a `STORE_MANAGER` al terminar la configuración del almacén. */
+export function promoteMockSession(): void {
+  try {
+    window.sessionStorage.setItem(PROMOTED_KEY, '1')
+  } catch {
+    // Sin almacenamiento el cambio dura hasta recargar.
+  }
+}
+
+function isPromoted(): boolean {
+  try {
+    return window.sessionStorage.getItem(PROMOTED_KEY) === '1'
+  } catch {
+    return false
+  }
+}
 
 function nameFromEmail(email: string): string {
   const local = email.split('@')[0] ?? email
@@ -31,6 +52,7 @@ function nameFromEmail(email: string): string {
 /** Roles simulados a partir del correo (ver la descripción de este archivo). */
 export function mockRolesFor(email: string): string[] {
   const clean = email.trim().toLowerCase()
+  if (clean.startsWith('pendiente')) return isPromoted() ? ['ROLE_CUSTOMER', 'ROLE_STORE_MANAGER'] : ['ROLE_CUSTOMER']
   if (clean.startsWith('cliente')) return ['ROLE_CUSTOMER']
   if (clean.startsWith('root')) return ['ROLE_ROOT']
   if (clean.startsWith('admin')) return ['ROLE_ADMIN']
@@ -83,6 +105,7 @@ export function createMockAuthService(): AuthService {
       await simulateLatency(250)
       try {
         window.sessionStorage.removeItem(STORAGE_KEY)
+        window.sessionStorage.removeItem(PROMOTED_KEY)
       } catch {
         // Nada que limpiar.
       }

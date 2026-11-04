@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
-import { useSellerCta } from '@/features/seller/hooks'
+import { SELLER_SETUP_PATH, useSellerCta, type SellerCta } from '@/features/seller/hooks'
 import type { Session } from '../api/types'
 import { useSession, useSignOut } from '../hooks'
 import {
@@ -39,10 +39,11 @@ export interface AccountMenuContext {
 function groupsFor(
   session: Session,
   { area = 'marketplace', storeId, can }: AccountMenuContext,
-  sellerApplicationTo?: string,
+  seller?: SellerCta,
 ) {
   return accountMenuGroups({
-    sellerApplicationTo,
+    sellerApplicationTo: seller?.state === 'review' ? seller.to : undefined,
+    sellerSetupTo: seller?.application?.status === 'CONFIGURATION_PENDING' ? SELLER_SETUP_PATH : undefined,
     root: session.roles.includes('ROLE_ROOT'),
     kind: accountKindOf(session.roles),
     area,
@@ -91,7 +92,6 @@ export function HeaderAccount({ className, ...context }: { className?: string } 
   const area = context.area ?? 'marketplace'
   const { leave, pending } = useLeaveAndSignOut(area)
   const seller = useSellerCta()
-  const sellerApplicationTo = seller.state === 'review' ? seller.to : undefined
 
   if (!session) {
     return (
@@ -138,7 +138,7 @@ export function HeaderAccount({ className, ...context }: { className?: string } 
         <div className="px-3 py-2.5">
           <AccountIdentity session={session} />
         </div>
-        {groupsFor(session, context, sellerApplicationTo).map((group) => (
+        {groupsFor(session, context, seller).map((group) => (
           <Fragment key={group[0]?.key}>
             <DropdownMenuSeparator />
             {group.map((item) => (
@@ -165,7 +165,7 @@ export function MobileMenuAccount({ onNavigate }: { onNavigate: () => void }) {
   const { leave, pending } = useLeaveAndSignOut('marketplace')
   const seller = useSellerCta()
   if (session) {
-    const links = groupsFor(session, { area: 'marketplace' }, seller.state === 'review' ? seller.to : undefined).flat()
+    const links = groupsFor(session, { area: 'marketplace' }, seller).flat()
     return (
       <div className="flex flex-col gap-3">
         <AccountIdentity session={session} />

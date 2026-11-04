@@ -25,7 +25,10 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     @Query("select p from Product p where p.id = :id and p.storeId = :storeId")
     Optional<Product> lockOwned(@Param("storeId") UUID storeId, @Param("id") UUID id);
 
-    /** Carga los productos de un listado con su estado y sus IDs de compatibilidad (sin N+1). */
-    @Query("select distinct p from Product p join fetch p.state left join fetch p.compatibilityIds where p.id in :ids")
+    /**
+     * Carga los productos de un listado con su estado y su fabricante (sin N+1). Join interno con el fabricante: igual
+     * que las consultas de listado, que exigen fabricante no borrado.
+     */
+    @Query("select p from Product p join fetch p.state join fetch p.manufacturer where p.id in :ids")
     List<Product> findAllWithDetails(@Param("ids") Collection<UUID> ids);
 }

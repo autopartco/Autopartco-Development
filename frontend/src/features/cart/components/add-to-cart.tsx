@@ -43,7 +43,7 @@ export function AddToCart({ product }: { product: Product }) {
         storeName: product.store?.name,
         branchName: product.availability?.branchName,
         unitPrice: product.price,
-        imageUrl: product.images[0],
+        imageUrl: product.images[0]?.thumbUrl,
       },
       quantity,
     )

@@ -5,6 +5,7 @@ import { FormAlert, PasswordField, TextField } from '@/components/common/form-fi
 import { focusFirstError } from '../lib/account'
 import { Button } from '@/components/ui/button'
 import { ApiError } from '@/lib/api'
+import { useSubmitOnce } from '@/lib/use-submit-once'
 import { getAuthService } from '../api/auth-service'
 import { AuthShell, SimulatedNotice } from '../components/auth-shell'
 import { compact, emailError, newPasswordError, PASSWORD_HINT, type FieldErrors } from '../lib/validation'
@@ -36,7 +37,9 @@ export default function PasswordRecoveryPage() {
   const [notice, setNotice] = useState<string>()
   const [errors, setErrors] = useState<FieldErrors>({})
   const [formError, setFormError] = useState<string>()
-  const [submitting, setSubmitting] = useState(false)
+  const request = useSubmitOnce(async (email: string) => (await getAuthService()).requestPasswordRecovery(email))
+  const reset = useSubmitOnce(async (token: string, password: string) => (await getAuthService()).resetPassword(token, password))
+  const submitting = request.pending || reset.pending
   const alertRef = useRef<HTMLDivElement>(null)
   const headingRef = useFocusOnChange<HTMLHeadingElement>(step)
 
@@ -59,15 +62,13 @@ export default function PasswordRecoveryPage() {
       document.getElementById('recuperar-email')?.focus()
       return
     }
-    setSubmitting(true)
-    try {
-      const service = await getAuthService()
-      setNotice(await service.requestPasswordRecovery(email))
+    // ÚNICA escritura de este paso: el correo se pide al pulsar «Enviar código».
+    const result = await request.run(email)
+    if (result.status === 'ok') {
+      setNotice(result.value)
       setStep('reset')
-    } catch (error) {
-      fail(error, 'No pudimos enviar el correo. Inténtalo de nuevo.')
-    } finally {
-      setSubmitting(false)
+    } else if (result.status === 'error') {
+      fail(result.error, 'No pudimos enviar el correo. Inténtalo de nuevo.')
     }
   }
 
@@ -88,15 +89,13 @@ export default function PasswordRecoveryPage() {
       focusFirstError(['token', 'password', 'confirm'], next, (field) => `recuperar-${field}`)
       return
     }
-    setSubmitting(true)
-    try {
-      const service = await getAuthService()
-      setNotice(await service.resetPassword(token, password))
+    // ÚNICA escritura de este paso: la contraseña cambia al pulsar «Cambiar contraseña».
+    const result = await reset.run(token, password)
+    if (result.status === 'ok') {
+      setNotice(result.value)
       setStep('done')
-    } catch (error) {
-      fail(error, 'No pudimos cambiar la contraseña. Inténtalo de nuevo.')
-    } finally {
-      setSubmitting(false)
+    } else if (result.status === 'error') {
+      fail(result.error, 'No pudimos cambiar la contraseña. Inténtalo de nuevo.')
     }
   }
 

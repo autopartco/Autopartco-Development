@@ -19,7 +19,7 @@ import com.autopartco.backend.core.organization.StoreFiles;
 import lombok.AllArgsConstructor;
 
 /**
- * Cierra el onboarding con el token de configuración (público): sube la marca, activa el almacén, inicia la
+ * Cierra el onboarding de la cuenta autenticada: sube la marca, activa el almacén, inicia la
  * prueba del plan, pasa la cuenta a {@code STORE_MANAGER} y abre sesión. Si algo falla, borra la marca subida.
  */
 @Service
@@ -32,16 +32,35 @@ public class CompleteStoreSetup {
     private final AccountProvisioning accountProvisioning;
     private final SessionIssuer sessionIssuer;
 
+    /** Con la sesión de la dueña de la solicitud (única vía; ningún token por correo es credencial). */
     @Transactional
-    public StoreSetupResponse execute(
-            String rawToken,
+    public StoreSetupResponse executeAuthenticated(
+            UUID applicationId,
+            String email,
             String businessDescription,
             MultipartFile logo,
             MultipartFile banner,
             String ipAddress,
             String userAgent
     ) {
-        StoreApplications.PendingSetup setup = storeApplications.lockForSetup(rawToken);
+        return complete(
+                storeApplications.lockForOwnerSetup(applicationId, email),
+                businessDescription,
+                logo,
+                banner,
+                ipAddress,
+                userAgent
+        );
+    }
+
+    private StoreSetupResponse complete(
+            StoreApplications.PendingSetup setup,
+            String businessDescription,
+            MultipartFile logo,
+            MultipartFile banner,
+            String ipAddress,
+            String userAgent
+    ) {
         UUID storeId = setup.storeId();
         String newLogoPath = null;
         String newBannerPath = null;

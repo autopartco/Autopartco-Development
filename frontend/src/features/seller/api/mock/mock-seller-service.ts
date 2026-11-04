@@ -1,14 +1,71 @@
 import { ApiError, simulateLatency } from '@/lib/api'
+import { promoteMockSession } from '@/features/auth/api/mock/mock-auth-service'
+import { getSession } from '@/features/auth/session-store'
 import type { MyStoreApplication, SellerApplicationService } from '../types'
+
+const COOLDOWN_MS = 5 * 60 * 1000
+const SEEDED_ID = '00000000-0000-4000-8000-000000000001'
+const SEEDED_STORE_ID = '00000000-0000-4000-8000-000000000002'
 
 /**
  * Solicitud de almacén simulada: valida y responde como el backend, pero no envía
  * ni guarda nada (los archivos elegidos no salen del navegador).
  * Para probar el error de correo repetido, usa `existe@autopartco.co`. La solicitud con
  * sesión se recuerda solo en memoria, para ver el estado "en revisión" al volver.
+ *
+ * Cómo probar la configuración del almacén (`/seller/setup`, solo con sesión):
+ * - Sin sesión: abre `/seller/setup` (también con `?token=x`, que se ignora y se borra de la URL):
+ *   redirige a `/ingresar?next=/seller/setup` y, tras ingresar con `pendiente@...`, vuelve a configurar.
+ * - Con otra cuenta: ingresa con un cliente sin solicitud (cualquier correo que no empiece por
+ *   `pendiente`) y abre `/seller/setup`: aviso de cuenta sin configuración pendiente y «Cambiar de cuenta».
+ * - Con cuenta pendiente: ingresa con un correo que empiece por `pendiente` (p. ej.
+ *   `pendiente@autopartco.co`). Es cliente con una solicitud `CONFIGURATION_PENDING`, así que el ingreso
+ *   lleva a `/seller/setup`. Al terminar pasa a gerente (cierra sesión para repetir) y `/seller/setup` va a `/portal`.
+ * - Reenvío del correo: «Reenviarme el correo de configuración» en `/portal/solicitud` con la cuenta
+ *   pendiente; repetirlo antes de 5 minutos simula el 429 `SELLER_SETUP_LINK_COOLDOWN`.
  */
 export function createMockSellerApplicationService(): SellerApplicationService {
   const mine: MyStoreApplication[] = []
+  const lastLinkAt = new Map<string, number>()
+
+  /** Solicitud simulada de las cuentas `pendiente...`: pendiente de configurar hasta que la cuenta pasa a gerente. */
+  function seeded(): MyStoreApplication[] {
+    const session = getSession()
+    if (!session?.user.email.startsWith('pendiente')) return []
+    const done = session.roles.includes('ROLE_STORE_MANAGER')
+    return [
+      {
+        applicationId: SEEDED_ID,
+        storeId: SEEDED_STORE_ID,
+        businessName: 'Repuestos El Paisa',
+        status: done ? 'ACTIVE' : 'CONFIGURATION_PENDING',
+        createdAt: '2026-10-10T09:00:00',
+      },
+    ]
+  }
+
+  /** Enfriamiento de 5 min por solicitud o token, como el backend. */
+  function throttle(key: string): void {
+    const last = lastLinkAt.get(key)
+    if (last && Date.now() - last < COOLDOWN_MS) {
+      throw new ApiError('Ya te enviamos un enlace hace poco. Espera 5 minutos para pedir otro.', {
+        status: 429,
+        code: 'SELLER_SETUP_LINK_COOLDOWN',
+      })
+    }
+    lastLinkAt.set(key, Date.now())
+  }
+
+  function requireOwnPending(applicationId: string): void {
+    if (!getSession()) throw new ApiError('Inicia sesión para continuar.', { status: 401, code: 'UNAUTHORIZED' })
+    const application = [...seeded(), ...mine].find((item) => item.applicationId === applicationId)
+    if (!application) {
+      throw new ApiError('No encontramos esa solicitud.', { status: 404, code: 'SELLER_APPLICATION_NOT_FOUND' })
+    }
+    if (application.status !== 'CONFIGURATION_PENDING') {
+      throw new ApiError('Esta solicitud ya no está pendiente de configuración.', { status: 409, code: 'SELLER_SETUP_NOT_PENDING' })
+    }
+  }
 
   return {
     simulated: true,
@@ -48,22 +105,24 @@ export function createMockSellerApplicationService(): SellerApplicationService {
 
     async myApplications() {
       await simulateLatency(300)
-      return mine.map((application) => ({ ...application }))
+      return [...seeded(), ...mine].map((application) => ({ ...application }))
     },
 
-    async completeSetup(input) {
+    async completeSetupAuthenticated(applicationId) {
       await simulateLatency(900)
-      if (!input.token.trim()) {
-        throw new ApiError('El enlace de configuración venció o ya fue utilizado.', {
-          status: 400,
-          code: 'SELLER_SETUP_TOKEN_INVALID',
-        })
-      }
+      requireOwnPending(applicationId)
+      promoteMockSession()
       return {
-        storeId: crypto.randomUUID(),
+        storeId: SEEDED_STORE_ID,
         status: 'ACTIVE',
         trialEndsAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       }
+    },
+
+    async requestSetupLink(applicationId) {
+      await simulateLatency(600)
+      requireOwnPending(applicationId)
+      throttle(applicationId)
     },
   }
 }

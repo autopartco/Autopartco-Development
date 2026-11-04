@@ -1,15 +1,21 @@
-import { useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
+import { DiscardChangesDialog } from '@/components/common/discard-changes-dialog'
 import { FormAlert, TextField } from '@/components/common/form-fields'
+import { UnsavedChangesDialog } from '@/components/common/unsaved-changes-dialog'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { ApiError } from '@/lib/api'
+import { useCloseGuard } from '@/lib/use-close-guard'
+import { useDraftForm, type FieldErrors } from '@/lib/use-draft-form'
+import { useSubmitOnce } from '@/lib/use-submit-once'
+import { useUnsavedChanges } from '@/lib/use-unsaved-changes'
 import { useCities } from '@/features/location/hooks'
 import { getBranchService } from '../api/branch-service'
 import type { Branch, BranchInput } from '../api/types'
 import { usePortal } from '../context'
 import { actionErrorMessage } from '../lib/errors'
-import { focusById, PHONE_PATTERN, type FieldErrors } from '../lib/forms'
+import { focusById, PHONE_PATTERN } from '../lib/forms'
 
 const FIELDS = ['name', 'numberPhone', 'addressLine', 'addressComplement', 'city', 'department'] as const
 type Field = (typeof FIELDS)[number]
@@ -49,39 +55,50 @@ function validate(values: Values): FieldErrors {
   return errors
 }
 
-function BranchForm({ branch, onDone }: { branch: Branch | undefined; onDone: () => void }) {
+interface BranchFormProps {
+  branch: Branch | undefined
+  /** Cierra sin preguntar (tras guardar). */
+  onDone: () => void
+  /** «Cancelar»: cierra, o pregunta si hay cambios. */
+  onCancel: () => void
+  /** Avisa al panel si hay cambios sin enviar. */
+  onDirtyChange: (dirty: boolean) => void
+}
+
+function BranchForm({ branch, onDone, onCancel, onDirtyChange }: BranchFormProps) {
   const { storeId, promptUpgrade, invalidateStore } = usePortal()
   const cities = useCities()
-  const [values, setValues] = useState<Values>(() => valuesOf(branch))
-  const [touched, setTouched] = useState<Partial<Record<Field, boolean>>>({})
-  const [submitted, setSubmitted] = useState(false)
-  const [serverErrors, setServerErrors] = useState<FieldErrors>({})
+  const draft = useDraftForm<Values>({ initial: valuesOf(branch), validate })
+  const { values } = draft
+  const submit = useSubmitOnce(async (input: BranchInput) => {
+    const service = await getBranchService()
+    if (branch) await service.update(storeId, branch.id, input)
+    else await service.create(storeId, input)
+  })
+  const pending = submit.pending
+  const blocker = useUnsavedChanges(draft.isDirty && !pending)
   const [formError, setFormError] = useState<string>()
-  const [pending, setPending] = useState(false)
   const alertRef = useRef<HTMLDivElement>(null)
 
-  const errors = validate(values)
-  const shown = (field: Field) => serverErrors[field] ?? (submitted || touched[field] ? errors[field] : undefined)
+  useEffect(() => {
+    onDirtyChange(draft.isDirty && !pending)
+    return () => onDirtyChange(false)
+  }, [draft.isDirty, pending, onDirtyChange])
+
   const bind = (field: Field) => ({
     id: fieldId(field),
     value: values[field],
-    error: shown(field),
-    onChange: (event: { target: { value: string } }) => {
-      setValues((current) => ({ ...current, [field]: event.target.value }))
-      if (serverErrors[field]) setServerErrors(({ [field]: _removed, ...rest }) => rest)
-    },
-    onBlur: () => setTouched((current) => ({ ...current, [field]: true })),
+    error: draft.errorFor(field),
+    onChange: (event: { target: { value: string } }) => draft.set(field, event.target.value),
+    onBlur: () => draft.touch(field),
   })
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (pending) return
-    setSubmitted(true)
     setFormError(undefined)
-    const current = validate(values)
-    if (Object.keys(current).length > 0) {
-      const first = FIELDS.find((field) => current[field])
-      focusById(first ? fieldId(first) : undefined)
+    const check = draft.validateAll()
+    if (!check.valid) {
+      focusById(check.firstInvalid ? fieldId(check.firstInvalid) : undefined)
       return
     }
     const input: BranchInput = {
@@ -95,28 +112,27 @@ function BranchForm({ branch, onDone }: { branch: Branch | undefined; onDone: ()
         country: 'Colombia',
       },
     }
-    setPending(true)
-    try {
-      const service = await getBranchService()
-      if (branch) await service.update(storeId, branch.id, input)
-      else await service.create(storeId, input)
+    // ÚNICA escritura: crear/actualizar al pulsar el botón final.
+    const result = await submit.run(input)
+    if (result.status === 'ok') {
+      draft.markSaved()
+      onDirtyChange(false)
       invalidateStore()
       toast.success(branch ? 'Sucursal actualizada.' : 'Sucursal creada.')
       onDone()
-    } catch (error) {
+    } else if (result.status === 'error') {
+      const error = result.error
       if (promptUpgrade(error)) return
       if (error instanceof ApiError && Object.keys(error.fieldErrors).length > 0) {
         // El servidor nombra los campos de ubicación como `location.city`.
         const mapped: FieldErrors = {}
         for (const [key, message] of Object.entries(error.fieldErrors)) mapped[key.replace(/^location\./, '')] = message
-        setServerErrors(mapped)
+        draft.setServerErrors(mapped)
         const first = FIELDS.find((field) => mapped[field])
         if (first) requestAnimationFrame(() => focusById(fieldId(first)))
       }
       setFormError(actionErrorMessage(error, 'No pudimos guardar la sucursal. Inténtalo de nuevo.'))
       requestAnimationFrame(() => alertRef.current?.focus())
-    } finally {
-      setPending(false)
     }
   }
 
@@ -137,21 +153,23 @@ function BranchForm({ branch, onDone }: { branch: Branch | undefined; onDone: ()
         <TextField {...bind('department')} label="Departamento" autoComplete="off" required />
       </div>
       <div className="flex flex-col-reverse gap-2 border-t border-border p-4 sm:flex-row sm:justify-end">
-        <Button type="button" variant="outline" className="h-11 px-5" onClick={onDone} disabled={pending}>
+        <Button type="button" variant="outline" className="h-11 px-5" onClick={onCancel} disabled={pending}>
           Cancelar
         </Button>
         <Button type="submit" className="h-11 px-5" disabled={pending}>
           {pending ? 'Guardando…' : branch ? 'Guardar cambios' : 'Crear sucursal'}
         </Button>
       </div>
+      <UnsavedChangesDialog blocker={blocker} />
     </form>
   )
 }
 
 /** Alta y edición de una sucursal en un panel lateral (`Sheet`). */
 export function BranchSheet({ open, onOpenChange, branch }: { open: boolean; onOpenChange: (open: boolean) => void; branch: Branch | undefined }) {
+  const guard = useCloseGuard(() => onOpenChange(false))
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
+    <Sheet open={open} onOpenChange={(next) => (next ? onOpenChange(true) : guard.requestClose())}>
       <SheetContent side="right" className="w-full gap-0 p-0 sm:max-w-md">
         <SheetHeader className="p-4 pr-16">
           <SheetTitle className="text-lg font-extrabold tracking-tight">{branch ? 'Editar sucursal' : 'Nueva sucursal'}</SheetTitle>
@@ -160,7 +178,8 @@ export function BranchSheet({ open, onOpenChange, branch }: { open: boolean; onO
           </SheetDescription>
         </SheetHeader>
         {/* key: cada apertura (o cambio de sucursal) parte de un formulario limpio. */}
-        <BranchForm key={branch?.id ?? 'nueva'} branch={branch} onDone={() => onOpenChange(false)} />
+        <BranchForm key={branch?.id ?? 'nueva'} branch={branch} onDone={() => onOpenChange(false)} onCancel={guard.requestClose} onDirtyChange={guard.setDirty} />
+        <DiscardChangesDialog guard={guard} />
       </SheetContent>
     </Sheet>
   )

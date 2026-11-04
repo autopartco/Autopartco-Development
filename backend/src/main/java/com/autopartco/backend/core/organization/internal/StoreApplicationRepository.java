@@ -29,11 +29,6 @@ public interface StoreApplicationRepository extends JpaRepository<StoreApplicati
     @Query("select application from StoreApplication application where application.id = :id")
     Optional<StoreApplication> lockById(@Param("id") UUID id);
 
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select application from StoreApplication application "
-            + "where application.onboardingTokenHash = :tokenHash")
-    Optional<StoreApplication> lockByOnboardingToken(@Param("tokenHash") String tokenHash);
-
     @Query("select application from StoreApplication application "
             + "join fetch application.store where application.store.id = :storeId")
     Optional<StoreApplication> findByStoreId(@Param("storeId") UUID storeId);

@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import { formatKm } from '@/features/location/lib/geo'
 import type { Product } from '../api/types'
 import { productPath } from '../lib/paths'
-import { AvailabilityLabel, FitmentLine, Price, StoreLine } from './product-meta'
+import { AvailabilityLabel, BrandName, FitmentLine, Price, StoreLine } from './product-meta'
 
 /**
  * Mini ruta del cliente a la tienda: aparece al pasar el cursor o al enfocar la
@@ -56,7 +56,7 @@ export const ProductCard = memo(function ProductCard({ product, eager = false, d
     <article className="group relative flex flex-col gap-3 rounded-xl p-2 transition-[background-color,box-shadow] duration-200 hover:bg-card hover:shadow-[0_0_0_1px_rgb(0_0_0/0.05),0_8px_24px_-12px_rgb(0_0_0/0.18)] has-[a:focus-visible]:bg-card">
       <div className="relative">
         <SmartImage
-          src={product.images[0]}
+          src={product.images[0]?.cardUrl}
           alt=""
           width={400}
           height={300}
@@ -85,7 +85,7 @@ export const ProductCard = memo(function ProductCard({ product, eager = false, d
 
       <div className="flex flex-1 flex-col gap-2 px-1 pb-1">
         <p className="flex flex-wrap gap-x-2 text-xs text-muted-foreground">
-          {product.brand ? <span className="font-semibold text-foreground">{product.brand.name}</span> : null}
+          {product.brand ? <BrandName brand={product.brand} /> : null}
           {product.partNumber ? <span className="tabular-nums">Ref. {product.partNumber}</span> : null}
         </p>
         <h3 className="line-clamp-2 text-[0.95rem] leading-snug font-medium">
@@ -97,7 +97,7 @@ export const ProductCard = memo(function ProductCard({ product, eager = false, d
             {product.name}
           </Link>
         </h3>
-        {product.compatibilities.length > 0 ? <FitmentLine fits={product.compatibilities} /> : null}
+        <FitmentLine product={product} />
         <div className="mt-auto flex flex-col gap-1 pt-1">
           <Price product={product} />
           {product.availability ? <AvailabilityLabel availability={product.availability} /> : null}

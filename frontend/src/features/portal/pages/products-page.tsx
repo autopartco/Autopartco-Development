@@ -97,9 +97,12 @@ function ProductsView({ rows }: { rows: ProductRow[] }) {
         <div className="flex items-center gap-3">
           <Thumb row={row} />
           <div className="min-w-0">
-            <Link to={`${base}/productos/${encodeURIComponent(row.id)}`} className="font-semibold underline-offset-4 hover:underline">
-              {row.name}
-            </Link>
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+              <Link to={`${base}/productos/${encodeURIComponent(row.id)}`} className="font-semibold underline-offset-4 hover:underline">
+                {row.name}
+              </Link>
+              {row.universal ? <StatusBadge tone="info">Universal</StatusBadge> : null}
+            </div>
             <p className="text-xs font-normal text-muted-foreground">
               {[row.sku ? `SKU ${row.sku}` : null, row.partNumber ? `Ref. ${row.partNumber}` : null].filter(Boolean).join(' · ') || 'Sin SKU ni referencia'}
             </p>

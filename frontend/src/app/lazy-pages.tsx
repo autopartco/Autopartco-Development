@@ -23,6 +23,10 @@ export const CartPage = lazy(() => import('@/features/cart/pages/cart-page'))
 export const CheckoutPage = lazy(() => import('@/features/checkout/pages/checkout-page'))
 export const OrderResultPage = lazy(() => import('@/features/checkout/pages/order-result-page'))
 
+// Mis pedidos y seguimiento del comprador.
+export const OrdersPage = lazy(() => import('@/features/orders/pages/orders-page'))
+export const OrderDetailPage = lazy(() => import('@/features/orders/pages/order-detail-page'))
+
 // Portal del almacén (SaaS vendedores): cada pantalla se descarga al visitarla.
 export const PortalRoot = lazy(() => import('@/features/portal/layout/portal-root').then((module) => ({ default: module.PortalRoot })))
 export const PortalLayout = lazy(() =>
