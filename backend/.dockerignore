@@ -1,0 +1,9 @@
+target/
+bin/
+src/test/
+*.iml
+.idea/
+.vscode/
+.env
+.env.*
+src/main/resources/certs/*.pem
