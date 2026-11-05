@@ -4,11 +4,13 @@ import { formatCOP } from '@/lib/format'
 import { formatOrderDate } from '@/features/checkout/lib/labels'
 import { StatusBadge } from '@/features/portal/components/status-badge'
 import type { BuyerOrderSummaryDto } from '../api/types'
-import { orderDetailPath, orderStatus } from '../lib/labels'
+import { buyerOrderStatus, isUnpaidOrder, orderDetailPath, orderStatus } from '../lib/labels'
 
 /** Resumen de un pedido en el listado; toda la tarjeta lleva al detalle. */
 export function OrderCard({ order }: { order: BuyerOrderSummaryDto }) {
-  const status = orderStatus(order.status)
+  const status = buyerOrderStatus(order.status)
+  // Sin pago aprobado las tiendas aún no tienen la venta: su estado no aporta.
+  const unpaid = isUnpaidOrder(order.status)
   return (
     <Link
       to={orderDetailPath(order.orderId)}
@@ -30,7 +32,7 @@ export function OrderCard({ order }: { order: BuyerOrderSummaryDto }) {
               <StoreIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
               <span className="truncate">{sale.storeName}</span>
             </span>
-            <span className="text-muted-foreground">{orderStatus(sale.status).label}</span>
+            {unpaid ? null : <span className="text-muted-foreground">{orderStatus(sale.status).label}</span>}
           </li>
         ))}
       </ul>

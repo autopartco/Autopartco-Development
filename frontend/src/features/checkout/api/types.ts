@@ -4,14 +4,21 @@
  * rechaza campos desconocidos (`INVALID_REQUEST_BODY`).
  */
 
-export type PaymentMethodCode = 'SIMULATED_CARD' | 'SIMULATED_TRANSFER' | 'SIMULATED_CASH'
+/**
+ * Código de método de pago. Lo decide el servidor (`GET /marketplace/checkout-options`):
+ * `WOMPI` con el proveedor real, `SIMULATED_*` solo en desarrollo.
+ */
+export type PaymentMethodCode = string
 
-/** Semilla `payment_methods` de init.sql. No hay endpoint de métodos en el MVP. */
-export const PAYMENT_METHODS: ReadonlyArray<{ code: PaymentMethodCode; name: string; hint: string }> = [
-  { code: 'SIMULATED_CARD', name: 'Tarjeta simulada', hint: 'Pago inmediato con una tarjeta de demostración.' },
-  { code: 'SIMULATED_TRANSFER', name: 'Transferencia simulada', hint: 'Transferencia bancaria de demostración.' },
-  { code: 'SIMULATED_CASH', name: 'Efectivo simulado', hint: 'Pago en efectivo de demostración.' },
-]
+export type PaymentProviderCode = 'SIMULATED' | 'WOMPI'
+
+/** GET /api/v1/marketplace/checkout-options (`docs/api/payments-wompi.md` §1). */
+export interface CheckoutOptionsDto {
+  provider: PaymentProviderCode
+  /** `SANDBOX` | `PRODUCTION` con WOMPI; `null` con SIMULATED. */
+  environment: string | null
+  methods: Array<{ code: PaymentMethodCode; name: string }>
+}
 
 export type SimulatedOutcome = 'APPROVED' | 'REJECTED'
 
@@ -20,11 +27,50 @@ export interface PlaceOrderRequestDto {
   clientRequestId: string
   addressId: string
   paymentMethod: PaymentMethodCode
-  simulatedOutcome?: SimulatedOutcome
+  /** Solo con el proveedor SIMULATED; con WOMPI se envía `null`. */
+  simulatedOutcome?: SimulatedOutcome | null
   items: Array<{ productId: string; branchId: string; quantity: number }>
 }
 
-/** Respuesta 201/200 (se tratan igual). */
+/** Respuesta 202 (o 200 si es repetición) con el proveedor WOMPI (`payments-wompi.md` §2.2). */
+export interface WompiCheckoutDto {
+  orderId: string
+  orderNumber: number
+  /** `AWAITING_PAYMENT` | `CONFIRMED` | `CANCELLED` | … */
+  status: string
+  payment: {
+    reference: string
+    amountInCents: number
+    currency: string
+    /** Enlace firmado del checkout de Wompi; `null` si el pedido ya no se puede pagar. No se modifica. */
+    checkoutUrl: string | null
+    expiresAt: string | null
+  }
+}
+
+/** Lo que devuelve `placeOrder`: el recibo (SIMULATED) o el enlace de pago (WOMPI). */
+export type PlaceOrderResult = { kind: 'receipt'; order: BuyerOrderDto } | { kind: 'redirect'; checkout: WompiCheckoutDto }
+
+/** Estado de Autopartco del pago de un pedido: el único que decide la interfaz. */
+export type OrderPaymentStatusCode = 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'EXPIRED'
+
+/** GET /api/v1/me/orders/{orderId}/payment y POST …/payment/sync (§3 y §4). */
+export interface OrderPaymentDto {
+  orderId: string
+  reference: string
+  status: OrderPaymentStatusCode | (string & {})
+  /** Estado crudo de Wompi; solo para soporte. */
+  providerStatus: string | null
+  orderStatus: string
+  amountInCents: number
+  currency: string
+  /** Solo existe mientras el pedido se puede pagar. */
+  checkoutUrl: string | null
+  expiresAt: string | null
+  paidAt: string | null
+}
+
+/** Respuesta 201/200 con el proveedor SIMULATED (se tratan igual). */
 export interface BuyerOrderDto {
   orderId: string
   orderNumber: number
@@ -152,8 +198,14 @@ export interface CartLine {
 export interface CheckoutService {
   /** `true` con la fuente `mock`: no se cobra ni se crea ningún pedido real. */
   readonly simulated: boolean
-  /** Lanza `ApiError` (ver §2.4 del plan para los códigos). */
-  placeOrder(input: PlaceOrderRequestDto): Promise<BuyerOrderDto>
+  /** Proveedor activo y métodos de pago. */
+  options(): Promise<CheckoutOptionsDto>
+  /** Lanza `ApiError` (códigos en `docs/api/payments-wompi.md` §2.3). */
+  placeOrder(input: PlaceOrderRequestDto): Promise<PlaceOrderResult>
+  /** Lanza `ApiError` 404 `ORDER_NOT_FOUND` si no existe o es ajeno. */
+  paymentStatus(orderId: string): Promise<OrderPaymentDto>
+  /** Pide al servidor consultar la transacción en Wompi (§4). 429 `PAYMENT_SYNC_RATE_LIMITED` si se abusa. */
+  syncPayment(orderId: string, transactionId: string): Promise<OrderPaymentDto>
 }
 
 export interface AddressService {

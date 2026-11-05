@@ -62,10 +62,11 @@ export const router = createBrowserRouter([
           { path: 'categoria/:slug', element: <CategoryPage /> },
           { path: 'producto/:id', element: <ProductPage /> },
           { path: 'tiendas', element: <StoresPage /> },
-          // Carrito (localStorage) y pago simulado (POST /marketplace/orders).
+          // Carrito (localStorage) y pago (POST /marketplace/orders; Wompi o SIMULATED en desarrollo).
           { path: 'carrito', element: <CartPage /> },
           { path: 'checkout', element: <CheckoutPage /> },
-          { path: 'pedido/:id/resultado', element: <OrderResultPage /> },
+          // Vuelta de Wompi (`?id=&env=`): exige sesión y consulta el estado al servidor; sin sesión vuelve aquí con los parámetros.
+          { path: 'pedido/:id/resultado', element: <RequireSession fallback={<PageFallback />}><OrderResultPage /></RequireSession> },
           // Mis pedidos (GET /me/orders): exigen sesión; el servidor solo devuelve los del titular.
           { path: 'mis-pedidos', element: <RequireSession fallback={<PageFallback />}><OrdersPage /></RequireSession> },
           { path: 'mis-pedidos/:id', element: <RequireSession fallback={<PageFallback />}><OrderDetailPage /></RequireSession> },

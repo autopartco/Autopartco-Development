@@ -1,6 +1,9 @@
 import type { ReactNode } from 'react'
 import { Link, useParams } from 'react-router'
-import { PackageSearchIcon, StoreIcon } from 'lucide-react'
+import { ClockIcon, InfoIcon, PackageSearchIcon, StoreIcon } from 'lucide-react'
+import { getCheckoutService } from '@/features/checkout/api/checkout-service'
+import { formatPaymentDeadline, isSafeCheckoutUrl } from '@/features/checkout/lib/order-payment'
+import { orderResultPath } from '@/features/checkout/lib/paths'
 import { Container, PageIntro } from '@/components/common/page-header'
 import { EmptyState, ErrorState } from '@/components/common/states'
 import { Button } from '@/components/ui/button'
@@ -12,7 +15,7 @@ import { formatCOP } from '@/lib/format'
 import { useAsync } from '@/lib/use-async'
 import { getOrdersService } from '../api/orders-service'
 import { SaleTracking } from '../components/sale-tracking'
-import { orderStatus, ordersPath } from '../lib/labels'
+import { buyerOrderStatus, isUnpaidOrder, orderStatus, ordersPath } from '../lib/labels'
 
 const CARD = 'flex flex-col gap-4 rounded-2xl bg-card p-5 shadow-[0_0_0_1px_rgb(0_0_0/0.07),0_18px_40px_-28px_rgb(23_27_32/0.35)]'
 
@@ -53,7 +56,8 @@ export default function OrderDetailPage() {
     )
   }
 
-  const status = orderStatus(order.status)
+  const status = buyerOrderStatus(order.status)
+  const unpaid = isUnpaidOrder(order.status)
   return (
     <Container className="py-6 sm:py-8">
       <title>{`Pedido #${order.orderNumber} | Autopartco`}</title>
@@ -64,6 +68,8 @@ export default function OrderDetailPage() {
       >
         <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
       </PageIntro>
+
+      {unpaid ? <UnpaidOrderNotice orderId={order.orderId} orderStatus={order.status} /> : null}
 
       <div className="grid items-start gap-8 lg:grid-cols-[1fr_22rem]">
         <div className="flex flex-col gap-4">
@@ -82,7 +88,7 @@ export default function OrderDetailPage() {
                           <p className="text-sm text-muted-foreground">{sale.branchName}</p>
                         </div>
                       </div>
-                      <StatusBadge tone={saleStatus.tone}>{saleStatus.label}</StatusBadge>
+                      {unpaid ? null : <StatusBadge tone={saleStatus.tone}>{saleStatus.label}</StatusBadge>}
                     </header>
 
                     <ul className="flex flex-col divide-y divide-border">
@@ -106,10 +112,12 @@ export default function OrderDetailPage() {
                       <Row label="Total de esta tienda" value={formatCOP(sale.total)} strong />
                     </dl>
 
-                    <div className="border-t border-border pt-4">
-                      <h4 className="mb-3 text-sm font-semibold">Envío</h4>
-                      <SaleTracking shipment={sale.shipment} />
-                    </div>
+                    {unpaid ? null : (
+                      <div className="border-t border-border pt-4">
+                        <h4 className="mb-3 text-sm font-semibold">Envío</h4>
+                        <SaleTracking shipment={sale.shipment} />
+                      </div>
+                    )}
                   </section>
                 </li>
               )
@@ -147,6 +155,54 @@ export default function OrderDetailPage() {
         </aside>
       </div>
     </Container>
+  )
+}
+
+/**
+ * Aviso de un pedido sin pago aprobado (§7). El texto de un `CANCELLED` depende del pago
+ * (`GET /me/orders/{id}/payment`): vencido o aprobado tarde. Si la consulta falla, se usa el del vencimiento.
+ */
+function UnpaidOrderNotice({ orderId, orderStatus: code }: { orderId: string; orderStatus: string }) {
+  const payment = useAsync(`portal:buyer-order-payment:${orderId}`, async () => (await getCheckoutService()).paymentStatus(orderId))
+  const data = payment.status === 'success' ? payment.data : undefined
+  const checkoutUrl = isSafeCheckoutUrl(data?.checkoutUrl) ? data.checkoutUrl : undefined
+
+  if (code === 'AWAITING_PAYMENT') {
+    const deadline = formatPaymentDeadline(data?.expiresAt ?? null)
+    return (
+      <div role="status" aria-busy={payment.status === 'loading' || undefined} className="mb-6 flex flex-col gap-3 rounded-lg border border-stock-low/40 bg-stock-low/10 p-4 text-sm sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-2.5">
+          <ClockIcon className="mt-0.5 size-5 shrink-0 text-foreground/70" aria-hidden />
+          <p>
+            <strong className="font-semibold">Pago pendiente.</strong>{' '}
+            {deadline ? `Completa el pago antes de las ${deadline} para confirmar tu pedido.` : 'Completa el pago para confirmar tu pedido.'}
+          </p>
+        </div>
+        <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+          <Button variant="outline" className="h-11 bg-card px-4" nativeButton={false} render={<Link to={orderResultPath(orderId)} />}>
+            Ver estado del pago
+          </Button>
+          {checkoutUrl ? (
+            <Button className="h-11 px-4" onClick={() => window.location.assign(checkoutUrl)}>
+              Ir a pagar
+            </Button>
+          ) : null}
+        </div>
+      </div>
+    )
+  }
+
+  const late = data?.status === 'APPROVED'
+  return (
+    <div role="status" className="mb-6 flex items-start gap-2.5 rounded-lg bg-concrete p-4 text-sm">
+      <InfoIcon className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
+      <p>
+        <strong className="font-semibold">Cancelado: pago no completado.</strong>{' '}
+        {late
+          ? 'Recibimos tu pago después de cancelar el pedido. Te contactaremos para devolverte el dinero.'
+          : 'No recibimos el pago a tiempo y liberamos los repuestos. No se hizo ningún cobro.'}
+      </p>
+    </div>
   )
 }
 

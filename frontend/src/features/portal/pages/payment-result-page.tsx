@@ -1,7 +1,8 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { ReceiptTextIcon, RotateCwIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { ApiError } from '@/lib/api'
 import { formatCOP } from '@/lib/format'
 import { invalidateAsync } from '@/lib/use-async'
 import { getSubscriptionService } from '../api/subscription-service'
@@ -13,9 +14,11 @@ import { PortalHeader } from '../layout/portal-header'
 import { formatDate } from '../lib/labels'
 import { clearPendingCheckout, loadPendingCheckout, type PendingCheckout } from '../lib/pending-checkout'
 
-/** Cada cuánto se consulta el estado y cuánto se espera al webhook de Wompi antes de rendirse. */
-const POLL_INTERVAL_MS = 3_000
+/** Cada 3 s al principio y luego más espaciado, durante 60 s como máximo (§6). */
 const POLL_TIMEOUT_MS = 60_000
+const pollDelay = (attempt: number) => (attempt < 5 ? 3_000 : Math.min(3_000 * 1.5 ** (attempt - 4), 8_000))
+/** Errores seguidos de red o del servidor que se toleran antes de mostrar el error. */
+const MAX_FAILURES = 3
 
 /** Estados finales de `WompiWebhookProcessor`; cualquier otro (o ninguno) se sigue esperando. */
 type FailedStatus = 'DECLINED' | 'ERROR' | 'VOIDED'
@@ -32,7 +35,7 @@ type Phase =
 function safeTransactionId(value: string | null): string | undefined {
   if (!value) return undefined
   const trimmed = value.trim()
-  return /^[\w-]{1,64}$/.test(trimmed) ? trimmed : undefined
+  return /^[A-Za-z0-9-]{1,64}$/.test(trimmed) ? trimmed : undefined
 }
 
 function storePath(storeId: string, section: string): string {
@@ -43,55 +46,96 @@ function monthsLabel(months: number): string {
   return months === 1 ? '1 mes' : `${months} meses`
 }
 
+const isCode = (error: unknown, code: string) => error instanceof ApiError && error.code === code
+
 /**
- * Consulta los pagos del almacén cada 3 s hasta encontrar la referencia en un estado final o
- * cumplir 60 s. El estado lo decide el servidor (webhook de Wompi), nunca la redirección.
+ * Con `id` de Wompi, sincroniza una vez por ronda (`POST …/payments/{reference}/sync`; tras un 429 ya
+ * no); luego consulta `GET …/payments/{reference}` hasta un estado final o 60 s (`payments-wompi.md` §5 y §6).
+ * El estado lo decide el servidor, nunca la redirección.
  */
-function usePaymentStatus(checkout: PendingCheckout, round: number): Phase {
+function usePaymentStatus(checkout: PendingCheckout, transactionId: string | undefined, round: number): Phase {
   // El resultado se guarda con su ronda: al pedir "Volver a verificar" se ve "verificando" de inmediato.
   const [result, setResult] = useState<{ round: number; phase: Phase }>()
+  const rateLimited = useRef(false)
 
   useEffect(() => {
     let active = true
     let timer: number | undefined
     const deadline = Date.now() + POLL_TIMEOUT_MS
+    let attempt = 0
+    let failures = 0
     const settle = (phase: Phase) => {
       if (active) setResult({ round, phase })
     }
-
-    async function check() {
-      try {
-        const payments = await (await getSubscriptionService()).payments(checkout.storeId)
-        if (!active) return
-        const payment = payments.find((candidate) => candidate.reference === checkout.reference)
-        if (payment?.status === 'APPROVED') {
-          clearPendingCheckout()
-          // La suscripción y los almacenes cambiaron: las pantallas del portal recargan al volver.
-          invalidateAsync(`portal:${checkout.storeId}:`)
-          invalidateAsync('portal:stores')
-          settle({ kind: 'approved', payment })
-          return
-        }
-        if (payment && FAILED_STATUSES.includes(payment.status)) {
-          settle({ kind: 'failed', payment, status: payment.status as FailedStatus })
-          return
-        }
-        if (Date.now() + POLL_INTERVAL_MS > deadline) {
-          settle({ kind: 'timeout' })
-          return
-        }
-        timer = window.setTimeout(() => void check(), POLL_INTERVAL_MS)
-      } catch (error) {
-        settle({ kind: 'error', error })
+    /** `true` si el pago ya es final y no hay que seguir consultando. */
+    const apply = (payment: SubscriptionPayment): boolean => {
+      if (payment.status === 'APPROVED') {
+        clearPendingCheckout()
+        // La suscripción y los almacenes cambiaron: las pantallas del portal recargan al volver.
+        invalidateAsync(`portal:${checkout.storeId}:`)
+        invalidateAsync('portal:stores')
+        settle({ kind: 'approved', payment })
+        return true
       }
+      if (FAILED_STATUSES.includes(payment.status)) {
+        settle({ kind: 'failed', payment, status: payment.status as FailedStatus })
+        return true
+      }
+      return false
+    }
+    /** 403 (no es OWNER) y 404 (referencia de otro almacén) terminan el ciclo. */
+    const fatal = (error: unknown): boolean => {
+      if (error instanceof ApiError && (error.status === 403 || error.status === 404 || error.status === 401) && !isCode(error, 'PAYMENT_TRANSACTION_NOT_FOUND')) {
+        settle({ kind: 'error', error })
+        return true
+      }
+      return false
     }
 
-    void check()
+    async function poll() {
+      try {
+        const payment = await (await getSubscriptionService()).payment(checkout.storeId, checkout.reference)
+        if (!active) return
+        failures = 0
+        if (apply(payment)) return
+      } catch (error) {
+        if (!active || fatal(error)) return
+        failures += 1
+        if (failures >= MAX_FAILURES) {
+          settle({ kind: 'error', error })
+          return
+        }
+      }
+      const delay = pollDelay(attempt++)
+      if (Date.now() + delay > deadline) {
+        settle({ kind: 'timeout' })
+        return
+      }
+      timer = window.setTimeout(() => void poll(), delay)
+    }
+
+    async function start() {
+      if (transactionId && !rateLimited.current) {
+        try {
+          const payment = await (await getSubscriptionService()).syncPayment(checkout.storeId, checkout.reference, transactionId)
+          if (!active) return
+          if (apply(payment)) return
+        } catch (error) {
+          if (!active) return
+          // 429: se sigue solo con el GET. 404 de transacción, 409 de referencia, 400 o red: el GET dice el estado real.
+          if (isCode(error, 'PAYMENT_SYNC_RATE_LIMITED')) rateLimited.current = true
+          else if (fatal(error)) return
+        }
+      }
+      void poll()
+    }
+
+    void start()
     return () => {
       active = false
       window.clearTimeout(timer)
     }
-  }, [checkout, round])
+  }, [checkout, transactionId, round])
 
   return result && result.round === round ? result.phase : { kind: 'checking' }
 }
@@ -173,7 +217,7 @@ const BUTTON = 'h-11 w-full px-5 sm:w-auto'
 
 function PendingResult({ checkout, transactionId }: { checkout: PendingCheckout; transactionId?: string }) {
   const [round, setRound] = useState(0)
-  const phase = usePaymentStatus(checkout, round)
+  const phase = usePaymentStatus(checkout, transactionId, round)
   const view = viewOf(phase, checkout)
   const planPath = storePath(checkout.storeId, 'plan')
 
@@ -329,7 +373,6 @@ export default function PaymentResultPage() {
   const [params] = useSearchParams()
   const [checkout] = useState(loadPendingCheckout)
   const transactionId = safeTransactionId(params.get('id'))
-  const testMode = params.get('env') === 'test'
 
   return (
     <div className="min-h-svh bg-background">
@@ -351,7 +394,6 @@ export default function PaymentResultPage() {
             </Actions>
           </ResultCard>
         )}
-        {testMode ? <p className="mt-4 text-center text-xs text-muted-foreground">Transacción en el entorno de pruebas de Wompi: no se cobra dinero real.</p> : null}
       </main>
     </div>
   )
