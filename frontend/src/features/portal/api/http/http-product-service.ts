@@ -2,6 +2,7 @@ import { apiRequest } from '@/lib/api'
 import type { ProductService } from '../product-service'
 import type {
   ManufacturerMatch,
+  ProductBulkResult,
   ProductImage,
   ProductOptions,
   ProductRow,
@@ -38,6 +39,16 @@ export function createHttpProductService(): ProductService {
       portalRequest<StoreManufacturer>(storePath(storeId, '/manufacturers'), { method: 'POST', body: input }),
     create: (storeId, input, images) =>
       portalRequest<ProductRow>(storePath(storeId, '/products'), { method: 'POST', body: productForm(input, 'images', images) }),
+    async addListing(storeId, productId, input) {
+      await portalRequest(storePath(storeId, `/products/${encodeURIComponent(productId)}/listings`), { method: 'POST', body: input })
+    },
+    async removeListing(storeId, productId, branchId) {
+      await portalRequest(
+        storePath(storeId, `/products/${encodeURIComponent(productId)}/listings/${encodeURIComponent(branchId)}`),
+        { method: 'DELETE' },
+      )
+    },
+    bulk: (storeId, input) => portalRequest<ProductBulkResult>(storePath(storeId, '/products/bulk'), { method: 'POST', body: input }),
     update: (storeId, branchId, productId, input, newImages) =>
       portalRequest<ProductRow>(
         storePath(storeId, `/branches/${encodeURIComponent(branchId)}/products/${encodeURIComponent(productId)}`),

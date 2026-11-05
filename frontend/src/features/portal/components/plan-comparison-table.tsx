@@ -1,7 +1,7 @@
 import { CheckIcon, ClockIcon, MinusIcon } from 'lucide-react'
 import { formatNumber } from '@/lib/format'
 import type { Plan } from '../api/types'
-import { capabilityInfo, CAPABILITY_CATALOG, planLimits } from '../lib/plan-capabilities'
+import { capabilityInfo, CAPABILITY_CATALOG, planIncludes, planLimits } from '../lib/plan-capabilities'
 
 function limitCell(value: number | null): string {
   return value === null ? 'Ilimitado' : formatNumber(value)
@@ -65,7 +65,7 @@ export function PlanComparisonTable({ plans, currentCode }: { plans: Plan[]; cur
                     {info.status === 'COMING_SOON' ? <span className="block text-xs font-normal text-muted-foreground">Próximamente</span> : null}
                   </th>
                   {plans.map((plan) => {
-                    const listed = plan.capabilities.includes(key)
+                    const listed = planIncludes(plan, key)
                     return (
                       <td key={plan.id} className="p-3">
                         {!listed ? (
