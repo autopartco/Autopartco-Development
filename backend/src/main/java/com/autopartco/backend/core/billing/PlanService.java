@@ -173,15 +173,6 @@ public class PlanService {
                 plan.setMaxUsers(1);
                 plan.setCapabilities(List.of("BASIC_ANALYTICS"));
             }
-            case "BUSINESS" -> {
-                plan.setMaxBranches(5);
-                plan.setMaxProducts(5000);
-                plan.setMaxUsers(10);
-                plan.setCapabilities(List.of(
-                        "BASIC_ANALYTICS", "ADVANCED_REPORTS", "PROMOTIONS", "CSV_IMPORT",
-                        "WHATSAPP_NOTIFICATIONS", "INTEGRATIONS", "CUSTOM_ROLES"
-                ));
-            }
             case "ENTERPRISE" -> {
                 plan.setMaxBranches(null);
                 plan.setMaxProducts(null);

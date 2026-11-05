@@ -1,5 +1,6 @@
 import type { ComponentType } from 'react'
 import {
+  BrainCircuitIcon,
   Building2Icon,
   ClipboardListIcon,
   CreditCardIcon,
@@ -14,7 +15,7 @@ import {
 import type { StorePermission } from '../api/types'
 
 /** Secciones del portal (segmento de ruta tras `/portal/:storeId/`). */
-export const PORTAL_SECTIONS = ['inicio', 'ventas', 'productos', 'inventario', 'pedidos', 'sucursales', 'equipo', 'tienda', 'plan'] as const
+export const PORTAL_SECTIONS = ['inicio', 'ventas', 'productos', 'inventario', 'inteligencia', 'pedidos', 'sucursales', 'equipo', 'tienda', 'plan'] as const
 
 /** Sección actual a partir de la URL, para conservarla al cambiar de tienda. */
 export function sectionOf(pathname: string): string {
@@ -49,6 +50,7 @@ export const PORTAL_SECTION_GROUPS: PortalSectionGroup[] = [
       { to: 'ventas', label: 'Ventas', icon: LineChartIcon, permission: 'ORDER_READ', keywords: 'ingresos analitica metricas' },
       { to: 'productos', label: 'Productos', icon: PackageIcon, permission: 'PRODUCT_READ', keywords: 'catalogo repuestos' },
       { to: 'inventario', label: 'Inventario', icon: WarehouseIcon, permission: 'PRODUCT_READ', keywords: 'stock existencias' },
+      { to: 'inteligencia', label: 'Inteligencia', icon: BrainCircuitIcon, permission: 'ANALYTICS_READ', keywords: 'reportes clientes segmentos proyeccion abc analitica' },
       { to: 'pedidos', label: 'Pedidos', icon: ClipboardListIcon, permission: 'ORDER_READ', keywords: 'ventas envios' },
     ],
   },

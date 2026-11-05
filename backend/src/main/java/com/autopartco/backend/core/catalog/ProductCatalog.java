@@ -1,6 +1,7 @@
 package com.autopartco.backend.core.catalog;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,7 +55,8 @@ public class ProductCatalog {
     private final StoreManufacturers storeManufacturers;
 
     /**
-     * Alta atómica: producto, listado en la sucursal (del almacén y activa), fabricante nuevo si se indicó, reglas de
+     * Alta atómica: producto, un listado por sucursal (todas del almacén y activas, validadas antes de escribir; cada
+     * una con su {@code INITIAL_LOAD}), fabricante nuevo si se indicó, reglas de
      * vehículo, imágenes y, con {@code publish=true}, publicación. Si se pide publicar y falta algún requisito, 409
      * {@code PRODUCT_NOT_PUBLISHABLE} sin crear ni subir nada.
      */
@@ -67,7 +69,10 @@ public class ProductCatalog {
     ) {
         com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
         // Fase 1: validaciones y lecturas.
-        branchService.requireActiveInStore(storeId, request.branchId());
+        List<ProductCreateRequest.Listing> listings = request.effectiveListings();
+        for (ProductCreateRequest.Listing listing : listings) {
+            branchService.requireActiveInStore(storeId, listing.branchId());
+        }
         List<ValidatedImage> images = productImages.validateAll(files);
         String mainToken = null;
         if (request.mainImageIndex() != null) {
@@ -103,12 +108,14 @@ public class ProductCatalog {
                 .attributes(attributes)
                 .universal(request.universalRequested())
                 .build());
-        stockService.createListing(request.branchId(), saved.getId(), request.quantity(), request.price());
+        for (ProductCreateRequest.Listing listing : listings) {
+            stockService.createListing(listing.branchId(), saved.getId(), listing.quantity(), listing.price());
+        }
         vehicleRules.replace(saved.getId(), rules);
         if (!images.isEmpty()) {
             productImages.applyGallery(saved, gallery);
         }
-        return reloadListing(storeId, request.branchId(), saved.getId());
+        return reloadListing(storeId, listings.getFirst().branchId(), saved.getId());
     }
 
     /**
@@ -211,6 +218,61 @@ public class ProductCatalog {
         product.setState(findState(StateCodes.INACTIVE));
     }
 
+    /** Producto omitido en una acción masiva con el motivo ({@code code}). */
+    public record BulkSkip(UUID productId, String code) {
+    }
+
+    /**
+     * Publica los productos que cumplen los requisitos y devuelve los demás sin lanzar (una excepción dentro de la
+     * transacción del llamador la dejaría en solo reversión). {@code code}: {@code PRODUCT_NOT_FOUND} si no es del
+     * almacén o el primer requisito incumplido ({@link PublicationIssue}). Bloquea en orden de id.
+     */
+    @Transactional
+    public List<BulkSkip> publishMany(UUID storeId, Collection<UUID> productIds, boolean subscriptionActive) {
+        List<BulkSkip> skipped = new ArrayList<>();
+        State active = findState(StateCodes.ACTIVE);
+        for (UUID productId : productIds.stream().distinct().sorted().toList()) {
+            Product product = productRepository.lockOwned(storeId, productId).orElse(null);
+            if (product == null) {
+                skipped.add(new BulkSkip(productId, "PRODUCT_NOT_FOUND"));
+                continue;
+            }
+            if (product.getState() != null && StateCodes.ACTIVE.equals(product.getState().getCode())) {
+                skipped.add(new BulkSkip(productId, "ALREADY_PUBLISHED"));
+                continue;
+            }
+            List<PublicationIssue> issues = publicationIssues(productImages.count(productId),
+                    product.isUniversal() || !vehicleRules.forProduct(productId).isEmpty(),
+                    currentManufacturerUsable(storeId, product), subscriptionActive);
+            if (!issues.isEmpty()) {
+                skipped.add(new BulkSkip(productId, issues.getFirst().code()));
+                continue;
+            }
+            product.setState(active);
+        }
+        return skipped;
+    }
+
+    /** Retira los productos del almacén; devuelve como omitidos ({@code PRODUCT_NOT_FOUND}) los que no son suyos. */
+    @Transactional
+    public List<BulkSkip> unpublishMany(UUID storeId, Collection<UUID> productIds) {
+        List<BulkSkip> skipped = new ArrayList<>();
+        State inactive = findState(StateCodes.INACTIVE);
+        for (UUID productId : productIds.stream().distinct().sorted().toList()) {
+            Product product = productRepository.lockOwned(storeId, productId).orElse(null);
+            if (product == null) {
+                skipped.add(new BulkSkip(productId, "PRODUCT_NOT_FOUND"));
+                continue;
+            }
+            if (product.getState() != null && StateCodes.INACTIVE.equals(product.getState().getCode())) {
+                skipped.add(new BulkSkip(productId, "ALREADY_UNPUBLISHED"));
+                continue;
+            }
+            product.setState(inactive);
+        }
+        return skipped;
+    }
+
     /** Bloquea ({@code FOR UPDATE}) el producto del almacén; si no existe, {@code PRODUCT_NOT_FOUND}. */
     @Transactional
     public void requireOwnedForUpdate(UUID storeId, UUID productId) {
@@ -276,15 +338,22 @@ public class ProductCatalog {
      */
     static void requirePublishable(long imageCount, boolean vehiclesOk, boolean manufacturerUsable,
             boolean subscriptionActive) {
+        List<PublicationIssue> issues = publicationIssues(imageCount, vehiclesOk, manufacturerUsable,
+                subscriptionActive);
+        if (!issues.isEmpty()) {
+            throw new ConflictException("PRODUCT_NOT_PUBLISHABLE",
+                    "El repuesto no cumple los requisitos para publicarse.", issues);
+        }
+    }
+
+    private static List<PublicationIssue> publicationIssues(long imageCount, boolean vehiclesOk,
+            boolean manufacturerUsable, boolean subscriptionActive) {
         List<PublicationIssue> issues = new ArrayList<>();
         if (imageCount < 1) issues.add(PublicationIssue.noImages());
         if (!vehiclesOk) issues.add(PublicationIssue.noVehicles());
         if (!manufacturerUsable) issues.add(PublicationIssue.manufacturerInvalid());
         if (!subscriptionActive) issues.add(PublicationIssue.subscriptionInactive());
-        if (!issues.isEmpty()) {
-            throw new ConflictException("PRODUCT_NOT_PUBLISHABLE",
-                    "El repuesto no cumple los requisitos para publicarse.", issues);
-        }
+        return issues;
     }
 
     /** Un producto universal no lleva reglas de vehículo: 400 {@code VALIDATION_ERROR} con detalle en {@code vehicleRules}. */

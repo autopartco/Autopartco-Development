@@ -57,8 +57,11 @@ export type StorePermission =
   | 'PRODUCT_PUBLISH'
   | 'PRODUCT_DELETE'
   | 'PRODUCT_IMAGE_MANAGE'
+  | 'INVENTORY_ADJUST'
+  | 'INVENTORY_TRANSFER'
   | 'PROMOTION_READ'
   | 'ORDER_READ'
+  | 'ANALYTICS_READ'
   | 'ORDER_UPDATE'
   | 'SHIPMENT_UPDATE'
   | 'COLLABORATOR_READ'
@@ -275,6 +278,48 @@ export interface ProductRow {
   universal: boolean
   vehicleRules: VehicleRule[]
   images: ProductImage[]
+  /** Umbral de stock bajo del listado si el servidor lo envía; sin él se usa `DEFAULT_MIN_STOCK`. */
+  minStock?: number | null
+}
+
+/** Umbral de stock bajo cuando el listado no tiene uno propio (igual que el servidor). */
+export const DEFAULT_MIN_STOCK = 3
+
+/** Listado inicial del alta multi-sucursal: sin `price`, toma el precio general del producto. */
+export interface ProductListingInput {
+  branchId: string
+  quantity: number
+  price?: number
+}
+
+/** `ProductListingRequest` de `POST …/products/{productId}/listings`. */
+export interface ProductListingAddInput {
+  branchId: string
+  price: number
+  stock: number
+}
+
+export type ProductBulkAction = 'PUBLISH' | 'UNPUBLISH' | 'DELETE' | 'PRICE'
+export type ProductBulkPriceMode = 'PERCENT' | 'AMOUNT'
+
+/**
+ * `POST /stores/{id}/products/bulk` (1 a 500 productos). `PRICE` exige `branchId`, `priceMode` y `value`:
+ * `PERCENT` es una variación con signo (-90 a +500; negativo baja) y `AMOUNT` es el nuevo precio absoluto
+ * en pesos (> 0). Atómico: 404 `LISTING_NOT_FOUND` si algún producto no está en la sucursal,
+ * 400 `INVALID_PRICE_VALUE` / `INVALID_PRICE` si el valor o el precio resultante no es válido.
+ */
+export interface ProductBulkInput {
+  productIds: string[]
+  action: ProductBulkAction
+  branchId?: string
+  priceMode?: ProductBulkPriceMode
+  value?: number
+}
+
+/** Resultado de la acción masiva: `skipped` lista los productos que no se tocaron y por qué. */
+export interface ProductBulkResult {
+  affected: number
+  skipped: { productId: string; code: string }[]
 }
 
 /** `ProductOptionsResponse` (`GET /marketplace/product-options`, público). */
@@ -307,13 +352,16 @@ export interface ManufacturerCreateInput {
  * `newManufacturerName`. Las imágenes viajan aparte (`images`, orden = orden de galería).
  */
 export interface ProductCreateInput {
-  branchId: string
+  /** Alta en una sucursal: `branchId` + `quantity`. Para varias, usa `listings` (uno u otro). */
+  branchId?: string
   name: string
   sku?: string
   partNumber?: string
   description: string
   price: number
-  quantity: number
+  quantity?: number
+  /** Una entrada por sucursal, sin repetir (1 a número de sucursales). */
+  listings?: ProductListingInput[]
   categoryId: string
   manufacturerId?: string
   newManufacturerName?: string
@@ -578,4 +626,149 @@ export interface SalesAnalytics {
   /** Embudo acumulado: cada etapa cuenta los pedidos que la alcanzaron (sin cancelados/rechazados). */
   funnel: { stage: SalesFunnelStage; count: number }[]
   cancelled: number
+}
+
+// ------------------------------------------------------------ inventario
+
+/** `PageResponse`: páginas desde 1. */
+export interface Page<T> {
+  items: T[]
+  page: number
+  size: number
+  total: number
+  totalPages: number
+}
+
+/** `MovementReasonResponse`: solo motivos ajustables. `direction` limita el sentido del ajuste. */
+export interface MovementReason {
+  code: string
+  label: string
+  direction: 'IN' | 'OUT' | 'ANY'
+}
+
+export type AdjustmentMode = 'SET' | 'DELTA'
+
+/**
+ * `POST /stores/{id}/inventory/adjustments` (permiso `INVENTORY_ADJUST`). `SET`: `quantity` es el nuevo stock (>= 0).
+ * `DELTA`: se suma o resta (distinto de 0). Errores: 400 `REASON_DIRECTION`, `INVALID_REASON`, `INVALID_QUANTITY`,
+ * `NO_CHANGES`; 404 `LISTING_NOT_FOUND`; 409 `INSUFFICIENT_STOCK`.
+ */
+export interface StockAdjustmentInput {
+  branchId: string
+  productId: string
+  mode: AdjustmentMode
+  quantity: number
+  reasonCode: string
+  notes?: string
+}
+
+/** `MovementResponse`. `actorName` es nulo si el actor ya no existe o fue el sistema. */
+export interface StockMovement {
+  id: string
+  occurredAt: string
+  branchId: string
+  branchName: string
+  productId: string
+  productName: string
+  sku: string | null
+  movementType: 'IN' | 'OUT'
+  quantity: number
+  previousStock: number
+  newStock: number
+  reasonCode: string
+  reasonLabel: string
+  actorName: string | null
+  referenceType: string | null
+  referenceId: string | null
+  notes: string | null
+}
+
+/** `GET /inventory/movements`: `from` y `to` en ISO 8601 con zona; `page` desde 1, `size` hasta 100. */
+export interface MovementQuery {
+  branchId?: string
+  productId?: string
+  reasonCode?: string
+  from?: string
+  to?: string
+  page: number
+  size: number
+}
+
+/** `LowStockResponse`: `minStock` ya es el umbral efectivo (3 si el listado no tiene uno propio). */
+export interface LowStockItem {
+  productId: string
+  productName: string
+  sku: string | null
+  branchId: string
+  branchName: string
+  stock: number
+  minStock: number
+}
+
+export type TransferMode = 'ALL' | 'ITEMS'
+
+/**
+ * `POST /stores/{id}/inventory/transfers` (permiso `INVENTORY_TRANSFER`). `ALL` no lleva `items`; `ITEMS` lleva 1 a 500
+ * productos sin repetir. `idempotencyKey` (letras, números y `. _ : -`, hasta 120): una por intento, repetida devuelve
+ * la transferencia ya hecha.
+ */
+export interface TransferInput {
+  fromBranchId: string
+  toBranchId: string
+  mode: TransferMode
+  items?: { productId: string; quantity: number }[]
+  notes?: string
+  idempotencyKey: string
+}
+
+/** `TransferResponse.Item`: `fromStock` / `toStock` son las existencias tras transferir. */
+export interface StockTransferItem {
+  productId: string
+  productName: string
+  quantity: number
+  fromStock: number
+  toStock: number
+}
+
+/** `TransferSummary`: fila del historial. */
+export interface StockTransferSummary {
+  id: string
+  fromBranchId: string
+  fromBranchName: string
+  toBranchId: string
+  toBranchName: string
+  mode: TransferMode
+  totalUnits: number
+  itemCount: number
+  notes: string | null
+  actorName: string | null
+  createdAt: string
+}
+
+/** `TransferResponse`. */
+export interface StockTransfer extends StockTransferSummary {
+  items: StockTransferItem[]
+}
+
+/** Fila con error de la importación CSV (`line` es la línea del archivo). */
+export interface CsvImportError {
+  line: number
+  code: string
+  message: string
+}
+
+/**
+ * `POST /inventory/import?dryRun=`. `updated`: filas con algún cambio (las que se aplicarían en la simulación).
+ * Con errores y `dryRun=false` no se aplica nada.
+ */
+export interface CsvImportResult {
+  rows: number
+  updated: number
+  errors: CsvImportError[]
+}
+
+/** Archivo descargado del servidor. */
+export interface DownloadedFile {
+  blob: Blob
+  filename: string
 }

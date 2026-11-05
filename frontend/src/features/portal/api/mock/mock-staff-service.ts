@@ -13,6 +13,7 @@ const PERMISSION_OPTIONS: PermissionOption[] = [
   { code: 'ORDER_UPDATE', description: 'Cambiar el estado de los pedidos' },
   { code: 'SHIPMENT_UPDATE', description: 'Registrar y actualizar envíos' },
   { code: 'BRANCH_READ', description: 'Ver sucursales' },
+  { code: 'ANALYTICS_READ', description: 'Ver reportes e inteligencia comercial' },
 ]
 
 function notFound(): ApiError {

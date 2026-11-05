@@ -22,6 +22,8 @@ import type { ProductCreateInput, ProductOptions, ProductRow, ProductUpdateInput
 import { ConfirmDialog } from '../components/confirm-dialog'
 import { CopField } from '../components/cop-field'
 import { SelectField, TextAreaField } from '../components/form-controls'
+import { CreateListingsEditor, ListingsManager } from '../components/product-listings'
+import { listingsError, newListingDraft, type ListingDraft } from '../lib/product-listings'
 import { ListSkeleton } from '../components/list-skeleton'
 import { ManufacturerCombobox, type ManufacturerChoice } from '../components/manufacturer-combobox'
 import { PageHeader } from '../components/page-header'
@@ -57,6 +59,8 @@ interface Values {
   vehicleRules: VehicleRule[]
   gallery: GalleryItem[]
   mainKey: string
+  /** Solo en el alta: sucursales con existencias y precio opcional. En la edición va vacío. */
+  listings: ListingDraft[]
 }
 type Field = keyof Values
 
@@ -68,7 +72,7 @@ interface StepDef {
 const STEPS: StepDef[] = [
   { id: 'producto', label: 'Producto', fields: ['name', 'manufacturerId', 'categoryId', 'description', 'sku', 'partNumber'] },
   { id: 'vehiculos', label: 'Vehículos', fields: ['vehicleRules'] },
-  { id: 'precio', label: 'Precio y stock', fields: ['branchId', 'price', 'quantity'] },
+  { id: 'precio', label: 'Precio y stock', fields: ['branchId', 'price', 'quantity', 'listings'] },
   { id: 'imagenes', label: 'Imágenes', fields: ['gallery'] },
   { id: 'revision', label: 'Revisión', fields: [] },
 ]
@@ -96,11 +100,14 @@ function valuesFrom(row: ProductRow | undefined, branchId: string): Values {
     vehicleRules: row?.vehicleRules ?? [],
     gallery: row ? galleryFrom(row.images) : [],
     mainKey: row ? mainKeyFrom(row.images) : '',
+    listings: row ? [] : [newListingDraft(branchId)],
   }
 }
 
 /** Mismas reglas que `ProductCreateRequest` para guardar un borrador; el servidor las vuelve a comprobar. */
-function validate(values: Values): FieldErrors {
+const validatorFor = (mode: 'create' | 'edit') => (values: Values) => validate(values, mode)
+
+function validate(values: Values, mode: 'create' | 'edit'): FieldErrors {
   const errors: FieldErrors = {}
   if (!values.name.trim()) errors.name = 'Escribe el nombre del producto.'
   else if (values.name.trim().length > 200) errors.name = 'El nombre no puede superar 200 caracteres.'
@@ -111,16 +118,22 @@ function validate(values: Values): FieldErrors {
   if (!values.manufacturerId && !newName) errors.manufacturerId = 'Elige el fabricante o agrega uno nuevo.'
   else if (!values.manufacturerId && (newName.length < 2 || newName.length > 100)) errors.manufacturerId = 'El nombre del fabricante debe tener entre 2 y 100 caracteres.'
   if (!values.categoryId) errors.categoryId = 'Elige la categoría.'
-  if (!values.branchId) errors.branchId = 'Elige la sucursal donde está el producto.'
   if (!values.price) errors.price = 'Escribe el precio en pesos.'
   else if (Number(values.price) < 1) errors.price = 'El precio debe ser mayor que 0.'
-  if (!values.quantity) errors.quantity = 'Escribe cuántas unidades tienes (0 si no hay).'
+  if (mode === 'create') {
+    const listings = listingsError(values.listings)
+    if (listings) errors.listings = listings
+  } else {
+    if (!values.branchId) errors.branchId = 'Elige la sucursal donde está el producto.'
+    if (!values.quantity) errors.quantity = 'Escribe cuántas unidades tienes (0 si no hay).'
+  }
   return errors
 }
 
 /** Campo del formulario al que apunta una clave de error del servidor (`details` por campo). */
-function fieldForServerKey(key: string): Field | undefined {
+function fieldForServerKey(key: string, mode: 'create' | 'edit'): Field | undefined {
   if (key.startsWith('vehicleRules')) return 'vehicleRules'
+  if (key.startsWith('listings') || (mode === 'create' && (key === 'branchId' || key === 'quantity'))) return 'listings'
   if (key === 'newManufacturerName' || key === 'manufacturerId') return 'manufacturerId'
   if (/^(images|newImages|mainImage|mainImageIndex|removeImageIds|imageOrder)/.test(key)) return 'gallery'
   return STEPS.some((step) => (step.fields as string[]).includes(key)) ? (key as Field) : undefined
@@ -161,12 +174,16 @@ function ProductForm({
   options,
   manufacturers: initialManufacturers,
   branches,
+  storeBranches,
 }: {
   mode: 'create' | 'edit'
   rows: ProductRow[]
   options: ProductOptions
   manufacturers: StoreManufacturer[]
+  /** Alta: sucursales activas. Edición: sucursales donde está el producto. */
   branches: { value: string; label: string }[]
+  /** Sucursales activas del almacén (para agregar el producto a otra en la edición). */
+  storeBranches: { value: string; label: string }[]
 }) {
   const { storeId, can, promptUpgrade, invalidateStore } = usePortal()
   const navigate = useNavigate()
@@ -174,7 +191,8 @@ function ProductForm({
   const first = rows[0]
 
   const [initial] = useState(() => valuesFrom(first, branches[0]?.value ?? ''))
-  const draft = useDraftForm<Values>({ initial, validate })
+  const [validateValues] = useState(() => validatorFor(mode))
+  const draft = useDraftForm<Values>({ initial, validate: validateValues })
   const { values } = draft
 
   const [step, setStep] = useState<StepId>('producto')
@@ -245,7 +263,7 @@ function ProductForm({
     const to = stepIndex(target)
     if (to === from) return
     if (mode === 'create' && to > from) {
-      const errors = validate(values)
+      const errors = validateValues(values)
       for (const def of STEPS.slice(from, to)) {
         const bad = checkStep(def, errors)
         markLeft([def.id])
@@ -317,6 +335,7 @@ function ProductForm({
         MANUFACTURER_PENDING_LIMIT: 'manufacturerId',
         MANUFACTURER_NAME_UNAVAILABLE: 'manufacturerId',
         PRODUCT_IMAGE_LIMIT_REACHED: 'gallery',
+        ...(mode === 'create' ? { BRANCH_NOT_FOUND: 'listings' as const } : {}),
       }
       const byCode = error.code ? fieldCodes[error.code] : undefined
       if (byCode) {
@@ -326,7 +345,7 @@ function ProductForm({
       }
       const mapped: FieldErrors = {}
       for (const [key, message] of Object.entries(error.fieldErrors)) {
-        const field = fieldForServerKey(key)
+        const field = fieldForServerKey(key, mode)
         if (field && !mapped[field]) mapped[field] = message
       }
       const firstField = STEPS.flatMap((def) => def.fields).find((field) => mapped[field])
@@ -360,14 +379,21 @@ function ProductForm({
     let job: Job
     if (mode === 'create') {
       const part = createImagePart(current.gallery, current.mainKey)
+      const listings = current.listings.map((listing) => ({
+        branchId: listing.branchId,
+        quantity: Number(listing.quantity),
+        ...(listing.price ? { price: Number(listing.price) } : {}),
+      }))
+      const only = listings[0]
+      // Una sola sucursal sin precio propio: forma clásica `branchId` + `quantity`; si no, `listings`.
+      const placement = listings.length === 1 && only && only.price === undefined ? { branchId: only.branchId, quantity: only.quantity } : { listings }
       const input: ProductCreateInput = {
-        branchId: current.branchId,
+        ...placement,
         name: current.name.trim(),
         sku: current.sku.trim() || undefined,
         partNumber: current.partNumber.trim() || undefined,
         description: current.description.trim(),
         price,
-        quantity,
         categoryId: current.categoryId,
         ...(current.manufacturerId ? { manufacturerId: current.manufacturerId } : { newManufacturerName: newName, ...(current.confirmNewManufacturer ? { confirmNewManufacturer: true } : {}) }),
         universal: current.universal,
@@ -445,6 +471,16 @@ function ProductForm({
     draft.patch({ manufacturerId: choice.id, newManufacturerName: choice.newName, confirmNewManufacturer: choice.confirmed })
   }
 
+  /** Alta: unidades totales entre sucursales, o `undefined` mientras falte alguna. */
+  const createdUnits = values.listings.length > 0 && values.listings.every((listing) => listing.quantity) ? values.listings.reduce((sum, listing) => sum + Number(listing.quantity), 0) : undefined
+
+  /** Si se quitó la sucursal que se está editando, pasa a otra donde siga el producto. */
+  function handleListingRemoved(branchId: string) {
+    if (values.branchId !== branchId) return
+    const other = rows.find((row) => row.branchId !== branchId)
+    if (other) changeBranch(other.branchId)
+  }
+
   const checklist = buildChecklist({
     images: values.gallery.length,
     rules: values.vehicleRules.length,
@@ -452,7 +488,7 @@ function ProductForm({
     hasManufacturer: Boolean(values.manufacturerId || values.newManufacturerName.trim()),
     price: values.price ? Number(values.price) : undefined,
     description: values.description,
-    quantity: values.quantity ? Number(values.quantity) : undefined,
+    quantity: mode === 'create' ? createdUnits : values.quantity ? Number(values.quantity) : undefined,
     subscriptionInactive: blockers.some((item) => item.code === 'SUBSCRIPTION_INACTIVE'),
   })
 
@@ -634,19 +670,43 @@ function ProductForm({
           </FormSection>
         )
       case 'precio':
+        if (mode === 'create') {
+          return (
+            <FormSection id="paso-precio" title="Precio y existencias" description="Elige en qué sucursales está el producto y cuántas unidades hay en cada una." disabled={busy}>
+              <CopField
+                id={fieldId('price')}
+                label="Precio"
+                value={values.price}
+                onChange={(digits) => draft.set('price', digits)}
+                onBlur={() => draft.touch('price')}
+                error={draft.errorFor('price')}
+                required
+                hint={branches.length > 1 ? 'Precio general en pesos colombianos, sin decimales. Puedes cambiarlo en cada sucursal.' : 'Precio de venta en pesos colombianos, sin decimales. Ej.: 85.000.'}
+              />
+              <CreateListingsEditor
+                id={fieldId('listings')}
+                listings={values.listings}
+                branches={branches}
+                onChange={(listings) => draft.set('listings', listings)}
+                onBlur={() => draft.touch('listings')}
+                error={draft.errorFor('listings')}
+                disabled={busy}
+              />
+            </FormSection>
+          )
+        }
         return (
           <FormSection id="paso-precio" title="Precio y existencias" description="Son propios de cada sucursal." disabled={busy}>
             {branches.length > 1 ? (
               <SelectField
                 id={fieldId('branchId')}
                 label="Sucursal"
-                placeholder={mode === 'create' ? 'Elige una sucursal' : undefined}
                 options={branches}
                 value={values.branchId}
-                onChange={(event) => (mode === 'edit' ? changeBranch(event.target.value) : draft.set('branchId', event.target.value))}
+                onChange={(event) => changeBranch(event.target.value)}
                 onBlur={() => draft.touch('branchId')}
                 error={draft.errorFor('branchId')}
-                hint={mode === 'edit' ? 'Al cambiar de sucursal verás su precio y sus existencias.' : 'Dónde está físicamente el producto.'}
+                hint="Al cambiar de sucursal verás su precio y sus existencias."
                 required
               />
             ) : (
@@ -678,6 +738,16 @@ function ProductForm({
                 hint="Unidades disponibles hoy en esta sucursal. Con 0 puedes publicar, pero aparecerá como agotado."
               />
             </div>
+            {first ? (
+              <ListingsManager
+                productId={first.id}
+                productName={first.name}
+                rows={rows}
+                branches={storeBranches}
+                suggestedPrice={(rows.find((row) => row.branchId === values.branchId) ?? first).price}
+                onRemoved={handleListingRemoved}
+              />
+            ) : null}
           </FormSection>
         )
       case 'imagenes':
@@ -729,13 +799,37 @@ function ProductForm({
                 </SummaryRow>
                 <SummaryRow label="Categoría">{categoryOptions.find((item) => item.value === values.categoryId)?.label ?? <span className="text-destructive">Falta la categoría</span>}</SummaryRow>
                 <SummaryRow label="Precio">{values.price ? formatCOP(Number(values.price)) : <span className="text-destructive">Falta el precio</span>}</SummaryRow>
-                <SummaryRow label="Existencias">
-                  <span className="flex flex-wrap items-center gap-2">
-                    {values.quantity ? `${formatNumber(Number(values.quantity))} u.` : '—'}
-                    {values.quantity ? <StockBadge quantity={Number(values.quantity)} /> : null}
-                  </span>
-                </SummaryRow>
-                <SummaryRow label="Sucursal">{branches.find((item) => item.value === values.branchId)?.label ?? '—'}</SummaryRow>
+                {mode === 'create' ? (
+                  <SummaryRow label={values.listings.length > 1 ? 'Sucursales' : 'Sucursal'}>
+                    <ul className="flex flex-col gap-1">
+                      {values.listings.map((listing) => (
+                        <li key={listing.key} className="flex flex-wrap items-center gap-2">
+                          <span>{branches.find((item) => item.value === listing.branchId)?.label ?? <span className="text-destructive">Falta la sucursal</span>}</span>
+                          <span className="text-muted-foreground">·</span>
+                          {listing.quantity ? (
+                            <>
+                              {`${formatNumber(Number(listing.quantity))} u.`}
+                              <StockBadge quantity={Number(listing.quantity)} />
+                            </>
+                          ) : (
+                            <span className="text-destructive">Faltan las existencias</span>
+                          )}
+                          {listing.price ? <span className="text-muted-foreground">· {formatCOP(Number(listing.price))}</span> : null}
+                        </li>
+                      ))}
+                    </ul>
+                  </SummaryRow>
+                ) : (
+                  <>
+                    <SummaryRow label="Existencias">
+                      <span className="flex flex-wrap items-center gap-2">
+                        {values.quantity ? `${formatNumber(Number(values.quantity))} u.` : '—'}
+                        {values.quantity ? <StockBadge quantity={Number(values.quantity)} /> : null}
+                      </span>
+                    </SummaryRow>
+                    <SummaryRow label="Sucursal">{branches.find((item) => item.value === values.branchId)?.label ?? '—'}</SummaryRow>
+                  </>
+                )}
                 <SummaryRow label="Vehículos">
                   {values.universal ? (
                     <StatusBadge tone="info">Universal</StatusBadge>
@@ -965,7 +1059,7 @@ export default function PortalProductFormPage() {
         actions={product ? <EditHeaderActions product={product} rows={rows} /> : undefined}
       />
       {/* key: al cambiar de producto o de modo el formulario se reinicia con los datos nuevos. */}
-      <ProductForm key={`${mode}:${productId ?? ''}`} mode={mode} rows={rows} options={options.data} manufacturers={manufacturerQuery.data} branches={branchOptions} />
+      <ProductForm key={`${mode}:${productId ?? ''}`} mode={mode} rows={rows} options={options.data} manufacturers={manufacturerQuery.data} branches={branchOptions} storeBranches={activeBranches} />
     </>
   )
 }

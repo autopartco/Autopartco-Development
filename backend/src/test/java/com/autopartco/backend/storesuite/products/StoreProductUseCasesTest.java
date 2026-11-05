@@ -27,6 +27,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.autopartco.backend.storesuite.inventory.InventoryActor;
 import com.autopartco.backend.core.billing.PlanEntitlements;
 import com.autopartco.backend.core.catalog.ProductCatalog;
 import com.autopartco.backend.core.catalog.ProductCreateRequest;
@@ -56,6 +57,9 @@ class StoreProductUseCasesTest {
     private ProductCatalog productCatalog;
 
     @Mock
+    private InventoryActor inventoryActor;
+
+    @Mock
     private ProductImages productImages;
 
     private final UUID storeId = UUID.randomUUID();
@@ -72,11 +76,11 @@ class StoreProductUseCasesTest {
     }
 
     private CreateProduct createProduct() {
-        return new CreateProduct(storeAccess, storeService, planEntitlements, productCatalog);
+        return new CreateProduct(storeAccess, storeService, planEntitlements, productCatalog, inventoryActor);
     }
 
     private UpdateProduct updateProduct() {
-        return new UpdateProduct(storeAccess, storeService, planEntitlements, productCatalog);
+        return new UpdateProduct(storeAccess, storeService, planEntitlements, productCatalog, inventoryActor);
     }
 
     private void deny(String permission) {

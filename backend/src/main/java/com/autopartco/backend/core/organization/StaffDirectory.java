@@ -47,13 +47,16 @@ public class StaffDirectory {
             StorePermissionCodes.PRODUCT_PUBLISH,
             StorePermissionCodes.PRODUCT_DELETE,
             StorePermissionCodes.PRODUCT_IMAGE_MANAGE,
+            StorePermissionCodes.INVENTORY_ADJUST,
+            StorePermissionCodes.INVENTORY_TRANSFER,
             StorePermissionCodes.PROMOTION_READ,
             StorePermissionCodes.PROMOTION_CREATE,
             StorePermissionCodes.PROMOTION_UPDATE,
             StorePermissionCodes.PROMOTION_DELETE,
             StorePermissionCodes.ORDER_READ,
             StorePermissionCodes.ORDER_UPDATE,
-            StorePermissionCodes.SHIPMENT_UPDATE
+            StorePermissionCodes.SHIPMENT_UPDATE,
+            StorePermissionCodes.ANALYTICS_READ
     );
 
     private final JdbcTemplate jdbcTemplate;
