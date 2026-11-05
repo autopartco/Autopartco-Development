@@ -252,6 +252,10 @@ CREATE OR REPLACE TRIGGER trg_payment_provider_events_append_only_truncate
     BEFORE TRUNCATE ON public.payment_provider_events
     FOR EACH STATEMENT EXECUTE FUNCTION public.forbid_update_delete();
 
+-- Supabase: todas las tablas de public tienen RLS (sin políticas) para que
+-- PostgREST (anon/authenticated) no las exponga; el backend usa el dueño.
+ALTER TABLE public.payment_provider_events ENABLE ROW LEVEL SECURITY;
+
 COMMENT ON TABLE public.payment_provider_events IS
     'Eventos con firma válida y consultas a proveedores de pago (Wompi), aplicados o no. Solo inserción. payload: solo la lista blanca de campos del backend (sin datos del comprador ni de tarjeta). Retención: purge_payment_provider_events.';
 
@@ -260,8 +264,7 @@ COMMENT ON TABLE public.payment_provider_events IS
 -- solo con p_dry_run = false; el plazo debe validarse con asesoría legal. No se
 -- programa: activarla en RetentionJob requiere aprobación (A9).
 -- La tabla es de solo inserción: la función fija autopartco.allow_purge = 'on'
--- solo durante su ejecución (cláusula SET de la función, se restaura al
--- salir). Es SECURITY INVOKER: quien la ejecute necesita DELETE en la tabla,
+-- solo durante el DELETE (set_config local; se apaga al terminar). Es SECURITY INVOKER: quien la ejecute necesita DELETE en la tabla,
 -- que autopartco_app no tiene (A6).
 -- Uso: SELECT public.purge_payment_provider_events();          -- cuenta
 --      SELECT public.purge_payment_provider_events(24, false); -- borra
@@ -272,7 +275,6 @@ CREATE OR REPLACE FUNCTION public.purge_payment_provider_events(
 RETURNS BIGINT
 LANGUAGE plpgsql
 SET search_path = public, pg_temp
-SET autopartco.allow_purge = 'on'
 AS $$
 DECLARE
     n BIGINT;
@@ -285,9 +287,13 @@ BEGIN
         WHERE received_at < now() - make_interval(months => p_months);
         RETURN n;
     END IF;
+    -- set_config local (no la cláusula SET de la función): en Supabase el rol
+    -- postgres no puede fijar parámetros personalizados en CREATE FUNCTION.
+    PERFORM set_config('autopartco.allow_purge', 'on', true);
     DELETE FROM payment_provider_events
     WHERE received_at < now() - make_interval(months => p_months);
     GET DIAGNOSTICS n = ROW_COUNT;
+    PERFORM set_config('autopartco.allow_purge', 'off', true);
     RETURN n;
 END;
 $$;

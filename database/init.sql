@@ -991,6 +991,9 @@ CREATE OR REPLACE TRIGGER trg_payment_provider_events_append_only_truncate
     BEFORE TRUNCATE ON payment_provider_events
     FOR EACH STATEMENT EXECUTE FUNCTION public.forbid_update_delete();
 
+-- Supabase: RLS sin políticas, como el resto de tablas de public (PostgREST no la expone).
+ALTER TABLE public.payment_provider_events ENABLE ROW LEVEL SECURITY;
+
 -- Retención: copia de V202611041000 (patrón de V202610151090). dry_run por
 -- defecto; no se programa (A9). Fija allow_purge solo durante su ejecución.
 CREATE OR REPLACE FUNCTION public.purge_payment_provider_events(
@@ -999,7 +1002,6 @@ CREATE OR REPLACE FUNCTION public.purge_payment_provider_events(
 RETURNS BIGINT
 LANGUAGE plpgsql
 SET search_path = public, pg_temp
-SET autopartco.allow_purge = 'on'
 AS $$
 DECLARE
     n BIGINT;
@@ -1012,9 +1014,13 @@ BEGIN
         WHERE received_at < now() - make_interval(months => p_months);
         RETURN n;
     END IF;
+    -- set_config local (no la cláusula SET de la función): en Supabase el rol
+    -- postgres no puede fijar parámetros personalizados en CREATE FUNCTION.
+    PERFORM set_config('autopartco.allow_purge', 'on', true);
     DELETE FROM payment_provider_events
     WHERE received_at < now() - make_interval(months => p_months);
     GET DIAGNOSTICS n = ROW_COUNT;
+    PERFORM set_config('autopartco.allow_purge', 'off', true);
     RETURN n;
 END;
 $$;
