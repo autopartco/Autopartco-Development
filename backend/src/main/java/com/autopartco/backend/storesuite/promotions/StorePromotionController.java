@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.autopartco.backend.core.analytics.PromotionResult;
 import com.autopartco.backend.core.pricing.PromotionResponse;
 import com.autopartco.backend.core.pricing.PromotionUpsertRequest;
 import com.autopartco.backend.shared.web.ApiPaths;
@@ -31,10 +32,20 @@ public class StorePromotionController {
     private final CreateStorePromotion createStorePromotion;
     private final UpdateStorePromotion updateStorePromotion;
     private final DeleteStorePromotion deleteStorePromotion;
+    private final GetStorePromotionResults getStorePromotionResults;
 
     @GetMapping
     public List<PromotionResponse> list(@PathVariable UUID storeId, Authentication authentication) {
         return listStorePromotions.execute(storeId, authentication.getName());
+    }
+
+    @GetMapping("/{promotionId}/results")
+    public PromotionResult results(
+            @PathVariable UUID storeId,
+            @PathVariable UUID promotionId,
+            Authentication authentication
+    ) {
+        return getStorePromotionResults.execute(storeId, promotionId, authentication.getName());
     }
 
     @PostMapping

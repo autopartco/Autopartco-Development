@@ -81,6 +81,22 @@ public class PromotionService {
         promotionRepository.delete(promotion);
     }
 
+    /** Promoción del almacén; {@code PROMOTION_NOT_FOUND} si no existe o es de otro almacén. */
+    @Transactional(readOnly = true)
+    public PromotionResponse getForStore(UUID storeId, UUID promotionId) {
+        return promotionRepository.findStorePromotion(storeId, promotionId)
+                .map(this::toResponse)
+                .orElseThrow(PromotionService::notFound);
+    }
+
+    /** Promoción de plataforma; {@code PROMOTION_NOT_FOUND} si no existe o es de un almacén. */
+    @Transactional(readOnly = true)
+    public PromotionResponse getForPlatform(UUID promotionId) {
+        return promotionRepository.findPlatformPromotion(promotionId)
+                .map(this::toResponse)
+                .orElseThrow(PromotionService::notFound);
+    }
+
     @Transactional(readOnly = true)
     public List<PromotionResponse> listForPlatform() {
         return promotionRepository.findPlatformPromotions()

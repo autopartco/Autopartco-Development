@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.autopartco.backend.core.analytics.PromotionResult;
+import com.autopartco.backend.core.analytics.PromotionResults;
 import com.autopartco.backend.core.pricing.PromotionResponse;
 import com.autopartco.backend.core.pricing.PromotionService;
 import com.autopartco.backend.core.pricing.PromotionUpsertRequest;
@@ -33,11 +35,21 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class PlatformPromotionController {
     private final PromotionService promotionService;
+    private final PromotionResults promotionResults;
 
     @GetMapping
     @PreAuthorize("hasAuthority('ROLE_ROOT')")
     public List<PromotionResponse> list() {
         return promotionService.listForPlatform();
+    }
+
+    /** Resultados agregados de la promoción de plataforma (alcance, ventas atribuidas, efecto frente al control). */
+    @GetMapping("/{promotionId}/results")
+    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    public PromotionResult results(@PathVariable UUID promotionId) {
+        PromotionResponse promotion = promotionService.getForPlatform(promotionId);
+        return promotionResults.results(
+                promotion.id(), null, promotion.startsAt(), promotion.endsAt(), promotion.audience().name());
     }
 
     @PostMapping
