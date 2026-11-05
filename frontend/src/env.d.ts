@@ -5,6 +5,8 @@ interface ImportMetaEnv {
   readonly VITE_MARKETPLACE_DATA_SOURCE?: 'mock' | 'http'
   /** URL base de la API con el prefijo de versión, p. ej. `http://localhost:8081/api/v1`. */
   readonly VITE_API_BASE_URL?: string
+  /** Correo público de soporte (opcional); sin él no se muestra el botón "Contactar soporte". */
+  readonly VITE_SUPPORT_EMAIL?: string
 }
 
 interface ImportMeta {

@@ -11,7 +11,7 @@ import { formatCOP } from '@/lib/format'
 import { useSubmitOnce } from '@/lib/use-submit-once'
 import { cn } from '@/lib/utils'
 import { getAddressService, getCheckoutService } from '../api/checkout-service'
-import type { PaymentMethodCode, PersonAddressDto, PlaceOrderRequestDto, SimulatedOutcome } from '../api/types'
+import type { CheckoutOptionsDto, PaymentMethodCode, PersonAddressDto, PlaceOrderRequestDto, SimulatedOutcome, WompiCheckoutDto } from '../api/types'
 import { AddressSelector } from '../components/address-selector'
 import { CheckoutSummary, PayButton, type LineIssue } from '../components/checkout-summary'
 import { PaymentMethodPicker, focusMethodPicker } from '../components/payment-method-picker'
@@ -20,6 +20,7 @@ import { classifyCheckoutError, leftNothingBehind, lineKey, type CheckoutProblem
 import { clearCart, removeCartLines, setCartLineQuantity, useCartLines } from '../lib/cart-source'
 import { checkoutPath, orderResultPath } from '../lib/paths'
 import { saveOrderResult } from '../lib/order-result-store'
+import { isSafeCheckoutUrl, savePendingOrderPayment } from '../lib/order-payment'
 import { useSessionReady } from '../lib/use-session-ready'
 
 const CRUMBS = [{ label: 'Inicio', to: '/' }, { label: 'Carrito', to: '/carrito' }, { label: 'Pagar' }]
@@ -53,6 +54,31 @@ function useAddresses() {
     }))
   }, [])
   return { ...state, reload, add }
+}
+
+/** Proveedor y métodos activos (`GET /marketplace/checkout-options`); el servidor es la fuente de verdad. */
+function useCheckoutOptions() {
+  const [state, setState] = useState<{ status: 'loading' | 'error' | 'ready'; data?: CheckoutOptionsDto }>({ status: 'loading' })
+  const [attempt, setAttempt] = useState(0)
+
+  useEffect(() => {
+    let active = true
+    getCheckoutService()
+      .then((service) => service.options())
+      .then(
+        (data) => active && setState({ status: 'ready', data }),
+        () => active && setState({ status: 'error' }),
+      )
+    return () => {
+      active = false
+    }
+  }, [attempt])
+
+  const reload = useCallback(() => {
+    setState({ status: 'loading' })
+    setAttempt((value) => value + 1)
+  }, [])
+  return { ...state, reload }
 }
 
 function Step({ number, title, last, children }: { number: string; title: string; last?: boolean; children: ReactNode }) {
@@ -96,13 +122,15 @@ function CheckoutView() {
   const navigate = useNavigate()
   const lines = useCartLines()
   const addresses = useAddresses()
+  const options = useCheckoutOptions()
 
   const [selectedId, setSelectedId] = useState<string>()
-  const [method, setMethod] = useState<PaymentMethodCode>('SIMULATED_CARD')
+  const [chosenMethod, setMethod] = useState<PaymentMethodCode>()
   const [outcome, setOutcome] = useState<SimulatedOutcome>('APPROVED')
   const place = useSubmitOnce(async (input: PlaceOrderRequestDto) => (await getCheckoutService()).placeOrder(input))
   const busy = place.pending
-  const [placed, setPlaced] = useState(false)
+  /** `receipt`: pedido SIMULATED creado; `redirect`: saliendo hacia Wompi. */
+  const [placed, setPlaced] = useState<'receipt' | 'redirect'>()
   const [problem, setProblem] = useState<CheckoutProblem>()
   const [addressNotice, setAddressNotice] = useState<string>()
   // Una por intento de compra: se conserva en reintentos ambiguos (red, 5xx) para que el servidor no cobre dos veces.
@@ -111,7 +139,11 @@ function CheckoutView() {
 
   const addressId = addresses.data.find((address) => address.id === selectedId)?.id ?? (addresses.data.find((address) => address.isDefault) ?? addresses.data[0])?.id
   const total = useMemo(() => lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0), [lines])
-  const busyNow = busy || placed
+  const busyNow = busy || placed !== undefined
+  const methods = options.data?.methods ?? []
+  // El método elegido solo vale si el servidor lo sigue ofreciendo; si no, el primero de la lista.
+  const method = methods.find((item) => item.code === chosenMethod)?.code ?? methods[0]?.code
+  const provider = options.data?.provider
 
   const issues = useMemo(() => {
     const map = new Map<string, LineIssue>()
@@ -124,8 +156,28 @@ function CheckoutView() {
     if (problem) problemRef.current?.focus()
   }, [problem])
 
+  /**
+   * WOMPI (§2.2): guarda el pedido, vacía el carrito y lleva el navegador a la URL firmada sin tocarla.
+   * Una repetición sin enlace (el pedido ya no se puede pagar) abre la página de resultado.
+   */
+  const goToGateway = useCallback(
+    (checkout: WompiCheckoutDto) => {
+      savePendingOrderPayment({ orderId: checkout.orderId, orderNumber: checkout.orderNumber, reference: checkout.payment.reference, lines })
+      // Un pedido cancelado liberó los repuestos: el carrito se conserva para volver a intentarlo.
+      if (checkout.status !== 'CANCELLED') clearCart()
+      if (isSafeCheckoutUrl(checkout.payment.checkoutUrl)) {
+        setPlaced('redirect')
+        window.location.assign(checkout.payment.checkoutUrl)
+      } else {
+        setPlaced('receipt')
+        navigate(orderResultPath(checkout.orderId))
+      }
+    },
+    [lines, navigate],
+  )
+
   const pay = useCallback(async () => {
-    if (placed || !addressId || lines.length === 0) return
+    if (placed || !addressId || !method || lines.length === 0) return
     setProblem(undefined)
     setAddressNotice(undefined)
     // ÚNICA escritura de la página: el pedido se crea al pulsar «Pagar»; el candado evita el doble envío.
@@ -133,12 +185,16 @@ function CheckoutView() {
       clientRequestId: requestId.current,
       addressId,
       paymentMethod: method,
-      simulatedOutcome: outcome,
+      simulatedOutcome: provider === 'SIMULATED' ? outcome : null,
       items: lines.map(({ productId, branchId, quantity }) => ({ productId, branchId, quantity })),
     })
     if (result.status === 'ok') {
-      const order = result.value
-      setPlaced(true)
+      if (result.value.kind === 'redirect') {
+        goToGateway(result.value.checkout)
+        return
+      }
+      const order = result.value.order
+      setPlaced('receipt')
       saveOrderResult(order)
       clearCart()
       navigate(orderResultPath(order.orderId), { state: { order } })
@@ -156,10 +212,14 @@ function CheckoutView() {
         addresses.reload()
         document.getElementById('paso-01')?.scrollIntoView({ block: 'center' })
       } else {
+        if (next.kind === 'method') {
+          setMethod(undefined)
+          options.reload()
+        }
         setProblem(next)
       }
     }
-  }, [addressId, addresses, lines, method, navigate, outcome, place, placed])
+  }, [addressId, addresses, goToGateway, lines, method, navigate, options, outcome, place, placed, provider])
 
   function adjustQuantities() {
     if (problem?.kind !== 'stock') return
@@ -180,7 +240,7 @@ function CheckoutView() {
     return (
       <Container className="py-16" >
         <p role="status" className="text-center text-muted-foreground">
-          Pago aprobado. Abriendo tu confirmación…
+          {placed === 'redirect' ? 'Te estamos llevando a Wompi para completar el pago…' : 'Abriendo el estado de tu pedido…'}
         </p>
       </Container>
     )
@@ -200,8 +260,14 @@ function CheckoutView() {
     )
   }
 
-  const blockedReason = !addressId ? 'Elige o agrega una dirección de entrega para continuar.' : undefined
-  const canPay = Boolean(addressId) && !busyNow
+  const blockedReason = !addressId
+    ? 'Elige o agrega una dirección de entrega para continuar.'
+    : options.status === 'loading'
+      ? 'Cargando los métodos de pago…'
+      : !method
+        ? 'Los pagos no están disponibles en este momento. Inténtalo de nuevo en unos minutos.'
+        : undefined
+  const canPay = Boolean(addressId) && Boolean(method) && !busyNow
 
   return (
     <Container className="py-6 pb-32 sm:py-8 lg:pb-12">
@@ -245,7 +311,16 @@ function CheckoutView() {
               />
             </Step>
             <Step number="02" title="Pago" last>
-              <PaymentMethodPicker method={method} outcome={outcome} disabled={busyNow} onMethodChange={setMethod} onOutcomeChange={setOutcome} />
+              <PaymentMethodPicker
+                status={options.status}
+                options={options.data}
+                method={method}
+                outcome={outcome}
+                disabled={busyNow}
+                onMethodChange={setMethod}
+                onOutcomeChange={setOutcome}
+                onRetry={options.reload}
+              />
             </Step>
           </ol>
         </div>
@@ -298,12 +373,14 @@ function ProblemView({ problem, onAdjust, onRemove, onRetry, onTryAnotherMethod 
       return <ProblemText title="Un precio cambió mientras pagabas" body="Revisa el resumen e inténtalo de nuevo. No se cobró nada." />
     case 'duplicate':
       return (
-        <ProblemText title="Este pedido ya se está procesando" body="Revisa tus pedidos antes de volver a pagar.">
-          <Button variant="outline" className="h-11 px-4" nativeButton={false} render={<Link to="/" />}>
-            Ir al inicio
+        <ProblemText title="Este pedido ya se está procesando" body="Revisa tus pedidos antes de volver a pagar. Si no aparece, recarga la página e inténtalo de nuevo.">
+          <Button variant="outline" className="h-11 px-4" nativeButton={false} render={<Link to="/mis-pedidos" />}>
+            Ver mis pedidos
           </Button>
         </ProblemText>
       )
+    case 'method':
+      return <ProblemText title="Ese método de pago ya no está disponible" body="Actualizamos las opciones de pago. Elige una y vuelve a pagar; no se cobró nada." />
     case 'invalid':
       return <ProblemText title="No pudimos procesar tu pedido" body={problem.message} />
     case 'unavailable':

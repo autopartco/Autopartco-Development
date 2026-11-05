@@ -86,6 +86,17 @@ export function clearCart(): void {
   write([])
 }
 
+/**
+ * Devuelve al carrito los repuestos de un pago que no se completó (el servidor ya liberó la reserva).
+ * Solo si el carrito está vacío, para no pisar lo que el comprador agregó después. Las líneas
+ * inválidas se descartan; precio y stock se vuelven a validar al pagar.
+ */
+export function restoreCartLines(lines: unknown[]): void {
+  if (readCartLines().length > 0) return
+  const valid = parse(JSON.stringify({ version: 1, lines }))
+  if (valid.length > 0) write(valid)
+}
+
 // useSyncExternalStore exige una instantánea estable: se reutiliza la lista mientras el texto crudo no cambie.
 let cachedRaw: string | null | undefined
 let cachedLines: CartLine[] = EMPTY

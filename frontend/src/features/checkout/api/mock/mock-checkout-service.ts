@@ -1,8 +1,18 @@
 import { ApiError, simulateLatency } from '@/lib/api'
 import { MOCK_PRODUCTS } from '@/features/marketplace/api/mock/mock-data'
-import type { BuyerOrderDto, BuyerSaleDto, CheckoutService, PlaceOrderRequestDto } from '../types'
-import { PAYMENT_METHODS } from '../types'
+import type { BuyerOrderDto, BuyerSaleDto, CheckoutOptionsDto, CheckoutService, OrderPaymentDto, PlaceOrderRequestDto } from '../types'
 import { findMockAddress } from './mock-address-service'
+
+/** Métodos que devuelve `checkout-options` con el proveedor SIMULATED (semilla `payment_methods`). */
+export const MOCK_CHECKOUT_OPTIONS: CheckoutOptionsDto = {
+  provider: 'SIMULATED',
+  environment: null,
+  methods: [
+    { code: 'SIMULATED_CARD', name: 'Tarjeta simulada' },
+    { code: 'SIMULATED_TRANSFER', name: 'Transferencia simulada' },
+    { code: 'SIMULATED_CASH', name: 'Efectivo simulado' },
+  ],
+}
 
 /** Existencias que "tiene" cualquier listado simulado. */
 const MOCK_AVAILABLE_STOCK = 5
@@ -80,7 +90,7 @@ export function createMockCheckoutService(): CheckoutService {
       payment: {
         status: 'APPROVED',
         method: input.paymentMethod,
-        methodName: PAYMENT_METHODS.find((method) => method.code === input.paymentMethod)?.name ?? input.paymentMethod,
+        methodName: MOCK_CHECKOUT_OPTIONS.methods.find((method) => method.code === input.paymentMethod)?.name ?? input.paymentMethod,
         reference: input.clientRequestId,
         amount: subtotal,
         paidAt: now,
@@ -100,10 +110,15 @@ export function createMockCheckoutService(): CheckoutService {
   return {
     simulated: true,
 
+    async options() {
+      await simulateLatency(300)
+      return MOCK_CHECKOUT_OPTIONS
+    },
+
     async placeOrder(input) {
       await simulateLatency(900)
       const replay = byRequest.get(input.clientRequestId)
-      if (replay) return replay
+      if (replay) return { kind: 'receipt', order: replay }
 
       if (input.simulatedOutcome === 'REJECTED') {
         const amount = input.items.reduce((sum, line) => sum + priceOf(line.productId) * line.quantity, 0)
@@ -136,7 +151,35 @@ export function createMockCheckoutService(): CheckoutService {
 
       const order = build(input)
       byRequest.set(input.clientRequestId, order)
-      return order
+      return { kind: 'receipt', order }
     },
+
+    async paymentStatus(orderId) {
+      await simulateLatency(400)
+      return paymentOf(orderId)
+    },
+
+    async syncPayment(orderId) {
+      await simulateLatency(400)
+      return paymentOf(orderId)
+    },
+  }
+
+  /** Pedidos SIMULATED: pago aprobado, sin enlace ni vencimiento (§3). Solo los creados en esta visita. */
+  function paymentOf(orderId: string): OrderPaymentDto {
+    const order = [...byRequest.values()].find((candidate) => candidate.orderId === orderId)
+    if (!order) throw new ApiError('No se encontró el pedido.', { status: 404, code: 'ORDER_NOT_FOUND' })
+    return {
+      orderId,
+      reference: order.payment.reference,
+      status: 'APPROVED',
+      providerStatus: null,
+      orderStatus: order.status,
+      amountInCents: order.total * 100,
+      currency: 'COP',
+      checkoutUrl: null,
+      expiresAt: null,
+      paidAt: order.payment.paidAt,
+    }
   }
 }
