@@ -3,7 +3,9 @@ package com.autopartco.backend.core.analytics;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -159,6 +161,16 @@ class SalesAnalyticsQueries {
             GROUP BY p.id, p.name, p.sku, p.created_at
             """.formatted(DEFAULT_MIN_STOCK);
 
+    /** Productos del almacén con estado {@code ACTIVE} (publicados), mismo criterio que el catálogo. */
+    static final String ACTIVE_PRODUCTS_SQL = """
+            SELECT p.id AS product_id
+            FROM products p
+            JOIN states ps ON ps.id = p.state_id AND ps.deleted_at IS NULL
+            WHERE p.store_id = :storeId
+              AND p.deleted_at IS NULL
+              AND ps.code = 'ACTIVE'
+            """;
+
     static final String BRANCH_IN_STORE_SQL = """
             SELECT EXISTS (SELECT 1 FROM branches WHERE id = :branchId AND store_id = :storeId) AS found
             """;
@@ -289,6 +301,13 @@ class SalesAnalyticsQueries {
                         result.getLong("stock"),
                         result.getInt("min_stock")))
                 .list();
+    }
+
+    Set<UUID> activeProductIds(UUID storeId) {
+        return new HashSet<>(jdbcClient.sql(ACTIVE_PRODUCTS_SQL)
+                .param("storeId", storeId)
+                .query((result, row) -> result.getObject("product_id", UUID.class))
+                .list());
     }
 
     private JdbcClient.StatementSpec scoped(String sql, UUID storeId, UUID branchId, DateRange range) {

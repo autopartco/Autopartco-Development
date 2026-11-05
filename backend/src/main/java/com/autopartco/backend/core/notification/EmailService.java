@@ -90,6 +90,35 @@ public class EmailService {
         mailSender.send(message);
     }
 
+    /**
+     * Aviso de alertas nuevas de un almacén (un solo correo por destinatario). {@code alertLines} son líneas ya
+     * redactadas en español; {@code portalLink} lleva al centro de alertas del portal.
+     */
+    public void sendStoreAlerts(String to, String storeName, java.util.List<String> alertLines, String portalLink) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(appProperties.emailVerification().from());
+        message.setTo(to);
+        message.setSubject(alertLines.size() == 1
+                ? "Nueva alerta en " + storeName
+                : alertLines.size() + " alertas nuevas en " + storeName);
+        message.setText("""
+                Hola,
+
+                Autopartco detectó %s sobre tu almacén %s:
+
+                %s
+
+                Revísalas y gestiónalas en el portal:
+                %s
+
+                Recibes este correo porque tienes activas las alertas por correo. Puedes cambiarlo en
+                Alertas > Preferencias.
+                """.formatted(alertLines.size() == 1 ? "una novedad" : "novedades", storeName,
+                String.join("\n", alertLines.stream().map(line -> "- " + line).toList()), portalLink));
+
+        mailSender.send(message);
+    }
+
     public void sendSellerCollaboratorInvitation(
             String to,
             String storeName,
