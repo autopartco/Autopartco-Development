@@ -176,6 +176,7 @@ class WebSecurityConfigTest {
                         "GET /api/v1/marketplace/stores/*/brand/*",
                         "GET /api/v1/marketplace/products",
                         "GET /api/v1/marketplace/products/*",
+                        "GET /api/v1/marketplace/products/*/frequently-bought",
                         "GET /api/v1/marketplace/product-options",
                         "GET /api/v1/marketplace/product-options/*",
                         "GET /api/v1/marketplace/vehicles/makes",
