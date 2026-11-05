@@ -149,8 +149,8 @@ function QuoteForm({ context, onClose }: { context: QuoteContext; onClose: () =>
   return (
     <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
       <DialogHeader>
-        <DialogTitle>Solicitar cotización · Empresarial</DialogTitle>
-        <DialogDescription>Cuéntanos el tamaño de tu operación y te enviamos una cotización. Los campos con asterisco son obligatorios.</DialogDescription>
+        <DialogTitle>Hablar con ventas · Empresarial</DialogTitle>
+        <DialogDescription>Cuéntanos el tamaño de tu operación y te contactamos para acompañarte en la contratación. Los campos con asterisco son obligatorios.</DialogDescription>
       </DialogHeader>
 
       <div className="grid gap-4 sm:grid-cols-2">

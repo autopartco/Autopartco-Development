@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils'
 import { formatCOP } from '@/lib/format'
 import type { Plan } from '../api/types'
 import { limitText } from '../lib/labels'
-import { annualPriceCop, annualSavingsCop, isCustomPlan, planCapabilities } from '../lib/plan-capabilities'
+import { annualPriceCop, annualSavingsCop, planCapabilities } from '../lib/plan-capabilities'
 
 export type Billing = 'MONTHLY' | 'ANNUAL'
 
@@ -19,9 +19,6 @@ interface PlanCardProps {
 }
 
 function PriceBlock({ plan, billing }: { plan: Plan; billing: Billing }) {
-  if (isCustomPlan(plan)) {
-    return <p className="text-[clamp(1.5rem,2.2vw,1.875rem)] font-extrabold tracking-tight">A medida</p>
-  }
   if (plan.monthlyPriceCop === 0) {
     return (
       <p className="flex items-baseline gap-1">

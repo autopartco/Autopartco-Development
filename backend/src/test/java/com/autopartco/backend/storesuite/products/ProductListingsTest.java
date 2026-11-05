@@ -22,6 +22,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
 
+import com.autopartco.backend.storesuite.inventory.InventoryActor;
 import com.autopartco.backend.core.billing.PlanEntitlements;
 import com.autopartco.backend.core.catalog.ProductCatalog;
 import com.autopartco.backend.core.catalog.ProductListingRequest;
@@ -57,6 +58,9 @@ class ProductListingsTest {
     private ProductCatalog productCatalog;
 
     @Mock
+    private InventoryActor inventoryActor;
+
+    @Mock
     private ProductRepository productRepository;
 
     @Mock
@@ -81,7 +85,7 @@ class ProductListingsTest {
         StoreProductDetail detail = mock(StoreProductDetail.class);
         when(productCatalog.addListing(storeId, productId, request)).thenReturn(detail);
 
-        StoreProductDetail result = new AddProductListing(storeAccess, storeService, planEntitlements, productCatalog)
+        StoreProductDetail result = new AddProductListing(storeAccess, storeService, planEntitlements, productCatalog, inventoryActor)
                 .execute(storeId, productId, EMAIL, request);
 
         assertEquals(detail, result);
@@ -98,7 +102,7 @@ class ProductListingsTest {
                 .when(planEntitlements).requireSubscriptionActive(storeId);
 
         ConflictException error = assertThrows(ConflictException.class,
-                () -> new AddProductListing(storeAccess, storeService, planEntitlements, productCatalog)
+                () -> new AddProductListing(storeAccess, storeService, planEntitlements, productCatalog, inventoryActor)
                         .execute(storeId, productId, EMAIL, request));
 
         assertEquals("SELLER_SUBSCRIPTION_EXPIRED", error.getCode());

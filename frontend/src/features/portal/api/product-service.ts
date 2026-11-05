@@ -2,7 +2,10 @@ import { DATA_SOURCE } from '@/lib/api'
 import type {
   ManufacturerCreateInput,
   ManufacturerMatch,
+  ProductBulkInput,
+  ProductBulkResult,
   ProductCreateInput,
+  ProductListingAddInput,
   ProductImage,
   ProductOptions,
   ProductRow,
@@ -40,6 +43,19 @@ export interface ProductService {
    * (`details: [{id,name}]`), 400 `VEHICLE_RULE_INVALID` (`details: VehicleRuleErrorDetail[]`).
    */
   create(storeId: string, input: ProductCreateInput, images?: File[]): Promise<ProductRow>
+  /**
+   * `POST /stores/{id}/products/{productId}/listings`: agrega el producto a otra sucursal activa.
+   * Errores: 404 `BRANCH_NOT_FOUND`, 409 `LISTING_ALREADY_EXISTS`, 409 `SELLER_SUBSCRIPTION_EXPIRED`.
+   */
+  addListing(storeId: string, productId: string, input: ProductListingAddInput): Promise<void>
+  /** `DELETE /stores/{id}/products/{productId}/listings/{branchId}`. Errores: 404 `LISTING_NOT_FOUND`, 409 `LAST_LISTING`. */
+  removeListing(storeId: string, productId: string, branchId: string): Promise<void>
+  /**
+   * `POST /stores/{id}/products/bulk`. Permiso según acción: `PRODUCT_PUBLISH` (publicar/retirar),
+   * `PRODUCT_DELETE` o `PRODUCT_UPDATE` (precio). `DELETE` y `PRICE` son atómicos; `PUBLISH` publica
+   * los que puede y devuelve los demás en `skipped`.
+   */
+  bulk(storeId: string, input: ProductBulkInput): Promise<ProductBulkResult>
   /** `PATCH /stores/{id}/branches/{branchId}/products/{productId}` (multipart atómico: `data` + `newImages`). */
   update(storeId: string, branchId: string, productId: string, input: ProductUpdateInput, newImages?: File[]): Promise<ProductRow>
   /** `PATCH /stores/{id}/products/{productId}/publication`. */

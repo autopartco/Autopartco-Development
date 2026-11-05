@@ -39,28 +39,40 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
 
     /**
      * Reactiva un listado borrado lógicamente: {@code uq_inventory_branch_product} no es parcial, así que no se puede
-     * insertar otra fila para la misma sucursal y producto. Devuelve las filas reactivadas (0 o 1).
+     * insertar otra fila para la misma sucursal y producto. No toca el stock: lo fija después {@code StockLedger}.
+     * Devuelve las filas reactivadas (0 o 1).
      */
     @Modifying
     @Query(value = """
-            update inventory set deleted_at = null, price = :price, stock = :stock,
+            update inventory set deleted_at = null, price = :price,
                    updated_at = now(), version = coalesce(version, 0) + 1
             where branch_id = :branchId and product_id = :productId and deleted_at is not null
             """, nativeQuery = true)
     int restoreListing(
             @Param("branchId") UUID branchId,
             @Param("productId") UUID productId,
-            @Param("price") java.math.BigDecimal price,
-            @Param("stock") Integer stock
+            @Param("price") java.math.BigDecimal price
     );
 
-    /** Conteos de listados de un almacén (sucursales no borradas). */
+    /** Cambia el precio sin cargar la entidad (el stock lo cambia {@code StockLedger} por JDBC). */
+    @Modifying
+    @Query(value = """
+            update inventory set price = :price, updated_at = now(), version = coalesce(version, 0) + 1
+            where id = :id and deleted_at is null
+            """, nativeQuery = true)
+    int updatePrice(@Param("id") UUID id, @Param("price") java.math.BigDecimal price);
+
+    /**
+     * Conteos de listados de un almacén (sucursales no borradas). Poco stock: {@code 0 < stock ≤} punto de reorden de
+     * la política vigente ({@code inventory_reorder_policies.valid_to IS NULL}), o 3 sin política.
+     */
     @Query(value = """
             select count(*) as listings,
                    count(*) filter (where i.stock <= 0) as outOfStock,
-                   count(*) filter (where i.stock > 0 and i.stock <= 3) as lowStock
+                   count(*) filter (where i.stock > 0 and i.stock <= coalesce(rp.reorder_point, 3)) as lowStock
             from inventory i
             join branches b on b.id = i.branch_id and b.deleted_at is null
+            left join inventory_reorder_policies rp on rp.inventory_id = i.id and rp.valid_to is null
             where i.deleted_at is null and b.store_id = :storeId
             """, nativeQuery = true)
     StockCounts countStockForStore(@Param("storeId") UUID storeId);

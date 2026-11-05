@@ -13,6 +13,8 @@ public final class StorePermissionCodes {
     public static final String PRODUCT_PUBLISH = "PRODUCT_PUBLISH";
     public static final String PRODUCT_DELETE = "PRODUCT_DELETE";
     public static final String PRODUCT_IMAGE_MANAGE = "PRODUCT_IMAGE_MANAGE";
+    public static final String INVENTORY_ADJUST = "INVENTORY_ADJUST";
+    public static final String INVENTORY_TRANSFER = "INVENTORY_TRANSFER";
     public static final String PROMOTION_READ = "PROMOTION_READ";
     public static final String PROMOTION_CREATE = "PROMOTION_CREATE";
     public static final String PROMOTION_UPDATE = "PROMOTION_UPDATE";

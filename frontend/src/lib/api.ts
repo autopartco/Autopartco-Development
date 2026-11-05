@@ -79,17 +79,34 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     throw new ApiError('No hay conexión con el servidor de Autopartco. Revisa tu internet e inténtalo de nuevo.', { cause })
   }
 
-  if (!response.ok) {
-    const payload = (await response.json().catch(() => null)) as ErrorBody | null
-    throw new ApiError(payload?.error?.message ?? `El servidor respondió ${response.status}. Inténtalo de nuevo en unos minutos.`, {
-      status: response.status,
-      code: payload?.error?.code,
-      fieldErrors: readFieldErrors(payload?.error?.details),
-      details: payload?.error?.details,
-    })
-  }
+  if (!response.ok) throw await responseError(response)
   if (response.status === 204) return undefined as T
   return (await response.json()) as T
+}
+
+async function responseError(response: Response): Promise<ApiError> {
+  const payload = (await response.json().catch(() => null)) as ErrorBody | null
+  return new ApiError(payload?.error?.message ?? `El servidor respondió ${response.status}. Inténtalo de nuevo en unos minutos.`, {
+    status: response.status,
+    code: payload?.error?.code,
+    fieldErrors: readFieldErrors(payload?.error?.details),
+    details: payload?.error?.details,
+  })
+}
+
+/** Descarga un archivo (p. ej. CSV) con la misma gestión de errores que `apiRequest`. */
+export async function apiBlob(path: string, options: Pick<RequestOptions, 'token' | 'signal'> = {}): Promise<Blob> {
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      headers: options.token ? { Authorization: `Bearer ${options.token}` } : undefined,
+      signal: options.signal,
+    })
+  } catch (cause) {
+    throw new ApiError('No hay conexión con el servidor de Autopartco. Revisa tu internet e inténtalo de nuevo.', { cause })
+  }
+  if (!response.ok) throw await responseError(response)
+  return await response.blob()
 }
 
 /** Lee un campo numérico de `error.details` (p. ej. `limit`, `used`). */

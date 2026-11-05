@@ -43,7 +43,7 @@ class StockServiceReturnTest {
         when(mapped.list()).thenReturn(List.of(SECOND, FIRST));
         when(statement.update()).thenReturn(1);
 
-        new StockService(mock(InventoryRepository.class), jdbcClient).returnStock(List.of(
+        new StockService(mock(InventoryRepository.class), jdbcClient, mock(StockLedger.class)).returnStock(List.of(
                 new StockReturn(FIRST, 2), new StockReturn(SECOND, 1), new StockReturn(FIRST, 1)));
 
         assertThat(sql.get(0)).contains("FOR UPDATE").contains("ORDER BY branch_id, product_id");
@@ -58,7 +58,7 @@ class StockServiceReturnTest {
     void emptyReturnDoesNothing() {
         JdbcClient jdbcClient = mock(JdbcClient.class);
 
-        new StockService(mock(InventoryRepository.class), jdbcClient).returnStock(List.of());
+        new StockService(mock(InventoryRepository.class), jdbcClient, mock(StockLedger.class)).returnStock(List.of());
 
         verify(jdbcClient, never()).sql(anyString());
     }

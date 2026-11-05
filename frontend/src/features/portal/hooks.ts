@@ -1,8 +1,9 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { useAsync, type AsyncResult } from '@/lib/use-async'
+import { getBranchService } from './api/branch-service'
 import { getProductService } from './api/product-service'
-import type { ProductRow } from './api/types'
+import type { Branch, ProductRow } from './api/types'
 import { usePortal } from './context'
 import { actionErrorMessage, publishBlockers } from './lib/errors'
 
@@ -10,6 +11,18 @@ import { actionErrorMessage, publishBlockers } from './lib/errors'
 export function useStoreQuery<T>(name: string, fetcher: (storeId: string) => Promise<T>): AsyncResult<T> {
   const { storeId } = usePortal()
   return useAsync(`portal:${storeId}:${name}`, () => fetcher(storeId))
+}
+
+/**
+ * Sucursales activas del almacén (comparte caché con la pantalla de sucursales). Sin `BRANCH_READ` no se piden:
+ * `known` queda en `false` y la interfaz no ofrece lo que depende de ellas.
+ */
+export function useActiveBranches(): { branches: Branch[]; known: boolean; result: AsyncResult<Branch[]> } {
+  const { can } = usePortal()
+  const readable = can('BRANCH_READ')
+  const result = useStoreQuery('branches', async (id) => (readable ? (await getBranchService()).list(id) : []))
+  const branches = useMemo(() => (result.data ?? []).filter((branch) => branch.state === 'ACTIVE'), [result.data])
+  return { branches, known: readable && result.status === 'success', result }
 }
 
 /** Pone el foco en el contenido principal (p. ej. cuando el elemento enfocado desaparece). */

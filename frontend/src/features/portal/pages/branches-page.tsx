@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router'
 import { toast } from 'sonner'
-import { MapPinIcon, MoreHorizontalIcon, PencilIcon, PlusIcon, PowerOffIcon, SearchXIcon } from 'lucide-react'
+import { ArrowLeftRightIcon, MapPinIcon, MoreHorizontalIcon, PencilIcon, PlusIcon, PowerOffIcon, SearchXIcon } from 'lucide-react'
 import { SelectField } from '../components/form-controls'
 import { ResultCount, SearchField } from '../components/search-field'
 import { normalizeText } from '../lib/fuzzy'
@@ -25,6 +26,9 @@ function BranchesView({ branches }: { branches: Branch[] }) {
   const [sheetOpen, setSheetOpen] = useState(false)
   const [toDeactivate, setToDeactivate] = useState<Branch>()
   const usage = subscription?.usage.branches
+  const navigate = useNavigate()
+  // Transferir exige dos o más sucursales activas; la acción sale desde la sucursal de origen.
+  const canTransfer = can('INVENTORY_TRANSFER') && branches.filter((branch) => branch.state === 'ACTIVE').length >= 2
   const [q, setQ] = useState('')
   const [state, setState] = useState('')
   const filtered = useMemo(() => {
@@ -68,7 +72,7 @@ function BranchesView({ branches }: { branches: Branch[] }) {
       sortValue: (row) => row.state,
       cell: (row) => (row.state === 'ACTIVE' ? <StatusBadge tone="success">Activa</StatusBadge> : <StatusBadge>Inactiva</StatusBadge>),
     },
-    ...(can('BRANCH_UPDATE') || can('BRANCH_DELETE')
+    ...(can('BRANCH_UPDATE') || can('BRANCH_DELETE') || canTransfer
       ? [
           {
             id: 'acciones',
@@ -93,6 +97,12 @@ function BranchesView({ branches }: { branches: Branch[] }) {
                     >
                       <PencilIcon aria-hidden />
                       Editar
+                    </DropdownMenuItem>
+                  ) : null}
+                  {canTransfer && row.state === 'ACTIVE' ? (
+                    <DropdownMenuItem onClick={() => void navigate(`/portal/${encodeURIComponent(storeId)}/inventario/transferencias?origen=${encodeURIComponent(row.id)}`)}>
+                      <ArrowLeftRightIcon aria-hidden />
+                      Transferir inventario
                     </DropdownMenuItem>
                   ) : null}
                   {can('BRANCH_DELETE') && row.state === 'ACTIVE' ? (

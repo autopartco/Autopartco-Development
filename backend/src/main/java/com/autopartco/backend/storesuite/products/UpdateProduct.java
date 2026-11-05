@@ -14,6 +14,7 @@ import com.autopartco.backend.core.catalog.ProductUpdateRequest;
 import com.autopartco.backend.core.organization.StoreAccess;
 import com.autopartco.backend.core.organization.StorePermissionCodes;
 import com.autopartco.backend.core.organization.StoreService;
+import com.autopartco.backend.storesuite.inventory.InventoryActor;
 
 import lombok.AllArgsConstructor;
 
@@ -29,6 +30,7 @@ public class UpdateProduct {
     private final StoreService storeService;
     private final PlanEntitlements planEntitlements;
     private final ProductCatalog productCatalog;
+    private final InventoryActor inventoryActor;
 
     @Transactional
     public ProductResponse execute(
@@ -66,6 +68,7 @@ public class UpdateProduct {
         storeService.requireExists(storeId);
         boolean subscriptionActive = !Boolean.TRUE.equals(request.publish())
                 || planEntitlements.isSubscriptionActive(storeId);
+        inventoryActor.bind(email);
         return productCatalog.update(storeId, branchId, productId, request, files, subscriptionActive);
     }
 }
