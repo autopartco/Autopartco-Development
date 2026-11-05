@@ -37,7 +37,7 @@ export const CAPABILITY_CATALOG: Record<string, CapabilityInfo> = Object.fromEnt
     entry('STOCK_ALERTS', 'Alertas de stock bajo', 'Ve qué productos están por agotarse en cada sucursal.', 'TRY', 'AVAILABLE'),
     entry('PROMOTIONS', 'Promociones', 'Descuentos y ofertas para tus productos.', 'ENTERPRISE', 'AVAILABLE'),
     entry('CUSTOM_ROLES', 'Roles y equipo personalizados', 'Define qué puede hacer cada persona de tu equipo.', 'ENTERPRISE', 'AVAILABLE'),
-    entry('ADVANCED_REPORTS', 'Reportes avanzados', 'Informes detallados de ventas e inventario.', 'ENTERPRISE'),
+    entry('ADVANCED_REPORTS', 'Inteligencia comercial', 'Reportes de ventas, segmentos de clientes, clasificación de productos y proyección de ventas.', 'ENTERPRISE', 'AVAILABLE'),
     entry('WHATSAPP_NOTIFICATIONS', 'Avisos por WhatsApp', 'Notificaciones de pedidos a tu WhatsApp.', 'ENTERPRISE'),
     entry('ERP_IMPORT', 'Importar desde Alegra o Siigo', 'Trae productos y existencias de tu ERP cuando lo necesites.', 'ENTERPRISE'),
     entry('ERP_SYNC', 'Sincronización con Alegra y Siigo', 'Inventario y precios al día de forma automática.', 'ENTERPRISE'),

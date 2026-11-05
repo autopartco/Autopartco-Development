@@ -26,7 +26,7 @@ export const CAPACITY_LABEL: Record<Capacity, { singular: string; plural: string
 /** Funciones de plan (`PlanCapabilities`) en lenguaje de almacén. */
 export const CAPABILITY_LABEL: Record<string, string> = {
   BASIC_ANALYTICS: 'Resumen de ventas',
-  ADVANCED_REPORTS: 'Reportes avanzados',
+  ADVANCED_REPORTS: 'Inteligencia comercial',
   PROMOTIONS: 'Promociones',
   CSV_IMPORT: 'Importación de productos por CSV',
   CUSTOM_ROLES: 'Roles y equipo personalizados',
@@ -125,6 +125,7 @@ export const PERMISSION_LABEL: Partial<Record<StorePermission, string>> = {
   ORDER_UPDATE: 'Gestionar pedidos',
   SHIPMENT_UPDATE: 'Gestionar envíos',
   BRANCH_READ: 'Ver sucursales',
+  ANALYTICS_READ: 'Ver inteligencia comercial',
 }
 
 /** "SUSPENSION_Y_DIRECCION" -> "Suspensión y dirección" aproximado: el API solo trae el código. */
