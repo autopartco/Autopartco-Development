@@ -74,7 +74,20 @@ class WompiWebhookControllerTest {
         WompiDispatcher dispatcher = new WompiDispatcher(List.of(subscriptionHandler), eventLog, properties,
                 transactions);
         controller = new WompiWebhookController(new WompiWebhookIngest(
-                new WompiSignatureVerifier(properties), eventLog, dispatcher, properties));
+                new WompiSignatureVerifier(properties), eventLog, dispatcher, properties), MAPPER);
+    }
+
+    /** El cuerpo llega como texto, igual que por HTTP. */
+    private ResponseEntity<Void> post(JsonNode event) {
+        return controller.webhook(event.toString());
+    }
+
+    @Test
+    void emptyOrInvalidBodyIsRejectedWithoutRecording() {
+        for (String body : new String[] {null, "", "   ", "{not json", "[1,2]", "\"text\"", "null"}) {
+            assertEquals(HttpStatus.UNAUTHORIZED, controller.webhook(body).getStatusCode(), String.valueOf(body));
+        }
+        verifyNoInteractions(eventLog, subscriptionHandler);
     }
 
     private static JsonNode event(String reference, String status, String environment, String secret)
@@ -105,7 +118,7 @@ class WompiWebhookControllerTest {
 
     @Test
     void invalidSignatureAnswers401AndStoresNothing() throws Exception {
-        ResponseEntity<Void> response = controller.webhook(event("APC-1", "APPROVED", "test", "wrong-secret"));
+        ResponseEntity<Void> response = post(event("APC-1", "APPROVED", "test", "wrong-secret"));
 
         assertEquals(HttpStatus.UNAUTHORIZED, response.getStatusCode());
         verifyNoInteractions(eventLog, subscriptionHandler);
@@ -117,7 +130,7 @@ class WompiWebhookControllerTest {
         when(subscriptionHandler.apply(any(), any())).thenReturn(WompiEventOutcome.APPLIED);
         when(eventLog.insert(any())).thenReturn(true);
 
-        ResponseEntity<Void> response = controller.webhook(event("APC-1", "APPROVED", "test", SECRET));
+        ResponseEntity<Void> response = post(event("APC-1", "APPROVED", "test", SECRET));
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         ArgumentCaptor<WompiTransaction> tx = ArgumentCaptor.forClass(WompiTransaction.class);
@@ -139,7 +152,7 @@ class WompiWebhookControllerTest {
     void alreadyRecordedChecksumAnswers200WithoutEffects() throws Exception {
         when(eventLog.existsByChecksum(anyString())).thenReturn(true);
 
-        ResponseEntity<Void> response = controller.webhook(event("APC-1", "APPROVED", "test", SECRET));
+        ResponseEntity<Void> response = post(event("APC-1", "APPROVED", "test", SECRET));
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verifyNoInteractions(subscriptionHandler);
@@ -152,7 +165,7 @@ class WompiWebhookControllerTest {
         when(subscriptionHandler.apply(any(), any())).thenReturn(WompiEventOutcome.APPLIED);
         when(eventLog.insert(any())).thenReturn(false);
 
-        ResponseEntity<Void> response = controller.webhook(event("APC-1", "APPROVED", "test", SECRET));
+        ResponseEntity<Void> response = post(event("APC-1", "APPROVED", "test", SECRET));
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertTrue(rolledBack.get());
@@ -163,7 +176,7 @@ class WompiWebhookControllerTest {
         when(subscriptionHandler.supports("XYZ-1")).thenReturn(false);
         when(eventLog.insert(any())).thenReturn(true);
 
-        ResponseEntity<Void> response = controller.webhook(event("XYZ-1", "APPROVED", "test", SECRET));
+        ResponseEntity<Void> response = post(event("XYZ-1", "APPROVED", "test", SECRET));
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(WompiEventOutcome.UNKNOWN_REFERENCE, insertedEntry().outcome());
@@ -176,7 +189,7 @@ class WompiWebhookControllerTest {
         when(subscriptionHandler.apply(any(), any())).thenReturn(WompiEventOutcome.UNKNOWN_REFERENCE);
         when(eventLog.insert(any())).thenReturn(true);
 
-        assertEquals(HttpStatus.OK, controller.webhook(event("APC-404", "APPROVED", "test", SECRET)).getStatusCode());
+        assertEquals(HttpStatus.OK, post(event("APC-404", "APPROVED", "test", SECRET)).getStatusCode());
         assertEquals(WompiEventOutcome.UNKNOWN_REFERENCE, insertedEntry().outcome());
     }
 
@@ -184,7 +197,7 @@ class WompiWebhookControllerTest {
     void eventFromAnotherEnvironmentIsRecordedAsMismatchAndNotApplied() throws Exception {
         when(eventLog.insert(any())).thenReturn(true);
 
-        ResponseEntity<Void> response = controller.webhook(event("APC-1", "APPROVED", "prod", SECRET));
+        ResponseEntity<Void> response = post(event("APC-1", "APPROVED", "prod", SECRET));
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(WompiEventOutcome.REJECTED_MISMATCH, insertedEntry().outcome());
@@ -201,7 +214,7 @@ class WompiWebhookControllerTest {
                 """.formatted(checksum));
         when(eventLog.insert(any())).thenReturn(true);
 
-        assertEquals(HttpStatus.OK, controller.webhook(event).getStatusCode());
+        assertEquals(HttpStatus.OK, post(event).getStatusCode());
         PaymentProviderEventLog.Entry entry = insertedEntry();
         assertEquals(WompiEventOutcome.IGNORED, entry.outcome());
         assertNull(entry.reference());
@@ -213,7 +226,7 @@ class WompiWebhookControllerTest {
         when(subscriptionHandler.supports("APC-1")).thenReturn(true);
         when(subscriptionHandler.apply(any(), any())).thenThrow(new IllegalStateException("db down"));
 
-        ResponseEntity<Void> response = controller.webhook(event("APC-1", "APPROVED", "test", SECRET));
+        ResponseEntity<Void> response = post(event("APC-1", "APPROVED", "test", SECRET));
 
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getStatusCode());
         verify(eventLog, never()).insert(any());
