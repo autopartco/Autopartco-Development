@@ -1,8 +1,9 @@
 import { Suspense } from 'react'
-import { Link, Outlet, ScrollRestoration } from 'react-router'
+import { Link, NavLink, Outlet, ScrollRestoration } from 'react-router'
 import { ShieldAlertIcon } from 'lucide-react'
 import { Logo } from '@/components/common/logo'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 import { Toaster } from '@/components/ui/sonner'
 import { RequireSession } from '@/features/auth/components/require-session'
 import { HeaderAccount } from '@/features/auth/components/account-menu'
@@ -17,6 +18,12 @@ function AdminLoading() {
   )
 }
 
+const ADMIN_LINKS = [
+  { to: '/admin/solicitudes', label: 'Solicitudes' },
+  { to: '/admin/clientes', label: 'Clientes frecuentes' },
+  { to: '/admin/busquedas', label: 'Búsquedas' },
+]
+
 function AdminHeader() {
   return (
     <header className="surface-asphalt sticky top-0 z-40 bg-header">
@@ -28,6 +35,22 @@ function AdminHeader() {
         </div>
         <HeaderAccount area="portal" />
       </div>
+      <nav aria-label="Administración" className="mx-auto flex w-full max-w-7xl gap-1 overflow-x-auto px-3 sm:px-6 lg:px-8">
+        {ADMIN_LINKS.map((link) => (
+          <NavLink
+            key={link.to}
+            to={link.to}
+            className={({ isActive }) =>
+              cn(
+                'inline-flex min-h-11 items-center border-b-2 px-3 text-sm font-medium whitespace-nowrap transition-colors hover:text-white',
+                isActive ? 'border-thread-on-asphalt text-white' : 'border-transparent text-asphalt-muted',
+              )
+            }
+          >
+            {link.label}
+          </NavLink>
+        ))}
+      </nav>
     </header>
   )
 }

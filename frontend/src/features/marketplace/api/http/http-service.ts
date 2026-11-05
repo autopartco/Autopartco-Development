@@ -1,3 +1,4 @@
+import { getAnonymousSessionId } from '@/lib/anonymous-session'
 import { PLACEHOLDER_IMAGES } from '@/lib/images'
 import type {
   CategoryOptionDto,
@@ -82,10 +83,10 @@ interface Lookups {
 export function createHttpMarketplaceService(baseUrl: string): MarketplaceService {
   const root = baseUrl.replace(/\/+$/, '')
 
-  async function get<T>(path: string): Promise<T> {
+  async function get<T>(path: string, extraHeaders: Record<string, string> = {}): Promise<T> {
     let response: Response
     try {
-      response = await fetch(`${root}${path}`, { headers: { Accept: 'application/json' } })
+      response = await fetch(`${root}${path}`, { headers: { Accept: 'application/json', ...extraHeaders } })
     } catch (cause) {
       throw new MarketplaceError('No hay conexión con el servidor de Autopartco.', { cause })
     }
@@ -171,8 +172,17 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
     },
 
     async searchProducts(query) {
-      // TODO(api): solo se envía el filtro por vehículo; el endpoint devuelve el resto del catálogo publicado completo.
-      const [listings, maps] = await Promise.all([get<ProductResponseDto[]>(`${PATHS.products}${vehicleQuery(query)}`), lookups()])
+      // La petición lleva vehículo, texto (q) y categoría (categoryId) para que el servidor registre la búsqueda;
+      // el filtrado y la paginación siguen en el cliente, así que los resultados no cambian.
+      // TODO(api): marcas, tienda, precio, existencias, orden y paginación aún no se envían al servidor.
+      const maps = await lookups()
+      const params = new URLSearchParams(vehicleQuery(query).slice(1))
+      const text = query.q.trim()
+      if (text) params.set('q', text)
+      const category = query.category ? [...maps.categories.values()].find((item) => item.slug === query.category) : undefined
+      if (category) params.set('categoryId', category.id)
+      const qs = params.toString()
+      const listings = await get<ProductResponseDto[]>(`${PATHS.products}${qs ? `?${qs}` : ''}`, { 'X-Session-Id': getAnonymousSessionId() })
       const items = listings.map((dto) => toProduct(dto, maps))
       return { items, total: items.length, page: 1, pageSize: Math.max(items.length, 1), totalPages: 1 }
     },

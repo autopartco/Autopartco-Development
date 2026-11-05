@@ -5,7 +5,8 @@
 @ApplicationModule(
         displayName = "Store Suite",
         allowedDependencies = {"shared", "core.audit", "core.notification", "core.identity", "core.organization",
-                "core.vehicle", "core.inventory", "core.pricing", "core.catalog", "core.billing", "core.order"})
+                "core.vehicle", "core.inventory", "core.pricing", "core.catalog", "core.billing", "core.order",
+                "core.analytics"})
 package com.autopartco.backend.storesuite;
 
 import org.springframework.modulith.ApplicationModule;

@@ -24,6 +24,8 @@ public final class StorePermissionCodes {
     public static final String SHIPMENT_UPDATE = "SHIPMENT_UPDATE";
     public static final String COLLABORATOR_READ = "COLLABORATOR_READ";
     public static final String COLLABORATOR_MANAGE = "COLLABORATOR_MANAGE";
+    /** Ver reportes e inteligencia comercial del almacén. */
+    public static final String ANALYTICS_READ = "ANALYTICS_READ";
 
     private StorePermissionCodes() {
     }

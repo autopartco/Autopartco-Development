@@ -44,6 +44,10 @@ export const PortalSalesPage = lazy(() => import('@/features/portal/pages/sales-
 export const PortalInventoryPage = lazy(() => import('@/features/portal/pages/inventory-page'))
 export const PortalInventoryMovementsPage = lazy(() => import('@/features/portal/pages/inventory-movements-page'))
 export const PortalInventoryTransfersPage = lazy(() => import('@/features/portal/pages/inventory-transfers-page'))
+export const PortalIntelligenceReportsPage = lazy(() => import('@/features/portal/pages/intelligence-reports-page'))
+export const PortalIntelligenceCustomersPage = lazy(() => import('@/features/portal/pages/intelligence-customers-page'))
+export const PortalIntelligenceProductsPage = lazy(() => import('@/features/portal/pages/intelligence-products-page'))
+export const PortalIntelligenceForecastPage = lazy(() => import('@/features/portal/pages/intelligence-forecast-page'))
 export const PortalBranchesPage = lazy(() => import('@/features/portal/pages/branches-page'))
 export const PortalTeamPage = lazy(() => import('@/features/portal/pages/team-page'))
 export const PortalStorePage = lazy(() => import('@/features/portal/pages/store-profile-page'))
@@ -51,4 +55,6 @@ export const PortalStorePage = lazy(() => import('@/features/portal/pages/store-
 // Administración (ROOT): revisión de solicitudes de almacenes.
 export const AdminRoot = lazy(() => import('@/features/admin/layout/admin-root').then((module) => ({ default: module.AdminRoot })))
 export const AdminApplicationsPage = lazy(() => import('@/features/admin/pages/applications-page'))
+export const AdminCustomersPage = lazy(() => import('@/features/admin/pages/customers-page'))
+export const AdminSearchesPage = lazy(() => import('@/features/admin/pages/searches-page'))
 export const PortalApplicationPage = lazy(() => import('@/features/portal/pages/application-page'))
