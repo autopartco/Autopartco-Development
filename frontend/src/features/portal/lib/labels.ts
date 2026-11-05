@@ -119,6 +119,8 @@ export const PERMISSION_LABEL: Partial<Record<StorePermission, string>> = {
   PRODUCT_CREATE: 'Crear productos',
   PRODUCT_UPDATE: 'Editar productos',
   PRODUCT_PUBLISH: 'Publicar productos',
+  INVENTORY_ADJUST: 'Ajustar existencias',
+  INVENTORY_TRANSFER: 'Transferir inventario entre sucursales',
   ORDER_READ: 'Ver pedidos',
   ORDER_UPDATE: 'Gestionar pedidos',
   SHIPMENT_UPDATE: 'Gestionar envíos',

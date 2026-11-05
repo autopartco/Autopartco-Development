@@ -42,6 +42,8 @@ export const PortalOrdersPage = lazy(() => import('@/features/portal/pages/order
 export const PortalOrderDetailPage = lazy(() => import('@/features/portal/pages/order-detail-page'))
 export const PortalSalesPage = lazy(() => import('@/features/portal/pages/sales-page'))
 export const PortalInventoryPage = lazy(() => import('@/features/portal/pages/inventory-page'))
+export const PortalInventoryMovementsPage = lazy(() => import('@/features/portal/pages/inventory-movements-page'))
+export const PortalInventoryTransfersPage = lazy(() => import('@/features/portal/pages/inventory-transfers-page'))
 export const PortalBranchesPage = lazy(() => import('@/features/portal/pages/branches-page'))
 export const PortalTeamPage = lazy(() => import('@/features/portal/pages/team-page'))
 export const PortalStorePage = lazy(() => import('@/features/portal/pages/store-profile-page'))

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router'
-import { CircleCheckIcon, InfoIcon, RefreshCwIcon } from 'lucide-react'
+import { CircleCheckIcon, InfoIcon, MessageSquareIcon, RefreshCwIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCOP } from '@/lib/format'
@@ -21,7 +21,7 @@ import { UsageMeter } from '../components/usage-meter'
 import { usePortal } from '../context'
 import { useStoreQuery } from '../hooks'
 import { Reveal, RevealGroup } from '../components/bento'
-import { isCustomPlan, planCapabilities, plansForDisplay } from '../lib/plan-capabilities'
+import { offersSalesContact, planCapabilities, sortPlans } from '../lib/plan-capabilities'
 import { cn } from '@/lib/utils'
 import { formatDate, formatDays, SUBSCRIPTION_STATUS_LABEL, SUBSCRIPTION_STATUS_TONE } from '../lib/labels'
 
@@ -77,14 +77,12 @@ function SummaryCard({ subscription }: { subscription: Subscription }) {
   )
 }
 
-function QuoteAction({ onRequest }: { onRequest: () => void }) {
+function SalesContactAction({ onRequest }: { onRequest: () => void }) {
   return (
-    <>
-      <p className="text-sm text-muted-foreground">Cuéntanos el tamaño de tu operación y te enviamos una cotización.</p>
-      <Button variant="outline" className="h-11 w-full px-4" onClick={onRequest}>
-        Solicitar cotización
-      </Button>
-    </>
+    <Button variant="ghost" className="h-11 w-full px-4" onClick={onRequest}>
+      <MessageSquareIcon aria-hidden />
+      Hablar con ventas
+    </Button>
   )
 }
 
@@ -113,26 +111,32 @@ function BillingToggle({ value, onChange }: { value: Billing; onChange: (value: 
   )
 }
 
-function PlanAction({
+function PlanAction(props: { plan: Plan; subscription: Subscription; onChoose: (plan: Plan) => void; onRequestQuote: () => void }) {
+  return (
+    <>
+      <PurchaseAction {...props} />
+      {offersSalesContact(props.plan) ? <SalesContactAction onRequest={props.onRequestQuote} /> : null}
+    </>
+  )
+}
+
+function PurchaseAction({
   plan,
   subscription,
   onChoose,
-  onRequestQuote,
 }: {
   plan: Plan
   subscription: Subscription
   onChoose: (plan: Plan) => void
-  onRequestQuote: () => void
 }) {
   const isCurrent = plan.id === subscription.plan.id || plan.code === subscription.plan.code
   const free = plan.monthlyPriceCop === 0
 
-  if (isCustomPlan(plan)) return <QuoteAction onRequest={onRequestQuote} />
   if (!subscription.canManage) return <p className="text-sm text-muted-foreground">Solo el propietario puede cambiar el plan.</p>
   if (free) {
     return (
       <p className="text-sm text-muted-foreground">
-        {plan.code === 'TRY' ? 'Es la prueba inicial: no se paga.' : 'Este plan no se contrata en línea. Escríbenos y te ayudamos.'}
+        {plan.code === 'TRY' ? 'Es el mes de prueba gratuita con el que empieza tu almacén: no se paga.' : 'Este plan no se contrata en línea. Escríbenos y te ayudamos.'}
       </p>
     )
   }
@@ -236,12 +240,12 @@ function PlanView({ subscription }: { subscription: Subscription }) {
         {plans.status === 'error' ? (
           <QueryError error={plans.error} what="los planes disponibles" onRetry={plans.retry} />
         ) : plans.data === undefined ? (
-          <CardsSkeleton count={3} label="Cargando planes" />
+          <CardsSkeleton count={2} label="Cargando planes" />
         ) : (
           <>
             <RevealGroup>
-              <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
-                {plansForDisplay(plans.data).map((plan, index) => (
+              <ul className="grid max-w-5xl gap-4 md:grid-cols-2">
+                {sortPlans(plans.data).map((plan, index) => (
                   <Reveal as="li" index={index} key={plan.id}>
                     <PlanCard
                       plan={plan}
@@ -254,7 +258,7 @@ function PlanView({ subscription }: { subscription: Subscription }) {
               </ul>
             </RevealGroup>
             <h3 className="mt-2 text-lg font-extrabold tracking-tight">Cupos y funciones lado a lado</h3>
-            <PlanComparisonTable plans={plansForDisplay(plans.data)} currentCode={subscription.plan.code} />
+            <PlanComparisonTable plans={sortPlans(plans.data)} currentCode={subscription.plan.code} />
           </>
         )}
       </section>

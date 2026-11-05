@@ -1,7 +1,21 @@
 import { ApiError } from '@/lib/api'
 import { PLACEHOLDER_IMAGES } from '@/lib/images'
 import type { ProductService } from '../product-service'
-import type { ProductImage, ProductRow, PublishBlocker, StoreManufacturer, VehicleRule, VehicleRuleInput } from '../types'
+import type {
+  Branch,
+  ProductBulkAction,
+  ProductBulkInput,
+  ProductBulkPriceMode,
+  ProductBulkResult,
+  ProductCreateInput,
+  ProductImage,
+  ProductRow,
+  PublishBlocker,
+  StoreManufacturer,
+  StorePermission,
+  VehicleRule,
+  VehicleRuleInput,
+} from '../types'
 import {
   type MockStore,
   getStore,
@@ -177,6 +191,128 @@ function assertPublishable(store: MockStore, manufacturer: StoreManufacturer, im
   }
 }
 
+function activeBranch(store: MockStore, branchId: string): Branch {
+  const branch = store.branches.find((candidate) => candidate.id === branchId && candidate.state === 'ACTIVE')
+  if (!branch) throw new ApiError('Esa sucursal no existe o está inactiva.', { status: 404, code: 'BRANCH_NOT_FOUND' })
+  return branch
+}
+
+/**
+ * Sucursales del alta como en `ProductCreateRequest`: o `branchId` + `quantity`, o `listings`
+ * (1 a número de sucursales, sin repetir). Sin `price` por sucursal se usa el precio general.
+ */
+function resolvePlacements(store: MockStore, input: ProductCreateInput): { branch: Branch; quantity: number; price: number }[] {
+  const single = input.branchId !== undefined && input.quantity !== undefined
+  const listings = input.listings ?? []
+  if (single === listings.length > 0) {
+    throw validation({ listings: 'Indica una sucursal con existencias o la lista de sucursales, no ambas.' })
+  }
+  const requested = single ? [{ branchId: input.branchId as string, quantity: input.quantity as number, price: undefined }] : listings
+  if (requested.length > store.branches.length) throw validation({ listings: 'Hay más sucursales que las de tu almacén.' })
+  const seen = new Set<string>()
+  return requested.map((listing, index) => {
+    if (seen.has(listing.branchId)) throw validation({ [`listings[${index}].branchId`]: 'No repitas la misma sucursal.' })
+    seen.add(listing.branchId)
+    if (!Number.isInteger(listing.quantity) || listing.quantity < 0) {
+      throw validation({ [`listings[${index}].quantity`]: 'Las existencias no pueden ser negativas.' })
+    }
+    if (listing.price !== undefined && !(listing.price >= 0.01)) {
+      throw validation({ [`listings[${index}].price`]: 'El precio debe ser mayor que 0.' })
+    }
+    return { branch: activeBranch(store, listing.branchId), quantity: listing.quantity, price: listing.price ?? input.price }
+  })
+}
+
+const BULK_MAX = 500
+const BULK_DELETE_MAX = 50
+const BULK_PERMISSION: Record<ProductBulkAction, StorePermission> = {
+  PUBLISH: 'PRODUCT_PUBLISH',
+  UNPUBLISH: 'PRODUCT_PUBLISH',
+  DELETE: 'PRODUCT_DELETE',
+  PRICE: 'PRODUCT_UPDATE',
+}
+
+const MAX_PRICE = 9_999_999_999
+
+/** `PERCENT`: variación con signo sobre el precio actual; `AMOUNT`: precio absoluto. Redondeado al peso. */
+function adjustedPrice(price: number, mode: ProductBulkPriceMode, value: number): number {
+  return Math.round(mode === 'PERCENT' ? price * (1 + value / 100) : value)
+}
+
+/** Misma semántica que `BulkProductAction`: `DELETE` y `PRICE` todo o nada; `PUBLISH` lo que se pueda. */
+function applyBulk(store: MockStore, input: ProductBulkInput): ProductBulkResult {
+  requirePermission(store, BULK_PERMISSION[input.action])
+  const ids = [...new Set(input.productIds)]
+  if (ids.length === 0 || ids.length > BULK_MAX) throw validation({ productIds: `Selecciona entre 1 y ${BULK_MAX} productos.` })
+  if (input.action === 'DELETE' && ids.length > BULK_DELETE_MAX) {
+    throw new ApiError(`Elimina hasta ${BULK_DELETE_MAX} productos a la vez.`, {
+      status: 400,
+      code: 'BULK_DELETE_LIMIT',
+      details: { max: BULK_DELETE_MAX },
+    })
+  }
+  const owned = ids.filter((id) => store.products.some((row) => row.id === id))
+  const missing = ids.filter((id) => !owned.includes(id))
+  const skipped: ProductBulkResult['skipped'] = []
+
+  if (input.action === 'DELETE') {
+    if (missing.length > 0) throw notFound()
+    store.products = store.products.filter((row) => !owned.includes(row.id))
+    return { affected: owned.length, skipped }
+  }
+
+  if (input.action === 'PRICE') {
+    if (!input.branchId) throw validation({ branchId: 'Elige la sucursal donde cambia el precio.' })
+    if (input.priceMode !== 'PERCENT' && input.priceMode !== 'AMOUNT') throw validation({ priceMode: 'Elige si ajustas por porcentaje o por valor.' })
+    const value = input.value
+    if (value === undefined || !Number.isFinite(value)) throw validation({ value: 'Escribe el valor del ajuste.' })
+    activeBranch(store, input.branchId)
+    if (missing.length > 0) throw notFound()
+    const targets = store.products.filter((row) => owned.includes(row.id) && row.branchId === input.branchId)
+    if (targets.length !== owned.length) {
+      throw new ApiError('Algún producto no está listado en esa sucursal.', { status: 404, code: 'LISTING_NOT_FOUND' })
+    }
+    const percent = input.priceMode === 'PERCENT'
+    if (percent ? value < -90 || value > 500 : value <= 0) {
+      throw new ApiError(percent ? 'La variación debe estar entre -90% y +500%.' : 'El precio debe ser mayor que 0.', {
+        status: 400,
+        code: 'INVALID_PRICE_VALUE',
+      })
+    }
+    const prices = targets.map((row) => adjustedPrice(row.price, input.priceMode as ProductBulkPriceMode, value))
+    if (prices.some((price) => price < 1 || price > MAX_PRICE)) {
+      throw new ApiError('El precio resultante debe estar entre 1 y 9.999.999.999 pesos.', { status: 400, code: 'INVALID_PRICE' })
+    }
+    targets.forEach((row, index) => {
+      const price = prices[index] as number
+      row.price = price
+      row.effectivePrice = Math.max(0, price - row.discountAmount)
+    })
+    return { affected: targets.length, skipped }
+  }
+
+  const publish = input.action === 'PUBLISH'
+  if (publish) requireActiveSubscription(store)
+  for (const id of missing) skipped.push({ productId: id, code: 'PRODUCT_NOT_FOUND' })
+  let affected = 0
+  for (const id of owned) {
+    const rows = store.products.filter((row) => row.id === id)
+    const first = rows[0] as ProductRow
+    if (publish) {
+      try {
+        assertPublishable(store, { id: first.manufacturerId, name: first.manufacturerName, approved: first.manufacturerApproved }, first.images.length, first.vehicleRules.length, first.universal)
+      } catch (error) {
+        const blocker = error instanceof ApiError && Array.isArray(error.details) ? (error.details[0] as PublishBlocker | undefined) : undefined
+        skipped.push({ productId: id, code: blocker?.code ?? 'PRODUCT_NOT_PUBLISHABLE' })
+        continue
+      }
+    }
+    for (const row of rows) row.state = publish ? 'ACTIVE' : 'INACTIVE'
+    affected += 1
+  }
+  return { affected, skipped }
+}
+
 /** Productos simulados: una fila por producto y sucursal, igual que el API real. */
 export function createMockProductService(): ProductService {
   return {
@@ -258,8 +394,7 @@ export function createMockProductService(): ProductService {
       requirePermission(store, 'PRODUCT_CREATE')
       requireActiveSubscription(store)
       requireCapacity(store, 'PRODUCTS')
-      const branch = store.branches.find((candidate) => candidate.id === input.branchId && candidate.state === 'ACTIVE')
-      if (!branch) throw new ApiError('Esa sucursal no existe o está inactiva.', { status: 404, code: 'BRANCH_NOT_FOUND' })
+      const placements = resolvePlacements(store, input)
       if (store.products.some((row) => row.sku && input.sku && row.sku.toLowerCase() === input.sku.toLowerCase())) {
         throw validation({ sku: 'Ya tienes un producto con este SKU.' })
       }
@@ -272,8 +407,9 @@ export function createMockProductService(): ProductService {
       const manufacturer = resolveManufacturer(storeId, input)
       const created = images.map((_, index) => mockImage(index, index === (input.mainImageIndex ?? 0)))
       if (input.publish) assertPublishable(store, manufacturer, created.length, rules.length, universal)
-      const row: ProductRow = {
-        id: newId('prod'),
+      const productId = newId('prod')
+      const rows: ProductRow[] = placements.map(({ branch, quantity, price }) => ({
+        id: productId,
         storeId,
         branchId: branch.id,
         branchName: branch.name,
@@ -281,11 +417,11 @@ export function createMockProductService(): ProductService {
         sku: input.sku || null,
         partNumber: input.partNumber || null,
         description: input.description,
-        price: input.price,
-        effectivePrice: input.price,
+        price,
+        effectivePrice: price,
         discountAmount: 0,
         appliedPromotionName: null,
-        quantity: input.quantity,
+        quantity,
         manufacturerId: manufacturer.id,
         manufacturerName: manufacturer.name,
         manufacturerApproved: manufacturer.approved,
@@ -295,10 +431,59 @@ export function createMockProductService(): ProductService {
         universal,
         vehicleRules: rules,
         images: created,
-      }
+        minStock: null,
+      }))
       commitManufacturer(storeId, manufacturer)
-      store.products.unshift(row)
-      return { ...row }
+      store.products.unshift(...rows)
+      return { ...(rows[0] as ProductRow) }
+    },
+
+    async addListing(storeId, productId, input) {
+      await simulateNetwork(500)
+      const store = getStore(storeId)
+      requirePermission(store, 'PRODUCT_UPDATE')
+      requireActiveSubscription(store)
+      const source = store.products.find((row) => row.id === productId)
+      if (!source) throw notFound()
+      const branch = activeBranch(store, input.branchId)
+      if (!(input.price >= 0.01)) throw validation({ price: 'El precio debe ser mayor que 0.' })
+      if (!Number.isInteger(input.stock) || input.stock < 0) throw validation({ stock: 'Las existencias no pueden ser negativas.' })
+      if (store.products.some((row) => row.id === productId && row.branchId === branch.id)) {
+        throw new ApiError('El producto ya está listado en esa sucursal.', { status: 409, code: 'LISTING_ALREADY_EXISTS' })
+      }
+      const index = store.products.findLastIndex((row) => row.id === productId)
+      store.products.splice(index + 1, 0, {
+        ...source,
+        branchId: branch.id,
+        branchName: branch.name,
+        price: input.price,
+        effectivePrice: input.price,
+        discountAmount: 0,
+        appliedPromotionName: null,
+        quantity: input.stock,
+        minStock: null,
+      })
+    },
+
+    async removeListing(storeId, productId, branchId) {
+      await simulateNetwork(400)
+      const store = getStore(storeId)
+      requirePermission(store, 'PRODUCT_UPDATE')
+      const rows = store.products.filter((row) => row.id === productId)
+      if (rows.length === 0) throw notFound()
+      if (!rows.some((row) => row.branchId === branchId)) {
+        throw new ApiError('El producto no está listado en esa sucursal.', { status: 404, code: 'LISTING_NOT_FOUND' })
+      }
+      if (rows.length === 1) {
+        throw new ApiError('Es el único listado del producto. Para quitarlo, borra el producto.', { status: 409, code: 'LAST_LISTING' })
+      }
+      store.products = store.products.filter((row) => !(row.id === productId && row.branchId === branchId))
+    },
+
+    async bulk(storeId, input) {
+      await simulateNetwork(700)
+      const store = getStore(storeId)
+      return applyBulk(store, input)
     },
 
     async update(storeId, branchId, productId, input, newImages = []) {
