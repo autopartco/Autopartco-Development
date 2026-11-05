@@ -35,7 +35,7 @@ import com.autopartco.backend.core.billing.internal.StoreSubscriptionRepository;
 import com.autopartco.backend.core.billing.internal.SubscriptionEvents;
 import com.autopartco.backend.core.billing.internal.SubscriptionPayment;
 import com.autopartco.backend.core.billing.internal.SubscriptionPaymentRepository;
-import com.autopartco.backend.core.billing.internal.wompi.WompiProperties;
+import com.autopartco.backend.core.payments.WompiProperties;
 import com.autopartco.backend.core.identity.AccountLookup;
 import com.autopartco.backend.core.identity.AccountRef;
 import com.autopartco.backend.core.organization.StoreAccess;
@@ -82,7 +82,7 @@ class SimulatedSubscriptionPaymentsTest {
                 subscriptionEvents,
                 storeAccess,
                 accountLookup,
-                new BillingSettings(enabled, new WompiProperties(null, null, null, null, null))
+                new BillingSettings(enabled, new WompiProperties(null, null, null, null, null, null, null))
         );
     }
 

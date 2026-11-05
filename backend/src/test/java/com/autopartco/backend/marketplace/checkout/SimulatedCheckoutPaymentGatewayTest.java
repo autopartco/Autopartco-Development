@@ -38,6 +38,19 @@ class SimulatedCheckoutPaymentGatewayTest {
     }
 
     @Test
+    void enabledOnlyWithSimulatedProvider() {
+        com.autopartco.backend.core.payments.WompiProperties wompi = new com.autopartco.backend.core.payments
+                .WompiProperties(null, null, null, null, null, null, null);
+
+        assertThat(new SimulatedCheckoutPaymentGateway(
+                new com.autopartco.backend.core.payments.PaymentSettings("", 30, wompi)).enabled()).isTrue();
+        assertThat(new SimulatedCheckoutPaymentGateway(
+                new com.autopartco.backend.core.payments.PaymentSettings("SIMULATED", 30, wompi)).enabled()).isTrue();
+        assertThat(new SimulatedCheckoutPaymentGateway(
+                new com.autopartco.backend.core.payments.PaymentSettings("WOMPI", 30, wompi)).enabled()).isFalse();
+    }
+
+    @Test
     void reportsSwitchState() {
         assertThat(new SimulatedCheckoutPaymentGateway(true).enabled()).isTrue();
         assertThat(new SimulatedCheckoutPaymentGateway(false).enabled()).isFalse();

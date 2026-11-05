@@ -62,8 +62,14 @@ image:
 openinary:
   base-url: "${OPENINARY_URL:}"
 
+# ADR 0004. Se valida al arrancar (core.payments.internal.WompiConfigurationValidator): prefijos de llaves según el
+# entorno (pub_test_/prv_test_ en SANDBOX, pub_prod_/prv_prod_ en PRODUCTION), https en PRODUCTION y sin
+# simuladores en el perfil prod. La URL de la API se deriva del entorno.
 wompi:
+  environment: "${WOMPI_ENVIRONMENT:SANDBOX}"
   public-key: "${WOMPI_PUBLIC_KEY:}"
+  # Solo backend: consulta de transacciones (sync y conciliación).
+  private-key: "${WOMPI_PRIVATE_KEY:}"
   integrity-secret: "${WOMPI_INTEGRITY_SECRET:}"
   events-secret: "${WOMPI_EVENTS_SECRET:}"
   checkout-url: "${WOMPI_CHECKOUT_URL:https://checkout.wompi.co/p/}"
@@ -74,6 +80,21 @@ app:
   billing:
     # Cobro simulado del portal (sin pasarela). Apagado por defecto: solo local y demo lo encienden.
     simulated-payments-enabled: "${SIMULATED_PAYMENTS_ENABLED:false}"
+    # Conciliación de pagos de suscripción Wompi PENDING (SubscriptionPaymentReconciler).
+    payment-reconciliation-enabled: "${APP_BILLING_PAYMENT_RECONCILIATION_ENABLED:true}"
+    payment-reconciliation-initial-delay-ms: "${APP_BILLING_PAYMENT_RECONCILIATION_INITIAL_DELAY_MS:90000}"
+    payment-reconciliation-delay-ms: "${APP_BILLING_PAYMENT_RECONCILIATION_DELAY_MS:300000}"
+  checkout:
+    # SIMULATED | WOMPI. Sin valor fuera de prod equivale a SIMULATED; en el perfil prod es obligatorio y no puede
+    # ser SIMULATED. El simulador del checkout solo está activo con SIMULATED (APP_CHECKOUT_SIMULATED_PAYMENTS_ENABLED
+    # ya no se usa).
+    payment-provider: "${APP_CHECKOUT_PAYMENT_PROVIDER:}"
+    # Minutos de reserva del stock mientras se espera el pago Wompi del pedido.
+    reservation-minutes: "${APP_CHECKOUT_RESERVATION_MINUTES:30}"
+    # Conciliación con Wompi y vencimiento de reservas de pedidos (MarketplacePaymentJobs).
+    payment-jobs-enabled: "${APP_CHECKOUT_PAYMENT_JOBS_ENABLED:true}"
+    payment-jobs-initial-delay-ms: "${APP_CHECKOUT_PAYMENT_JOBS_INITIAL_DELAY_MS:60000}"
+    payment-jobs-delay-ms: "${APP_CHECKOUT_PAYMENT_JOBS_DELAY_MS:300000}"
   frontend-base-url: "${APP_FRONTEND_BASE_URL:http://localhost:5173}"
   email-verification:
     expires-minutes: "${EMAIL_VERIFICATION_EXPIRES_MINUTES:30}"

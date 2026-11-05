@@ -105,22 +105,24 @@ public class Subscriptions {
                         "No se encontró la suscripción de vendedor para este almacén."
                 ));
         return paymentRepository.findByStoreApplicationIdOrderByCreatedAtDesc(subscription.getId()).stream()
-                .map(payment -> new SubscriptionPaymentView(
-                        payment.getId(),
-                        payment.getReference(),
-                        payment.getProvider(),
-                        payment.getPlan().getCode(),
-                        payment.getPlan().getName(),
-                        payment.getPrepaidMonths(),
-                        payment.getAmountInCents() / 100,
-                        payment.getCurrency(),
-                        payment.getStatus(),
-                        payment.getCreatedAt(),
-                        payment.getPaidAt(),
-                        payment.getPeriodStartsAt(),
-                        payment.getPeriodEndsAt()
-                ))
+                .map(SubscriptionPaymentView::from)
                 .toList();
+    }
+
+    /**
+     * Un pago del almacén por referencia. {@code SELLER_PAYMENT_NOT_FOUND} si no existe o es de otro almacén (no se
+     * distingue). El llamador ya comprobó el acceso.
+     */
+    @Transactional(readOnly = true)
+    public SubscriptionPaymentView paymentView(UUID storeId, String reference) {
+        return subscriptionRepository.findByStoreId(storeId)
+                .flatMap(subscription -> paymentRepository.findByReference(reference)
+                        .filter(payment -> subscription.getId().equals(payment.getStoreApplicationId())))
+                .map(SubscriptionPaymentView::from)
+                .orElseThrow(() -> new NotFoundException(
+                        "SELLER_PAYMENT_NOT_FOUND",
+                        "No se encontró el pago de la suscripción."
+                ));
     }
 
     private static Long daysRemaining(LocalDateTime validThrough, LocalDateTime now) {

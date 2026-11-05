@@ -2,7 +2,8 @@
 
 Este directorio contiene las migraciones versionadas del esquema. Siguen la convención de Flyway del ADR 0001 (`docs/adr/0001-estrategia-de-esquema-y-migraciones.md`) y el diseño predictivo (`docs/architecture/2026-10-13-database-predictive-data-model.md`).
 
-- **Línea base:** `database/init.sql`, que no se modifica. Las migraciones parten de un esquema creado con ese archivo. `V202610130900` aborta si no lo encuentra.
+- **Línea base:** `database/init.sql`, que no se modifica salvo excepción documentada en un ADR. Las migraciones parten de un esquema creado con ese archivo. `V202610130900` aborta si no lo encuentra.
+  - Excepción (ADR 0004, cobros Wompi): `init.sql` es el esquema activo y refleja de forma idempotente `V202611041000` y las columnas de pago de las que depende (`payments.environment/idempotency_key`, `seller_payments.environment`, `orders.cancelled_at/cancellation_reason_code`), con los mismos nombres de columnas y restricciones que las migraciones. También crea `forbid_update_delete()` (copia literal de `V202610130930`), los triggers de solo inserción de `payment_provider_events`, `purge_payment_provider_events()` y los GRANT/REVOKE si existen los roles. Ver "Caminos de despliegue" en §2.
 - **Alcance:** solo Colombia: COP, DIVIPOLA, festivos por la Ley 51 de 1983 y Ley 1581 de 2012. Las tablas con `country_code` usan `DEFAULT 'CO'`.
 - **Nada de esto se ha ejecutado** contra ninguna base de datos. Los comandos de este documento los ejecuta el usuario.
 
@@ -81,6 +82,23 @@ Este directorio contiene las migraciones versionadas del esquema. Siguen la conv
 | `V202610172000__product_universal` | `products.is_universal BOOLEAN NOT NULL DEFAULT false`: producto universal sin reglas de vehículo (invariante validada en backend). Rollback destructivo (guard) |
 
 Todas las de la fase 2 son transaccionales.
+
+### Cobros Wompi en producción (ADR 0004)
+
+| Versión | Tx | Qué resuelve |
+|---|---|---|
+| `V202611041000__wompi_production` | sí | Semillas `AWAITING_PAYMENT` (dominio ORDER), `payment_statuses.EXPIRED` y `payment_methods.WOMPI` (el vencimiento reutiliza `PAYMENT_TIMEOUT`). `payments.provider_transaction_id` (único parcial por proveedor), `provider_status`, `expires_at`, `requires_manual_refund`, CHECK de `provider` (`NOT VALID`) e índice de conciliación `WHERE provider = 'WOMPI'`. `seller_payments.requires_manual_refund`. `payment_events.source` admite `REDIRECT_SYNC`. Tabla de solo inserción `payment_provider_events` (único parcial `(provider, checksum)`) y `purge_payment_provider_events()` (24 meses, sin programar). Guard de precondiciones. Reflejada en `init.sql`. Rollback destructivo (guard) |
+
+#### Caminos de despliegue de los cobros Wompi
+
+Elija **uno** por base de datos.
+
+| Camino | Cuándo | Qué ejecutar | Resultado |
+|---|---|---|---|
+| A. Solo `init.sql` | BD nueva, o la actual creada con `init.sql` sin migraciones aplicadas (hoy, el esquema activo con `ddl-auto: update`) | `init.sql` completo, en una transacción | Columnas de `payments`/`seller_payments`, `payment_provider_events` de solo inserción (trigger con `forbid_update_delete()`), función de purga y permisos condicionados. **No** crea `state_domains` ni `payment_events.source`: el backend no debe escribir `payment_events.source` en este camino |
+| B. Migraciones versionadas | BD que ya sigue las `V` de este directorio | Todas las `V` en orden (§3.1), `V202611041000` después de `V202610151090` | Lo anterior, más `AWAITING_PAYMENT` en `state_domains` (ORDER) y `payment_events.source` con `REDIRECT_SYNC` |
+
+Precondiciones de `V202611041000` (su guard inicial aborta y lista lo que falta): `public.forbid_update_delete()` (`V202610130930`), `payment_events.source` (`V202610141020`) y `public.state_domains` (`V202610151020`). Por eso **no** se aplica sola sobre una BD del camino A: primero van las `V` anteriores. Reejecutar `init.sql` sobre una BD del camino B es inocuo para estos objetos: `forbid_update_delete()` y la función de purga son idénticas y los triggers tienen el mismo nombre.
 
 ### Repetibles (después de todas las V)
 
@@ -200,7 +218,8 @@ Ninguna migración del flujo normal exige cambios para seguir funcionando. Recom
 7. **Fase 1 (diseño §12):** `StockLedger`, `ListingPrices`, el historial en `SaleStatusService` y el webhook a `payment_events`. Al implementarlos, fijar `autopartco.capture_managed_by_app = 'on'` o retirar el puente (`U202610141025`).
 8. **Jobs:** `PartitionMaintenanceJob` (llama a `ensure_monthly_partitions(..., 3)` y alerta si la `default` tiene filas), `InventorySnapshotJob`, `AnalyticsRefreshJob`, `CartAbandonmentJob` y `RetentionJob` (A9, dry-run).
 9. **Entidades:** ninguna mapea las columnas nuevas. Con `ddl-auto: validate` no hay problema. Con `update`, Hibernate no las toca.
-10. **`seller_payments.environment`:** rellenarlo según la configuración de Wompi.
+10. **`seller_payments.environment`:** rellenarlo según la configuración de Wompi. Cuando el backend lo escriba siempre (T3 de ADR 0004), una migración de contracción lo hará obligatorio para filas nuevas.
+11. **Wompi (`V202611041000`):** `payment_provider_events` es de solo inserción (`42501` en UPDATE/DELETE). Deduplicar con `INSERT ... ON CONFLICT (provider, checksum) WHERE checksum IS NOT NULL DO NOTHING`. `payments.provider` solo admite `SIMULATED` o `WOMPI`. Wompi sí envía datos del comprador y parciales de tarjeta: `payload` guarda solo la lista blanca (event, environment, timestamp, signature y, de la transacción, id, reference, status, status_message, amount_in_cents, currency, payment_method_type, created_at, finalized_at).
 
 ## 7. Verificación
 
@@ -283,4 +302,5 @@ Según el diseño §7, sin implementar hasta que haya un caso de uso:
 - Esquema `pii` o cifrado por columna para `persons`, direcciones y VIN (**aprobación:** destructivo y de seguridad).
 - RLS por `store_id` en `analytics`/`ml` (**aprobación:** seguridad).
 - Particionar `inventory_movements` al superar unos 50 M de filas (**aprobación:** recrear la tabla).
-- De la auditoría, pendientes de diseño: `login_attempts.account_id` nullable + `email_attempted`, `persons.identification_type`, `sha256` en documentos, `audit_logs.ip_address/user_agent/request_id/actor_type`, `used_at` en tokens y una tabla de eventos de webhook de Wompi para `seller_payments`.
+- De la auditoría, pendientes de diseño: `login_attempts.account_id` nullable + `email_attempted`, `persons.identification_type`, `sha256` en documentos, `audit_logs.ip_address/user_agent/request_id/actor_type`, `used_at` en tokens. La tabla de eventos de webhook de Wompi quedó resuelta con `payment_provider_events` (`V202611041000`), común a pedidos (`APM-`) y suscripciones (`APC-`).
+- **Wompi:** retención de `payment_provider_events` en 24 meses con `public.purge_payment_provider_events(p_months, p_dry_run)` (dry_run por defecto; fija `autopartco.allow_purge` solo durante su ejecución; `SECURITY INVOKER`; sin EXECUTE para `PUBLIC`). **No está programada:** activarla en `RetentionJob` requiere aprobación (A9) y el plazo debe validarlo asesoría legal. Tras purgar, un reenvío de un evento de más de 24 meses ya no se deduplica por checksum; lo cubre `uq_payments__provider_transaction`. `VALIDATE CONSTRAINT chk_payments__provider` pendiente tras el diagnóstico del encabezado de `V202611041000`. Desde ADR 0004, el esquema tras las `U` ya no coincide exactamente con `init.sql` (este incluye las columnas de pago de `V202610141310` y `V202611041000`).
