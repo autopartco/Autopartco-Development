@@ -61,6 +61,7 @@ export type StorePermission =
   | 'INVENTORY_TRANSFER'
   | 'PROMOTION_READ'
   | 'ORDER_READ'
+  | 'ANALYTICS_READ'
   | 'ORDER_UPDATE'
   | 'SHIPMENT_UPDATE'
   | 'COLLABORATOR_READ'

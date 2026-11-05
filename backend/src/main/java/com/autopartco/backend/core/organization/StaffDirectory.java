@@ -55,7 +55,8 @@ public class StaffDirectory {
             StorePermissionCodes.PROMOTION_DELETE,
             StorePermissionCodes.ORDER_READ,
             StorePermissionCodes.ORDER_UPDATE,
-            StorePermissionCodes.SHIPMENT_UPDATE
+            StorePermissionCodes.SHIPMENT_UPDATE,
+            StorePermissionCodes.ANALYTICS_READ
     );
 
     private final JdbcTemplate jdbcTemplate;
