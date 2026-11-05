@@ -23,8 +23,8 @@ Plan: `docs/architecture/Inventario-feature.md`. Rama `feature/inventario-sucurs
 | T6 Productos (frontend) | ✅ | Alta multi-sucursal, añadir/quitar sucursal, selección y acciones masivas, filtros. Lint y build en verde. PRICE: AMOUNT = precio absoluto, PERCENT = variación (ajuste en T7). |
 | T7 Inventario (frontend) | ✅ | Ajustes con motivo, stock bajo y mínimo, CSV con vista previa, transferencias (idempotentes), historial; pestañas Existencias/Movimientos/Transferencias; «Transferir inventario» en sucursales. Lint y build en verde. |
 | T8 QA | ✅ | Acotado al diff. Sin IDOR ni inyección; 15 clases en verde. Hallazgos corregidos: (Alto) import CSV fijaba stock absoluto → columna `stock_base` y delta sobre stock bloqueado; (Medio) bloqueo ordenado antes de precio/mínimo en import; (Medio) DELETE masivo máx. 50. (Bajo, aceptado) editar producto cambia stock con `PRODUCT_UPDATE` sin `INVENTORY_ADJUST`: hoy solo OWNER tiene permisos. |
-| T9 PR | 🔄 | |
-| T11 Producción | ⏳ | |
+| T9 PR | ✅ | autopartco/Autopartco-Development#105 fusionado en `develop` (ba49999). |
+| T11 Producción | ✅ | Tag `v1.1.0` → workflow «Promover a main» OK (main 9ab0a67). Vercel `autopartco-production` desplegado. Render `autopartco-backend`: deploy `dep-dbmffhd9el5s73c2e5i0` live con 9ab0a67, arranque sin errores. |
 
 ## Hallazgos
 
