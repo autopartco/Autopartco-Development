@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.autopartco.backend.core.catalog.ListingQueries;
+import com.autopartco.backend.core.catalog.ListingCache;
 import com.autopartco.backend.core.catalog.ProductOptionsResponse;
 import com.autopartco.backend.core.catalog.ProductResponse;
 import com.autopartco.backend.core.catalog.VehicleFilter;
@@ -23,7 +23,7 @@ public class ProductBrowseController {
     private static final String PRODUCTS = ApiPaths.MARKETPLACE + "/products";
     private static final String OPTIONS = ApiPaths.MARKETPLACE + "/product-options";
 
-    private final ListingQueries listingQueries;
+    private final ListingCache listingQueries;
 
     /**
      * Listados publicados. Filtro opcional por vehículo ({@code makeId}, {@code modelId}, {@code versionId}): solo
@@ -36,12 +36,12 @@ public class ProductBrowseController {
             @RequestParam(required = false) UUID modelId,
             @RequestParam(required = false) UUID versionId
     ) {
-        return listingQueries.publishedListings(new VehicleFilter(makeId, modelId, versionId));
+        return listingQueries.published(new VehicleFilter(makeId, modelId, versionId));
     }
 
     @GetMapping(PRODUCTS + "/{productId}")
     public ProductResponse detail(@PathVariable UUID productId) {
-        return listingQueries.publishedListing(productId);
+        return listingQueries.detail(productId);
     }
 
     @GetMapping(OPTIONS)

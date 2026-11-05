@@ -65,6 +65,7 @@ public class ProductCatalog {
             List<MultipartFile> files,
             boolean subscriptionActive
     ) {
+        com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
         // Fase 1: validaciones y lecturas.
         branchService.requireActiveInStore(storeId, request.branchId());
         List<ValidatedImage> images = productImages.validateAll(files);
@@ -125,6 +126,7 @@ public class ProductCatalog {
             List<MultipartFile> files,
             boolean subscriptionActive
     ) {
+        com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
         if (listingQueries.storeListing(storeId, branchId, productId).isEmpty()) {
             throw productNotFound();
         }
@@ -193,6 +195,7 @@ public class ProductCatalog {
      */
     @Transactional
     public void publish(UUID storeId, UUID productId, boolean subscriptionActive) {
+        com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
         Product product = productRepository.lockOwned(storeId, productId).orElseThrow(ProductCatalog::productNotFound);
         requirePublishable(productImages.count(productId),
                 product.isUniversal() || !vehicleRules.forProduct(productId).isEmpty(),
@@ -203,6 +206,7 @@ public class ProductCatalog {
     /** Retira ({@code INACTIVE}) el producto del almacén; no exige requisitos. */
     @Transactional
     public void unpublish(UUID storeId, UUID productId) {
+        com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
         Product product = productRepository.findOwned(storeId, productId).orElseThrow(ProductCatalog::productNotFound);
         product.setState(findState(StateCodes.INACTIVE));
     }
@@ -219,6 +223,7 @@ public class ProductCatalog {
      */
     @Transactional
     public void delete(UUID storeId, UUID productId) {
+        com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
         Product product = productRepository.lockOwned(storeId, productId)
                 .orElseThrow(ProductCatalog::productNotFound);
         productImages.deleteAllForProduct(productId);
@@ -237,6 +242,7 @@ public class ProductCatalog {
     /** Agrega el producto a otra sucursal activa del almacén. */
     @Transactional
     public StoreProductDetail addListing(UUID storeId, UUID productId, ProductListingRequest request) {
+        com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
         requireOwnedForUpdate(storeId, productId);
         branchService.requireActiveInStore(storeId, request.branchId());
         stockService.addListing(request.branchId(), productId, request.stock(), request.price());
@@ -247,6 +253,7 @@ public class ProductCatalog {
     /** Quita el listado de una sucursal. El último listado no se quita: para eso se borra el producto. */
     @Transactional
     public void removeListing(UUID storeId, UUID productId, UUID branchId) {
+        com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
         requireOwnedForUpdate(storeId, productId);
         stockService.removeListing(storeId, branchId, productId);
         // Si no quedó ninguno, el lanzamiento revierte el borrado lógico de esta transacción.
