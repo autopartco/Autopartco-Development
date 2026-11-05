@@ -18,6 +18,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -79,4 +80,13 @@ public class SubscriptionPayment extends BaseEntity {
 
     @Column(name = "requested_by_account_id")
     private UUID requestedByAccountId;
+
+    // SANDBOX | PRODUCTION (ADR 0004). Nulo en filas anteriores y en pagos simulados.
+    @Column(length = 10)
+    private String environment;
+
+    // Pago aprobado que no se pudo aplicar (p. ej. segundo cobro de una referencia ya pagada): reembolso manual.
+    @Builder.Default
+    @Column(name = "requires_manual_refund", nullable = false, columnDefinition = "boolean not null default false")
+    private boolean requiresManualRefund = false;
 }

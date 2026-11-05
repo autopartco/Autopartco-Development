@@ -90,9 +90,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/resources/application.yaml": {
-    "mtime": 1792260817.965374,
-    "seen": 1792262762.406922,
-    "ast_hash": "8e0f924c08a85256c2ce9e6eb9ec3bf9",
+    "mtime": 1793896551.573281,
+    "seen": 1793897259.790472,
+    "ast_hash": "e31fc41137ecc5d782b31d3c3fc56d14",
     "semantic_hash": ""
   },
   "docs/AUTOPARTCO_AGENT_CONTEXT.md": {
@@ -900,21 +900,15 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/billing/internal/BillingConfig.java": {
-    "mtime": 1791974616.7584116,
-    "seen": 1791974975.6840997,
-    "ast_hash": "d476a68e768c69caa10b5dbae266c088",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/core/billing/internal/wompi/WompiProperties.java": {
-    "mtime": 1791974616.7660165,
-    "seen": 1791974975.6841514,
-    "ast_hash": "3312ebd846ab6e040f5ae7b306de2cc5",
+    "mtime": 1793896811.171803,
+    "seen": 1793897259.028716,
+    "ast_hash": "19c7cf9414db5c981d528619b5c66737",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/billing/package-info.java": {
-    "mtime": 1791974616.769462,
-    "seen": 1791974975.6841648,
-    "ast_hash": "799729b3d4610155eec349657e94d451",
+    "mtime": 1793830253.9048915,
+    "seen": 1793831219.589888,
+    "ast_hash": "307e240058750a92366689df1135a05c",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/catalog/package-info.java": {
@@ -972,9 +966,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/marketplace/package-info.java": {
-    "mtime": 1791974616.9896708,
-    "seen": 1791974975.6856017,
-    "ast_hash": "efbbd3af7f579664f96aa4d3a4dcae7b",
+    "mtime": 1793832293.5774882,
+    "seen": 1793833024.0004444,
+    "ast_hash": "a6439108cdc700488d7d404ae79d4520",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/operations/package-info.java": {
@@ -1932,15 +1926,15 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/billing/SubscriptionCheckout.java": {
-    "mtime": 1792012571.5332673,
-    "seen": 1792017095.3263576,
-    "ast_hash": "9615d8c7ab8213b265c221ddd5b46760",
+    "mtime": 1793830226.5374138,
+    "seen": 1793831219.5862875,
+    "ast_hash": "6bb7e9d739b5fcf38ba3b1bfe4aad2f6",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/billing/Subscriptions.java": {
-    "mtime": 1792012571.555835,
-    "seen": 1792017095.326379,
-    "ast_hash": "e7fb33c3c9df5d61477a0b5b17a28913",
+    "mtime": 1793830283.5396533,
+    "seen": 1793831219.58717,
+    "ast_hash": "2750c275447348d2392b5c3e59c725b7",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/billing/internal/Plan.java": {
@@ -1968,33 +1962,15 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/billing/internal/SubscriptionPayment.java": {
-    "mtime": 1792016302.4289134,
-    "seen": 1792017095.3305826,
-    "ast_hash": "cbee0f002b26800313052616731dfd01",
+    "mtime": 1793830191.9559257,
+    "seen": 1793831219.5892494,
+    "ast_hash": "0dbdacf09388ee4a05055fa27b09cc99",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/billing/internal/SubscriptionPaymentRepository.java": {
-    "mtime": 1792012571.581659,
-    "seen": 1792017095.330587,
-    "ast_hash": "4d1c026a64394ada13f45ed5a014dd72",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/core/billing/internal/wompi/WompiSignatureVerifier.java": {
-    "mtime": 1791974616.7671235,
-    "seen": 1791974975.6841571,
-    "ast_hash": "fcfb27424557f42b33c0bbef0e67ab72",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/core/billing/internal/wompi/WompiWebhookProcessor.java": {
-    "mtime": 1792012571.5896826,
-    "seen": 1792017095.3318236,
-    "ast_hash": "91551cfd6e423d829af257030586e7ee",
-    "semantic_hash": ""
-  },
-  "backend/src/main/java/com/autopartco/backend/core/billing/web/WompiWebhookController.java": {
-    "mtime": 1791974616.777913,
-    "seen": 1791974975.684171,
-    "ast_hash": "205eef509deb8ae82c30733a794a4b27",
+    "mtime": 1793832307.4910626,
+    "seen": 1793833023.8579006,
+    "ast_hash": "fe77f0907284594eb72d30b7940b4ce3",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/organization/StaffDirectory.java": {
@@ -2016,21 +1992,15 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/storesuite/subscription/SubscriptionController.java": {
-    "mtime": 1792016388.3923244,
-    "seen": 1792017095.559272,
-    "ast_hash": "184d457f4a3e953e14b6cc35d282d51c",
+    "mtime": 1793830294.5585127,
+    "seen": 1793831219.8233988,
+    "ast_hash": "b0e851ef6bf34835bfb1772a9a94ed86",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/core/billing/SubscriptionCheckoutTest.java": {
-    "mtime": 1792012571.6547189,
-    "seen": 1792017095.5613203,
-    "ast_hash": "97612bb8bae18d4ba3044c6de1b384c9",
-    "semantic_hash": ""
-  },
-  "backend/src/test/java/com/autopartco/backend/core/billing/internal/wompi/WompiWebhookProcessorTest.java": {
-    "mtime": 1792012571.6772277,
-    "seen": 1792017095.5613291,
-    "ast_hash": "dc7462241e24c880b84789c3a43939e0",
+    "mtime": 1793830316.8351405,
+    "seen": 1793831219.8274982,
+    "ast_hash": "c591df5b6dea16d555851b1aee4795a3",
     "semantic_hash": ""
   },
   ".agents/skills/firebase-security-rules-auditor/SKILL.md": {
@@ -2202,9 +2172,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/inventory/StockService.java": {
-    "mtime": 1792066158.9941013,
-    "seen": 1792072653.0275075,
-    "ast_hash": "2bcaf213fcda2513be5254b07337647d",
+    "mtime": 1793831759.369171,
+    "seen": 1793833023.9319026,
+    "ast_hash": "ab6a65645969915db2ca2f6e63028fca",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/inventory/internal/Inventory.java": {
@@ -2652,9 +2622,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/order/SaleQueries.java": {
-    "mtime": 1791974616.8982253,
-    "seen": 1791974975.685257,
-    "ast_hash": "78e72934bc9e6dac60a3db66dee979fb",
+    "mtime": 1793833116.0003872,
+    "seen": 1793833387.4079685,
+    "ast_hash": "4dd3e2b8bdffa3c6e2a4f298806b9a40",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/order/SaleStatusRequest.java": {
@@ -2958,9 +2928,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/order/SaleStatusService.java": {
-    "mtime": 1791974616.9009676,
-    "seen": 1791974975.6852777,
-    "ast_hash": "b0bc76839149449777ba3be579645ee1",
+    "mtime": 1793833126.8927312,
+    "seen": 1793833387.4091709,
+    "ast_hash": "aaed58f6bbd658c8561a5910835cfd13",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/order/ShipmentService.java": {
@@ -3504,9 +3474,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/marketplace/checkout/package-info.java": {
-    "mtime": 1792066159.0146008,
-    "seen": 1792072653.08176,
-    "ast_hash": "1584c93f25dccc84d4642d34e76bbacd",
+    "mtime": 1793832292.9364953,
+    "seen": 1793833023.9998202,
+    "ast_hash": "9c6f94c1127ca9555cabffd4e8a82057",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/marketplace/comparison/package-info.java": {
@@ -3846,9 +3816,9 @@
     "semantic_hash": ""
   },
   "database/migrations/README.md": {
-    "mtime": 1792260831.761349,
-    "seen": 1792262762.4077463,
-    "ast_hash": "cf8147da8796be3c4175397fef0cebe8",
+    "mtime": 1793896693.17216,
+    "seen": 1793897259.79394,
+    "ast_hash": "eccedce0c886264aba1b783a5b65c15a",
     "semantic_hash": ""
   },
   "tools/release/promote-to-main.sh": {
@@ -3948,9 +3918,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/billing/BillingSettings.java": {
-    "mtime": 1792017447.4290326,
-    "seen": 1792059545.4494767,
-    "ast_hash": "46c7579ba2890000dc00afd7964d5d18",
+    "mtime": 1793830247.0204206,
+    "seen": 1793831219.583068,
+    "ast_hash": "be0ca2995bcba55d56048d4b5c696692",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/billing/PaymentMode.java": {
@@ -4128,9 +4098,9 @@
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/core/billing/SimulatedSubscriptionPaymentsTest.java": {
-    "mtime": 1792017502.434772,
-    "seen": 1792059545.5916862,
-    "ast_hash": "af37789679a05f94a78be3c0d45b29d6",
+    "mtime": 1793830304.6096935,
+    "seen": 1793831219.8274908,
+    "ast_hash": "a6819cd11a1598f97a5318db041b41f4",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/core/billing/SubscriptionPeriodsTest.java": {
@@ -4176,9 +4146,9 @@
     "semantic_hash": ""
   },
   "frontend/src/components/common/data-table.tsx": {
-    "mtime": 1792089630.1458275,
-    "seen": 1792091485.1351335,
-    "ast_hash": "36832cbe5733dff55a5749825be710b8",
+    "mtime": 1792270432.7279887,
+    "seen": 1793829583.4506714,
+    "ast_hash": "f496ae56dd430f9afd211c199af94ea6",
     "semantic_hash": ""
   },
   "frontend/src/components/ui/alert-dialog.tsx": {
@@ -4596,9 +4566,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/portal/pages/orders-page.tsx": {
-    "mtime": 1792089630.444426,
-    "seen": 1792091485.2570539,
-    "ast_hash": "4fbe2ca0d32c6d3cbe3df01339a181ba",
+    "mtime": 1792270437.871099,
+    "seen": 1793829583.5588362,
+    "ast_hash": "8b073dd988a9ad04dbabd09ae5fd9803",
     "semantic_hash": ""
   },
   "frontend/src/features/portal/pages/product-form-page.tsx": {
@@ -4674,9 +4644,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/order/OrderPlacement.java": {
-    "mtime": 1792262620.2415946,
-    "seen": 1792262762.1049397,
-    "ast_hash": "82146fec9ec5ca1eecc51a44a4415099",
+    "mtime": 1793831823.5034685,
+    "seen": 1793833023.9396384,
+    "ast_hash": "889310cad955ae8392a71e2c615d51db",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/order/PaymentReferenceOwner.java": {
@@ -4698,9 +4668,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/marketplace/checkout/MarketplaceOrderController.java": {
-    "mtime": 1792066159.0055535,
-    "seen": 1792072653.0817387,
-    "ast_hash": "156ea718b0a31b821ae3bc60336e108e",
+    "mtime": 1793832278.738019,
+    "seen": 1793833023.9987793,
+    "ast_hash": "f17a2e60e397c11cd1e6b9f51fe65e11",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/marketplace/checkout/PaymentAttempt.java": {
@@ -4716,9 +4686,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/marketplace/checkout/PlaceMarketplaceOrder.java": {
-    "mtime": 1792262620.729616,
-    "seen": 1792262762.1380224,
-    "ast_hash": "9084dbd2c31777d96884017e6564b793",
+    "mtime": 1793832098.7322116,
+    "seen": 1793833023.9994853,
+    "ast_hash": "4848cd4fa6d37bec757a0da12136a64e",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/marketplace/checkout/PlaceOrderRequest.java": {
@@ -4728,9 +4698,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/marketplace/checkout/SimulatedCheckoutPaymentGateway.java": {
-    "mtime": 1792066159.0146008,
-    "seen": 1792072653.081755,
-    "ast_hash": "6bfb7e0b3ab0e4eee8e24ea916e66906",
+    "mtime": 1793832292.1206675,
+    "seen": 1793833023.9998102,
+    "ast_hash": "a9cd499c7308d44757523ac2ee7210b1",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/core/identity/PersonAddressLookupTest.java": {
@@ -4764,9 +4734,9 @@
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/marketplace/checkout/MarketplaceOrderControllerTest.java": {
-    "mtime": 1792066159.0464165,
-    "seen": 1792072653.145482,
-    "ast_hash": "5c6ca07b1ab340fcb2da6f97f9a0c243",
+    "mtime": 1793832425.8701284,
+    "seen": 1793833024.2083771,
+    "ast_hash": "2b3ff9bf31a4e6fb46374161654a0709",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/marketplace/checkout/PlaceMarketplaceOrderTest.java": {
@@ -4776,9 +4746,9 @@
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/marketplace/checkout/SimulatedCheckoutPaymentGatewayTest.java": {
-    "mtime": 1792066159.0557916,
-    "seen": 1792072653.1454885,
-    "ast_hash": "3b5b311ce73dddb33fa47eed08e5d497",
+    "mtime": 1793832713.1432986,
+    "seen": 1793833024.2094743,
+    "ast_hash": "5300b28d9a2b3918aca376f194b6eb49",
     "semantic_hash": ""
   },
   "frontend/src/features/auth/lib/account-menu-items.ts": {
@@ -5745,6 +5715,468 @@
     "mtime": 1792269622.115606,
     "seen": 1792269763.9899418,
     "ast_hash": "6e8ffca970796ef5e296507103fc4b6c",
+    "semantic_hash": ""
+  },
+  "backend/docker-entrypoint.sh": {
+    "mtime": 1793775326.9208598,
+    "seen": 1793829583.2201679,
+    "ast_hash": "a58856acab63b338223c7cd32f253eda",
+    "semantic_hash": ""
+  },
+  "frontend/vercel.json": {
+    "mtime": 1793817376.5556335,
+    "seen": 1793829583.5746238,
+    "ast_hash": "133af4258a3d530edd6c475f0e848f2a",
+    "semantic_hash": ""
+  },
+  "docs/adr/0004-cobros-wompi-produccion.md": {
+    "mtime": 1793831410.0665257,
+    "seen": 1793833024.417206,
+    "ast_hash": "4cfb04ccf709c08b98334f2b195f72a4",
+    "semantic_hash": ""
+  },
+  "docs/architecture/2026-11-04-wompi-produccion-plan.md": {
+    "mtime": 1793831410.7483284,
+    "seen": 1793833024.4221563,
+    "ast_hash": "dd7626e0012dc470afee6b97dc73be63",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/billing/SubscriptionPaymentStatus.java": {
+    "mtime": 1793830284.7957182,
+    "seen": 1793831219.5862913,
+    "ast_hash": "e9ce675f99ab5bbde7ddf8500d46ceb9",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/billing/SubscriptionPaymentSyncRequest.java": {
+    "mtime": 1793830284.1540022,
+    "seen": 1793831219.586294,
+    "ast_hash": "94b54ccb62e22bccee690983be055352",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/billing/internal/SubscriptionWompiHandler.java": {
+    "mtime": 1793896730.1719568,
+    "seen": 1793897259.0370126,
+    "ast_hash": "28d0759cb591f202f072cc64a9a70096",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/payments/PaymentProvider.java": {
+    "mtime": 1793830130.3097198,
+    "seen": 1793831219.6700664,
+    "ast_hash": "efe374f44b0bb626852196239a007a51",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/payments/PaymentSettings.java": {
+    "mtime": 1793830131.2183347,
+    "seen": 1793831219.6700723,
+    "ast_hash": "cd94d69b3b862ee76ba61f72c1712d78",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/payments/PaymentSyncRateLimiter.java": {
+    "mtime": 1793830159.3743389,
+    "seen": 1793831219.6700757,
+    "ast_hash": "1dbe38ea82ed4b46c4f423e3624519a2",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/payments/WompiCheckoutRequest.java": {
+    "mtime": 1793829965.2808053,
+    "seen": 1793831219.6700792,
+    "ast_hash": "394a9a85d8c7ea89b613d889bbea78d2",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/payments/WompiClient.java": {
+    "mtime": 1793830977.9182055,
+    "seen": 1793831219.6700823,
+    "ast_hash": "ac3cb8a4a88740ba6e16d68ef22e9881",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/payments/WompiEnvironment.java": {
+    "mtime": 1793829948.1110837,
+    "seen": 1793831219.670085,
+    "ast_hash": "bad5551fafbab70c6d109cf5bb61cbc9",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/payments/WompiEventOutcome.java": {
+    "mtime": 1793829951.1841924,
+    "seen": 1793831219.6700876,
+    "ast_hash": "97e382fdd91774a399869d7472bc58b1",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/payments/WompiEventRouter.java": {
+    "mtime": 1793830097.6062777,
+    "seen": 1793831219.670091,
+    "ast_hash": "13707f6dfa229a1c7073fc96eb8a8081",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/payments/WompiEventSource.java": {
+    "mtime": 1793829950.3845935,
+    "seen": 1793831219.6700943,
+    "ast_hash": "2b60c72fef67fc08c344fd79fc62d00b",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/payments/WompiProperties.java": {
+    "mtime": 1793829948.911561,
+    "seen": 1793831219.6700974,
+    "ast_hash": "92a45bad3f3d5988707f2c7b4b2717cb",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/payments/WompiTransaction.java": {
+    "mtime": 1793829949.6607618,
+    "seen": 1793831219.6701,
+    "ast_hash": "33d4c4f94503acdc813db17ff6b98804",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/payments/WompiTransactionHandler.java": {
+    "mtime": 1793829951.9936562,
+    "seen": 1793831219.6701026,
+    "ast_hash": "166dcb2c01901ce8a36c81e07afff896",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/payments/WompiUnavailableException.java": {
+    "mtime": 1793829952.5657744,
+    "seen": 1793831219.670106,
+    "ast_hash": "e442864c867889d0664071461c2bca51",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/payments/internal/PaymentProviderEventLog.java": {
+    "mtime": 1793830054.0839386,
+    "seen": 1793831219.670109,
+    "ast_hash": "ec302530c90c29701fa793cc82b856fb",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/payments/internal/PaymentsConfig.java": {
+    "mtime": 1793896810.2459693,
+    "seen": 1793897259.250853,
+    "ast_hash": "b97131d5b703c2be4f0a643a6186d216",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/payments/internal/WompiConfigurationValidator.java": {
+    "mtime": 1793896695.0440378,
+    "seen": 1793897259.2508595,
+    "ast_hash": "2cd8faff285e534e1613e5b404de8a25",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/payments/internal/WompiDispatcher.java": {
+    "mtime": 1793896659.1558435,
+    "seen": 1793897259.2508633,
+    "ast_hash": "46fcd1f85169e8cfc76b38c70a2b55db",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/payments/internal/WompiPayloads.java": {
+    "mtime": 1793829966.1462007,
+    "seen": 1793831219.6701212,
+    "ast_hash": "0b4e4358b7a5efcf9d50348cb1e116a1",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/payments/internal/WompiSignatureException.java": {
+    "mtime": 1793830017.176531,
+    "seen": 1793831219.6701238,
+    "ast_hash": "6e4c5f99c6c877d5e476e64db185c8e4",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/payments/internal/WompiSignatureVerifier.java": {
+    "mtime": 1793896586.2618222,
+    "seen": 1793897259.2541428,
+    "ast_hash": "24017be5450087f75d9defacf7a187e4",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/payments/internal/WompiWebhookIngest.java": {
+    "mtime": 1793830115.422363,
+    "seen": 1793831219.6701288,
+    "ast_hash": "2ad1c80415c3bf897ca42eee0e49f6d1",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/payments/package-info.java": {
+    "mtime": 1793829947.317767,
+    "seen": 1793831219.6701324,
+    "ast_hash": "a1e925104e1ef990108ef86cd27149f9",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/payments/web/WompiWebhookController.java": {
+    "mtime": 1793830116.0410447,
+    "seen": 1793831219.6701353,
+    "ast_hash": "8ec49bf603d4737fd56f3f8c52f4a8b2",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/billing/SubscriptionPaymentStatusTest.java": {
+    "mtime": 1793830510.1684766,
+    "seen": 1793831219.8275034,
+    "ast_hash": "ffd506a742f38498beb9cb7368534247",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/billing/internal/SubscriptionWompiHandlerTest.java": {
+    "mtime": 1793896943.879173,
+    "seen": 1793897259.4495203,
+    "ast_hash": "2c3e51952d691f49beb41bcb2b6268ea",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/payments/PaymentSyncRateLimiterTest.java": {
+    "mtime": 1793830508.8796198,
+    "seen": 1793831219.8387036,
+    "ast_hash": "cfbc5bda9317c4c50bcdef4a08d29eb5",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/payments/WompiClientTest.java": {
+    "mtime": 1793830508.2097704,
+    "seen": 1793831219.838707,
+    "ast_hash": "2330232876a3eb01cd2e4289916ad3ae",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/payments/internal/PaymentProviderEventLogTest.java": {
+    "mtime": 1793830509.5046735,
+    "seen": 1793831219.8387094,
+    "ast_hash": "6e401e276f9d86dc6b4b82e10a9e79b8",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/payments/internal/WompiConfigurationValidatorTest.java": {
+    "mtime": 1793896712.8473046,
+    "seen": 1793897259.4825616,
+    "ast_hash": "07ed57df129572e73eeae3fea096e130",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/payments/internal/WompiDispatcherTest.java": {
+    "mtime": 1793896924.4718153,
+    "seen": 1793897259.4825692,
+    "ast_hash": "eafd18592b029ebdb06b7da1d6310f86",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/payments/internal/WompiSignatureVerifierTest.java": {
+    "mtime": 1793896623.0752687,
+    "seen": 1793897259.482573,
+    "ast_hash": "f81721a5902794b1d88df41b3fd8b45e",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/payments/web/WompiWebhookControllerTest.java": {
+    "mtime": 1793896617.6543388,
+    "seen": 1793897259.4825773,
+    "ast_hash": "be56f298bc95a77332bf1e7d6751163c",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/billing/internal/SubscriptionPaymentReconciler.java": {
+    "mtime": 1793832322.941048,
+    "seen": 1793833023.8578942,
+    "ast_hash": "11a1f3eed8d3ec3a9824ab0c6891ce95",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/inventory/StockReturn.java": {
+    "mtime": 1793831748.987492,
+    "seen": 1793833023.9318967,
+    "ast_hash": "85600b81b64221c3cb86ddbf56f8ed34",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/order/OrderPayment.java": {
+    "mtime": 1793832024.6571114,
+    "seen": 1793833023.9396307,
+    "ast_hash": "5c79358920240d61b1d64b0398ef0b5b",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/order/OrderPayments.java": {
+    "mtime": 1793897554.799517,
+    "seen": 1793897895.3916583,
+    "ast_hash": "55c8926c1357d7029432dcfbd200fba7",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/order/PaymentMethodOption.java": {
+    "mtime": 1793831766.9358227,
+    "seen": 1793833023.9396417,
+    "ast_hash": "a853e6e22f449e9b4bfad6f79035bcb5",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/order/PendingPayment.java": {
+    "mtime": 1793831766.221671,
+    "seen": 1793833023.9401262,
+    "ast_hash": "b6b3e8e003eec4400ed28ce9d22756ff",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/marketplace/checkout/CheckoutOptions.java": {
+    "mtime": 1793832277.9539435,
+    "seen": 1793833023.9980693,
+    "ast_hash": "4a5f701e9189a7dfaf32d9b7d0af081a",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/marketplace/checkout/CheckoutOptionsResponse.java": {
+    "mtime": 1793832260.8896377,
+    "seen": 1793833023.9980726,
+    "ast_hash": "984186258c51d482dcb3f2b09fbbcdc9",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/marketplace/checkout/CheckoutSchedulingConfig.java": {
+    "mtime": 1793896812.0894601,
+    "seen": 1793897259.2940366,
+    "ast_hash": "cf438416a50fcce86d99e9325bd89fb0",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/marketplace/checkout/ExpireAwaitingPayments.java": {
+    "mtime": 1793897575.2003782,
+    "seen": 1793897895.4817839,
+    "ast_hash": "628bf4724fbdda72330cb006f9bd33bc",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/marketplace/checkout/MarketplacePaymentJobs.java": {
+    "mtime": 1793897577.53743,
+    "seen": 1793897895.4825625,
+    "ast_hash": "a73a84aac723e9d8a5f4d2d74e60106f",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/marketplace/checkout/MarketplacePaymentLinks.java": {
+    "mtime": 1793832120.11008,
+    "seen": 1793833023.9987843,
+    "ast_hash": "708ef805af6ef05a97e476ee2d2a007c",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/marketplace/checkout/MarketplaceWompiHandler.java": {
+    "mtime": 1793896729.183056,
+    "seen": 1793897259.296198,
+    "ast_hash": "928bdcd9ccf093e322337638d67119b7",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/marketplace/checkout/OrderPaymentController.java": {
+    "mtime": 1793832259.9546144,
+    "seen": 1793833023.9987886,
+    "ast_hash": "4c32554bdff3192bef539ddc4153ac5d",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/marketplace/checkout/OrderPaymentStatus.java": {
+    "mtime": 1793832250.1931021,
+    "seen": 1793833023.9987905,
+    "ast_hash": "9587fa3ff52e964792acfb4853405713",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/marketplace/checkout/OrderPaymentSyncRequest.java": {
+    "mtime": 1793832230.032718,
+    "seen": 1793833023.9987924,
+    "ast_hash": "3857b548db52a754c25799cc4a8a7e67",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/marketplace/checkout/OrderPaymentView.java": {
+    "mtime": 1793832229.5503125,
+    "seen": 1793833023.9987948,
+    "ast_hash": "1364c4c09b057b182da05899eb6ce9e5",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/marketplace/checkout/PreparedOrder.java": {
+    "mtime": 1793832106.0089622,
+    "seen": 1793833023.999804,
+    "ast_hash": "b8f3561b55e6f2fdac1d1894213d627b",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/marketplace/checkout/ReconcilePendingPayments.java": {
+    "mtime": 1793896839.300256,
+    "seen": 1793897259.3075242,
+    "ast_hash": "72c43351329a471b7a3787f89fc89aec",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/marketplace/checkout/StartMarketplaceCheckout.java": {
+    "mtime": 1793832162.7598138,
+    "seen": 1793833023.9998124,
+    "ast_hash": "86164b6f272dbdee69d0db2d9f6c70d3",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/marketplace/checkout/WompiCheckoutResponse.java": {
+    "mtime": 1793832127.1390696,
+    "seen": 1793833023.9998155,
+    "ast_hash": "58b534a1af4b5c19c92b8e96768a537f",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/marketplace/checkout/WompiCheckoutResult.java": {
+    "mtime": 1793832127.773286,
+    "seen": 1793833023.9998174,
+    "ast_hash": "17e290383864ed72547d7730b0921a01",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/billing/internal/SubscriptionPaymentReconcilerTest.java": {
+    "mtime": 1793832712.361808,
+    "seen": 1793833024.1303656,
+    "ast_hash": "8c19e95e99e86337e7d9a23faf3e8584",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/inventory/StockServiceReturnTest.java": {
+    "mtime": 1793832650.180979,
+    "seen": 1793833024.172341,
+    "ast_hash": "a49d39488c962c9292ae472eaccb33b8",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/order/OrderPaymentsTest.java": {
+    "mtime": 1793897625.6211247,
+    "seen": 1793897895.7144105,
+    "ast_hash": "e945e0781a9bbad9090e45653af26ede",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/order/OrderPlacementAwaitingPaymentTest.java": {
+    "mtime": 1793832695.6582212,
+    "seen": 1793833024.1763864,
+    "ast_hash": "d236c8fa91e51c7ed2ebce2ca4e2b326",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/marketplace/checkout/CheckoutOptionsTest.java": {
+    "mtime": 1793832631.6222706,
+    "seen": 1793833024.208365,
+    "ast_hash": "8a1717008b46d2f8e32e16deac172cec",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/marketplace/checkout/ExpireAwaitingPaymentsTest.java": {
+    "mtime": 1793897606.783769,
+    "seen": 1793897895.728775,
+    "ast_hash": "e829e2b178146370503caddbd882cdb3",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/marketplace/checkout/MarketplacePaymentLinksTest.java": {
+    "mtime": 1793832632.2971077,
+    "seen": 1793833024.208381,
+    "ast_hash": "89a72c3e788a16c61919aa10708af100",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/marketplace/checkout/MarketplaceWompiHandlerTest.java": {
+    "mtime": 1793896935.862815,
+    "seen": 1793897259.490202,
+    "ast_hash": "de689ec730759089fe50283fc03b5e7a",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/marketplace/checkout/OrderPaymentStatusTest.java": {
+    "mtime": 1793832630.4433424,
+    "seen": 1793833024.2083879,
+    "ast_hash": "1e5dbb4ab7f26d22d689cb648b7d8380",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/marketplace/checkout/PaymentExpirationRaceTest.java": {
+    "mtime": 1793897623.0659113,
+    "seen": 1793897895.7314856,
+    "ast_hash": "da809d457ef02c785771f905ee922796",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/marketplace/checkout/ReconcilePendingPaymentsTest.java": {
+    "mtime": 1793832631.0210502,
+    "seen": 1793833024.2094657,
+    "ast_hash": "f9ce507dce0134aa918f3799d852c925",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/marketplace/checkout/StartMarketplaceCheckoutTest.java": {
+    "mtime": 1793832828.4421287,
+    "seen": 1793833024.209479,
+    "ast_hash": "78c1d99f530755858d4e23f45db35b33",
+    "semantic_hash": ""
+  },
+  "docs/api/payments-wompi.md": {
+    "mtime": 1793833423.5105968,
+    "seen": 1793897259.8179169,
+    "ast_hash": "030a9ddd08628a7ebfebd75d552edfb3",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/order/SaleAwaitingPaymentTest.java": {
+    "mtime": 1793833147.478119,
+    "seen": 1793833387.6341147,
+    "ast_hash": "f2e336b5084fdc4be15da19cefbbf3b2",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/payments/internal/WompiPayloadWhitelist.java": {
+    "mtime": 1793896645.5019956,
+    "seen": 1793897259.250868,
+    "ast_hash": "dd835ec410cbc304dbd46f5eb0834e9f",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/marketplace/checkout/MarketplacePaymentJobsTest.java": {
+    "mtime": 1793897646.104475,
+    "seen": 1793897895.7293158,
+    "ast_hash": "4111505ee02bd29bb6f15abdf93465a3",
     "semantic_hash": ""
   }
 }

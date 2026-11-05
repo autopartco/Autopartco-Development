@@ -3,6 +3,9 @@ package com.autopartco.backend.core.order;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.sql.Types;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -23,9 +26,12 @@ public class OrderPlacement {
     static final String PROVIDER = "SIMULATED";
     static final String CURRENCY = "COP";
     static final String ORDER_STATUS = "CONFIRMED";
+    static final String AWAITING_PAYMENT_STATUS = "AWAITING_PAYMENT";
     static final String SALE_STATUS = "PENDING";
     static final String PAYMENT_STATUS = "APPROVED";
+    static final String PENDING_PAYMENT_STATUS = "PENDING";
     static final String PAYMENT_EVENT_MESSAGE = "Pago simulado aprobado";
+    static final String PENDING_PAYMENT_EVENT_MESSAGE = "Pago iniciado; en espera del proveedor";
 
     static final String ACTIVE_PAYMENT_METHOD_SQL = """
             SELECT EXISTS (
@@ -34,12 +40,27 @@ public class OrderPlacement {
             )
             """;
 
+    static final String ACTIVE_PAYMENT_METHODS_SQL = """
+            SELECT code, name
+            FROM payment_methods
+            WHERE active = true AND deleted_at IS NULL
+              AND starts_with(code, :prefix)
+            ORDER BY code
+            """;
+
     static final String PAYMENT_REFERENCE_OWNER_SQL = """
             SELECT payment.order_id, customer_order.person_id
             FROM payments payment
             JOIN orders customer_order ON customer_order.id = payment.order_id
             WHERE payment.provider = :provider
               AND payment.provider_reference = :reference
+            """;
+
+    static final String IDEMPOTENCY_KEY_OWNER_SQL = """
+            SELECT payment.order_id, customer_order.person_id
+            FROM payments payment
+            JOIN orders customer_order ON customer_order.id = payment.order_id
+            WHERE payment.idempotency_key = :idempotencyKey
             """;
 
     static final String INSERT_ORDER_SQL = """
@@ -77,6 +98,16 @@ public class OrderPlacement {
             RETURNING id
             """;
 
+    static final String INSERT_PENDING_PAYMENT_SQL = """
+            INSERT INTO payments (order_id, payment_method_id, payment_status_id, provider, provider_reference,
+                                  amount, currency, idempotency_key, environment, expires_at)
+            VALUES (:orderId,
+                    (SELECT id FROM payment_methods WHERE code = :methodCode),
+                    (SELECT id FROM payment_statuses WHERE code = :statusCode),
+                    :provider, :reference, :amount, :currency, :idempotencyKey, :environment, :expiresAt)
+            RETURNING id
+            """;
+
     static final String INSERT_PAYMENT_EVENT_SQL = """
             INSERT INTO payment_events (payment_id, payment_status_id, message)
             VALUES (:paymentId, (SELECT id FROM payment_statuses WHERE code = :statusCode), :message)
@@ -96,15 +127,33 @@ public class OrderPlacement {
                 .single());
     }
 
+    /** Métodos de pago activos cuyo código empieza por {@code prefix} (p. ej. {@code SIMULATED_}), por código. */
+    @Transactional(readOnly = true)
+    public List<PaymentMethodOption> activePaymentMethods(String prefix) {
+        return jdbcClient.sql(ACTIVE_PAYMENT_METHODS_SQL)
+                .param("prefix", prefix)
+                .query((result, row) -> new PaymentMethodOption(result.getString("code"), result.getString("name")))
+                .list();
+    }
+
     /** Pago con provider {@code SIMULATED} y esa referencia, si existe. */
     @Transactional(readOnly = true)
     public Optional<PaymentReferenceOwner> findByPaymentReference(String reference) {
         return jdbcClient.sql(PAYMENT_REFERENCE_OWNER_SQL)
                 .param("provider", PROVIDER)
                 .param("reference", reference)
-                .query((result, row) -> new PaymentReferenceOwner(
-                        result.getObject("order_id", UUID.class),
-                        result.getObject("person_id", UUID.class)))
+                .query(OrderPlacement::mapOwner)
+                .list()
+                .stream()
+                .findFirst();
+    }
+
+    /** Pago (de cualquier proveedor) con esa {@code idempotency_key} ({@code clientRequestId}), si existe. */
+    @Transactional(readOnly = true)
+    public Optional<PaymentReferenceOwner> findByIdempotencyKey(String idempotencyKey) {
+        return jdbcClient.sql(IDEMPOTENCY_KEY_OWNER_SQL)
+                .param("idempotencyKey", idempotencyKey)
+                .query(OrderPlacement::mapOwner)
                 .list()
                 .stream()
                 .findFirst();
@@ -118,9 +167,56 @@ public class OrderPlacement {
      */
     @Transactional
     public UUID placeApproved(NewOrder order) {
+        PlacedOrder placed = insertOrder(order, ORDER_STATUS);
+
+        UUID paymentId = jdbcClient.sql(INSERT_PAYMENT_SQL)
+                .param("orderId", placed.orderId())
+                .param("methodCode", order.paymentMethodCode())
+                .param("statusCode", PAYMENT_STATUS)
+                .param("provider", PROVIDER)
+                .param("reference", order.paymentReference())
+                .param("amount", placed.amount())
+                .param("currency", CURRENCY)
+                .query(UUID.class)
+                .single();
+
+        insertPaymentEvent(paymentId, PAYMENT_STATUS, PAYMENT_EVENT_MESSAGE);
+        return placed.orderId();
+    }
+
+    /**
+     * Inserta el pedido en espera de pago (ADR 0004 §2.4): {@code orders} (AWAITING_PAYMENT), dirección, ventas
+     * (PENDING) y detalles, {@code payments} (PENDING, sin {@code paid_at}, con referencia, {@code idempotency_key},
+     * entorno y {@code expires_at}) y {@code payment_events} (PENDING). {@code order.paymentReference()} se ignora:
+     * manda {@code payment.reference()}. Una referencia o clave de idempotencia repetida propaga la
+     * {@code DuplicateKeyException}.
+     */
+    @Transactional
+    public UUID placeAwaitingPayment(NewOrder order, PendingPayment payment) {
+        PlacedOrder placed = insertOrder(order, AWAITING_PAYMENT_STATUS);
+
+        UUID paymentId = jdbcClient.sql(INSERT_PENDING_PAYMENT_SQL)
+                .param("orderId", placed.orderId())
+                .param("methodCode", order.paymentMethodCode())
+                .param("statusCode", PENDING_PAYMENT_STATUS)
+                .param("provider", payment.provider())
+                .param("reference", payment.reference())
+                .param("amount", placed.amount())
+                .param("currency", CURRENCY)
+                .param("idempotencyKey", payment.idempotencyKey())
+                .param("environment", payment.environment())
+                .param("expiresAt", OffsetDateTime.ofInstant(payment.expiresAt(), ZoneOffset.UTC))
+                .query(UUID.class)
+                .single();
+
+        insertPaymentEvent(paymentId, PENDING_PAYMENT_STATUS, PENDING_PAYMENT_EVENT_MESSAGE);
+        return placed.orderId();
+    }
+
+    private PlacedOrder insertOrder(NewOrder order, String orderStatus) {
         UUID orderId = jdbcClient.sql(INSERT_ORDER_SQL)
                 .param("personId", order.personId())
-                .param("stateCode", ORDER_STATUS)
+                .param("stateCode", orderStatus)
                 .query(UUID.class)
                 .single();
 
@@ -160,25 +256,23 @@ public class OrderPlacement {
             }
             amount = amount.add(sale.total());
         }
-        amount = amount.setScale(2, RoundingMode.HALF_UP);
+        return new PlacedOrder(orderId, amount.setScale(2, RoundingMode.HALF_UP));
+    }
 
-        UUID paymentId = jdbcClient.sql(INSERT_PAYMENT_SQL)
-                .param("orderId", orderId)
-                .param("methodCode", order.paymentMethodCode())
-                .param("statusCode", PAYMENT_STATUS)
-                .param("provider", PROVIDER)
-                .param("reference", order.paymentReference())
-                .param("amount", amount)
-                .param("currency", CURRENCY)
-                .query(UUID.class)
-                .single();
-
+    private void insertPaymentEvent(UUID paymentId, String statusCode, String message) {
         jdbcClient.sql(INSERT_PAYMENT_EVENT_SQL)
                 .param("paymentId", paymentId)
-                .param("statusCode", PAYMENT_STATUS)
-                .param("message", PAYMENT_EVENT_MESSAGE)
+                .param("statusCode", statusCode)
+                .param("message", message)
                 .update();
+    }
 
-        return orderId;
+    private static PaymentReferenceOwner mapOwner(java.sql.ResultSet result, int row) throws java.sql.SQLException {
+        return new PaymentReferenceOwner(
+                result.getObject("order_id", UUID.class),
+                result.getObject("person_id", UUID.class));
+    }
+
+    private record PlacedOrder(UUID orderId, BigDecimal amount) {
     }
 }

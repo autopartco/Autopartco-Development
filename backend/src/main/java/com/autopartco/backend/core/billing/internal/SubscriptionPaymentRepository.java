@@ -1,9 +1,11 @@
 package com.autopartco.backend.core.billing.internal;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -17,6 +19,18 @@ public interface SubscriptionPaymentRepository extends JpaRepository<Subscriptio
     List<SubscriptionPayment> findByStoreApplicationIdOrderByCreatedAtDesc(UUID storeApplicationId);
 
     boolean existsByProviderTransactionId(String providerTransactionId);
+
+    /** Referencias de pagos Wompi PENDING del entorno, creados entre {@code from} y {@code to}, más antiguos primero. */
+    @Query("select payment.reference from SubscriptionPayment payment "
+            + "where payment.provider = 'WOMPI' and payment.status = 'PENDING' "
+            + "and payment.environment = :environment "
+            + "and payment.createdAt >= :from and payment.createdAt <= :to "
+            + "order by payment.createdAt")
+    List<String> findPendingWompiReferences(
+            @Param("environment") String environment,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to,
+            Pageable pageable);
 
     // Conserva el inner join del antiguo "join fetch payment.application": solo devuelve el pago si su fila de
     // seller_applications existe y no está borrada lógicamente.

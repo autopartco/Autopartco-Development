@@ -3,7 +3,7 @@ package com.autopartco.backend.core.billing;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.autopartco.backend.core.billing.internal.wompi.WompiProperties;
+import com.autopartco.backend.core.payments.WompiProperties;
 
 /** Configuración de cobros que el portal necesita conocer: si el simulador está encendido y si Wompi está listo. */
 @Service
@@ -28,15 +28,7 @@ public class BillingSettings {
         if (simulatedPaymentsEnabled) {
             return PaymentMode.SIMULATED;
         }
-        boolean wompiConfigured = wompiProperties != null
-                && !isBlank(wompiProperties.publicKey())
-                && !isBlank(wompiProperties.integritySecret())
-                && !isBlank(wompiProperties.checkoutUrl())
-                && !isBlank(wompiProperties.redirectUrl());
+        boolean wompiConfigured = wompiProperties != null && wompiProperties.checkoutConfigured();
         return wompiConfigured ? PaymentMode.WOMPI : PaymentMode.NONE;
-    }
-
-    private static boolean isBlank(String value) {
-        return value == null || value.isBlank();
     }
 }

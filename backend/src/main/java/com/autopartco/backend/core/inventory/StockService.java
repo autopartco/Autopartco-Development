@@ -1,6 +1,7 @@
 package com.autopartco.backend.core.inventory;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -40,6 +41,24 @@ public class StockService {
             FROM inventory
             WHERE branch_id = :branchId AND product_id = :productId
               AND deleted_at IS NULL
+            """;
+
+    /**
+     * Bloquea los listados que reciben unidades en el mismo orden que el descuento del checkout
+     * ({@code branch_id, product_id}) para no interbloquearse con una compra en curso.
+     */
+    static final String LOCK_FOR_RETURN_SQL = """
+            SELECT id
+            FROM inventory
+            WHERE id IN (:inventoryIds)
+            ORDER BY branch_id, product_id
+            FOR UPDATE
+            """;
+
+    static final String RETURN_SQL = """
+            UPDATE inventory
+            SET stock = stock + :units, version = version + 1, updated_at = now()
+            WHERE id = :inventoryId
             """;
 
     private final InventoryRepository inventoryRepository;
@@ -92,6 +111,32 @@ public class StockService {
                 .list()
                 .stream()
                 .findFirst();
+    }
+
+    /**
+     * Devuelve unidades reservadas a sus listados (también si el listado se borró después). No escribe
+     * {@code inventory_movements}: el descuento del checkout tampoco lo hace (plan Wompi, N14). Corre en la
+     * transacción del llamador.
+     */
+    @Transactional
+    public void returnStock(List<StockReturn> returns) {
+        if (returns == null || returns.isEmpty()) {
+            return;
+        }
+        List<UUID> locked = jdbcClient.sql(LOCK_FOR_RETURN_SQL)
+                .param("inventoryIds", returns.stream().map(StockReturn::inventoryId).distinct().toList())
+                .query((result, row) -> result.getObject("id", UUID.class))
+                .list();
+        for (UUID inventoryId : locked) {
+            int units = returns.stream()
+                    .filter(item -> item.inventoryId().equals(inventoryId))
+                    .mapToInt(StockReturn::units)
+                    .sum();
+            jdbcClient.sql(RETURN_SQL)
+                    .param("units", units)
+                    .param("inventoryId", inventoryId)
+                    .update();
+        }
     }
 
     /** Stock actual del listado vivo, o 0 si no existe. Solo para los detalles de error. */

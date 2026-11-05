@@ -2,9 +2,11 @@ package com.autopartco.backend.marketplace.checkout;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -21,6 +23,10 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 
 import com.autopartco.backend.core.order.BuyerOrderResponse;
+import com.autopartco.backend.core.payments.PaymentProvider;
+import com.autopartco.backend.core.payments.PaymentSettings;
+import com.autopartco.backend.core.payments.WompiEnvironment;
+import com.autopartco.backend.core.payments.WompiProperties;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
@@ -47,19 +53,52 @@ class MarketplaceOrderControllerTest {
 
     @Test
     void createdOrderReturns201WithLocation() {
-        ResponseEntity<BuyerOrderResponse> response = place(false);
+        ResponseEntity<?> response = place(false);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CREATED);
         assertThat(response.getHeaders().getLocation()).hasToString("/api/v1/me/orders/" + ORDER_ID);
-        assertThat(response.getBody().orderId()).isEqualTo(ORDER_ID);
+        assertThat(((BuyerOrderResponse) response.getBody()).orderId()).isEqualTo(ORDER_ID);
     }
 
     @Test
     void replayedOrderReturns200WithSameBody() {
-        ResponseEntity<BuyerOrderResponse> response = place(true);
+        ResponseEntity<?> response = place(true);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getBody().orderId()).isEqualTo(ORDER_ID);
+        assertThat(((BuyerOrderResponse) response.getBody()).orderId()).isEqualTo(ORDER_ID);
+    }
+
+    @Test
+    void wompiOrderReturns202WithLocationAndPaymentLink() {
+        ResponseEntity<?> response = placeWompi(false);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.ACCEPTED);
+        assertThat(response.getHeaders().getLocation()).hasToString("/api/v1/me/orders/" + ORDER_ID);
+        WompiCheckoutResponse body = (WompiCheckoutResponse) response.getBody();
+        assertThat(body.status()).isEqualTo("AWAITING_PAYMENT");
+        assertThat(body.payment().checkoutUrl()).isEqualTo("https://checkout.example/p");
+    }
+
+    @Test
+    void replayedWompiOrderReturns200WithSameShape() {
+        ResponseEntity<?> response = placeWompi(true);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+        assertThat(response.getBody()).isInstanceOf(WompiCheckoutResponse.class);
+    }
+
+    @Test
+    void checkoutOptionsDelegatesToService() {
+        CheckoutOptions options = mock(CheckoutOptions.class);
+        CheckoutOptionsResponse expected = new CheckoutOptionsResponse("WOMPI", "SANDBOX",
+                List.of(new CheckoutOptionsResponse.Method("WOMPI", CheckoutOptions.WOMPI_NAME)));
+        when(options.current()).thenReturn(expected);
+
+        MarketplaceOrderController controller = new MarketplaceOrderController(
+                mock(PlaceMarketplaceOrder.class), mock(StartMarketplaceCheckout.class), options,
+                settings(PaymentProvider.WOMPI));
+
+        assertThat(controller.checkoutOptions()).isSameAs(expected);
     }
 
     @Test
@@ -89,15 +128,40 @@ class MarketplaceOrderControllerTest {
                 .containsExactly("items");
     }
 
-    private static ResponseEntity<BuyerOrderResponse> place(boolean replayed) {
+    private static ResponseEntity<?> place(boolean replayed) {
         PlaceMarketplaceOrder useCase = mock(PlaceMarketplaceOrder.class);
+        StartMarketplaceCheckout wompi = mock(StartMarketplaceCheckout.class);
         PlaceOrderRequest request = request("SIMULATED_CARD", null, List.of(item(1)));
         BuyerOrderResponse order = new BuyerOrderResponse(ORDER_ID, 1042L, "CONFIRMED", null, "COP",
                 BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, null, null, List.of());
         when(useCase.execute(EMAIL, request)).thenReturn(new CheckoutResult(order, replayed));
         Authentication authentication = new UsernamePasswordAuthenticationToken(EMAIL, null);
 
-        return new MarketplaceOrderController(useCase).place(request, authentication);
+        ResponseEntity<?> response = new MarketplaceOrderController(useCase, wompi, mock(CheckoutOptions.class),
+                settings(PaymentProvider.SIMULATED)).place(request, authentication);
+        verifyNoInteractions(wompi);
+        return response;
+    }
+
+    private static ResponseEntity<?> placeWompi(boolean replayed) {
+        PlaceMarketplaceOrder simulated = mock(PlaceMarketplaceOrder.class);
+        StartMarketplaceCheckout wompi = mock(StartMarketplaceCheckout.class);
+        PlaceOrderRequest request = request("WOMPI", null, List.of(item(1)));
+        WompiCheckoutResponse body = new WompiCheckoutResponse(ORDER_ID, 1042L, "AWAITING_PAYMENT",
+                new WompiCheckoutResponse.Payment("APM-1", 23_000_000L, "COP", "https://checkout.example/p",
+                        LocalDateTime.of(2026, 11, 4, 11, 0)));
+        when(wompi.execute(EMAIL, request)).thenReturn(new WompiCheckoutResult(body, replayed));
+        Authentication authentication = new UsernamePasswordAuthenticationToken(EMAIL, null);
+
+        ResponseEntity<?> response = new MarketplaceOrderController(simulated, wompi, mock(CheckoutOptions.class),
+                settings(PaymentProvider.WOMPI)).place(request, authentication);
+        verifyNoInteractions(simulated);
+        return response;
+    }
+
+    private static PaymentSettings settings(PaymentProvider provider) {
+        return new PaymentSettings(provider.name(), 30,
+                new WompiProperties(WompiEnvironment.SANDBOX, null, null, null, null, null, null));
     }
 
     private static PlaceOrderRequest request(String method, String outcome, List<PlaceOrderRequest.Item> items) {

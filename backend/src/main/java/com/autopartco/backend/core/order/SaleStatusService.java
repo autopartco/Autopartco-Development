@@ -40,24 +40,42 @@ public class SaleStatusService {
         return saleQueries.detail(storeId, saleId);
     }
 
-    /** Bloquea la venta del almacén ({@code FOR UPDATE}) y devuelve su estado; si no existe, {@code SELLER_ORDER_NOT_FOUND}. */
+    static final String LOCK_SALE_SQL = """
+            SELECT status.code AS sale_status, order_state.code AS order_status
+            FROM sales sale
+            JOIN branches branch ON branch.id = sale.branch_id
+            JOIN states status ON status.id = sale.state_id
+            JOIN orders customer_order ON customer_order.id = sale.order_id
+            JOIN states order_state ON order_state.id = customer_order.state_id
+            WHERE branch.store_id = ?
+              AND sale.id = ?
+              AND sale.deleted_at IS NULL
+            FOR UPDATE OF sale
+            """;
+
+    /**
+     * Bloquea la venta del almacén ({@code FOR UPDATE}) y devuelve su estado; si no existe,
+     * {@code SELLER_ORDER_NOT_FOUND}. Si el pedido aún espera el pago Wompi, {@code SALE_AWAITING_PAYMENT} (409): el
+     * almacén no puede confirmar, preparar, cancelar ni enviar una venta sin pagar (ADR 0004).
+     */
     String lockSaleStatus(UUID storeId, UUID saleId) {
-        return jdbcTemplate.query("""
-                SELECT status.code
-                FROM sales sale
-                JOIN branches branch ON branch.id = sale.branch_id
-                JOIN states status ON status.id = sale.state_id
-                WHERE branch.store_id = ?
-                  AND sale.id = ?
-                  AND sale.deleted_at IS NULL
-                FOR UPDATE OF sale
-                """, (result, row) -> result.getString(1), storeId, saleId)
+        LockedSale sale = jdbcTemplate.query(LOCK_SALE_SQL, (result, row) -> new LockedSale(
+                        result.getString("sale_status"), result.getString("order_status")), storeId, saleId)
                 .stream()
                 .findFirst()
                 .orElseThrow(() -> new NotFoundException(
                         "SELLER_ORDER_NOT_FOUND",
                         "No se encontró la venta de este almacén."
                 ));
+        if (AWAITING_PAYMENT.equals(sale.orderStatus())) {
+            throw new ConflictException("SALE_AWAITING_PAYMENT", "El pedido todavía no está pagado.");
+        }
+        return sale.saleStatus();
+    }
+
+    private static final String AWAITING_PAYMENT = "AWAITING_PAYMENT";
+
+    private record LockedSale(String saleStatus, String orderStatus) {
     }
 
     void updateSaleStatus(UUID saleId, String status) {

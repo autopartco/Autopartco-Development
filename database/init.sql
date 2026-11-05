@@ -815,6 +815,233 @@ CREATE TABLE IF NOT EXISTS payment_events (
 );
 
 -- ============================================================
+-- COBROS WOMPI EN PRODUCCION (ADR 0004)
+-- Espejo de database/migrations/V202610141310 (environment,
+-- idempotency_key), V202610141020 (orders.cancelled_at,
+-- cancellation_reason_code sin FK: cancellation_reasons solo existe
+-- en las migraciones) y V202611041000. Mismos nombres de columnas y
+-- restricciones, para que las migraciones las encuentren y no dupliquen.
+-- payment_provider_events es de solo inserción también aquí:
+-- forbid_update_delete() es copia literal de V202610130930 (mantener
+-- sincronizadas), con los mismos nombres de trigger que V202611041000.
+-- No se reflejan state_domains (dominio ORDER de AWAITING_PAYMENT) ni
+-- payment_events.source: dependen de objetos que solo crean las migraciones.
+-- ============================================================
+
+ALTER TABLE orders
+    ADD COLUMN IF NOT EXISTS cancelled_at TIMESTAMPTZ,
+    ADD COLUMN IF NOT EXISTS cancellation_reason_code VARCHAR(40);
+
+ALTER TABLE payments
+    ADD COLUMN IF NOT EXISTS idempotency_key VARCHAR(100),
+    ADD COLUMN IF NOT EXISTS environment VARCHAR(10) NOT NULL DEFAULT 'SANDBOX',
+    ADD COLUMN IF NOT EXISTS provider_transaction_id VARCHAR(100),
+    ADD COLUMN IF NOT EXISTS provider_status VARCHAR(30),
+    ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ,
+    ADD COLUMN IF NOT EXISTS requires_manual_refund BOOLEAN NOT NULL DEFAULT false;
+
+ALTER TABLE seller_payments
+    ADD COLUMN IF NOT EXISTS environment VARCHAR(10),
+    ADD COLUMN IF NOT EXISTS requires_manual_refund BOOLEAN NOT NULL DEFAULT false;
+
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint
+                   WHERE conrelid = 'payments'::regclass AND conname = 'chk_payments__environment') THEN
+        ALTER TABLE payments ADD CONSTRAINT chk_payments__environment
+            CHECK (environment IN ('SANDBOX', 'PRODUCTION'));
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint
+                   WHERE conrelid = 'payments'::regclass AND conname = 'chk_payments__provider') THEN
+        ALTER TABLE payments ADD CONSTRAINT chk_payments__provider
+            CHECK (provider IN ('SIMULATED', 'WOMPI')) NOT VALID;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint
+                   WHERE conrelid = 'payments'::regclass AND conname = 'chk_payments__provider_status_format') THEN
+        ALTER TABLE payments ADD CONSTRAINT chk_payments__provider_status_format
+            CHECK (provider_status ~ '^[A-Z_]{1,30}$');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint
+                   WHERE conrelid = 'seller_payments'::regclass AND conname = 'chk_seller_payments__environment') THEN
+        ALTER TABLE seller_payments ADD CONSTRAINT chk_seller_payments__environment
+            CHECK (environment IN ('SANDBOX', 'PRODUCTION'));
+    END IF;
+END $$;
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_payments__idempotency_key
+    ON payments (idempotency_key) WHERE idempotency_key IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_payments__provider_transaction
+    ON payments (provider, provider_transaction_id) WHERE provider_transaction_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_payments__wompi_status_created
+    ON payments (payment_status_id, created_at) WHERE provider = 'WOMPI';
+CREATE INDEX IF NOT EXISTS idx_payments__requires_manual_refund
+    ON payments (created_at) WHERE requires_manual_refund;
+CREATE INDEX IF NOT EXISTS idx_seller_payments__requires_manual_refund
+    ON seller_payments (created_at) WHERE requires_manual_refund;
+
+-- Eventos con firma válida y consultas a Wompi, aplicados o no.
+-- Solo inserción. Los eventos con firma inválida no se guardan.
+-- checksum es NULL en REDIRECT_SYNC y RECONCILIATION.
+-- payload: Wompi envía datos del comprador y parciales de tarjeta; el
+-- backend guarda solo la lista blanca event, environment, timestamp,
+-- signature y, de data.transaction: id, reference, status, status_message,
+-- amount_in_cents, currency, payment_method_type, created_at, finalized_at.
+CREATE TABLE IF NOT EXISTS payment_provider_events (
+    id UUID NOT NULL DEFAULT gen_random_uuid(),
+    provider VARCHAR(20) NOT NULL,
+    environment VARCHAR(10) NOT NULL,
+    event_type VARCHAR(60),
+    checksum VARCHAR(128),
+    reference VARCHAR(100),
+    provider_transaction_id VARCHAR(100),
+    provider_status VARCHAR(30),
+    amount_in_cents BIGINT,
+    currency VARCHAR(3),
+    source VARCHAR(20) NOT NULL,
+    outcome VARCHAR(30) NOT NULL,
+    payload JSONB NOT NULL DEFAULT '{}'::jsonb,
+    received_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    CONSTRAINT pk_payment_provider_events PRIMARY KEY (id),
+    CONSTRAINT chk_payment_provider_events__provider CHECK (provider IN ('WOMPI', 'SIMULATED')),
+    CONSTRAINT chk_payment_provider_events__environment CHECK (environment IN ('SANDBOX', 'PRODUCTION')),
+    CONSTRAINT chk_payment_provider_events__source CHECK (source IN ('WEBHOOK', 'REDIRECT_SYNC', 'RECONCILIATION')),
+    CONSTRAINT chk_payment_provider_events__outcome CHECK (outcome IN
+        ('APPLIED', 'DUPLICATE', 'IGNORED', 'REJECTED_MISMATCH', 'UNKNOWN_REFERENCE')),
+    CONSTRAINT chk_payment_provider_events__amount CHECK (amount_in_cents >= 0),
+    CONSTRAINT chk_payment_provider_events__currency CHECK (currency ~ '^[A-Z]{3}$'),
+    CONSTRAINT chk_payment_provider_events__payload CHECK (
+        jsonb_typeof(payload) = 'object' AND pg_column_size(payload) <= 32768)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uq_payment_provider_events__provider_checksum
+    ON payment_provider_events (provider, checksum) WHERE checksum IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_payment_provider_events__reference_received
+    ON payment_provider_events (reference, received_at DESC) WHERE reference IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_payment_provider_events__transaction
+    ON payment_provider_events (provider, provider_transaction_id) WHERE provider_transaction_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_payment_provider_events__needs_review
+    ON payment_provider_events (received_at) WHERE outcome IN ('REJECTED_MISMATCH', 'UNKNOWN_REFERENCE');
+CREATE INDEX IF NOT EXISTS brin_payment_provider_events__received_at
+    ON payment_provider_events USING brin (received_at) WITH (pages_per_range = 32);
+
+COMMENT ON TABLE payment_provider_events IS
+    'Eventos con firma válida y consultas a proveedores de pago (Wompi), aplicados o no. Solo inserción. payload: solo la lista blanca de campos del backend (sin datos del comprador ni de tarjeta). Retención: purge_payment_provider_events.';
+
+-- Copia literal de database/migrations/V202610130930 (mantener sincronizadas).
+-- DELETE/TRUNCATE solo con autopartco.allow_purge = 'on'.
+CREATE OR REPLACE FUNCTION public.forbid_update_delete()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+    old_row   JSONB;
+    new_row   JSONB;
+    col       TEXT;
+    arg       TEXT;
+    only_null BOOLEAN;
+    allowed   BOOLEAN;
+BEGIN
+    IF TG_OP IN ('DELETE', 'TRUNCATE') THEN
+        IF coalesce(current_setting('autopartco.allow_purge', true), '') = 'on' THEN
+            RETURN CASE WHEN TG_OP = 'DELETE' THEN OLD ELSE NULL END;
+        END IF;
+        RAISE EXCEPTION 'append-only table %: % no permitido', TG_TABLE_NAME, TG_OP
+            USING ERRCODE = '42501';
+    END IF;
+
+    -- UPDATE: cada columna que cambia debe estar en la lista de excepciones.
+    -- Se excluyen las columnas generadas: en un trigger BEFORE UPDATE su valor
+    -- en NEW todavía no está recalculado y daría falsos positivos.
+    old_row := to_jsonb(OLD);
+    new_row := to_jsonb(NEW);
+    FOR col IN
+        SELECT n.key FROM jsonb_each(new_row) n
+        WHERE n.value IS DISTINCT FROM old_row -> n.key
+          AND NOT EXISTS (
+              SELECT 1 FROM pg_attribute a
+              WHERE a.attrelid = TG_RELID AND a.attname = n.key AND a.attgenerated <> ''
+          )
+    LOOP
+        allowed := false;
+        FOREACH arg IN ARRAY coalesce(TG_ARGV, ARRAY[]::TEXT[]) LOOP
+            only_null := arg LIKE '%:null';
+            IF split_part(arg, ':', 1) = col
+               AND (NOT only_null OR new_row -> col = 'null'::jsonb) THEN
+                allowed := true;
+                EXIT;
+            END IF;
+        END LOOP;
+        IF NOT allowed THEN
+            RAISE EXCEPTION 'append-only table %: no se puede modificar la columna %', TG_TABLE_NAME, col
+                USING ERRCODE = '42501';
+        END IF;
+    END LOOP;
+    RETURN NEW;
+END;
+$$;
+
+COMMENT ON FUNCTION public.forbid_update_delete() IS
+    'Tablas de solo inserción. Args: columnas modificables (col) o que solo pueden pasar a NULL (col:null). Purga con autopartco.allow_purge=on.';
+
+CREATE OR REPLACE TRIGGER trg_payment_provider_events_append_only
+    BEFORE UPDATE OR DELETE ON payment_provider_events
+    FOR EACH ROW EXECUTE FUNCTION public.forbid_update_delete();
+CREATE OR REPLACE TRIGGER trg_payment_provider_events_append_only_truncate
+    BEFORE TRUNCATE ON payment_provider_events
+    FOR EACH STATEMENT EXECUTE FUNCTION public.forbid_update_delete();
+
+-- Supabase: RLS sin políticas, como el resto de tablas de public (PostgREST no la expone).
+ALTER TABLE public.payment_provider_events ENABLE ROW LEVEL SECURITY;
+
+-- Retención: copia de V202611041000 (patrón de V202610151090). dry_run por
+-- defecto; no se programa (A9). Fija allow_purge solo durante su ejecución.
+CREATE OR REPLACE FUNCTION public.purge_payment_provider_events(
+    p_months INT DEFAULT 24, p_dry_run BOOLEAN DEFAULT true
+)
+RETURNS BIGINT
+LANGUAGE plpgsql
+SET search_path = public, pg_temp
+AS $$
+DECLARE
+    n BIGINT;
+BEGIN
+    IF p_months IS NULL OR p_months < 1 THEN
+        RAISE EXCEPTION 'p_months debe ser >= 1';
+    END IF;
+    IF p_dry_run THEN
+        SELECT count(*) INTO n FROM payment_provider_events
+        WHERE received_at < now() - make_interval(months => p_months);
+        RETURN n;
+    END IF;
+    -- set_config local (no la cláusula SET de la función): en Supabase el rol
+    -- postgres no puede fijar parámetros personalizados en CREATE FUNCTION.
+    PERFORM set_config('autopartco.allow_purge', 'on', true);
+    DELETE FROM payment_provider_events
+    WHERE received_at < now() - make_interval(months => p_months);
+    GET DIAGNOSTICS n = ROW_COUNT;
+    PERFORM set_config('autopartco.allow_purge', 'off', true);
+    RETURN n;
+END;
+$$;
+
+COMMENT ON FUNCTION public.purge_payment_provider_events(INT, BOOLEAN) IS
+    'DESTRUCTIVA (A9). dry_run por defecto. Borra payment_provider_events con received_at anterior a p_months (24) meses.';
+REVOKE ALL ON FUNCTION public.purge_payment_provider_events(INT, BOOLEAN) FROM PUBLIC;
+
+-- Roles (V202610151080): solo si ya existen; la app solo inserta y lee.
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'autopartco_app') THEN
+        GRANT SELECT, INSERT ON payment_provider_events TO autopartco_app;
+        REVOKE UPDATE, DELETE, TRUNCATE ON payment_provider_events FROM autopartco_app;
+    END IF;
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'autopartco_analyst') THEN
+        REVOKE ALL ON payment_provider_events FROM autopartco_analyst;
+    END IF;
+END $$;
+
+-- ============================================================
 -- RECIBOS
 -- ============================================================
 
@@ -1203,7 +1430,8 @@ VALUES
     ('SHIPPED', 'Enviado'),
     ('DELIVERED', 'Entregado'),
     ('CANCELLED', 'Cancelado'),
-    ('REJECTED', 'Rechazado')
+    ('REJECTED', 'Rechazado'),
+    ('AWAITING_PAYMENT', 'Pedido en espera de pago')
 ON CONFLICT(code) DO NOTHING;
 
 INSERT INTO types_accounts(code, description)
@@ -1217,8 +1445,9 @@ INSERT INTO payment_methods(code, name)
 VALUES
     ('SIMULATED_CARD', 'Tarjeta simulada'),
     ('SIMULATED_TRANSFER', 'Transferencia simulada'),
-    ('SIMULATED_CASH', 'Efectivo simulado')
-ON CONFLICT(code) DO NOTHING;
+    ('SIMULATED_CASH', 'Efectivo simulado'),
+    ('WOMPI', 'Wompi')
+ON CONFLICT DO NOTHING;
 
 INSERT INTO payment_statuses(code, description)
 VALUES
@@ -1226,7 +1455,8 @@ VALUES
     ('APPROVED', 'Pago aprobado'),
     ('REJECTED', 'Pago rechazado'),
     ('CANCELLED', 'Pago cancelado'),
-    ('REFUNDED', 'Pago reembolsado')
+    ('REFUNDED', 'Pago reembolsado'),
+    ('EXPIRED', 'Pago vencido sin aprobación')
 ON CONFLICT(code) DO NOTHING;
 
 INSERT INTO shipment_statuses(code, description)
