@@ -12,6 +12,7 @@ import com.autopartco.backend.core.catalog.StoreProductDetail;
 import com.autopartco.backend.core.organization.StoreAccess;
 import com.autopartco.backend.core.organization.StorePermissionCodes;
 import com.autopartco.backend.core.organization.StoreService;
+import com.autopartco.backend.storesuite.inventory.InventoryActor;
 
 import lombok.AllArgsConstructor;
 
@@ -23,12 +24,14 @@ public class AddProductListing {
     private final StoreService storeService;
     private final PlanEntitlements planEntitlements;
     private final ProductCatalog productCatalog;
+    private final InventoryActor inventoryActor;
 
     @Transactional
     public StoreProductDetail execute(UUID storeId, UUID productId, String email, ProductListingRequest request) {
         storeAccess.requirePermission(email, storeId, StorePermissionCodes.PRODUCT_UPDATE);
         storeService.requireExists(storeId);
         planEntitlements.requireSubscriptionActive(storeId);
+        inventoryActor.bind(email);
         return productCatalog.addListing(storeId, productId, request);
     }
 }

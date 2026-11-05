@@ -63,26 +63,56 @@ public class StockService {
 
     private final InventoryRepository inventoryRepository;
     private final JdbcClient jdbcClient;
+    private final StockLedger stockLedger;
 
-    @Transactional
-    public void createListing(UUID branchId, UUID productId, Integer stock, BigDecimal price) {
-        inventoryRepository.save(Inventory.builder()
-                .branchId(branchId)
-                .productId(productId)
-                .stock(stock)
-                .price(price)
-                .build());
+    private void recordStock(UUID inventoryId, Integer stock, String reasonCode) {
+        if (stock == null) {
+            return;
+        }
+        stockLedger.apply(null, StockLedger.SOURCE_USER,
+                List.of(StockLedger.StockChange.of(inventoryId, stock, reasonCode, null)));
     }
 
-    /** Actualiza precio y stock (los nulos no cambian). Sin listado: {@code PRODUCT_NOT_FOUND}. */
+    /**
+     * Crea el listado con stock 0 y registra la carga inicial en el ledger ({@code INITIAL_LOAD}) si
+     * {@code stock > 0}. El actor es el ligado a la transacción ({@link StockLedger#bindActor}).
+     */
+    @Transactional
+    public void createListing(UUID branchId, UUID productId, Integer stock, BigDecimal price) {
+        Inventory saved = inventoryRepository.saveAndFlush(Inventory.builder()
+                .branchId(branchId)
+                .productId(productId)
+                .stock(0)
+                .price(price)
+                .build());
+        recordStock(saved.getId(), stock, StockLedger.REASON_INITIAL_LOAD);
+    }
+
+    /**
+     * Actualiza precio y stock (los nulos no cambian). Sin listado: {@code PRODUCT_NOT_FOUND}. El precio se escribe
+     * antes que el stock para que el trigger puente registre su historial; el stock pasa por el ledger
+     * ({@code MANUAL_CORRECTION}; sin movimiento si no cambia).
+     */
     @Transactional
     public void updateListing(UUID branchId, UUID productId, BigDecimal price, Integer stock) {
         Inventory inventory = DataAccessUtils.singleResult(inventoryRepository.findListings(branchId, productId));
         if (inventory == null) {
             throw new NotFoundException("PRODUCT_NOT_FOUND", "No se encontró el repuesto.");
         }
-        if (price != null) inventory.setPrice(price);
-        if (stock != null) inventory.setStock(stock);
+        // Sin tocar la entidad: el ledger cambia stock y version por JDBC y un flush de la entidad los pisaría.
+        if (price != null) inventoryRepository.updatePrice(inventory.getId(), price);
+        if (stock != null) recordStock(inventory.getId(), stock, StockLedger.REASON_MANUAL_CORRECTION);
+    }
+
+    /**
+     * Cambia solo el precio de un listado vivo por su id (importaciones y acciones masivas). Sin listado vivo:
+     * {@code LISTING_NOT_FOUND}. El trigger puente registra el historial con el actor ligado a la transacción.
+     */
+    @Transactional
+    public void setPrice(UUID inventoryId, BigDecimal price) {
+        if (inventoryRepository.updatePrice(inventoryId, price) == 0) {
+            throw new NotFoundException("LISTING_NOT_FOUND", "El producto no está listado en esa sucursal.");
+        }
     }
 
     /** Borrado lógico de todos los listados del producto. */
@@ -150,15 +180,25 @@ public class StockService {
                 .orElse(0);
     }
 
-    /** Agrega el producto a una sucursal; si ya está listado, {@code LISTING_ALREADY_EXISTS}. */
+    /**
+     * Agrega el producto a una sucursal; si ya está listado, {@code LISTING_ALREADY_EXISTS}. Un listado borrado se
+     * reactiva y su stock se fija por el ledger ({@code MANUAL_CORRECTION}); uno nuevo se crea como en
+     * {@link #createListing}.
+     */
     @Transactional
     public void addListing(UUID branchId, UUID productId, Integer stock, BigDecimal price) {
         if (!inventoryRepository.findListings(branchId, productId).isEmpty()) {
             throw new ConflictException("LISTING_ALREADY_EXISTS", "El producto ya está listado en esa sucursal.");
         }
-        if (inventoryRepository.restoreListing(branchId, productId, price, stock) == 0) {
+        if (inventoryRepository.restoreListing(branchId, productId, price) == 0) {
             createListing(branchId, productId, stock, price);
+            return;
         }
+        Inventory restored = DataAccessUtils.singleResult(inventoryRepository.findListings(branchId, productId));
+        if (restored == null) {
+            throw new NotFoundException("LISTING_NOT_FOUND", "El producto no está listado en esa sucursal.");
+        }
+        recordStock(restored.getId(), stock, StockLedger.REASON_MANUAL_CORRECTION);
     }
 
     /** Borrado lógico del listado del producto en la sucursal; sin listado, {@code LISTING_NOT_FOUND}. */
@@ -174,7 +214,10 @@ public class StockService {
         return inventoryRepository.countListingsOfProduct(productId);
     }
 
-    /** Conteos de inventario del almacén: listados, agotados (stock ≤ 0) y con poco stock (0 &lt; stock ≤ 3). */
+    /**
+     * Conteos de inventario del almacén: listados, agotados (stock ≤ 0) y con poco stock (0 &lt; stock ≤ punto de
+     * reorden vigente, o 3 sin política).
+     */
     @Transactional(readOnly = true)
     public StockSummary summaryForStore(UUID storeId) {
         InventoryRepository.StockCounts counts = inventoryRepository.countStockForStore(storeId);

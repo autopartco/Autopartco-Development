@@ -38,7 +38,7 @@ class StockServiceTest {
         statement = mock(JdbcClient.StatementSpec.class);
         when(jdbcClient.sql(sql.capture())).thenReturn(statement);
         when(statement.param(anyString(), any())).thenReturn(statement);
-        service = new StockService(mock(InventoryRepository.class), jdbcClient);
+        service = new StockService(mock(InventoryRepository.class), jdbcClient, mock(StockLedger.class));
     }
 
     @Test
@@ -78,7 +78,7 @@ class StockServiceTest {
     @Test
     void decrementRejectsNonPositiveUnits() {
         JdbcClient untouched = mock(JdbcClient.class);
-        StockService guarded = new StockService(mock(InventoryRepository.class), untouched);
+        StockService guarded = new StockService(mock(InventoryRepository.class), untouched, mock(StockLedger.class));
 
         assertThatThrownBy(() -> guarded.decrementIfAvailable(BRANCH_ID, PRODUCT_ID, 0))
                 .isInstanceOf(IllegalArgumentException.class);

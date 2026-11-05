@@ -50,7 +50,7 @@ class StoreProductControllerMultipartTest {
     void setUp() {
         StoreProductController controller = new StoreProductController(mock(ListStoreProducts.class), createProduct,
                 updateProduct, mock(PublishProduct.class), mock(DeleteProduct.class), mock(GetStoreProduct.class),
-                mock(AddProductListing.class), mock(RemoveProductListing.class));
+                mock(AddProductListing.class), mock(RemoveProductListing.class), mock(BulkProductAction.class));
         mvc = MockMvcBuilders.standaloneSetup(controller).setControllerAdvice(new GlobalExceptionHandler()).build();
     }
 

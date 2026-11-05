@@ -42,6 +42,17 @@ public class StoreProductController {
     private final GetStoreProduct getStoreProduct;
     private final AddProductListing addProductListing;
     private final RemoveProductListing removeProductListing;
+    private final BulkProductAction bulkProductAction;
+
+    /** Acción masiva (publicar, retirar, eliminar, ajustar precio); ver {@link BulkProductAction}. */
+    @PostMapping("/products/bulk")
+    public BulkProductResult bulk(
+            @PathVariable UUID storeId,
+            @Valid @RequestBody BulkProductRequest request,
+            Authentication authentication
+    ) {
+        return bulkProductAction.execute(storeId, authentication.getName(), request);
+    }
 
     @GetMapping("/products")
     public List<ProductResponse> list(@PathVariable UUID storeId, Authentication authentication) {

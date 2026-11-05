@@ -14,6 +14,7 @@ import com.autopartco.backend.core.catalog.ProductResponse;
 import com.autopartco.backend.core.organization.StoreAccess;
 import com.autopartco.backend.core.organization.StorePermissionCodes;
 import com.autopartco.backend.core.organization.StoreService;
+import com.autopartco.backend.storesuite.inventory.InventoryActor;
 
 import lombok.AllArgsConstructor;
 
@@ -30,6 +31,7 @@ public class CreateProduct {
     private final StoreService storeService;
     private final PlanEntitlements planEntitlements;
     private final ProductCatalog productCatalog;
+    private final InventoryActor inventoryActor;
 
     @Transactional
     public ProductResponse execute(UUID storeId, String email, ProductCreateRequest request) {
@@ -51,6 +53,7 @@ public class CreateProduct {
         storeService.lockForUpdate(storeId);
         boolean subscriptionActive = !request.publishRequested() || planEntitlements.isSubscriptionActive(storeId);
         planEntitlements.requireCapacity(storeId, PlanEntitlements.Capacity.PRODUCTS, 1);
+        inventoryActor.bind(email);
         return productCatalog.create(storeId, request, files, subscriptionActive);
     }
 }

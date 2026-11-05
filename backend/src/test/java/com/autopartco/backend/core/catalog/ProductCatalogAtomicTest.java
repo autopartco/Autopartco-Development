@@ -427,6 +427,66 @@ class ProductCatalogAtomicTest {
         verifyNoInteractions(storageService);
     }
 
+    // --- alta multi-sucursal ---
+
+    private ProductCreateRequest createWithListings(BigDecimal generalPrice,
+            List<ProductCreateRequest.Listing> listings) {
+        return new ProductCreateRequest(null, "Filtro", null, null, "desc", generalPrice, null, UUID.randomUUID(),
+                bosch.getId(), null, null, List.of(), null, Map.of(), null, false, listings);
+    }
+
+    @Test
+    void altaConListingsCreaUnListadoPorSucursalConSuPrecioOElGeneral() {
+        UUID other = UUID.randomUUID();
+        catalog.create(STORE, createWithListings(new BigDecimal("10.00"), List.of(
+                new ProductCreateRequest.Listing(BRANCH, 5, null),
+                new ProductCreateRequest.Listing(other, 0, new BigDecimal("99.00")))), List.of(), true);
+
+        verify(branchService).requireActiveInStore(STORE, BRANCH);
+        verify(branchService).requireActiveInStore(STORE, other);
+        verify(stockService).createListing(BRANCH, PRODUCT, 5, new BigDecimal("10.00"));
+        verify(stockService).createListing(other, PRODUCT, 0, new BigDecimal("99.00"));
+        verify(listingQueries).storeListing(STORE, BRANCH, PRODUCT);
+    }
+
+    @Test
+    void altaConSucursalAjenaEs404YNoCreaNada() {
+        UUID foreign = UUID.randomUUID();
+        doThrow(new com.autopartco.backend.shared.error.NotFoundException("BRANCH_NOT_FOUND", "x"))
+                .when(branchService).requireActiveInStore(STORE, foreign);
+
+        assertEquals("BRANCH_NOT_FOUND", assertThrows(com.autopartco.backend.shared.error.NotFoundException.class,
+                () -> catalog.create(STORE, createWithListings(new BigDecimal("10.00"), List.of(
+                        new ProductCreateRequest.Listing(BRANCH, 5, null),
+                        new ProductCreateRequest.Listing(foreign, 1, null))), List.of(), true)).getCode());
+
+        assertNothingWritten();
+    }
+
+    @Test
+    void validacionDeListingsYCuerpoHistorico() {
+        var validator = jakarta.validation.Validation.buildDefaultValidatorFactory().getValidator();
+        var one = new ProductCreateRequest.Listing(BRANCH, 1, null);
+        var two = new ProductCreateRequest.Listing(UUID.randomUUID(), 1, new BigDecimal("5"));
+
+        assertTrue(validator.validate(createWithListings(new BigDecimal("10"), List.of(one, two))).isEmpty());
+        // Sin precio general todos los listings deben traer precio.
+        assertFalse(validator.validate(createWithListings(null, List.of(one, two))).isEmpty());
+        assertTrue(validator.validate(createWithListings(null, List.of(two))).isEmpty());
+        // Repetidas, vacías o mezcladas con branchId/quantity.
+        assertFalse(validator.validate(createWithListings(new BigDecimal("10"), List.of(one, one))).isEmpty());
+        assertFalse(validator.validate(createWithListings(new BigDecimal("10"), List.of())).isEmpty());
+        assertFalse(validator.validate(new ProductCreateRequest(BRANCH, "Filtro", null, null, "desc",
+                new BigDecimal("10"), 1, UUID.randomUUID(), bosch.getId(), null, null, List.of(), null, Map.of(),
+                null, false, List.of(one))).isEmpty());
+        // Cuerpo histórico intacto; sin sucursal ni listings es inválido.
+        assertTrue(validator.validate(create(bosch.getId(), null, null, List.of(), null, false)).isEmpty());
+        assertFalse(validator.validate(createWithListings(new BigDecimal("10"), null)).isEmpty());
+        List<ProductCreateRequest.Listing> many = java.util.stream.IntStream.range(0, 51)
+                .mapToObj(i -> new ProductCreateRequest.Listing(UUID.randomUUID(), 1, null)).toList();
+        assertFalse(validator.validate(createWithListings(new BigDecimal("10"), many)).isEmpty());
+    }
+
     // --- utilidades ---
 
     private void assertNothingWritten() {
