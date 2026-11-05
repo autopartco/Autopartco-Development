@@ -23,8 +23,15 @@ public record PromotionUpsertRequest(
         @NotNull @DecimalMin(value = "0.01") @Digits(integer = 10, fraction = 2) BigDecimal discountValue,
         @NotNull OffsetDateTime startsAt,
         @NotNull OffsetDateTime endsAt,
-        Boolean enabled
+        Boolean enabled,
+        /** Opcional; sin valor, {@code ALL}. */
+        PromotionAudience audience
 ) {
+    /** Audiencia efectiva: {@code ALL} si no se envía. */
+    public PromotionAudience audienceOrDefault() {
+        return audience == null ? PromotionAudience.ALL : audience;
+    }
+
     @AssertTrue(message = "La fecha de finalización debe ser posterior a la fecha de inicio.")
     public boolean hasValidDateRange() {
         return startsAt == null || endsAt == null || endsAt.isAfter(startsAt);

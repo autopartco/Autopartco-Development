@@ -30,6 +30,8 @@ import com.autopartco.backend.core.order.BuyerOrderQueries;
 import com.autopartco.backend.core.order.NewOrder;
 import com.autopartco.backend.core.order.OrderPlacement;
 import com.autopartco.backend.core.order.PaymentReferenceOwner;
+import com.autopartco.backend.core.pricing.BuyerContext;
+import com.autopartco.backend.marketplace.benefits.BuyerContexts;
 import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
@@ -41,7 +43,9 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Caso de uso B1: el comprador confirma su carrito. Todo ocurre en una sola transacción; cualquier excepción
  * (stock insuficiente, cambio de precio, pago rechazado, clave repetida) revierte los descuentos de stock y no deja
- * pedido, venta ni pago. El precio sale siempre de {@link ProductResponse#effectivePrice()}, nunca del cliente.
+ * pedido, venta ni pago. El precio sale siempre de {@link ProductResponse#effectivePrice()}, recalculado con el
+ * {@link BuyerContext} del comprador (promociones por audiencia incluidas), nunca del cliente; cada línea guarda la
+ * promoción ganadora en {@code order_details.promotion_id}.
  */
 @Slf4j
 @Service
@@ -62,6 +66,7 @@ public class PlaceMarketplaceOrder {
     private final OrderPlacement orderPlacement;
     private final BuyerOrderQueries buyerOrderQueries;
     private final CheckoutPaymentGateway gateway;
+    private final BuyerContexts buyerContexts;
 
     @Transactional
     public CheckoutResult execute(String email, PlaceOrderRequest request) {
@@ -139,9 +144,11 @@ public class PlaceMarketplaceOrder {
         AddressSnapshot address = personAddressLookup.findOwned(personId, request.addressId())
                 .orElseThrow(() -> new NotFoundException("ADDRESS_NOT_FOUND", "No se encontró la dirección."));
 
-        // 6. Listados comprables; se reportan todas las líneas faltantes.
+        // 6. Listados comprables con el precio recalculado para este comprador (mismos segmentos que el catálogo); se
+        // reportan todas las líneas faltantes.
         List<ListingKey> keys = items.stream().map(PlaceMarketplaceOrder::keyOf).toList();
-        Map<ListingKey, ProductResponse> listings = listingQueries.purchasableListings(keys);
+        BuyerContext buyer = buyerContexts.forPerson(personId);
+        Map<ListingKey, ProductResponse> listings = listingQueries.purchasableListings(keys, buyer);
         List<Map<String, Object>> missing = new ArrayList<>();
         for (ListingKey key : keys) {
             if (!listings.containsKey(key)) {
@@ -199,11 +206,13 @@ public class PlaceMarketplaceOrder {
         Map<UUID, BigDecimal> subtotalByBranch = new LinkedHashMap<>();
         for (PlaceOrderRequest.Item item : sorted) {
             ListingKey key = keyOf(item);
-            BigDecimal unitPrice = listings.get(key).effectivePrice().setScale(2, RoundingMode.HALF_UP);
+            ProductResponse listing = listings.get(key);
+            BigDecimal unitPrice = listing.effectivePrice().setScale(2, RoundingMode.HALF_UP);
             BigDecimal lineTotal = unitPrice.multiply(BigDecimal.valueOf(item.quantity()))
                     .setScale(2, RoundingMode.HALF_UP);
             linesByBranch.computeIfAbsent(item.branchId(), branchId -> new ArrayList<>())
-                    .add(new NewOrder.NewLine(decrements.get(key).inventoryId(), item.productId(), item.quantity(), unitPrice));
+                    .add(new NewOrder.NewLine(decrements.get(key).inventoryId(), item.productId(), item.quantity(),
+                            unitPrice, listing.appliedPromotionId()));
             subtotalByBranch.merge(item.branchId(), lineTotal, BigDecimal::add);
         }
         List<NewOrder.NewSale> sales = new ArrayList<>();

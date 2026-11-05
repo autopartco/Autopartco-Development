@@ -36,7 +36,9 @@ import com.autopartco.backend.core.catalog.internal.Product;
 import com.autopartco.backend.core.catalog.internal.ProductImageMapper;
 import com.autopartco.backend.core.catalog.internal.ProductImageRepository;
 import com.autopartco.backend.core.catalog.internal.ProductRepository;
+import com.autopartco.backend.core.pricing.BuyerContext;
 import com.autopartco.backend.core.pricing.PriceCalculator;
+import com.autopartco.backend.core.pricing.PromotionAudience;
 import com.autopartco.backend.core.pricing.PromotionDiscountType;
 import com.autopartco.backend.core.pricing.PromotionScope;
 import com.autopartco.backend.core.pricing.PromotionTargetType;
@@ -337,6 +339,42 @@ class ListingQueriesTest {
         assertEquals(new BigDecimal("60.00"), listing.effectivePrice());
         assertEquals(new BigDecimal("20.00"), listing.discountAmount());
         assertEquals(0, listing.quantity());
+    }
+
+    @Test
+    void purchasableListingsRecalculateTheAudiencePriceForTheBuyer() {
+        Product product = product("Filtro");
+        UUID branchId = UUID.randomUUID();
+        UUID promotionId = UUID.randomUUID();
+        when(jdbcTemplate.query(any(String.class), any(RowMapper.class), eq(product.getId()), eq(branchId)))
+                .thenReturn((List) List.of(new ListingRow(
+                        product.getId(), branchId, STORE_ID, "Norte", new BigDecimal("100.00"), 3)));
+        when(productRepository.findAllWithDetails(anyCollection())).thenReturn(List.of(product));
+        when(productImageRepository.findAllOfProducts(anyCollection())).thenReturn(List.of());
+        Promotion frequent = Promotion.builder()
+                .scope(PromotionScope.STORE)
+                .storeId(STORE_ID)
+                .name("Frecuentes")
+                .targetType(PromotionTargetType.STORE)
+                .targetId(STORE_ID)
+                .discountType(PromotionDiscountType.PERCENTAGE)
+                .discountValue(new BigDecimal("20.00"))
+                .audience(PromotionAudience.STORE_FREQUENT)
+                .build();
+        frequent.setId(promotionId);
+        when(promotionRepository.findActiveAt(any())).thenReturn(List.of(frequent));
+        ListingKey key = new ListingKey(product.getId(), branchId);
+
+        ProductResponse forBuyer = queries.purchasableListings(List.of(key),
+                new BuyerContext(UUID.randomUUID(), Set.of(), Map.of(STORE_ID, Set.of("FREQUENT")))).get(key);
+        ProductResponse forAnonymous = queries.purchasableListings(List.of(key)).get(key);
+
+        assertEquals(new BigDecimal("80.00"), forBuyer.effectivePrice());
+        assertEquals(promotionId, forBuyer.appliedPromotionId());
+        assertEquals(PromotionAudience.STORE_FREQUENT, forBuyer.appliedPromotionAudience());
+        assertEquals(new BigDecimal("100.00"), forAnonymous.effectivePrice());
+        assertEquals(null, forAnonymous.appliedPromotionId());
+        assertEquals(null, forAnonymous.appliedPromotionAudience());
     }
 
     @Test

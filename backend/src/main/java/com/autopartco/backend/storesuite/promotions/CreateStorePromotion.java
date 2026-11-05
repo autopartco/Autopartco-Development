@@ -28,6 +28,7 @@ public class CreateStorePromotion {
     public PromotionResponse execute(UUID storeId, String email, PromotionUpsertRequest request) {
         planEntitlements.requireCapability(storeId, StorePromotionAccess.PROMOTIONS_CAPABILITY);
         access.requirePermission(storeId, email, StorePermissionCodes.PROMOTION_CREATE);
-        return promotionService.createForStore(storeId, request);
+        return promotionService.createForStore(storeId, request,
+                StorePromotionAccess.platformAudienceAllowed(planEntitlements, storeId, request));
     }
 }

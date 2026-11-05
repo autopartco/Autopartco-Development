@@ -4,9 +4,12 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
+import com.autopartco.backend.core.billing.PlanEntitlements;
 import com.autopartco.backend.core.organization.StoreAccess;
 import com.autopartco.backend.core.organization.StoreService;
+import com.autopartco.backend.core.pricing.PromotionAudience;
 import com.autopartco.backend.core.pricing.PromotionService;
+import com.autopartco.backend.core.pricing.PromotionUpsertRequest;
 
 import lombok.AllArgsConstructor;
 
@@ -27,5 +30,25 @@ class StorePromotionAccess {
         if (!storeService.exists(storeId)) {
             throw PromotionService.notFound();
         }
+    }
+
+    /**
+     * {@code true} si el almacén puede dirigir la promoción a {@code PLATFORM_FREQUENT}: su plan efectivo incluye
+     * {@value PromotionService#PLATFORM_AUDIENCE_CAPABILITY} (sin suscripción registrada, mismo criterio que
+     * {@code requireCapability}: se permite). Solo consulta el plan si la solicitud pide esa audiencia. Se llama
+     * después de {@code requireCapability(PROMOTIONS)}, que ya rechazó solicitudes inactivas o vencidas.
+     */
+    static boolean platformAudienceAllowed(
+            PlanEntitlements planEntitlements,
+            UUID storeId,
+            PromotionUpsertRequest request
+    ) {
+        if (request == null || request.audienceOrDefault() != PromotionAudience.PLATFORM_FREQUENT) {
+            return false;
+        }
+        return planEntitlements.accessForStore(storeId)
+                .map(access -> !access.subscriptionExpired()
+                        && access.capabilities().contains(PromotionService.PLATFORM_AUDIENCE_CAPABILITY))
+                .orElse(true);
     }
 }

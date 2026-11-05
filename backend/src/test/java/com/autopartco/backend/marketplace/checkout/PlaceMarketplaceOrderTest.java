@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -44,6 +45,9 @@ import com.autopartco.backend.core.order.BuyerOrderResponse;
 import com.autopartco.backend.core.order.NewOrder;
 import com.autopartco.backend.core.order.OrderPlacement;
 import com.autopartco.backend.core.order.PaymentReferenceOwner;
+import com.autopartco.backend.core.pricing.BuyerContext;
+import com.autopartco.backend.core.pricing.PromotionAudience;
+import com.autopartco.backend.marketplace.benefits.BuyerContexts;
 import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
@@ -80,15 +84,19 @@ class PlaceMarketplaceOrderTest {
     private BuyerOrderQueries buyerOrderQueries;
     @Mock
     private CheckoutPaymentGateway gateway;
+    @Mock
+    private BuyerContexts buyerContexts;
 
     private PlaceMarketplaceOrder useCase;
+    private final BuyerContext buyer = new BuyerContext(PERSON_ID, Set.of(), Map.of());
     private final Map<ListingKey, ProductResponse> listings = new HashMap<>();
     private final BuyerOrderResponse receipt = receipt();
 
     @BeforeEach
     void setUp() {
         useCase = new PlaceMarketplaceOrder(accountLookup, personAddressLookup, listingQueries, stockService,
-                orderPlacement, buyerOrderQueries, gateway);
+                orderPlacement, buyerOrderQueries, gateway, buyerContexts);
+        when(buyerContexts.forPerson(PERSON_ID)).thenReturn(buyer);
 
         when(accountLookup.requireByEmail(EMAIL)).thenReturn(
                 new AccountRef(UUID.randomUUID(), PERSON_ID, EMAIL, "Ana Pérez", "ACTIVE", "BUYER", "Ana"));
@@ -99,7 +107,8 @@ class PlaceMarketplaceOrderTest {
         when(orderPlacement.placeApproved(any())).thenReturn(ORDER_ID);
         when(personAddressLookup.findOwned(PERSON_ID, ADDRESS_ID)).thenReturn(Optional.of(new AddressSnapshot(
                 "Calle 10 # 20-30", "Apto 401", "Bogotá", "Cundinamarca", "Colombia", "110111", null, null)));
-        when(listingQueries.purchasableListings(any())).thenAnswer(invocation -> {
+        // Solo responde con el comprador de la sesión: si el checkout calculara con otro contexto, no habría listados.
+        when(listingQueries.purchasableListings(any(), eq(buyer))).thenAnswer(invocation -> {
             Collection<ListingKey> keys = invocation.getArgument(0);
             Map<ListingKey, ProductResponse> found = new HashMap<>();
             keys.forEach(key -> {
@@ -257,7 +266,7 @@ class PlaceMarketplaceOrderTest {
                             .containsExactly(Map.of("productId", PRODUCT_1, "branchId", BRANCH_1));
                 });
 
-        verify(listingQueries, never()).purchasableListings(any());
+        verify(listingQueries, never()).purchasableListings(any(), any());
         verify(stockService, never()).decrementIfAvailable(any(), any(), anyInt());
     }
 
@@ -367,6 +376,52 @@ class PlaceMarketplaceOrderTest {
         assertThatThrownBy(() -> useCase.execute(EMAIL, request(null, item(PRODUCT_1, BRANCH_1, 1))))
                 .isInstanceOfSatisfying(ConflictException.class,
                         exception -> assertThat(exception.getCode()).isEqualTo("CHECKOUT_DUPLICATE_REQUEST"));
+    }
+
+    @Test
+    void audiencePriceIsRecalculatedForTheBuyerAndStoresThePromotion() {
+        UUID promotionId = UUID.randomUUID();
+        // El servidor recalcula con los segmentos del comprador: el listado trae el precio de «clientes frecuentes».
+        listings.put(new ListingKey(PRODUCT_1, BRANCH_1), new ProductResponse(
+                PRODUCT_1, UUID.randomUUID(), BRANCH_1, "Sede", "Repuesto", "BP-1", null, null,
+                new BigDecimal("100000.00"), new BigDecimal("80000.00"), new BigDecimal("20000.00"), "Frecuentes", 10,
+                null, null, false, null, "ACTIVE", false, Map.of(), List.of(), List.of(),
+                promotionId, PromotionAudience.STORE_FREQUENT));
+        listing(PRODUCT_2, BRANCH_1, "50000.00", "50000.00");
+        UUID inv1 = stock(PRODUCT_1, BRANCH_1, 2, "100000.00");
+        UUID inv2 = stock(PRODUCT_2, BRANCH_1, 1, "50000.00");
+
+        useCase.execute(EMAIL, request(null, item(PRODUCT_1, BRANCH_1, 2), item(PRODUCT_2, BRANCH_1, 1)));
+
+        verify(buyerContexts).forPerson(PERSON_ID);
+        verify(listingQueries).purchasableListings(any(), eq(buyer));
+        ArgumentCaptor<NewOrder> captor = ArgumentCaptor.forClass(NewOrder.class);
+        verify(orderPlacement).placeApproved(captor.capture());
+        NewOrder.NewSale sale = captor.getValue().sales().get(0);
+        assertThat(sale.lines()).containsExactly(
+                new NewOrder.NewLine(inv1, PRODUCT_1, 2, new BigDecimal("80000.00"), promotionId),
+                new NewOrder.NewLine(inv2, PRODUCT_2, 1, new BigDecimal("50000.00"), null));
+        assertThat(sale.total()).isEqualByComparingTo("210000.00");
+        ArgumentCaptor<PaymentAttempt> attempt = ArgumentCaptor.forClass(PaymentAttempt.class);
+        verify(gateway).charge(attempt.capture());
+        assertThat(attempt.getValue().amount()).isEqualByComparingTo("210000.00");
+    }
+
+    @Test
+    void prepareUsesTheBuyerOfTheSessionForTheWompiFlowToo() {
+        UUID promotionId = UUID.randomUUID();
+        listings.put(new ListingKey(PRODUCT_1, BRANCH_1), new ProductResponse(
+                PRODUCT_1, UUID.randomUUID(), BRANCH_1, "Sede", "Repuesto", "BP-1", null, null,
+                new BigDecimal("100000.00"), new BigDecimal("90000.00"), new BigDecimal("10000.00"), "Plataforma", 10,
+                null, null, false, null, "ACTIVE", false, Map.of(), List.of(), List.of(),
+                promotionId, PromotionAudience.PLATFORM_FREQUENT));
+        UUID inv1 = stock(PRODUCT_1, BRANCH_1, 1, "100000.00");
+
+        PreparedOrder prepared = useCase.prepare(PERSON_ID, request(null, item(PRODUCT_1, BRANCH_1, 1)));
+
+        assertThat(prepared.total()).isEqualByComparingTo("90000.00");
+        assertThat(prepared.sales().get(0).lines())
+                .containsExactly(new NewOrder.NewLine(inv1, PRODUCT_1, 1, new BigDecimal("90000.00"), promotionId));
     }
 
     // --- utilidades ---

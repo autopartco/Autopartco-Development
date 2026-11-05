@@ -28,6 +28,7 @@ public class UpdateStorePromotion {
     public PromotionResponse execute(UUID storeId, UUID promotionId, String email, PromotionUpsertRequest request) {
         planEntitlements.requireCapability(storeId, StorePromotionAccess.PROMOTIONS_CAPABILITY);
         access.requirePermission(storeId, email, StorePermissionCodes.PROMOTION_UPDATE);
-        return promotionService.updateForStore(storeId, promotionId, request);
+        return promotionService.updateForStore(storeId, promotionId, request,
+                StorePromotionAccess.platformAudienceAllowed(planEntitlements, storeId, request));
     }
 }

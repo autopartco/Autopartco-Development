@@ -23,7 +23,11 @@ import com.autopartco.backend.shared.web.ApiPaths;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 
-/** Promociones de plataforma, aplicables a todos los almacenes (solo root). */
+/**
+ * Promociones de plataforma, aplicables a todos los almacenes (solo root). Audiencia opcional: {@code ALL} (por
+ * defecto) o {@code PLATFORM_FREQUENT}; los segmentos {@code STORE_*} responden 400 {@code INVALID_PROMOTION_AUDIENCE}
+ * (lo valida {@link PromotionService}).
+ */
 @RestController
 @RequestMapping(ApiPaths.ADMIN + "/promotions")
 @AllArgsConstructor
