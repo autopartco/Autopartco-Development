@@ -17,6 +17,16 @@ function toLocalIso(date: Date): string {
 /** Resultados por `clientRequestId` para la idempotencia del cobro simulado. */
 const processed = new Map<string, SimulatedPaymentResult>()
 
+/** Pago por referencia del almacén (solo OWNER); 404 si no existe o es de otro almacén. */
+async function findPayment(storeId: string, reference: string): Promise<SubscriptionPayment> {
+  await simulateNetwork()
+  const store = getStore(storeId)
+  requireOwner(store)
+  const found = store.payments.find((candidate) => candidate.reference === reference)
+  if (!found) throw new ApiError('No encontramos ese pago.', { status: 404, code: 'SELLER_PAYMENT_NOT_FOUND' })
+  return found
+}
+
 /** Suscripción y cobro simulados con las mismas reglas del plan §4.3 (402, 409, idempotencia). */
 export function createMockSubscriptionService(): SubscriptionService {
   return {
@@ -38,6 +48,11 @@ export function createMockSubscriptionService(): SubscriptionService {
       requirePermission(store, 'STORE_READ')
       return [...store.payments].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     },
+
+    payment: findPayment,
+
+    // Sin Wompi en la simulación: sincronizar devuelve el estado guardado.
+    syncPayment: (storeId, reference) => findPayment(storeId, reference),
 
     async paySimulated(storeId, input) {
       await simulateNetwork(900)

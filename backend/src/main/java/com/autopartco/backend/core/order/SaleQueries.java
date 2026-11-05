@@ -41,7 +41,17 @@ public class SaleQueries {
                     result.getInt("item_count")
             );
 
-    private static final String ORDER_SELECT = """
+    /**
+     * El almacén solo ve ventas de pedidos ya pagados (o cancelados después de pagar): oculta los pedidos en espera
+     * del pago Wompi y los cancelados porque el pago venció ({@code PAYMENT_TIMEOUT}), incluido un pago aprobado
+     * tarde que queda para reembolso manual (ADR 0004).
+     */
+    static final String STORE_VISIBLE_ORDER = """
+              AND customer_order.state_id <> (SELECT id FROM states WHERE code = 'AWAITING_PAYMENT')
+              AND customer_order.cancellation_reason_code IS DISTINCT FROM 'PAYMENT_TIMEOUT'
+            """;
+
+    static final String ORDER_SELECT = """
             SELECT sale.id AS sale_id,
                    sale.order_id,
                    customer_order.order_number,
@@ -78,27 +88,30 @@ public class SaleQueries {
             ) shipment ON true
             WHERE branch.store_id = ?
               AND sale.deleted_at IS NULL
-            """;
+            """ + STORE_VISIBLE_ORDER;
+
+    static final String MONTHLY_SUMMARY_SQL = """
+            SELECT count(*) FILTER (WHERE sale.created_at >= date_trunc('month', now())) AS month_orders,
+                   COALESCE(sum(sale.total) FILTER (
+                       WHERE sale.created_at >= date_trunc('month', now())
+                         AND sale_state.code <> 'CANCELLED'
+                   ), 0) AS month_revenue,
+                   count(*) FILTER (WHERE sale_state.code = 'PENDING') AS pending_orders,
+                   count(*) FILTER (WHERE sale_state.code = 'PREPARING') AS preparing_orders
+            FROM sales sale
+            JOIN branches branch ON branch.id = sale.branch_id
+            JOIN orders customer_order ON customer_order.id = sale.order_id
+            JOIN states sale_state ON sale_state.id = sale.state_id
+            WHERE branch.store_id = ?
+              AND sale.deleted_at IS NULL
+            """ + STORE_VISIBLE_ORDER;
 
     private final JdbcTemplate jdbcTemplate;
 
     /** Pedidos del mes en curso, ingresos (sin cancelados) y pedidos pendientes o en preparación. */
     @Transactional(readOnly = true)
     public SalesSummary monthlySummary(UUID storeId) {
-        return jdbcTemplate.queryForObject("""
-                SELECT count(*) FILTER (WHERE sale.created_at >= date_trunc('month', now())) AS month_orders,
-                       COALESCE(sum(sale.total) FILTER (
-                           WHERE sale.created_at >= date_trunc('month', now())
-                             AND sale_state.code <> 'CANCELLED'
-                       ), 0) AS month_revenue,
-                       count(*) FILTER (WHERE sale_state.code = 'PENDING') AS pending_orders,
-                       count(*) FILTER (WHERE sale_state.code = 'PREPARING') AS preparing_orders
-                FROM sales sale
-                JOIN branches branch ON branch.id = sale.branch_id
-                JOIN states sale_state ON sale_state.id = sale.state_id
-                WHERE branch.store_id = ?
-                  AND sale.deleted_at IS NULL
-                """, (result, row) -> new SalesSummary(
+        return jdbcTemplate.queryForObject(MONTHLY_SUMMARY_SQL, (result, row) -> new SalesSummary(
                 result.getLong("month_orders"),
                 result.getBigDecimal("month_revenue"),
                 result.getLong("pending_orders"),
@@ -186,7 +199,7 @@ public class SaleQueries {
                 WHERE branch.store_id = ?
                   AND sale.id = ?
                   AND sale.deleted_at IS NULL
-                """, (result, row) -> new SaleBase(
+                """ + STORE_VISIBLE_ORDER, (result, row) -> new SaleBase(
                 result.getObject("sale_id", UUID.class),
                 result.getObject("order_id", UUID.class),
                 result.getLong("order_number"),

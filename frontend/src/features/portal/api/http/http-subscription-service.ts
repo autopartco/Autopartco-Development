@@ -10,6 +10,13 @@ export function createHttpSubscriptionService(): SubscriptionService {
     // Catálogo público: no necesita token.
     plans: () => apiRequest<Plan[]>('/plans'),
     payments: (storeId) => portalRequest<SubscriptionPayment[]>(storePath(storeId, '/subscription/payments')),
+    payment: (storeId, reference) =>
+      portalRequest<SubscriptionPayment>(storePath(storeId, `/subscription/payments/${encodeURIComponent(reference)}`)),
+    syncPayment: (storeId, reference, transactionId) =>
+      portalRequest<SubscriptionPayment>(storePath(storeId, `/subscription/payments/${encodeURIComponent(reference)}/sync`), {
+        method: 'POST',
+        body: { transactionId },
+      }),
     paySimulated: (storeId, input) =>
       portalRequest<SimulatedPaymentResult>(storePath(storeId, '/subscription/simulated-payments'), {
         method: 'POST',

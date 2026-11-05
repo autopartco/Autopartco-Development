@@ -1,7 +1,5 @@
 package com.autopartco.backend.core.billing;
 
-import static com.autopartco.backend.shared.security.TokenHashing.sha256Hex;
-
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Objects;
@@ -9,9 +7,10 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.util.UriComponentsBuilder;
 
-import com.autopartco.backend.core.billing.internal.wompi.WompiProperties;
+import com.autopartco.backend.core.payments.WompiCheckoutRequest;
+import com.autopartco.backend.core.payments.WompiClient;
+import com.autopartco.backend.core.payments.WompiProperties;
 import com.autopartco.backend.core.organization.StoreAccess;
 import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.ConflictException;
@@ -37,6 +36,7 @@ public class SubscriptionCheckout {
     private final StoreSubscriptionRepository applicationRepository;
     private final PlanRepository planRepository;
     private final WompiProperties wompiProperties;
+    private final WompiClient wompiClient;
     private final StoreAccess storeAccess;
 
     @Transactional
@@ -90,21 +90,12 @@ public class SubscriptionCheckout {
                 .currency(currency)
                 .status("PENDING")
                 .provider("WOMPI")
+                .environment(wompiProperties.environment().name())
                 .build());
 
-        String integritySignature = sha256Hex(
-                reference + amountInCents + currency + wompiProperties.integritySecret()
-        );
-        String checkoutUrl = UriComponentsBuilder.fromUriString(wompiProperties.checkoutUrl())
-                .queryParam("public-key", wompiProperties.publicKey())
-                .queryParam("currency", currency)
-                .queryParam("amount-in-cents", amountInCents)
-                .queryParam("reference", reference)
-                .queryParam("signature:integrity", integritySignature)
-                .queryParam("redirect-url", wompiProperties.redirectUrl())
-                .build()
-                .encode()
-                .toUriString();
+        // Sin expiration-time: el pago de suscripción no reserva nada (ADR 0004).
+        String checkoutUrl = wompiClient.checkoutUrl(new WompiCheckoutRequest(
+                reference, amountInCents, currency, wompiProperties.redirectUrl(), null));
         return new CheckoutResponse(
                 payment.getReference(),
                 checkoutUrl,
@@ -129,15 +120,8 @@ public class SubscriptionCheckout {
     }
 
     private void requireWompiConfiguration() {
-        if (isBlank(wompiProperties.publicKey())
-                || isBlank(wompiProperties.integritySecret())
-                || isBlank(wompiProperties.checkoutUrl())
-                || isBlank(wompiProperties.redirectUrl())) {
+        if (!wompiProperties.checkoutConfigured()) {
             throw new IllegalStateException("Wompi checkout configuration is incomplete.");
         }
-    }
-
-    private boolean isBlank(String value) {
-        return value == null || value.isBlank();
     }
 }

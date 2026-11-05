@@ -9,6 +9,8 @@ export type CheckoutProblem =
   | { kind: 'address' }
   | { kind: 'changed' }
   | { kind: 'duplicate' }
+  /** El método elegido ya no está activo: se recargan las opciones del checkout. */
+  | { kind: 'method' }
   | { kind: 'invalid'; message: string }
   | { kind: 'unauthorized' }
   | { kind: 'unavailable' }
@@ -51,9 +53,11 @@ export function classifyCheckoutError(error: unknown): CheckoutProblem {
       return { kind: 'changed' }
     case 'CHECKOUT_DUPLICATE_REQUEST':
       return { kind: 'duplicate' }
+    case 'PAYMENT_METHOD_NOT_SUPPORTED':
+      return { kind: 'method' }
     case 'VALIDATION_ERROR':
     case 'CHECKOUT_DUPLICATE_LINE':
-    case 'PAYMENT_METHOD_NOT_SUPPORTED':
+    case 'SIMULATED_OUTCOME_NOT_ALLOWED':
     case 'INVALID_REQUEST_BODY':
       return { kind: 'invalid', message: error.message }
   }
@@ -69,7 +73,8 @@ export function classifyCheckoutError(error: unknown): CheckoutProblem {
  * el reintento no cobre dos veces.
  */
 export function leftNothingBehind(problem: CheckoutProblem): boolean {
-  return problem.kind !== 'unavailable' && problem.kind !== 'duplicate' && problem.kind !== 'unauthorized'
+  // `duplicate` (409 `CHECKOUT_DUPLICATE_REQUEST`): el contrato pide generar una clave nueva.
+  return problem.kind !== 'unavailable' && problem.kind !== 'unauthorized'
 }
 
 export const lineKey = (ref: CheckoutLineRef) => `${ref.productId}:${ref.branchId}`

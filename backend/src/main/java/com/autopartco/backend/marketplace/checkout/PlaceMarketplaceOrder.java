@@ -72,13 +72,11 @@ public class PlaceMarketplaceOrder {
         // 2. Sin pares producto-sucursal repetidos.
         rejectDuplicateLines(items);
 
-        // 3. Método de pago disponible.
+        // 3. Método de pago disponible (el método WOMPI solo vale con el proveedor WOMPI).
         String paymentMethod = request.paymentMethod();
-        if (!gateway.enabled() || !orderPlacement.isActivePaymentMethod(paymentMethod)) {
-            throw new BadRequestException(
-                    "PAYMENT_METHOD_NOT_SUPPORTED",
-                    "El método de pago no está disponible."
-            );
+        if (!gateway.enabled() || StartMarketplaceCheckout.WOMPI_METHOD.equals(paymentMethod)
+                || !orderPlacement.isActivePaymentMethod(paymentMethod)) {
+            throw paymentMethodNotSupported();
         }
 
         // 4. Idempotencia por clientRequestId.
@@ -91,6 +89,51 @@ public class PlaceMarketplaceOrder {
             }
             throw duplicateRequest();
         }
+
+        // 5-9. Dirección, listados, descuento de stock y ventas.
+        PreparedOrder prepared = prepare(personId, request);
+        List<NewOrder.NewSale> sales = prepared.sales();
+        BigDecimal orderTotal = prepared.total();
+
+        // 10. Cobro. Un rechazo revierte todo y responde 402.
+        String outcome = request.simulatedOutcome() == null ? DEFAULT_OUTCOME : request.simulatedOutcome();
+        PaymentDecision decision = gateway.charge(
+                new PaymentAttempt(paymentMethod, orderTotal, CURRENCY, reference, outcome));
+        if (decision != PaymentDecision.APPROVED) {
+            log.info("Pago de checkout rechazado: referencia={}, monto={}", reference, orderTotal);
+            Map<String, Object> details = new LinkedHashMap<>();
+            details.put("paymentMethod", paymentMethod);
+            details.put("amount", orderTotal);
+            details.put("currency", CURRENCY);
+            throw new PaymentRequiredException(
+                    "PAYMENT_REJECTED",
+                    "El pago simulado fue rechazado. No se hizo ningún cobro ni se creó el pedido; "
+                            + "puedes intentarlo con otro método.",
+                    details
+            );
+        }
+
+        // 11. Persistencia; una referencia repetida en carrera es un 409.
+        NewOrder newOrder = new NewOrder(personId, prepared.address(), paymentMethod, reference, sales);
+        UUID orderId;
+        try {
+            orderId = orderPlacement.placeApproved(newOrder);
+        } catch (DuplicateKeyException exception) {
+            throw duplicateRequest();
+        }
+        log.info("Pedido de checkout creado: pedido={}, referencia={}, monto={}", orderId, reference, orderTotal);
+
+        // 12. Recibo con la forma de §2.3.
+        return new CheckoutResult(buyerOrderQueries.receipt(personId, orderId), false);
+    }
+
+    /**
+     * Pasos comunes a los dos proveedores: dirección propia, listados comprables, descuento atómico de stock y ventas
+     * por sucursal con precios del servidor. Debe correr dentro de la transacción del llamador: lanzar después
+     * revierte los descuentos.
+     */
+    public PreparedOrder prepare(UUID personId, PlaceOrderRequest request) {
+        List<PlaceOrderRequest.Item> items = request.items();
 
         // 5. Dirección propia y vigente (no se distingue ajena de inexistente).
         AddressSnapshot address = personAddressLookup.findOwned(personId, request.addressId())
@@ -171,40 +214,17 @@ public class PlaceMarketplaceOrder {
             sales.add(new NewOrder.NewSale(entry.getKey(), subtotal, ZERO, total, List.copyOf(entry.getValue())));
             orderTotal = orderTotal.add(total);
         }
-
-        // 10. Cobro. Un rechazo revierte todo y responde 402.
-        String outcome = request.simulatedOutcome() == null ? DEFAULT_OUTCOME : request.simulatedOutcome();
-        PaymentDecision decision = gateway.charge(
-                new PaymentAttempt(paymentMethod, orderTotal, CURRENCY, reference, outcome));
-        if (decision != PaymentDecision.APPROVED) {
-            log.info("Pago de checkout rechazado: referencia={}, monto={}", reference, orderTotal);
-            Map<String, Object> details = new LinkedHashMap<>();
-            details.put("paymentMethod", paymentMethod);
-            details.put("amount", orderTotal);
-            details.put("currency", CURRENCY);
-            throw new PaymentRequiredException(
-                    "PAYMENT_REJECTED",
-                    "El pago simulado fue rechazado. No se hizo ningún cobro ni se creó el pedido; "
-                            + "puedes intentarlo con otro método.",
-                    details
-            );
-        }
-
-        // 11. Persistencia; una referencia repetida en carrera es un 409.
-        NewOrder newOrder = new NewOrder(personId, toDeliveryAddress(address), paymentMethod, reference, sales);
-        UUID orderId;
-        try {
-            orderId = orderPlacement.placeApproved(newOrder);
-        } catch (DuplicateKeyException exception) {
-            throw duplicateRequest();
-        }
-        log.info("Pedido de checkout creado: pedido={}, referencia={}, monto={}", orderId, reference, orderTotal);
-
-        // 12. Recibo con la forma de §2.3.
-        return new CheckoutResult(buyerOrderQueries.receipt(personId, orderId), false);
+        return new PreparedOrder(toDeliveryAddress(address), List.copyOf(sales), orderTotal);
     }
 
-    private static void rejectDuplicateLines(List<PlaceOrderRequest.Item> items) {
+    static BadRequestException paymentMethodNotSupported() {
+        return new BadRequestException(
+                "PAYMENT_METHOD_NOT_SUPPORTED",
+                "El método de pago no está disponible."
+        );
+    }
+
+    static void rejectDuplicateLines(List<PlaceOrderRequest.Item> items) {
         Set<ListingKey> seen = new HashSet<>();
         Set<ListingKey> duplicated = new LinkedHashSet<>();
         for (PlaceOrderRequest.Item item : items) {
@@ -222,7 +242,7 @@ public class PlaceMarketplaceOrder {
         }
     }
 
-    private static ConflictException duplicateRequest() {
+    static ConflictException duplicateRequest() {
         return new ConflictException(
                 "CHECKOUT_DUPLICATE_REQUEST",
                 "Esta compra ya se está procesando o el identificador de la solicitud ya se usó. "

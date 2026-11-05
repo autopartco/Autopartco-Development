@@ -1,14 +1,11 @@
 package com.autopartco.backend.core.billing.internal;
 
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
-import com.autopartco.backend.core.billing.internal.wompi.WompiProperties;
-
 /**
- * Configuración del dominio de cobros: registra las propiedades de Wompi.
+ * Configuración del dominio de cobros de suscripción. Las propiedades de Wompi ({@code wompi.*}) y la activación de
+ * {@code @Scheduled} (que usa {@code SubscriptionPaymentReconciler}) las registra {@code core.payments}.
  */
 @Configuration
-@EnableConfigurationProperties(WompiProperties.class)
 public class BillingConfig {
 }
