@@ -53,6 +53,7 @@ public class ProductImages {
             UUID productId,
             List<MultipartFile> files
     ) {
+        com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
         Product product = lockOwned(storeId, productId);
         if (files == null || files.isEmpty()) {
             throw new BadRequestException("PRODUCT_IMAGES_REQUIRED", "Selecciona al menos una imagen.");
@@ -99,6 +100,7 @@ public class ProductImages {
             UUID productId,
             UUID imageId
     ) {
+        com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
         lockOwned(storeId, productId);
         ProductImage image = findImage(productId, imageId);
         productImageRepository.clearMainImage(productId);
@@ -112,6 +114,7 @@ public class ProductImages {
             UUID productId,
             List<UUID> imageIds
     ) {
+        com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
         lockOwned(storeId, productId);
         List<ProductImage> images = productImageRepository
                 .findAllOfProduct(productId);
@@ -144,6 +147,7 @@ public class ProductImages {
             UUID imageId,
             MultipartFile replacement
     ) {
+        com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
         Product product = lockOwned(storeId, productId);
         ProductImage image = findImage(productId, imageId);
         ProductImageValidator.ValidatedImage validated = imageValidator.validate(replacement);
@@ -174,6 +178,7 @@ public class ProductImages {
             UUID productId,
             UUID imageId
     ) {
+        com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
         lockOwned(storeId, productId);
         List<ProductImage> images = productImageRepository
                 .findAllOfProduct(productId);
@@ -216,6 +221,7 @@ public class ProductImages {
      */
     @Transactional
     public void deleteAllForProduct(UUID productId) {
+        com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
         List<ProductImage> images = productImageRepository
                 .findAllOfProduct(productId);
         List<ImageBackup> backups = images.stream()
@@ -325,6 +331,7 @@ public class ProductImages {
      */
     @Transactional
     public void applyGallery(Product product, GalleryPlan plan) {
+        com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
         UUID productId = product.getId();
         List<ImageBackup> backups = plan.removed().stream()
                 .map(image -> new ImageBackup(image.getStoragePath(), storageService.download(image.getStoragePath()),

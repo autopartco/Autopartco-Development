@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.autopartco.backend.core.analytics.MarketplaceSearch;
 import com.autopartco.backend.core.analytics.SearchLog;
 import com.autopartco.backend.core.analytics.SearchText;
-import com.autopartco.backend.core.catalog.ListingQueries;
+import com.autopartco.backend.core.catalog.ListingCache;
 import com.autopartco.backend.core.catalog.ProductOptionsResponse;
 import com.autopartco.backend.core.catalog.ProductResponse;
 import com.autopartco.backend.core.catalog.VehicleFilter;
@@ -33,7 +33,7 @@ public class ProductBrowseController {
 
     static final String SESSION_HEADER = "X-Session-Id";
 
-    private final ListingQueries listingQueries;
+    private final ListingCache listingQueries;
     private final SearchLog searchLog;
 
     /**
@@ -56,7 +56,7 @@ public class ProductBrowseController {
             @RequestHeader(name = SESSION_HEADER, required = false) String sessionId,
             Authentication authentication
     ) {
-        List<ProductResponse> listings = listingQueries.publishedListings(new VehicleFilter(makeId, modelId, versionId));
+        List<ProductResponse> listings = listingQueries.published(new VehicleFilter(makeId, modelId, versionId));
         String text = SearchText.normalize(q);
         if (text != null || categoryId != null) {
             listings = listings.stream()
@@ -93,7 +93,7 @@ public class ProductBrowseController {
 
     @GetMapping(PRODUCTS + "/{productId}")
     public ProductResponse detail(@PathVariable UUID productId) {
-        return listingQueries.publishedListing(productId);
+        return listingQueries.detail(productId);
     }
 
     @GetMapping(OPTIONS)
