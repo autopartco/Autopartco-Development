@@ -84,6 +84,11 @@ export interface Product {
   listPrice?: number
   discountAmount?: number
   promotionName?: string
+  /**
+   * Audiencia de la promoción aplicada (`ALL`, `PLATFORM_FREQUENT`, `STORE_*`). Si no es `ALL`, el precio es un precio
+   * para clientes frecuentes. El servidor decide a quién aplica; aquí solo se etiqueta.
+   */
+  promotionAudience?: string
   images: ProductImage[]
   category?: Category
   brand?: Brand
@@ -93,6 +98,17 @@ export interface Product {
   universal: boolean
   vehicleRules: VehicleRule[]
   specifications: Specification[]
+}
+
+/** Por qué se sugiere: pedidos reales, mismo vehículo o misma categoría. */
+export type FrequentlyBoughtReason = 'ORDERS' | 'COMPATIBILITY' | 'CATEGORY'
+
+export interface FrequentlyBoughtItem {
+  productId: string
+  name: string
+  price: number
+  image?: string
+  reason: FrequentlyBoughtReason
 }
 
 export type SortOption = 'relevance' | 'price_asc' | 'price_desc'
@@ -154,6 +170,8 @@ export interface MarketplaceService {
   searchProducts(query: ProductQuery): Promise<ProductPage>
   getProduct(id: string): Promise<Product>
   getRelatedProducts(product: Product, limit: number): Promise<Product[]>
+  /** `GET /marketplace/products/{id}/frequently-bought` (público): hasta 6 productos que se compran junto con este. */
+  getFrequentlyBought(productId: string): Promise<FrequentlyBoughtItem[]>
   getFilterOptions(): Promise<FilterOptions>
   /** Catálogo de vehículos en cascada (público). */
   listVehicleMakes(): Promise<VehicleOption[]>

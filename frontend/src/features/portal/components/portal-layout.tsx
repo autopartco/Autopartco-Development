@@ -16,6 +16,7 @@ import { PortalNav } from '../layout/portal-nav'
 import { PlanBadge } from '../layout/plan-badge'
 import { StoreSwitcher } from '../layout/store-switcher'
 import { useCommandPalette } from '../lib/use-command-palette'
+import { AlertsBell } from '../layout/alerts-bell'
 import { CommandPalette, CommandPaletteButton } from './command-palette'
 import { ListSkeleton } from './list-skeleton'
 import { QueryError } from './query-boundary'
@@ -178,7 +179,14 @@ function PortalShell({ storeId }: { storeId: string }) {
         </a>
         <PortalHeader
           start={<MobileMenu />}
-          tools={permissions.status === 'success' && accessError === undefined && !inactive ? <CommandPaletteButton onClick={() => palette.setOpen(true)} /> : null}
+          tools={
+            permissions.status === 'success' && accessError === undefined && !inactive ? (
+              <>
+                <AlertsBell />
+                <CommandPaletteButton onClick={() => palette.setOpen(true)} />
+              </>
+            ) : null
+          }
         />
         <div className="flex-1 lg:grid lg:grid-cols-[15rem_minmax(0,1fr)]">
           <aside className="hidden border-t border-asphalt-line bg-asphalt lg:block">

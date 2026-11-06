@@ -22,6 +22,7 @@ const ADMIN_LINKS = [
   { to: '/admin/solicitudes', label: 'Solicitudes' },
   { to: '/admin/clientes', label: 'Clientes frecuentes' },
   { to: '/admin/busquedas', label: 'Búsquedas' },
+  { to: '/admin/promociones', label: 'Promociones' },
 ]
 
 function AdminHeader() {

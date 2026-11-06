@@ -126,6 +126,11 @@ export const PERMISSION_LABEL: Partial<Record<StorePermission, string>> = {
   SHIPMENT_UPDATE: 'Gestionar envíos',
   BRANCH_READ: 'Ver sucursales',
   ANALYTICS_READ: 'Ver inteligencia comercial',
+  PROMOTION_READ: 'Ver promociones',
+  PROMOTION_CREATE: 'Crear promociones',
+  PROMOTION_UPDATE: 'Editar promociones',
+  PROMOTION_DELETE: 'Eliminar promociones',
+  ALERT_MANAGE: 'Configurar alertas',
 }
 
 /** "SUSPENSION_Y_DIRECCION" -> "Suspensión y dirección" aproximado: el API solo trae el código. */

@@ -41,7 +41,7 @@ type SelectProps = Omit<SelectHTMLAttributes<HTMLSelectElement>, 'id'> & {
   containerClassName?: string
   /** Texto de la opción vacía; sin él no hay opción vacía. */
   placeholder?: string
-  options: { value: string; label: string }[]
+  options: { value: string; label: string; disabled?: boolean }[]
 }
 
 /** Lista desplegable nativa (accesible y cómoda en móvil) con la misma anatomía que `TextField`. */
@@ -62,7 +62,7 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectProps>(function S
         >
           {placeholder !== undefined ? <option value="">{placeholder}</option> : null}
           {options.map((option) => (
-            <option key={option.value} value={option.value}>
+            <option key={option.value} value={option.value} disabled={option.disabled}>
               {option.label}
             </option>
           ))}

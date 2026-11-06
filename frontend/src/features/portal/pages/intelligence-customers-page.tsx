@@ -1,5 +1,5 @@
-import { useSearchParams } from 'react-router'
-import { LightbulbIcon, UsersIcon } from 'lucide-react'
+import { Link, useSearchParams } from 'react-router'
+import { LightbulbIcon, TagIcon, UsersIcon } from 'lucide-react'
 import { DataTable, type DataColumn } from '@/components/common/data-table'
 import { EmptyState } from '@/components/common/states'
 import { Button } from '@/components/ui/button'
@@ -9,9 +9,29 @@ import { cn } from '@/lib/utils'
 import { getAnalyticsService } from '../api/analytics-service'
 import type { CustomerReport, CustomerSegmentCode, StoreCustomer } from '../api/analytics-types'
 import { AnalyticsBoundary, IntelligencePage } from '../components/intelligence-shell'
+import { usePortal } from '../context'
 import { useStoreQuery } from '../hooks'
 import { SEGMENT_CODES, SEGMENT_INFO, dateLabel, isSegmentCode } from '../lib/analytics'
 import { formatDate } from '../lib/labels'
+import { SEGMENT_AUDIENCE } from '../lib/promotions'
+
+/** «Crear promoción para este segmento»: abre el formulario de promociones con la audiencia prellenada. */
+function CreatePromotionLink({ segment }: { segment: CustomerSegmentCode }) {
+  const { storeId, can, subscription } = usePortal()
+  const audience = SEGMENT_AUDIENCE[segment]
+  if (!audience || !can('PROMOTION_CREATE') || !subscription?.capabilities.includes('PROMOTIONS')) return null
+  return (
+    <Button
+      variant="outline"
+      className="h-11 bg-card px-4"
+      nativeButton={false}
+      render={<Link to={`/portal/${encodeURIComponent(storeId)}/promociones?nueva=1&audiencia=${audience}`} />}
+    >
+      <TagIcon aria-hidden />
+      Crear promoción para este segmento
+    </Button>
+  )
+}
 
 function daysAgo(days: number): string {
   if (days <= 0) return 'Hoy'
@@ -112,6 +132,9 @@ function CustomersView({ report, selected, onSelect }: { report: CustomerReport;
             {suggestion.title}
           </p>
           <p className="max-w-prose text-sm text-foreground/85">{suggestion.text}</p>
+          <div className="mt-1">
+            <CreatePromotionLink segment={selected} />
+          </div>
         </aside>
       ) : !selected && suggested.length > 0 ? (
         <section aria-labelledby="acc-titulo" className="flex flex-col gap-3">
@@ -130,9 +153,12 @@ function CustomersView({ report, selected, onSelect }: { report: CustomerReport;
                   <p className="text-sm text-foreground/85">
                     {info.suggestion?.text} <span className="text-muted-foreground">({pluralize(segment.customers, 'cliente', 'clientes')} en {segment.label.toLowerCase()})</span>
                   </p>
-                  <Button variant="ghost" className="-ml-3 h-11 px-3 underline underline-offset-4" onClick={() => onSelect(segment.code)}>
-                    Ver estos clientes
-                  </Button>
+                  <div className="flex flex-wrap items-center gap-x-2">
+                    <Button variant="ghost" className="-ml-3 h-11 px-3 underline underline-offset-4" onClick={() => onSelect(segment.code)}>
+                      Ver estos clientes
+                    </Button>
+                    <CreatePromotionLink segment={segment.code} />
+                  </div>
                 </li>
               )
             })}

@@ -2,6 +2,7 @@ import { ApiError } from '@/lib/api'
 import type { AnalyticsService } from '../analytics-service'
 import type {
   AbcClass,
+  AssociationReport,
   BranchBreakdown,
   CustomerSegmentCode,
   Forecast,
@@ -387,5 +388,62 @@ export function createMockAnalyticsService(): AnalyticsService {
       const store = guard(storeId)
       return forecastOf(datasetFor(store), branchId)
     },
+
+    async associations(storeId) {
+      await simulateNetwork(500)
+      const store = guard(storeId)
+      return associationsOf(datasetFor(store))
+    },
+  }
+}
+
+/** Pares a partir de los pedidos simulados (soporte, confianza y lift reales sobre el historial sintético). */
+function associationsOf(dataset: MockDataset): AssociationReport {
+  const orders = dataset.orders.filter((order) => !order.cancelled && order.lines.length > 1)
+  if (orders.length < 10) return { computedAt: null, source: null, pairs: [], suggestedCombo: null }
+  const all = dataset.orders.filter((order) => !order.cancelled)
+  const names = new Map(dataset.catalog.map((item) => [item.productId, item.name]))
+  const single = new Map<string, number>()
+  for (const order of all) for (const line of order.lines) single.set(line.productId, (single.get(line.productId) ?? 0) + 1)
+  const together = new Map<string, number>()
+  for (const order of orders) {
+    const ids = order.lines.map((line) => line.productId).toSorted()
+    for (let i = 0; i < ids.length; i += 1) {
+      for (let j = i + 1; j < ids.length; j += 1) together.set(`${ids[i]}|${ids[j]}`, (together.get(`${ids[i]}|${ids[j]}`) ?? 0) + 1)
+    }
+  }
+  const total = all.length
+  const pairs = [...together.entries()]
+    .filter(([, count]) => count >= 3)
+    .map(([key, count]) => {
+      const [a = '', b = ''] = key.split('|')
+      const countA = single.get(a) ?? 1
+      const countB = single.get(b) ?? 1
+      return {
+        antecedent: { productId: a, name: names.get(a) ?? 'Producto' },
+        consequent: { productId: b, name: names.get(b) ?? 'Producto' },
+        support: round(count / total, 3),
+        confidence: round(count / countA, 2),
+        lift: round(count / total / ((countA / total) * (countB / total)), 2),
+        orders: count,
+      }
+    })
+    .filter((pair) => pair.lift > 1)
+    .toSorted((x, y) => y.lift - x.lift || y.orders - x.orders)
+    .slice(0, 10)
+  const top = pairs[0]
+  const night = new Date()
+  night.setHours(3, 0, 0, 0)
+  return {
+    computedAt: night.toISOString(),
+    source: 'ORDERS',
+    pairs,
+    suggestedCombo: top
+      ? {
+          productIds: [top.antecedent.productId, top.consequent.productId],
+          names: [top.antecedent.name, top.consequent.name],
+          reason: `Se compraron juntos en ${top.orders} pedidos y la probabilidad de llevarlos juntos es ${top.lift.toString().replace('.', ',')} veces la normal.`,
+        }
+      : null,
   }
 }

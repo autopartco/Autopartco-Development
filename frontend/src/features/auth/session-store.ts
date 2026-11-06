@@ -1,3 +1,4 @@
+import { invalidateAsync } from '@/lib/use-async'
 import type { Session } from './api/types'
 
 /**
@@ -13,9 +14,17 @@ export function getSession(): Session | undefined {
   return current
 }
 
+/**
+ * Claves de caché del marketplace cuyo contenido depende de quién compra (precio por audiencia, beneficios):
+ * se descartan al cambiar de persona para no mostrar el precio de la sesión anterior.
+ */
+const BUYER_CACHE_PREFIXES = ['product', 'related:', 'frequently-bought:', 'marketplace:benefits']
+
 export function setSession(next: Session | undefined): void {
+  const changed = current?.user.email !== next?.user.email
   current = next
   initialized = true
+  if (changed) for (const prefix of BUYER_CACHE_PREFIXES) invalidateAsync(prefix)
   for (const listener of listeners) listener()
 }
 

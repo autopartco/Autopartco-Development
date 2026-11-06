@@ -23,6 +23,9 @@ export const CartPage = lazy(() => import('@/features/cart/pages/cart-page'))
 export const CheckoutPage = lazy(() => import('@/features/checkout/pages/checkout-page'))
 export const OrderResultPage = lazy(() => import('@/features/checkout/pages/order-result-page'))
 
+// Beneficios del comprador (promociones para su segmento).
+export const BenefitsPage = lazy(() => import('@/features/benefits/pages/benefits-page'))
+
 // Mis pedidos y seguimiento del comprador.
 export const OrdersPage = lazy(() => import('@/features/orders/pages/orders-page'))
 export const OrderDetailPage = lazy(() => import('@/features/orders/pages/order-detail-page'))
@@ -48,6 +51,9 @@ export const PortalIntelligenceReportsPage = lazy(() => import('@/features/porta
 export const PortalIntelligenceCustomersPage = lazy(() => import('@/features/portal/pages/intelligence-customers-page'))
 export const PortalIntelligenceProductsPage = lazy(() => import('@/features/portal/pages/intelligence-products-page'))
 export const PortalIntelligenceForecastPage = lazy(() => import('@/features/portal/pages/intelligence-forecast-page'))
+export const PortalIntelligenceAssociationsPage = lazy(() => import('@/features/portal/pages/intelligence-associations-page'))
+export const PortalPromotionsPage = lazy(() => import('@/features/portal/pages/promotions-page'))
+export const PortalAlertsPage = lazy(() => import('@/features/portal/pages/alerts-page'))
 export const PortalBranchesPage = lazy(() => import('@/features/portal/pages/branches-page'))
 export const PortalTeamPage = lazy(() => import('@/features/portal/pages/team-page'))
 export const PortalStorePage = lazy(() => import('@/features/portal/pages/store-profile-page'))
@@ -56,5 +62,6 @@ export const PortalStorePage = lazy(() => import('@/features/portal/pages/store-
 export const AdminRoot = lazy(() => import('@/features/admin/layout/admin-root').then((module) => ({ default: module.AdminRoot })))
 export const AdminApplicationsPage = lazy(() => import('@/features/admin/pages/applications-page'))
 export const AdminCustomersPage = lazy(() => import('@/features/admin/pages/customers-page'))
+export const AdminPromotionsPage = lazy(() => import('@/features/admin/pages/promotions-page'))
 export const AdminSearchesPage = lazy(() => import('@/features/admin/pages/searches-page'))
 export const PortalApplicationPage = lazy(() => import('@/features/portal/pages/application-page'))

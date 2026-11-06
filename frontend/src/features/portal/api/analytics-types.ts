@@ -153,3 +153,39 @@ export interface Forecast {
   weekly: ForecastWeek[]
   topProducts: ForecastProduct[]
 }
+
+// ------------------------------------------------------------- se compran juntos
+
+export type AssociationSource = 'ORDERS' | 'COMPATIBILITY' | 'CATEGORY'
+
+export interface AssociationProduct {
+  productId: string
+  name: string
+}
+
+/** `support`, `confidence` son fracciones 0..1; `lift` es un múltiplo (2,4 = 2,4 veces más probable que al azar). */
+export interface AssociationPair {
+  antecedent: AssociationProduct
+  consequent: AssociationProduct
+  support: number
+  confidence: number
+  lift: number
+  orders: number
+}
+
+export interface SuggestedCombo {
+  productIds: string[]
+  names: string[]
+  reason: string
+}
+
+/**
+ * `GET /stores/{id}/analytics/associations`. Se calcula cada noche: `computedAt` y `source` llegan `null` mientras
+ * no haya un cálculo. `source` indica en qué se basan los pares (pedidos reales, compatibilidad o categoría).
+ */
+export interface AssociationReport {
+  computedAt: string | null
+  source: AssociationSource | null
+  pairs: AssociationPair[]
+  suggestedCombo: SuggestedCombo | null
+}
