@@ -1,6 +1,6 @@
 # Inteligencia comercial — fases 2 y 3
 
-Estado: fase 2 backend en producción (v1.3.0, 2026-11-05); frontend de la fase 2 y fase 3 pendientes (ver §7). La fase 1 está en producción (v1.2.0): `core.analytics`, `/stores/{id}/analytics/*`, `/admin/analytics/*`, registro anónimo en `marketplace_searches` y permiso `ANALYTICS_READ`.
+Estado: fase 2 completa en producción (backend v1.3.0, frontend v1.4.0, 2026-11-05); fase 3 pendiente (ver §7). La fase 1 está en producción (v1.2.0): `core.analytics`, `/stores/{id}/analytics/*`, `/admin/analytics/*`, registro anónimo en `marketplace_searches` y permiso `ANALYTICS_READ`.
 
 Reglas de ejecución:
 - Esquema y datos solo en Supabase `autopartco-dev` (`hwojkaguqmegvdxlcysd`) con `apply_migration`, desde la sesión orquestadora. Ningún archivo SQL en el repo.
@@ -161,8 +161,8 @@ Hecho y publicado en v1.3.0:
 - T5: alertas (tarea 05:00), `GET /stores/{id}/alerts`, `/alerts/summary`, `PATCH /alerts/{aid}`, `GET/PUT /alert-preferences`, correo por `EmailService`.
 
 Pendiente:
-1. **T6 — Frontend de la fase 2** (completa): página de promociones del portal con audiencia y resultados, centro de alertas (ruta `/portal/{storeId}/alertas`, a la que enlaza el correo) y preferencias, «Se compran juntos» en la ficha y en Inteligencia, «Tus beneficios», etiqueta «Precio para clientes frecuentes», audiencia en promociones de administración. El cliente HTTP debe enviar `Authorization` también en `/marketplace/products*` para recibir el precio por audiencia.
-2. **T8–T12 — Fase 3** completa (búsqueda con año y ubicación, demanda no atendida y por vehículo, pantallas de demanda, modelos de ML, publicación v1.4.0). La tabla `analytics_model_runs` ya existe.
+1. **Verificar en producción el frontend de la fase 2 (v1.4.0)**: la lista, el formulario y los resultados de Promociones, la pestaña «Se compran juntos» de Inteligencia y las promociones de administración no se probaron en navegador (los almacenes del mock están en plan Prueba, sin `PROMOTIONS`); nada se probó aún contra el backend real.
+2. **T8–T12 — Fase 3** completa (búsqueda con año y ubicación, demanda no atendida y por vehículo, pantallas de demanda, modelos de ML, publicación v1.5.0). La tabla `analytics_model_runs` ya existe.
 3. Re-evaluar alertas de agotamiento al registrar una venta: no existe evento de dominio de venta confirmada; hoy solo corre la tarea nocturna.
 4. `frequently-bought` no registra exposiciones cuando el precio mostrado viene de una promoción con audiencia.
 5. El checkout guarda `promotion_id` pero no `list_unit_price` ni `discount_amount` (no se guardaban antes).
