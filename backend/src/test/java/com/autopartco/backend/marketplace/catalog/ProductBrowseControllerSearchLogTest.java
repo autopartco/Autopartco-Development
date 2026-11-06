@@ -59,8 +59,8 @@ class ProductBrowseControllerSearchLogTest {
         when(listingQueries.publishedListings(any(), eq(buyer)))
                 .thenReturn(List.of(frequentPrice, generalPrice, noPromotion));
 
-        List<ProductResponse> result = controller.published(null, null, null, null, null, null,
-                new UsernamePasswordAuthenticationToken("a@b.co", null, AuthorityUtils.NO_AUTHORITIES));
+        List<ProductResponse> result = controller.published(null, null, null, null, null, null, null, null,
+                new UsernamePasswordAuthenticationToken("a@b.co", null, AuthorityUtils.NO_AUTHORITIES)).getBody();
 
         assertThat(result).hasSize(3);
         @SuppressWarnings("unchecked")
@@ -76,7 +76,7 @@ class ProductBrowseControllerSearchLogTest {
         when(listingQueries.publishedListings(any())).thenReturn(List.of(
                 listing("Pastillas", brakes, UUID.randomUUID(), PromotionAudience.ALL)));
 
-        controller.published(null, null, null, null, null, null, null);
+        controller.published(null, null, null, null, null, null, null, null, null);
 
         verify(exposureRecorder, never()).record(any(), any());
     }
@@ -100,8 +100,8 @@ class ProductBrowseControllerSearchLogTest {
         when(listingQueries.publishedListings(any())).thenReturn(List.of(
                 listing("Pastillas de freno Mazdá", brakes), listing("Filtro de aceite", UUID.randomUUID())));
 
-        List<ProductResponse> result = controller.published(null, null, null, " PASTILLAS mazda", brakes, "sess",
-                new UsernamePasswordAuthenticationToken("a@b.co", null, AuthorityUtils.NO_AUTHORITIES));
+        List<ProductResponse> result = controller.published(null, null, null, " PASTILLAS mazda", brakes, null, null, "sess",
+                new UsernamePasswordAuthenticationToken("a@b.co", null, AuthorityUtils.NO_AUTHORITIES)).getBody();
 
         assertThat(result).extracting(ProductResponse::name).containsExactly("Pastillas de freno Mazdá");
         ArgumentCaptor<MarketplaceSearch> search = ArgumentCaptor.forClass(MarketplaceSearch.class);
@@ -117,9 +117,9 @@ class ProductBrowseControllerSearchLogTest {
         when(listingQueries.publishedListings(any())).thenReturn(List.of(listing("Filtro", brakes)));
         doThrow(new IllegalStateException("fallo")).when(searchLog).record(any());
 
-        List<ProductResponse> result = controller.published(UUID.randomUUID(), null, null, null, null, null,
+        List<ProductResponse> result = controller.published(UUID.randomUUID(), null, null, null, null, null, null, null,
                 new AnonymousAuthenticationToken("key", "anonymous",
-                        AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS")));
+                        AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS"))).getBody();
 
         assertThat(result).hasSize(1);
     }
@@ -127,7 +127,7 @@ class ProductBrowseControllerSearchLogTest {
     @Test
     void anonymousIsNotAuthenticated() {
         when(listingQueries.publishedListings(any())).thenReturn(List.of());
-        controller.published(null, null, null, "filtro", null, null, null);
+        controller.published(null, null, null, "filtro", null, null, null, null, null);
         ArgumentCaptor<MarketplaceSearch> search = ArgumentCaptor.forClass(MarketplaceSearch.class);
         verify(searchLog).record(search.capture());
         assertThat(search.getValue().authenticated()).isFalse();
@@ -137,15 +137,15 @@ class ProductBrowseControllerSearchLogTest {
     @Test
     void generalPriceIsCachedButSegmentedBuyerNeverUsesTheSharedCache() {
         when(listingQueries.publishedListings(any())).thenReturn(List.of(listing("Filtro", brakes)));
-        controller.published(null, null, null, null, null, null, null);
-        controller.published(null, null, null, null, null, null, null);
+        controller.published(null, null, null, null, null, null, null, null, null);
+        controller.published(null, null, null, null, null, null, null, null, null);
         verify(listingQueries, org.mockito.Mockito.times(1)).publishedListings(any());
 
         BuyerContext buyer = new BuyerContext(UUID.randomUUID(), Set.of("FREQUENT"), Map.of());
         when(buyerContexts.forBrowsing(any())).thenReturn(buyer);
         when(listingQueries.publishedListings(any(), eq(buyer))).thenReturn(List.of(listing("Bujía", brakes)));
-        List<ProductResponse> result = controller.published(null, null, null, null, null, null,
-                new UsernamePasswordAuthenticationToken("a@b.co", null, AuthorityUtils.NO_AUTHORITIES));
+        List<ProductResponse> result = controller.published(null, null, null, null, null, null, null, null,
+                new UsernamePasswordAuthenticationToken("a@b.co", null, AuthorityUtils.NO_AUTHORITIES)).getBody();
 
         assertThat(result).extracting(ProductResponse::name).containsExactly("Bujía");
         verify(listingQueries).publishedListings(any(), eq(buyer));

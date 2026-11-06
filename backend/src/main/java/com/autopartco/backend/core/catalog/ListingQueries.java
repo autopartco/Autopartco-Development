@@ -207,6 +207,19 @@ public class ListingQueries {
         return toResponses(jdbcTemplate.query(STORE_LISTINGS_SQL, ListingQueries::mapRow, storeId));
     }
 
+    /** Página de listados del almacén (mismo orden que {@link #storeListings}); solo carga imágenes/reglas de la página. */
+    @Transactional(readOnly = true)
+    public StoreListingsPage storeListingsPage(UUID storeId, int page, int size) {
+        Long total = jdbcTemplate.queryForObject(
+                "select count(*) from (" + STORE_LISTINGS_SQL + ") t", Long.class, storeId);
+        List<ListingRow> rows = jdbcTemplate.query(
+                STORE_LISTINGS_SQL + " limit ? offset ?", ListingQueries::mapRow, storeId, size, (long) page * size);
+        return new StoreListingsPage(toResponses(rows), total == null ? 0 : total);
+    }
+
+    public record StoreListingsPage(List<ProductResponse> items, long total) {
+    }
+
     /**
      * Listado de un producto del almacén en una sucursal, sin filtrar por estado. Si se llama tras escribir en la
      * misma transacción, el llamador debe hacer {@code flush} antes (es SQL nativo).
