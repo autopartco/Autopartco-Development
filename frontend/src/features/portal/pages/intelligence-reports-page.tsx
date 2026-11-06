@@ -54,13 +54,26 @@ function Variation({ current, previous, inverse = false }: { current: number; pr
   )
 }
 
+/** Cuatro cifras principales en una fila y tres secundarias en otra: siete tarjetas sin huecos en la cuadrícula. */
 function Kpis({ totals, previous }: { totals: ReportTotals; previous: ReportTotals }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      <StatCard label="Ingresos" value={formatCOP(totals.revenue)} hint={<Variation current={totals.revenue} previous={previous.revenue} />} />
-      <StatCard label="Pedidos" value={formatNumber(totals.orders)} hint={<Variation current={totals.orders} previous={previous.orders} />} />
-      <StatCard label="Ticket promedio" value={formatCOP(totals.averageTicket)} hint={<Variation current={totals.averageTicket} previous={previous.averageTicket} />} />
-      <StatCard label="Unidades vendidas" value={formatNumber(totals.units)} hint={<Variation current={totals.units} previous={previous.units} />} />
+    <div className="flex flex-col gap-3">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Ingresos" value={formatCOP(totals.revenue)} hint={<Variation current={totals.revenue} previous={previous.revenue} />} />
+        <StatCard label="Pedidos" value={formatNumber(totals.orders)} hint={<Variation current={totals.orders} previous={previous.orders} />} />
+        <StatCard label="Ticket promedio" value={formatCOP(totals.averageTicket)} hint={<Variation current={totals.averageTicket} previous={previous.averageTicket} />} />
+        <StatCard label="Unidades vendidas" value={formatNumber(totals.units)} hint={<Variation current={totals.units} previous={previous.units} />} />
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <SecondaryKpis totals={totals} previous={previous} />
+      </div>
+    </div>
+  )
+}
+
+function SecondaryKpis({ totals, previous }: { totals: ReportTotals; previous: ReportTotals }) {
+  return (
+    <>
       <StatCard label="Clientes" value={formatNumber(totals.customers)} hint={<Variation current={totals.customers} previous={previous.customers} />} />
       <StatCard label="Descuentos otorgados" value={formatCOP(totals.discounts)} hint={<Variation current={totals.discounts} previous={previous.discounts} inverse />} />
       <StatCard
@@ -73,7 +86,7 @@ function Kpis({ totals, previous }: { totals: ReportTotals; previous: ReportTota
           </>
         }
       />
-    </div>
+    </>
   )
 }
 
@@ -84,11 +97,35 @@ const BRANCH_COLUMNS: DataColumn<BranchBreakdown>[] = [
   { id: 'unidades', header: 'Unidades', align: 'end', sortValue: (row) => row.units, cell: (row) => formatNumber(row.units) },
 ]
 
-const CATEGORY_COLUMNS: DataColumn<CategoryBreakdown>[] = [
-  { id: 'categoria', header: 'Categoría', rowHeader: true, sortValue: (row) => humanizeCode(row.categoryCode), cell: (row) => humanizeCode(row.categoryCode) },
-  { id: 'ingresos', header: 'Ingresos', align: 'end', sortValue: (row) => row.revenue, cell: (row) => formatCOP(row.revenue) },
-  { id: 'unidades', header: 'Unidades', align: 'end', sortValue: (row) => row.units, cell: (row) => formatNumber(row.units) },
-]
+/**
+ * Ventas por categoría como lista con barra proporcional a los ingresos (cabe en un tercio del ancho sin pasar a
+ * tarjetas). Ordenada por ingresos; las cifras van en texto, la barra es solo apoyo visual.
+ */
+function CategoryBars({ rows }: { rows: CategoryBreakdown[] }) {
+  const sorted = rows.toSorted((a, b) => b.revenue - a.revenue)
+  const max = sorted[0]?.revenue ?? 0
+  if (sorted.length === 0) return <p className="text-sm text-muted-foreground">Sin ventas por categoría en este periodo.</p>
+  return (
+    <ol className="flex flex-col gap-3">
+      {sorted.map((row) => (
+        <li key={row.categoryId} className="flex flex-col gap-1">
+          <div className="flex items-baseline justify-between gap-3 text-sm">
+            <span className="min-w-0 truncate font-semibold">{humanizeCode(row.categoryCode)}</span>
+            <span className="shrink-0 tabular-nums">{formatCOP(row.revenue)}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div aria-hidden className="h-1.5 flex-1 overflow-hidden rounded-full bg-concrete">
+              <div className="h-full rounded-full bg-primary/70" style={{ width: `${max > 0 ? Math.max(2, (row.revenue / max) * 100) : 0}%` }} />
+            </div>
+            <span className="w-20 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
+              {formatNumber(row.units)} {row.units === 1 ? 'unidad' : 'unidades'}
+            </span>
+          </div>
+        </li>
+      ))}
+    </ol>
+  )
+}
 
 const PRODUCT_COLUMNS: DataColumn<TopProduct>[] = [
   {
@@ -174,28 +211,28 @@ function ReportView({ report }: { report: SalesReport }) {
   return (
     <div className="flex flex-col gap-6">
       <Kpis totals={report.totals} previous={report.previous} />
-      <BentoTile title="Ingresos" aside={`${dateLabel(report.from)} – ${dateLabel(report.to)}`}>
-        <AnalyticsChart mode="bars" points={points} label="Ingresos del periodo" formatAxis={(value) => compactCOP.format(value)} />
-      </BentoTile>
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid items-start gap-6 lg:grid-cols-3">
+        <BentoTile title="Ingresos" aside={`${dateLabel(report.from)} – ${dateLabel(report.to)}`} className="lg:col-span-2">
+          <AnalyticsChart mode="bars" points={points} label="Ingresos del periodo" formatAxis={(value) => compactCOP.format(value)} />
+        </BentoTile>
+        <BentoTile index={1} title="Por categoría">
+          <CategoryBars rows={report.byCategory} />
+        </BentoTile>
+      </div>
+      {/* Con una sola sucursal el desglose repite los totales: solo se muestra con dos o más. */}
+      {report.byBranch.length > 1 ? (
         <section aria-labelledby="rep-sucursales" className="flex min-w-0 flex-col gap-3">
           <h2 id="rep-sucursales" className="text-lg font-semibold tracking-tight">
             Por sucursal
           </h2>
           <DataTable caption="Ventas por sucursal" columns={BRANCH_COLUMNS} rows={report.byBranch} getRowId={(row) => row.branchId} defaultSort={{ columnId: 'ingresos', direction: 'desc' }} />
         </section>
-        <section aria-labelledby="rep-categorias" className="flex min-w-0 flex-col gap-3">
-          <h2 id="rep-categorias" className="text-lg font-semibold tracking-tight">
-            Por categoría
-          </h2>
-          <DataTable caption="Ventas por categoría" columns={CATEGORY_COLUMNS} rows={report.byCategory} getRowId={(row) => row.categoryId} defaultSort={{ columnId: 'ingresos', direction: 'desc' }} />
-        </section>
-      </div>
+      ) : null}
       <section aria-labelledby="rep-productos" className="flex min-w-0 flex-col gap-3">
         <h2 id="rep-productos" className="text-lg font-semibold tracking-tight">
           Productos más vendidos
         </h2>
-        <DataTable caption="Productos más vendidos del periodo" columns={PRODUCT_COLUMNS} rows={report.topProducts} getRowId={(row) => row.productId} defaultSort={{ columnId: 'ingresos', direction: 'desc' }} />
+        <DataTable caption="Productos más vendidos del periodo" columns={PRODUCT_COLUMNS} rows={report.topProducts} getRowId={(row) => row.productId} defaultSort={{ columnId: 'ingresos', direction: 'desc' }} pageSize={5} />
       </section>
     </div>
   )
