@@ -49,7 +49,9 @@ function Variation({ current, previous, inverse = false }: { current: number; pr
   const good = inverse ? !up : up
   return (
     <span className={cn('font-semibold', good ? 'text-stock' : 'text-destructive')}>
-      {up ? '▲' : '▼'} {formatNumber(rounded)} % {up ? 'más' : 'menos'} que el periodo anterior
+      {/* Texto corto para que quepa en una línea; el lector de pantalla oye «24 % más que el periodo anterior». */}
+      <span aria-hidden>{up ? '▲' : '▼'}</span> {formatNumber(rounded)} %<span className="sr-only"> {up ? 'más' : 'menos'} que el periodo anterior</span>
+      <span aria-hidden> vs. periodo anterior</span>
     </span>
   )
 }
@@ -58,13 +60,13 @@ function Variation({ current, previous, inverse = false }: { current: number; pr
 function Kpis({ totals, previous }: { totals: ReportTotals; previous: ReportTotals }) {
   return (
     <div className="flex flex-col gap-3">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Ingresos" value={formatCOP(totals.revenue)} hint={<Variation current={totals.revenue} previous={previous.revenue} />} />
-        <StatCard label="Pedidos" value={formatNumber(totals.orders)} hint={<Variation current={totals.orders} previous={previous.orders} />} />
-        <StatCard label="Ticket promedio" value={formatCOP(totals.averageTicket)} hint={<Variation current={totals.averageTicket} previous={previous.averageTicket} />} />
-        <StatCard label="Unidades vendidas" value={formatNumber(totals.units)} hint={<Variation current={totals.units} previous={previous.units} />} />
+      <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
+        <StatCard compact label="Ingresos" value={formatCOP(totals.revenue)} hint={<Variation current={totals.revenue} previous={previous.revenue} />} />
+        <StatCard compact label="Pedidos" value={formatNumber(totals.orders)} hint={<Variation current={totals.orders} previous={previous.orders} />} />
+        <StatCard compact label="Ticket promedio" value={formatCOP(totals.averageTicket)} hint={<Variation current={totals.averageTicket} previous={previous.averageTicket} />} />
+        <StatCard compact label="Unidades vendidas" value={formatNumber(totals.units)} hint={<Variation current={totals.units} previous={previous.units} />} />
       </div>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <SecondaryKpis totals={totals} previous={previous} />
       </div>
     </div>
@@ -74,9 +76,11 @@ function Kpis({ totals, previous }: { totals: ReportTotals; previous: ReportTota
 function SecondaryKpis({ totals, previous }: { totals: ReportTotals; previous: ReportTotals }) {
   return (
     <>
-      <StatCard label="Clientes" value={formatNumber(totals.customers)} hint={<Variation current={totals.customers} previous={previous.customers} />} />
-      <StatCard label="Descuentos otorgados" value={formatCOP(totals.discounts)} hint={<Variation current={totals.discounts} previous={previous.discounts} inverse />} />
+      <StatCard compact label="Clientes" value={formatNumber(totals.customers)} hint={<Variation current={totals.customers} previous={previous.customers} />} />
+      <StatCard compact label="Descuentos otorgados" value={formatCOP(totals.discounts)} hint={<Variation current={totals.discounts} previous={previous.discounts} inverse />} />
       <StatCard
+        compact
+        className="col-span-2 sm:col-span-1"
         label="Pedidos cancelados"
         value={formatNumber(totals.cancelledOrders)}
         hint={
@@ -106,24 +110,28 @@ function CategoryBars({ rows }: { rows: CategoryBreakdown[] }) {
   const max = sorted[0]?.revenue ?? 0
   if (sorted.length === 0) return <p className="text-sm text-muted-foreground">Sin ventas por categoría en este periodo.</p>
   return (
-    <ol className="flex flex-col gap-3">
-      {sorted.map((row) => (
-        <li key={row.categoryId} className="flex flex-col gap-1">
-          <div className="flex items-baseline justify-between gap-3 text-sm">
-            <span className="min-w-0 truncate font-semibold">{humanizeCode(row.categoryCode)}</span>
-            <span className="shrink-0 tabular-nums">{formatCOP(row.revenue)}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div aria-hidden className="h-1.5 flex-1 overflow-hidden rounded-full bg-concrete">
-              <div className="h-full rounded-full bg-primary/70" style={{ width: `${max > 0 ? Math.max(2, (row.revenue / max) * 100) : 0}%` }} />
+    // Altura fija (la de la gráfica) con desplazamiento propio: muchas categorías no alargan la página.
+    // `tabIndex` + `role="region"`: la zona desplazable se alcanza y recorre con teclado.
+    <div tabIndex={0} role="region" aria-label="Ventas por categoría" className="-mr-2 max-h-72 overflow-y-auto pr-2 focus-visible:outline-offset-2">
+      <ol className="flex flex-col gap-3">
+        {sorted.map((row) => (
+          <li key={row.categoryId} className="flex flex-col gap-1">
+            <div className="flex items-baseline justify-between gap-3 text-sm">
+              <span className="min-w-0 truncate font-semibold">{humanizeCode(row.categoryCode)}</span>
+              <span className="shrink-0 tabular-nums">{formatCOP(row.revenue)}</span>
             </div>
-            <span className="w-20 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
-              {formatNumber(row.units)} {row.units === 1 ? 'unidad' : 'unidades'}
-            </span>
-          </div>
-        </li>
-      ))}
-    </ol>
+            <div className="flex items-center gap-2">
+              <div aria-hidden className="h-1.5 flex-1 overflow-hidden rounded-full bg-concrete">
+                <div className="h-full rounded-full bg-primary/70" style={{ width: `${max > 0 ? Math.max(2, (row.revenue / max) * 100) : 0}%` }} />
+              </div>
+              <span className="w-20 shrink-0 text-right text-xs text-muted-foreground tabular-nums">
+                {formatNumber(row.units)} {row.units === 1 ? 'unidad' : 'unidades'}
+              </span>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </div>
   )
 }
 
@@ -232,7 +240,10 @@ function ReportView({ report }: { report: SalesReport }) {
         <h2 id="rep-productos" className="text-lg font-semibold tracking-tight">
           Productos más vendidos
         </h2>
-        <DataTable caption="Productos más vendidos del periodo" columns={PRODUCT_COLUMNS} rows={report.topProducts} getRowId={(row) => row.productId} defaultSort={{ columnId: 'ingresos', direction: 'desc' }} pageSize={5} />
+        {/* Altura fija con desplazamiento propio: todos los productos sin alargar la página. */}
+        <div tabIndex={0} role="region" aria-label="Productos más vendidos" className="max-h-72 overflow-y-auto rounded-xl focus-visible:outline-offset-2">
+          <DataTable caption="Productos más vendidos del periodo" columns={PRODUCT_COLUMNS} rows={report.topProducts} getRowId={(row) => row.productId} defaultSort={{ columnId: 'ingresos', direction: 'desc' }} />
+        </div>
       </section>
     </div>
   )

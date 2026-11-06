@@ -11,6 +11,8 @@ interface StatCardProps {
   to?: string
   /** Resalta cifras que piden acción (pedidos pendientes, agotados). */
   tone?: 'default' | 'attention'
+  /** Versión densa (menos relleno y cifra más pequeña) para pantallas con muchas cifras, como los reportes. */
+  compact?: boolean
   className?: string
 }
 
@@ -19,11 +21,13 @@ interface StatCardProps {
  * y, si es enlace, se eleva 2px al pasar el puntero (como las tarjetas del marketplace).
  * Ambos movimientos se anulan con `prefers-reduced-motion`.
  */
-export function StatCard({ label, value, hint, to, tone = 'default', className }: StatCardProps) {
+export function StatCard({ label, value, hint, to, tone = 'default', compact = false, className }: StatCardProps) {
   const content = (
     <Card
       className={cn(
-        'h-full gap-2 p-4 ring-1 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 motion-safe:duration-300 motion-safe:ease-out-snap',
+        'h-full ring-1 motion-safe:animate-in',
+        compact ? 'gap-1 px-4 py-3' : 'gap-2 p-4',
+        'motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1 motion-safe:duration-300 motion-safe:ease-out-snap',
         tone === 'attention' ? 'ring-stock-low/40' : 'ring-foreground/10',
         to &&
           'transition-[box-shadow,transform] duration-200 ease-out-snap group-hover/stat:ring-foreground/30 group-hover/stat:shadow-[0_8px_24px_-12px_rgb(0_0_0/0.18)] motion-safe:group-hover/stat:-translate-y-0.5',
@@ -31,8 +35,8 @@ export function StatCard({ label, value, hint, to, tone = 'default', className }
       )}
     >
       <p className="text-sm font-medium text-muted-foreground">{label}</p>
-      <p className="text-3xl leading-none font-extrabold tracking-[-0.035em] tabular-nums">{value}</p>
-      {hint ? <p className="text-sm text-muted-foreground">{hint}</p> : null}
+      <p className={cn('leading-none font-extrabold tracking-[-0.035em] tabular-nums', compact ? 'text-xl sm:text-2xl' : 'text-3xl')}>{value}</p>
+      {hint ? <p className={cn('text-muted-foreground', compact ? 'text-xs' : 'text-sm')}>{hint}</p> : null}
     </Card>
   )
   return to ? (
