@@ -25,6 +25,8 @@ public class CorsConfig {
                 Arrays.asList("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
         );
         configuration.setAllowedHeaders(Arrays.asList("*"));
+        // Cabeceras del paginado (shared.web.Paging): sin esto el navegador no deja leerlas desde otro origen.
+        configuration.setExposedHeaders(Arrays.asList("X-Total-Count", "X-Total-Pages", "X-Page", "X-Size"));
         // Necesario para que el navegador envíe la cookie del refresh token. Los orígenes son una lista explícita.
         configuration.setAllowCredentials(true);
 
