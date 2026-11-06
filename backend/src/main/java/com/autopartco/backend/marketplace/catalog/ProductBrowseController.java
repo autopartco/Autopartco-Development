@@ -5,6 +5,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,6 +26,7 @@ import com.autopartco.backend.core.pricing.PromotionAudience;
 import com.autopartco.backend.core.pricing.PromotionExposureRecorder;
 import com.autopartco.backend.marketplace.benefits.BuyerContexts;
 import com.autopartco.backend.shared.web.ApiPaths;
+import com.autopartco.backend.shared.web.Paging;
 
 import lombok.AllArgsConstructor;
 
@@ -53,12 +55,14 @@ public class ProductBrowseController {
      * {@value #SESSION_HEADER} (solo se guarda su hash diario).</p>
      */
     @GetMapping(PRODUCTS)
-    public List<ProductResponse> published(
+    public ResponseEntity<List<ProductResponse>> published(
             @RequestParam(required = false) UUID makeId,
             @RequestParam(required = false) UUID modelId,
             @RequestParam(required = false) UUID versionId,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) UUID categoryId,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
             @RequestHeader(name = SESSION_HEADER, required = false) String sessionId,
             Authentication authentication
     ) {
@@ -73,8 +77,9 @@ public class ProductBrowseController {
         }
         recordSearch(new MarketplaceSearch(q, makeId, modelId, versionId, null, categoryId, null, listings.size(),
                 sessionId, isAuthenticated(authentication)));
-        recordExposures(buyer, listings);
-        return listings;
+        ResponseEntity<List<ProductResponse>> response = Paging.slice(listings, page, size);
+        recordExposures(buyer, response.getBody());
+        return response;
     }
 
     /**

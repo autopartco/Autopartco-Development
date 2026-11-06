@@ -28,4 +28,11 @@ public class ListStoreProducts {
         storeService.requireExists(storeId);
         return listingQueries.storeListings(storeId);
     }
+
+    @Transactional(readOnly = true)
+    public ListingQueries.StoreListingsPage executePage(UUID storeId, String email, int page, int size) {
+        storeAccess.requirePermission(email, storeId, StorePermissionCodes.PRODUCT_READ);
+        storeService.requireExists(storeId);
+        return listingQueries.storeListingsPage(storeId, page, size);
+    }
 }
