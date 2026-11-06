@@ -61,7 +61,7 @@ export default function PortalAlertsPage() {
       <title>Alertas | Autopartco</title>
       <PageHeader title="Alertas" description="Avisos sobre ventas, existencias y clientes que conviene atender a tiempo." />
       {canManage ? (
-        <nav aria-label="Secciones de alertas" className="mb-6 flex gap-1 overflow-x-auto border-b border-border">
+        <nav aria-label="Secciones de alertas" className="mb-6 flex gap-1 overflow-x-auto overflow-y-hidden border-b border-border">
           <Link to={base} className={tabClass(!preferences)} aria-current={!preferences ? 'page' : undefined}>
             Alertas
           </Link>

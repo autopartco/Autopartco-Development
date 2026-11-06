@@ -27,7 +27,9 @@ export function IntelligenceTabs() {
     { to: `${base}/proyeccion`, label: 'Proyección', end: false },
   ]
   return (
-    <nav aria-label="Secciones de inteligencia" className="-mt-2 mb-6 flex gap-1 overflow-x-auto border-b border-border">
+    // Móvil: píldoras que bajan de línea (todas las vistas a la vista, sin desplazamiento). Desde `sm`: pestañas
+    // subrayadas en una fila.
+    <nav aria-label="Secciones de inteligencia" className="-mt-2 mb-6 flex flex-wrap gap-2 sm:gap-1 sm:border-b sm:border-border">
       {tabs.map((tab) => (
         <NavLink
           key={tab.to}
@@ -35,8 +37,11 @@ export function IntelligenceTabs() {
           end={tab.end}
           className={({ isActive }) =>
             cn(
-              '-mb-px inline-flex min-h-11 items-center border-b-2 px-3 text-sm font-semibold whitespace-nowrap transition-colors',
-              isActive ? 'border-foreground text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground',
+              'inline-flex min-h-11 items-center rounded-full px-4 text-sm font-semibold whitespace-nowrap ring-1 transition-colors',
+              'sm:-mb-px sm:rounded-none sm:border-b-2 sm:px-3 sm:ring-0',
+              isActive
+                ? 'bg-foreground text-background ring-foreground sm:border-foreground sm:bg-transparent sm:text-foreground'
+                : 'bg-card text-muted-foreground ring-foreground/15 hover:text-foreground sm:border-transparent sm:bg-transparent',
             )
           }
         >
