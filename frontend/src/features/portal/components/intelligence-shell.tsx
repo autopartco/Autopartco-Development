@@ -23,6 +23,7 @@ export function IntelligenceTabs() {
     { to: base, label: 'Reportes', end: true },
     { to: `${base}/clientes`, label: 'Clientes', end: false },
     { to: `${base}/productos`, label: 'Productos', end: false },
+    { to: `${base}/se-compran-juntos`, label: 'Se compran juntos', end: false },
     { to: `${base}/proyeccion`, label: 'Proyección', end: false },
   ]
   return (

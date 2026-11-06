@@ -1,4 +1,4 @@
-import { AwardIcon, CarFrontIcon, GlobeIcon } from 'lucide-react'
+import { AwardIcon, CarFrontIcon, GlobeIcon, SparklesIcon } from 'lucide-react'
 import { formatCOP, formatNumber } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import type { Availability, Brand, Product, StoreSummary } from '../api/types'
@@ -24,7 +24,28 @@ export function Price({ product, size = 'md' }: { product: Product; size?: 'md' 
           {formatCOP(product.listPrice)}
         </span>
       ) : null}
+      {isAudiencePrice(product) ? <FrequentPriceTag /> : null}
     </div>
+  )
+}
+
+/** El servidor aplicó una promoción dirigida a un segmento de compradores (no a todos). */
+function isAudiencePrice(product: Pick<Product, 'promotionAudience'>): boolean {
+  return product.promotionAudience !== undefined && product.promotionAudience !== 'ALL'
+}
+
+/** Etiqueta junto al precio cuando la promoción es para clientes frecuentes. */
+export function FrequentPriceTag({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex w-fit shrink-0 items-center gap-1 rounded-full bg-recommended-soft px-2 py-0.5 text-xs leading-tight font-semibold text-recommended',
+        className,
+      )}
+    >
+      <SparklesIcon className="size-3.5" aria-hidden />
+      Precio para clientes frecuentes
+    </span>
   )
 }
 

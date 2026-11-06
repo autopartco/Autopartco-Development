@@ -11,6 +11,7 @@ import { AddToCart } from '@/features/cart/components/add-to-cart'
 import { formatCOP } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { isNotFoundError, type Product } from '../api/types'
+import { FrequentlyBought } from '../components/frequently-bought'
 import { ProductCard, ProductGrid } from '../components/product-card'
 import { AvailabilityLabel, BrandName, Price, RECOMMENDED_EXPLANATION, RecommendedMark, UniversalTag } from '../components/product-meta'
 import { useProduct, useRelatedProducts } from '../hooks'
@@ -253,6 +254,7 @@ function ProductDetail({ product }: { product: Product }) {
 
       <div className="mt-14 grid gap-12 sm:mt-20 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:gap-12">
         <div className="flex min-w-0 flex-col gap-12">
+          <FrequentlyBought productId={product.id} />
           {hasFitment ? <CompatibilityTable product={product} /> : null}
           {product.description ? (
             <section aria-labelledby="descripcion" className="flex flex-col gap-3">

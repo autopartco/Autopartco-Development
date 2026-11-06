@@ -1,4 +1,6 @@
 import { getAnonymousSessionId } from '@/lib/anonymous-session'
+import { getAuthService } from '@/features/auth/api/auth-service'
+import { getAccessToken } from '@/features/auth/api/http/http-auth-service'
 import { PLACEHOLDER_IMAGES } from '@/lib/images'
 import type {
   CategoryOptionDto,
@@ -13,6 +15,7 @@ import {
   MarketplaceError,
   type Category,
   type FilterOptions,
+  type FrequentlyBoughtItem,
   type MarketplaceService,
   type Product,
   type ProductImage,
@@ -29,6 +32,7 @@ import {
 const PATHS = {
   products: '/marketplace/products',
   product: (id: string) => `/marketplace/products/${encodeURIComponent(id)}`,
+  frequentlyBought: (id: string) => `/marketplace/products/${encodeURIComponent(id)}/frequently-bought`,
   options: '/marketplace/product-options',
   categories: '/marketplace/product-options/categories',
   vehicleMakes: '/marketplace/vehicles/makes',
@@ -38,6 +42,9 @@ const PATHS = {
   storeAsset: (storeId: string, assetType: 'logo' | 'banner') =>
     `/marketplace/stores/${encodeURIComponent(storeId)}/brand/${assetType}`,
 } as const
+
+/** `FrequentlyBoughtController`: `GET /marketplace/products/{id}/frequently-bought` (público, hasta 6). */
+type FrequentlyBoughtDto = Omit<FrequentlyBoughtItem, 'image'> & { image: string | null }
 
 /** "FRENOS_Y_DISCOS" -> "Frenos y discos". */
 function humanizeCode(code: string): string {
@@ -83,13 +90,33 @@ interface Lookups {
 export function createHttpMarketplaceService(baseUrl: string): MarketplaceService {
   const root = baseUrl.replace(/\/+$/, '')
 
-  async function get<T>(path: string, extraHeaders: Record<string, string> = {}): Promise<T> {
-    let response: Response
+  /** Access token de la sesión, si la hay. Nunca lanza: sin sesión (o si no se pudo renovar) la petición va anónima. */
+  async function bearer(): Promise<string | undefined> {
     try {
-      response = await fetch(`${root}${path}`, { headers: { Accept: 'application/json', ...extraHeaders } })
+      await getAuthService()
+      return await getAccessToken()
+    } catch {
+      return undefined
+    }
+  }
+
+  async function send(path: string, extraHeaders: Record<string, string>, token: string | undefined): Promise<Response> {
+    try {
+      return await fetch(`${root}${path}`, {
+        headers: { Accept: 'application/json', ...extraHeaders, ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      })
     } catch (cause) {
       throw new MarketplaceError('No hay conexión con el servidor de Autopartco.', { cause })
     }
+  }
+
+  async function get<T>(path: string, extraHeaders: Record<string, string> = {}): Promise<T> {
+    // Las rutas de productos son públicas, pero el precio depende de quién compra (precio para clientes frecuentes):
+    // con sesión llevan el token.
+    const token = path.startsWith('/marketplace/products') ? await bearer() : undefined
+    let response = await send(path, extraHeaders, token)
+    // Un token vencido o revocado no debe impedir ver el catálogo: se reintenta como visitante.
+    if (response.status === 401 && token) response = await send(path, extraHeaders, undefined)
     if (!response.ok) {
       const body = (await response.json().catch(() => null)) as {
         message?: string
@@ -138,6 +165,7 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
       listPrice: discount ? dto.price : undefined,
       discountAmount: discount,
       promotionName: dto.appliedPromotionName ?? undefined,
+      promotionAudience: dto.appliedPromotionAudience ?? undefined,
       images: toImages(dto.images),
       category: dto.categoryId ? maps.categories.get(dto.categoryId) : undefined,
       // La marca sale del propio producto: se ve aunque el fabricante esté pendiente de aprobación.
@@ -195,6 +223,17 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
     async getRelatedProducts() {
       // TODO(api): falta un endpoint de relacionados (p. ej. GET /marketplace/products/{id}/related?limit=).
       return []
+    },
+
+    async getFrequentlyBought(productId) {
+      const items = await get<FrequentlyBoughtDto[]>(PATHS.frequentlyBought(productId))
+      return items.map((item) => ({
+        productId: item.productId,
+        name: item.name,
+        price: item.price,
+        image: item.image ?? undefined,
+        reason: item.reason,
+      }))
     },
 
     async getFilterOptions(): Promise<FilterOptions> {
