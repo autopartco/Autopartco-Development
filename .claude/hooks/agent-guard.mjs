@@ -13,6 +13,8 @@
 // Salida: exit 0 sin texto = permitir; JSON con permissionDecision "ask" = pedir
 // confirmación al usuario; exit 2 con motivo en stderr = bloquear.
 
+import { execFileSync } from "node:child_process";
+import { existsSync } from "node:fs";
 import path from "node:path";
 
 const ALWAYS_DENY = ["**/.env", "**/.env.*", "**/*.pem", "**/*.key", "backend/bin/", "graphify-out/", ".git/"];
@@ -86,14 +88,51 @@ function parseLists(args) {
   return lists;
 }
 
+function samePath(a, b) {
+  const left = path.resolve(a);
+  const right = path.resolve(b);
+  return process.platform === "win32" ? left.toLowerCase() === right.toLowerCase() : left === right;
+}
+
+function gitInfo(dir) {
+  try {
+    const [top, common] = execFileSync("git", ["-C", dir, "rev-parse", "--show-toplevel", "--git-common-dir"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim().split(/\r?\n/);
+    return { top: path.resolve(top), common: path.resolve(dir, common) };
+  } catch {
+    return undefined;
+  }
+}
+
+// Raíz del worktree de git que contiene `absolute`, solo si es un worktree del mismo repositorio que el
+// proyecto (mismo --git-common-dir). Así las áreas por agente (relativas a la raíz) valen igual en
+// worktrees como C:\Development\Autopartco-dev-inventario. Cualquier otra ruta sigue fuera del repositorio.
+function worktreeRootFor(absolute, projectRoot) {
+  let dir = path.dirname(absolute);
+  while (!existsSync(dir)) {
+    const parent = path.dirname(dir);
+    if (parent === dir) return undefined;
+    dir = parent;
+  }
+  const target = gitInfo(dir);
+  const project = gitInfo(projectRoot);
+  if (!target || !project || !samePath(target.common, project.common)) {
+    return undefined;
+  }
+  return target.top;
+}
+
 function checkPath(input, lists) {
   const toolInput = input.tool_input ?? {};
   const target = toolInput.file_path ?? toolInput.notebook_path ?? toolInput.path;
   if (!target) {
     block("No se pudo determinar la ruta del archivo a editar.");
   }
-  const root = process.env.CLAUDE_PROJECT_DIR || input.cwd || process.cwd();
-  const absolute = path.resolve(root, target);
+  const projectRoot = process.env.CLAUDE_PROJECT_DIR || input.cwd || process.cwd();
+  const absolute = path.resolve(input.cwd || projectRoot, target);
+  const root = worktreeRootFor(absolute, projectRoot) ?? projectRoot;
   const relPath = path.relative(root, absolute).split(path.sep).join("/");
   if (relPath === "" || relPath.startsWith("..") || path.isAbsolute(relPath)) {
     block(`Ruta fuera del repositorio: ${target}`);
