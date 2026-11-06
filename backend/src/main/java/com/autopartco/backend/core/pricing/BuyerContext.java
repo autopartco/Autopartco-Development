@@ -33,6 +33,14 @@ public record BuyerContext(UUID personId, Set<String> platformSegments, Map<UUID
     }
 
     /**
+     * {@code true} si el comprador pertenece a algún segmento y por tanto puede recibir un precio distinto del general.
+     * Sin segmentos su precio es el mismo de un anónimo y se puede servir desde la caché compartida.
+     */
+    public boolean hasSegments() {
+        return !isAnonymous() && (!platformSegments.isEmpty() || !storeSegments.isEmpty());
+    }
+
+    /**
      * {@code true} si el comprador puede recibir una promoción con esa audiencia sobre un producto del almacén
      * {@code storeId}. {@code ALL} (o nula) siempre; un anónimo nunca recibe las demás.
      */

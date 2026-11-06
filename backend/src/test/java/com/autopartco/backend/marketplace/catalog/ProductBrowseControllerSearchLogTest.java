@@ -25,6 +25,7 @@ import org.springframework.security.core.authority.AuthorityUtils;
 
 import com.autopartco.backend.core.analytics.MarketplaceSearch;
 import com.autopartco.backend.core.analytics.SearchLog;
+import com.autopartco.backend.core.catalog.ListingCache;
 import com.autopartco.backend.core.catalog.ListingQueries;
 import com.autopartco.backend.core.catalog.ProductResponse;
 import com.autopartco.backend.core.pricing.BuyerContext;
@@ -38,7 +39,7 @@ class ProductBrowseControllerSearchLogTest {
     private final BuyerContexts buyerContexts = mock(BuyerContexts.class);
     private final PromotionExposureRecorder exposureRecorder = mock(PromotionExposureRecorder.class);
     private final ProductBrowseController controller =
-            new ProductBrowseController(listingQueries, searchLog, buyerContexts, exposureRecorder);
+            new ProductBrowseController(new ListingCache(listingQueries), searchLog, buyerContexts, exposureRecorder);
     private final UUID brakes = UUID.randomUUID();
 
     @BeforeEach
@@ -72,7 +73,7 @@ class ProductBrowseControllerSearchLogTest {
 
     @Test
     void anonymousBuyerNeverRecordsExposures() {
-        when(listingQueries.publishedListings(any(), any())).thenReturn(List.of(
+        when(listingQueries.publishedListings(any())).thenReturn(List.of(
                 listing("Pastillas", brakes, UUID.randomUUID(), PromotionAudience.ALL)));
 
         controller.published(null, null, null, null, null, null, null);
@@ -83,7 +84,7 @@ class ProductBrowseControllerSearchLogTest {
     @Test
     void exposureFailureDoesNotBreakTheDetail() {
         UUID productId = UUID.randomUUID();
-        BuyerContext buyer = new BuyerContext(UUID.randomUUID(), Set.of(), Map.of());
+        BuyerContext buyer = new BuyerContext(UUID.randomUUID(), Set.of(), Map.of(UUID.randomUUID(), Set.of("FREQUENT")));
         when(buyerContexts.forBrowsing(any())).thenReturn(buyer);
         ProductResponse detail = listing("Pastillas", brakes, UUID.randomUUID(), PromotionAudience.STORE_FREQUENT);
         when(listingQueries.publishedListing(productId, buyer)).thenReturn(detail);
@@ -96,7 +97,7 @@ class ProductBrowseControllerSearchLogTest {
 
     @Test
     void filtersByTextAndCategoryAndRecordsResultCount() {
-        when(listingQueries.publishedListings(any(), any())).thenReturn(List.of(
+        when(listingQueries.publishedListings(any())).thenReturn(List.of(
                 listing("Pastillas de freno Mazdá", brakes), listing("Filtro de aceite", UUID.randomUUID())));
 
         List<ProductResponse> result = controller.published(null, null, null, " PASTILLAS mazda", brakes, "sess",
@@ -113,7 +114,7 @@ class ProductBrowseControllerSearchLogTest {
 
     @Test
     void searchLogFailureDoesNotBreakTheCatalog() {
-        when(listingQueries.publishedListings(any(), any())).thenReturn(List.of(listing("Filtro", brakes)));
+        when(listingQueries.publishedListings(any())).thenReturn(List.of(listing("Filtro", brakes)));
         doThrow(new IllegalStateException("fallo")).when(searchLog).record(any());
 
         List<ProductResponse> result = controller.published(UUID.randomUUID(), null, null, null, null, null,
@@ -125,12 +126,29 @@ class ProductBrowseControllerSearchLogTest {
 
     @Test
     void anonymousIsNotAuthenticated() {
-        when(listingQueries.publishedListings(any(), any())).thenReturn(List.of());
+        when(listingQueries.publishedListings(any())).thenReturn(List.of());
         controller.published(null, null, null, "filtro", null, null, null);
         ArgumentCaptor<MarketplaceSearch> search = ArgumentCaptor.forClass(MarketplaceSearch.class);
         verify(searchLog).record(search.capture());
         assertThat(search.getValue().authenticated()).isFalse();
         assertThat(search.getValue().resultsCount()).isZero();
+    }
+
+    @Test
+    void generalPriceIsCachedButSegmentedBuyerNeverUsesTheSharedCache() {
+        when(listingQueries.publishedListings(any())).thenReturn(List.of(listing("Filtro", brakes)));
+        controller.published(null, null, null, null, null, null, null);
+        controller.published(null, null, null, null, null, null, null);
+        verify(listingQueries, org.mockito.Mockito.times(1)).publishedListings(any());
+
+        BuyerContext buyer = new BuyerContext(UUID.randomUUID(), Set.of("FREQUENT"), Map.of());
+        when(buyerContexts.forBrowsing(any())).thenReturn(buyer);
+        when(listingQueries.publishedListings(any(), eq(buyer))).thenReturn(List.of(listing("Bujía", brakes)));
+        List<ProductResponse> result = controller.published(null, null, null, null, null, null,
+                new UsernamePasswordAuthenticationToken("a@b.co", null, AuthorityUtils.NO_AUTHORITIES));
+
+        assertThat(result).extracting(ProductResponse::name).containsExactly("Bujía");
+        verify(listingQueries).publishedListings(any(), eq(buyer));
     }
 
     private static ProductResponse listing(String name, UUID categoryId) {

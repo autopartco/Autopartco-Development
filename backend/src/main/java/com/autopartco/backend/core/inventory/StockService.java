@@ -79,6 +79,7 @@ public class StockService {
      */
     @Transactional
     public void createListing(UUID branchId, UUID productId, Integer stock, BigDecimal price) {
+        com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
         Inventory saved = inventoryRepository.saveAndFlush(Inventory.builder()
                 .branchId(branchId)
                 .productId(productId)
@@ -95,6 +96,7 @@ public class StockService {
      */
     @Transactional
     public void updateListing(UUID branchId, UUID productId, BigDecimal price, Integer stock) {
+        com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
         Inventory inventory = DataAccessUtils.singleResult(inventoryRepository.findListings(branchId, productId));
         if (inventory == null) {
             throw new NotFoundException("PRODUCT_NOT_FOUND", "No se encontró el repuesto.");
@@ -110,6 +112,7 @@ public class StockService {
      */
     @Transactional
     public void setPrice(UUID inventoryId, BigDecimal price) {
+        com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
         if (inventoryRepository.updatePrice(inventoryId, price) == 0) {
             throw new NotFoundException("LISTING_NOT_FOUND", "El producto no está listado en esa sucursal.");
         }
@@ -118,6 +121,7 @@ public class StockService {
     /** Borrado lógico de todos los listados del producto. */
     @Transactional
     public void removeAllForProduct(UUID productId) {
+        com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
         inventoryRepository.softDeleteAllForProduct(productId);
     }
 
@@ -127,6 +131,7 @@ public class StockService {
      */
     @Transactional
     public Optional<StockDecrement> decrementIfAvailable(UUID branchId, UUID productId, int units) {
+        com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
         if (units < 1) {
             throw new IllegalArgumentException("units must be >= 1");
         }
@@ -150,6 +155,7 @@ public class StockService {
      */
     @Transactional
     public void returnStock(List<StockReturn> returns) {
+        com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
         if (returns == null || returns.isEmpty()) {
             return;
         }
@@ -187,6 +193,7 @@ public class StockService {
      */
     @Transactional
     public void addListing(UUID branchId, UUID productId, Integer stock, BigDecimal price) {
+        com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
         if (!inventoryRepository.findListings(branchId, productId).isEmpty()) {
             throw new ConflictException("LISTING_ALREADY_EXISTS", "El producto ya está listado en esa sucursal.");
         }
@@ -204,6 +211,7 @@ public class StockService {
     /** Borrado lógico del listado del producto en la sucursal; sin listado, {@code LISTING_NOT_FOUND}. */
     @Transactional
     public void removeListing(UUID storeId, UUID branchId, UUID productId) {
+        com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
         if (inventoryRepository.softDeleteListing(storeId, branchId, productId) == 0) {
             throw new NotFoundException("LISTING_NOT_FOUND", "El producto no está listado en esa sucursal.");
         }

@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.autopartco.backend.core.analytics.MarketplaceSearch;
 import com.autopartco.backend.core.analytics.SearchLog;
 import com.autopartco.backend.core.analytics.SearchText;
-import com.autopartco.backend.core.catalog.ListingQueries;
+import com.autopartco.backend.core.catalog.ListingCache;
 import com.autopartco.backend.core.catalog.ProductOptionsResponse;
 import com.autopartco.backend.core.catalog.ProductResponse;
 import com.autopartco.backend.core.catalog.VehicleFilter;
@@ -37,7 +37,7 @@ public class ProductBrowseController {
 
     static final String SESSION_HEADER = "X-Session-Id";
 
-    private final ListingQueries listingQueries;
+    private final ListingCache listingQueries;
     private final SearchLog searchLog;
     private final BuyerContexts buyerContexts;
     private final PromotionExposureRecorder exposureRecorder;
@@ -63,8 +63,7 @@ public class ProductBrowseController {
             Authentication authentication
     ) {
         BuyerContext buyer = buyerContexts.forBrowsing(authentication);
-        List<ProductResponse> listings = listingQueries.publishedListings(
-                new VehicleFilter(makeId, modelId, versionId), buyer);
+        List<ProductResponse> listings = listingQueries.published(new VehicleFilter(makeId, modelId, versionId), buyer);
         String text = SearchText.normalize(q);
         if (text != null || categoryId != null) {
             listings = listings.stream()
@@ -130,7 +129,7 @@ public class ProductBrowseController {
     @GetMapping(PRODUCTS + "/{productId}")
     public ProductResponse detail(@PathVariable UUID productId, Authentication authentication) {
         BuyerContext buyer = buyerContexts.forBrowsing(authentication);
-        ProductResponse listing = listingQueries.publishedListing(productId, buyer);
+        ProductResponse listing = listingQueries.detail(productId, buyer);
         recordExposures(buyer, List.of(listing));
         return listing;
     }
