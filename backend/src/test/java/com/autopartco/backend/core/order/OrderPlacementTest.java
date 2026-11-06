@@ -28,6 +28,7 @@ class OrderPlacementTest {
     private static final UUID PRODUCT_A1 = UUID.randomUUID();
     private static final UUID PRODUCT_A2 = UUID.randomUUID();
     private static final UUID PRODUCT_B1 = UUID.randomUUID();
+    private static final UUID PROMOTION_A1 = UUID.randomUUID();
 
     @Test
     void placeApprovedInsertsInOrderWithStatusCodes() {
@@ -75,6 +76,9 @@ class OrderPlacementTest {
         assertThat(statements.get(6).param("productId")).isEqualTo(PRODUCT_B1);
         assertThat(detailA1.param("units")).isEqualTo(2);
         assertThat(detailA1.param("unitPrice")).isEqualTo(new BigDecimal("80000.00"));
+        assertThat(OrderPlacement.INSERT_ORDER_DETAIL_SQL).contains("promotion_id", ":promotionId");
+        assertThat(detailA1.param("promotionId")).isEqualTo(PROMOTION_A1.toString());
+        assertThat(statements.get(4).params()).containsEntry("promotionId", null);
         assertThat(statements.get(6).param("saleId")).isEqualTo(SALE_B);
 
         Statement payment = statements.get(7);
@@ -185,7 +189,8 @@ class OrderPlacementTest {
                 List.of(
                         new NewOrder.NewSale(BRANCH_A, new BigDecimal("180000.00"), new BigDecimal("0.00"),
                                 new BigDecimal("180000.00"), List.of(
-                                        new NewOrder.NewLine(INVENTORY_A1, PRODUCT_A1, 2, new BigDecimal("80000.00")),
+                                        new NewOrder.NewLine(INVENTORY_A1, PRODUCT_A1, 2, new BigDecimal("80000.00"),
+                                                PROMOTION_A1),
                                         new NewOrder.NewLine(INVENTORY_A2, PRODUCT_A2, 1, new BigDecimal("20000.00")))),
                         new NewOrder.NewSale(BRANCH_B, new BigDecimal("50000.50"), new BigDecimal("0.00"),
                                 new BigDecimal("50000.50"), List.of(

@@ -20,6 +20,7 @@ public record PromotionResponse(
         OffsetDateTime startsAt,
         OffsetDateTime endsAt,
         boolean enabled,
-        boolean currentlyActive
+        boolean currentlyActive,
+        PromotionAudience audience
 ) {
 }

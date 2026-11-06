@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.autopartco.backend.core.analytics.CustomerReport;
+import com.autopartco.backend.core.analytics.ProductAssociations;
 import com.autopartco.backend.core.analytics.ProductReport;
 import com.autopartco.backend.core.analytics.SalesForecast;
 import com.autopartco.backend.core.analytics.SalesReport;
@@ -26,6 +27,7 @@ public class AnalyticsController {
     private final GetCustomerSegments getCustomerSegments;
     private final GetProductPerformance getProductPerformance;
     private final GetSalesForecast getSalesForecast;
+    private final GetProductAssociations getProductAssociations;
 
     @GetMapping("/report")
     public SalesReport report(
@@ -55,6 +57,11 @@ public class AnalyticsController {
             Authentication authentication
     ) {
         return getProductPerformance.execute(storeId, authentication.getName(), branchId);
+    }
+
+    @GetMapping("/associations")
+    public ProductAssociations.StoreReport associations(@PathVariable UUID storeId, Authentication authentication) {
+        return getProductAssociations.execute(storeId, authentication.getName());
     }
 
     @GetMapping("/forecast")

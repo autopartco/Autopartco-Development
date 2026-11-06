@@ -34,9 +34,20 @@ public class PriceCalculator {
         return promotionRepository.findActiveAt(at).stream().map(PriceCalculator::toRule).toList();
     }
 
+    /** Precio para un comprador anónimo: solo aplican promociones con audiencia {@code ALL}. */
     public PriceQuote bestPrice(PricingSubject subject, List<PromotionRule> promotions) {
+        return bestPrice(subject, promotions, BuyerContext.anonymous());
+    }
+
+    /**
+     * Precio para {@code buyer}: entre las promociones que aplican al listado y cuya audiencia incluye al comprador
+     * ({@link BuyerContext#qualifiesFor}, con el almacén del listado), gana la de menor precio efectivo.
+     */
+    public PriceQuote bestPrice(PricingSubject subject, List<PromotionRule> promotions, BuyerContext buyer) {
+        BuyerContext effectiveBuyer = buyer == null ? BuyerContext.anonymous() : buyer;
         BigDecimal originalPrice = subject.price().setScale(2, RoundingMode.HALF_UP);
         return promotions.stream()
+                .filter(promotion -> effectiveBuyer.qualifiesFor(promotion.audience(), subject.storeId()))
                 .filter(promotion -> appliesTo(promotion, subject))
                 .map(promotion -> quote(originalPrice, promotion))
                 .min((first, second) -> {
@@ -46,7 +57,7 @@ public class PriceCalculator {
                     }
                     return first.promotionName().compareToIgnoreCase(second.promotionName());
                 })
-                .orElse(new PriceQuote(originalPrice, ZERO, null));
+                .orElse(new PriceQuote(originalPrice, ZERO, null, null, null));
     }
 
     private PriceQuote quote(BigDecimal originalPrice, PromotionRule promotion) {
@@ -60,7 +71,9 @@ public class PriceCalculator {
         return new PriceQuote(
                 effectivePrice,
                 originalPrice.subtract(effectivePrice),
-                promotion.name()
+                promotion.name(),
+                promotion.promotionId(),
+                promotion.audience()
         );
     }
 
@@ -137,6 +150,7 @@ public class PriceCalculator {
 
     private static PromotionRule toRule(Promotion promotion) {
         return new PromotionRule(
+                promotion.getId(),
                 promotion.getScope(),
                 promotion.getStoreId(),
                 promotion.getName(),
@@ -146,7 +160,8 @@ public class PriceCalculator {
                 promotion.getAttributeValue(),
                 promotion.getAttributeOperator(),
                 promotion.getDiscountType(),
-                promotion.getDiscountValue()
+                promotion.getDiscountValue(),
+                promotion.getAudience()
         );
     }
 }

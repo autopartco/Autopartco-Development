@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
+import com.autopartco.backend.core.pricing.BuyerContext;
 import com.autopartco.backend.shared.cache.TtlCache;
 
 /**
@@ -31,6 +32,25 @@ public class ListingCache {
 
     public ProductResponse detail(UUID productId) {
         return detail.get(productId, () -> queries.publishedListing(productId));
+    }
+
+    /**
+     * Listados con el precio del comprador. Solo un comprador con segmentos puede recibir un precio distinto del
+     * general, así que solo él consulta sin caché; la caché nunca guarda precios personalizados.
+     */
+    public List<ProductResponse> published(VehicleFilter filter, BuyerContext buyer) {
+        if (buyer == null || !buyer.hasSegments()) {
+            return published(filter);
+        }
+        return queries.publishedListings(filter == null || filter.isEmpty() ? VehicleFilter.none() : filter, buyer);
+    }
+
+    /** Detalle con el precio del comprador; misma regla de caché que {@link #published(VehicleFilter, BuyerContext)}. */
+    public ProductResponse detail(UUID productId, BuyerContext buyer) {
+        if (buyer == null || !buyer.hasSegments()) {
+            return detail(productId);
+        }
+        return queries.publishedListing(productId, buyer);
     }
 
     public ProductOptionsResponse options() {

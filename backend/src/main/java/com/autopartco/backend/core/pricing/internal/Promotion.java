@@ -8,6 +8,7 @@ import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
 
 import com.autopartco.backend.core.pricing.PromotionAttributeOperator;
+import com.autopartco.backend.core.pricing.PromotionAudience;
 import com.autopartco.backend.core.pricing.PromotionDiscountType;
 import com.autopartco.backend.core.pricing.PromotionScope;
 import com.autopartco.backend.core.pricing.PromotionTargetType;
@@ -80,4 +81,10 @@ public class Promotion extends BaseEntity {
     @Builder.Default
     @Column(nullable = false)
     private boolean enabled = true;
+
+    /** Compradores a los que aplica; {@code ALL} por defecto (columna {@code NOT NULL DEFAULT 'ALL'}). */
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private PromotionAudience audience = PromotionAudience.ALL;
 }

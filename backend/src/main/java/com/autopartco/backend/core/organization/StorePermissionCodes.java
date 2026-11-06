@@ -27,6 +27,9 @@ public final class StorePermissionCodes {
     /** Ver reportes e inteligencia comercial del almacén. */
     public static final String ANALYTICS_READ = "ANALYTICS_READ";
 
+    /** Configurar las alertas automáticas del almacén (canales y umbrales); recibir las alertas por correo. */
+    public static final String ALERT_MANAGE = "ALERT_MANAGE";
+
     private StorePermissionCodes() {
     }
 }
