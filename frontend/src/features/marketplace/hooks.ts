@@ -27,6 +27,11 @@ export function useRelatedProducts(product: Product | undefined, limit = 4) {
   )
 }
 
+/** Productos que se compran junto con este; un fallo no estorba la ficha (la sección simplemente no se muestra). */
+export function useFrequentlyBought(productId: string) {
+  return useMarketplace(`frequently-bought:${productId}`, (service) => service.getFrequentlyBought(productId).catch(() => []))
+}
+
 export function useFilterOptions() {
   return useMarketplace('filter-options', (service) => service.getFilterOptions())
 }

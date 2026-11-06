@@ -2,6 +2,7 @@ import {
   MarketplaceError,
   type Category,
   type FilterOptions,
+  type FrequentlyBoughtReason,
   type MarketplaceService,
   type Product,
   type ProductPage,
@@ -185,6 +186,31 @@ export function createMockMarketplaceService(): MarketplaceService {
       return MOCK_PRODUCTS.filter(
         (item) => item.id !== product.id && item.category?.id === product.category?.id,
       ).slice(0, limit)
+    },
+
+    async getFrequentlyBought(productId) {
+      await simulateNetwork()
+      const product = MOCK_PRODUCTS.find((item) => item.id === productId)
+      if (!product) return []
+      const sameVehicle = (item: Product) =>
+        !item.universal && !product.universal && item.vehicleRules.some((rule) => product.vehicleRules.some((other) => other.makeId === rule.makeId && other.modelId === rule.modelId))
+      const candidates = MOCK_PRODUCTS.filter((item) => item.id !== product.id && item.branchId && item.availability?.status !== 'out_of_stock')
+      // Un producto de la misma tienda hace de «comprado junto por otros clientes»; luego, mismo vehículo y misma categoría.
+      const ordered = candidates.find((item) => item.store?.id === product.store?.id)
+      const picked: { item: Product; reason: FrequentlyBoughtReason }[] = []
+      if (ordered) picked.push({ item: ordered, reason: 'ORDERS' })
+      const taken = () => new Set(picked.map((entry) => entry.item.id))
+      for (const item of candidates.filter(sameVehicle)) if (picked.length < 4 && !taken().has(item.id)) picked.push({ item, reason: 'COMPATIBILITY' })
+      for (const item of candidates.filter((other) => other.category?.id === product.category?.id)) {
+        if (picked.length < 6 && !taken().has(item.id)) picked.push({ item, reason: 'CATEGORY' })
+      }
+      return picked.map(({ item, reason }) => ({
+        productId: item.id,
+        name: item.name,
+        price: item.price,
+        image: item.images[0]?.cardUrl,
+        reason,
+      }))
     },
 
     async getFilterOptions() {

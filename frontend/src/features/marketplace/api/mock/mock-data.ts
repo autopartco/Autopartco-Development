@@ -229,6 +229,12 @@ const PENDING_BRANDS: Brand[] = [{ id: 'tecnolub', name: 'TecnoLub Andina', appr
 const brandById = new Map([...MOCK_BRANDS, ...PENDING_BRANDS].map((brand) => [brand.id, brand]))
 const storeById = new Map(MOCK_STORES.map((store) => [store.id, store]))
 
+/** Promociones simuladas dirigidas a clientes frecuentes (el resto aplica a todos los compradores). */
+const PROMO_AUDIENCE: Record<string, string> = {
+  'Precio de temporada': 'PLATFORM_FREQUENT',
+  'Semana del freno': 'STORE_FREQUENT',
+}
+
 export const MOCK_PRODUCTS: Product[] = SEEDS.map((seed, index) => {
   const id = `rep-${String(index + 1).padStart(3, '0')}`
   const storeId = STORE_IDS[seed.store]
@@ -249,6 +255,7 @@ export const MOCK_PRODUCTS: Product[] = SEEDS.map((seed, index) => {
     listPrice: seed.discount ? seed.price : undefined,
     discountAmount: seed.discount,
     promotionName: seed.promo,
+    promotionAudience: seed.promo ? (PROMO_AUDIENCE[seed.promo] ?? 'ALL') : undefined,
     images: [PLACEHOLDER_IMAGES.product, PLACEHOLDER_IMAGES.category].map((url) => ({ url, thumbUrl: url, cardUrl: url })),
     category,
     brand: brand ? { ...brand, approved: brand.approved ?? true } : undefined,

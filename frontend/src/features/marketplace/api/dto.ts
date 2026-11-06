@@ -33,6 +33,9 @@ export interface ProductResponseDto {
   effectivePrice: number | null
   discountAmount: number | null
   appliedPromotionName: string | null
+  appliedPromotionId?: string | null
+  /** `ALL`, `PLATFORM_FREQUENT` o `STORE_*`; distinto de `ALL` significa precio para un segmento de compradores. */
+  appliedPromotionAudience?: string | null
   quantity: number | null
   manufacturerId: string | null
   /** Visible aunque el fabricante esté pendiente de aprobación. */
