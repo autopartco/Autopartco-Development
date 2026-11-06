@@ -83,7 +83,7 @@ interface Lookups {
 export function createHttpMarketplaceService(baseUrl: string): MarketplaceService {
   const root = baseUrl.replace(/\/+$/, '')
 
-  async function get<T>(path: string, extraHeaders: Record<string, string> = {}): Promise<T> {
+  async function get<T>(path: string, extraHeaders: Record<string, string> = {}, onHeaders?: (headers: Headers) => void): Promise<T> {
     let response: Response
     try {
       response = await fetch(`${root}${path}`, { headers: { Accept: 'application/json', ...extraHeaders } })
@@ -101,6 +101,7 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
         code: body?.error?.code ?? body?.code,
       })
     }
+    onHeaders?.(response.headers)
     return (await response.json()) as T
   }
 
@@ -164,27 +165,34 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
   return {
     capabilities: {
       // El servidor solo filtra por vehículo (makeId/modelId/versionId); los universales aparecen siempre.
-      // TODO(api): no hay búsqueda por texto, otros filtros, orden ni paginación en el servidor.
+      // TODO(api): no hay búsqueda por texto, otros filtros ni orden en el servidor. La paginación sí (page/size).
       textSearch: false,
       sorting: false,
-      pagination: false,
+      pagination: true,
       filters: new Set(['vehicle']),
     },
 
     async searchProducts(query) {
       // La petición lleva vehículo, texto (q) y categoría (categoryId) para que el servidor registre la búsqueda;
-      // el filtrado y la paginación siguen en el cliente, así que los resultados no cambian.
-      // TODO(api): marcas, tienda, precio, existencias, orden y paginación aún no se envían al servidor.
+      // la paginación la hace el servidor (page desde 0, size; total en X-Total-Count).
+      // TODO(api): marcas, tienda, precio, existencias y orden aún no se envían al servidor.
       const maps = await lookups()
       const params = new URLSearchParams(vehicleQuery(query).slice(1))
       const text = query.q.trim()
       if (text) params.set('q', text)
       const category = query.category ? [...maps.categories.values()].find((item) => item.slug === query.category) : undefined
       if (category) params.set('categoryId', category.id)
+      params.set('page', String(Math.max(0, query.page - 1)))
+      params.set('size', String(query.pageSize))
       const qs = params.toString()
-      const listings = await get<ProductResponseDto[]>(`${PATHS.products}${qs ? `?${qs}` : ''}`, { 'X-Session-Id': getAnonymousSessionId() })
+      let total: number | undefined
+      const listings = await get<ProductResponseDto[]>(`${PATHS.products}?${qs}`, { 'X-Session-Id': getAnonymousSessionId() }, (headers) => {
+        const header = Number(headers.get('X-Total-Count'))
+        if (Number.isFinite(header) && headers.has('X-Total-Count')) total = header
+      })
       const items = listings.map((dto) => toProduct(dto, maps))
-      return { items, total: items.length, page: 1, pageSize: Math.max(items.length, 1), totalPages: 1 }
+      const count = total ?? items.length
+      return { items, total: count, page: query.page, pageSize: query.pageSize, totalPages: Math.max(1, Math.ceil(count / query.pageSize)) }
     },
 
     async getProduct(id) {
