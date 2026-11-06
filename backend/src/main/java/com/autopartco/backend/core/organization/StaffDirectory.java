@@ -56,7 +56,8 @@ public class StaffDirectory {
             StorePermissionCodes.ORDER_READ,
             StorePermissionCodes.ORDER_UPDATE,
             StorePermissionCodes.SHIPMENT_UPDATE,
-            StorePermissionCodes.ANALYTICS_READ
+            StorePermissionCodes.ANALYTICS_READ,
+            StorePermissionCodes.ALERT_MANAGE
     );
 
     private final JdbcTemplate jdbcTemplate;
@@ -111,6 +112,31 @@ public class StaffDirectory {
                 splitCodes(result.getString("role_names")),
                 splitCodes(result.getString("permissions"))
         ), storeId);
+    }
+
+    /**
+     * Correos (en minúsculas, sin repetir) de los colaboradores activos del almacén cuyos roles tienen el permiso.
+     * Solo para avisos operativos del propio almacén; no se devuelve a ningún cliente de la API.
+     */
+    @Transactional(readOnly = true)
+    public List<String> emailsWithPermission(UUID storeId, String permissionCode) {
+        return jdbcTemplate.queryForList("""
+                SELECT DISTINCT lower(account.email)
+                FROM collaborators collaborator
+                JOIN states state ON state.id = collaborator.state AND state.code = 'ACTIVE'
+                JOIN accounts account ON account.id_person = collaborator.person_id
+                                     AND account.deleted_at IS NULL
+                JOIN roles_collaborators role_link ON role_link.collaborator_id = collaborator.id
+                                                  AND role_link.deleted_at IS NULL
+                JOIN roles_permissions role_permission ON role_permission.role_id = role_link.role_id
+                                                      AND role_permission.deleted_at IS NULL
+                JOIN permissions permission ON permission.id = role_permission.permission_id
+                                           AND permission.deleted_at IS NULL
+                WHERE collaborator.collab_store_id = ?
+                  AND collaborator.deleted_at IS NULL
+                  AND permission.code = ?
+                ORDER BY 1
+                """, String.class, storeId, permissionCode);
     }
 
     /** Permisos que se pueden asignar a un colaborador invitado, ordenados por código. */

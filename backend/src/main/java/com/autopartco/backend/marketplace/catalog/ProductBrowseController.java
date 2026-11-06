@@ -20,6 +20,10 @@ import com.autopartco.backend.core.catalog.ListingCache;
 import com.autopartco.backend.core.catalog.ProductOptionsResponse;
 import com.autopartco.backend.core.catalog.ProductResponse;
 import com.autopartco.backend.core.catalog.VehicleFilter;
+import com.autopartco.backend.core.pricing.BuyerContext;
+import com.autopartco.backend.core.pricing.PromotionAudience;
+import com.autopartco.backend.core.pricing.PromotionExposureRecorder;
+import com.autopartco.backend.marketplace.benefits.BuyerContexts;
 import com.autopartco.backend.shared.web.ApiPaths;
 
 import lombok.AllArgsConstructor;
@@ -35,6 +39,8 @@ public class ProductBrowseController {
 
     private final ListingCache listingQueries;
     private final SearchLog searchLog;
+    private final BuyerContexts buyerContexts;
+    private final PromotionExposureRecorder exposureRecorder;
 
     /**
      * Listados publicados. Filtro opcional por vehículo ({@code makeId}, {@code modelId}, {@code versionId}): solo
@@ -56,7 +62,8 @@ public class ProductBrowseController {
             @RequestHeader(name = SESSION_HEADER, required = false) String sessionId,
             Authentication authentication
     ) {
-        List<ProductResponse> listings = listingQueries.published(new VehicleFilter(makeId, modelId, versionId));
+        BuyerContext buyer = buyerContexts.forBrowsing(authentication);
+        List<ProductResponse> listings = listingQueries.published(new VehicleFilter(makeId, modelId, versionId), buyer);
         String text = SearchText.normalize(q);
         if (text != null || categoryId != null) {
             listings = listings.stream()
@@ -66,7 +73,31 @@ public class ProductBrowseController {
         }
         recordSearch(new MarketplaceSearch(q, makeId, modelId, versionId, null, categoryId, null, listings.size(),
                 sessionId, isAuthenticated(authentication)));
+        recordExposures(buyer, listings);
         return listings;
+    }
+
+    /**
+     * Registra en {@code promotion_exposures} los precios mostrados que ganó una promoción con audiencia distinta de
+     * {@code ALL}. Best-effort y asíncrono: nunca afecta la respuesta.
+     */
+    private void recordExposures(BuyerContext buyer, List<ProductResponse> listings) {
+        if (buyer.isAnonymous()) {
+            return;
+        }
+        try {
+            List<PromotionExposureRecorder.Exposure> exposures = listings.stream()
+                    .filter(listing -> listing.appliedPromotionId() != null
+                            && listing.appliedPromotionAudience() != null
+                            && listing.appliedPromotionAudience() != PromotionAudience.ALL)
+                    .map(listing -> new PromotionExposureRecorder.Exposure(
+                            listing.appliedPromotionId(), listing.id()))
+                    .distinct()
+                    .toList();
+            exposureRecorder.record(buyer.personId(), exposures);
+        } catch (RuntimeException ignored) {
+            // Best-effort: el registro de exposiciones nunca rompe el catálogo.
+        }
     }
 
     private void recordSearch(MarketplaceSearch search) {
@@ -91,9 +122,16 @@ public class ProductBrowseController {
                 && !(authentication instanceof AnonymousAuthenticationToken);
     }
 
+    /**
+     * Listado publicado más barato del producto, con el precio del comprador autenticado (anónimo sin sesión). La
+     * sesión es opcional: la ruta es pública.
+     */
     @GetMapping(PRODUCTS + "/{productId}")
-    public ProductResponse detail(@PathVariable UUID productId) {
-        return listingQueries.detail(productId);
+    public ProductResponse detail(@PathVariable UUID productId, Authentication authentication) {
+        BuyerContext buyer = buyerContexts.forBrowsing(authentication);
+        ProductResponse listing = listingQueries.detail(productId, buyer);
+        recordExposures(buyer, List.of(listing));
+        return listing;
     }
 
     @GetMapping(OPTIONS)

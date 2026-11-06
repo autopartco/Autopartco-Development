@@ -28,6 +28,7 @@ import com.autopartco.backend.core.catalog.internal.Product;
 import com.autopartco.backend.core.catalog.internal.ProductImageMapper;
 import com.autopartco.backend.core.catalog.internal.ProductImageRepository;
 import com.autopartco.backend.core.catalog.internal.ProductRepository;
+import com.autopartco.backend.core.pricing.BuyerContext;
 import com.autopartco.backend.core.pricing.PriceCalculator;
 import com.autopartco.backend.core.pricing.PriceQuote;
 import com.autopartco.backend.core.pricing.PricingSubject;
@@ -289,8 +290,14 @@ public class ListingQueries {
      */
     @Transactional(readOnly = true)
     public List<ProductResponse> publishedListings(VehicleFilter filter) {
+        return publishedListings(filter, BuyerContext.anonymous());
+    }
+
+    /** Igual que {@link #publishedListings(VehicleFilter)} con el precio calculado para {@code buyer}. */
+    @Transactional(readOnly = true)
+    public List<ProductResponse> publishedListings(VehicleFilter filter, BuyerContext buyer) {
         if (filter == null || filter.isEmpty()) {
-            return toResponses(jdbcTemplate.query(PUBLISHED_LISTINGS_SQL, ListingQueries::mapRow));
+            return toResponses(jdbcTemplate.query(PUBLISHED_LISTINGS_SQL, ListingQueries::mapRow), buyer);
         }
         StringBuilder sql = new StringBuilder(PUBLISHED_LISTINGS_WHERE_SQL).append(VEHICLE_MATCH_MAKE_SQL);
         List<Object> args = new java.util.ArrayList<>();
@@ -304,15 +311,21 @@ public class ListingQueries {
             args.add(filter.versionId());
         }
         sql.append(VEHICLE_MATCH_END_SQL).append(PUBLISHED_LISTINGS_ORDER_SQL);
-        return toResponses(jdbcTemplate.query(sql.toString(), ListingQueries::mapRow, args.toArray()));
+        return toResponses(jdbcTemplate.query(sql.toString(), ListingQueries::mapRow, args.toArray()), buyer);
     }
 
     /** El listado publicado más barato del producto; si no hay ninguno, {@code PRODUCT_NOT_FOUND}. */
     @Transactional(readOnly = true)
     public ProductResponse publishedListing(UUID productId) {
+        return publishedListing(productId, BuyerContext.anonymous());
+    }
+
+    /** Igual que {@link #publishedListing(UUID)} con el precio calculado para {@code buyer}. */
+    @Transactional(readOnly = true)
+    public ProductResponse publishedListing(UUID productId, BuyerContext buyer) {
         return jdbcTemplate.query(PUBLISHED_LISTING_SQL, ListingQueries::mapRow, productId).stream()
                 .findFirst()
-                .flatMap(row -> toResponses(List.of(row)).stream().findFirst())
+                .flatMap(row -> toResponses(List.of(row), buyer).stream().findFirst())
                 .orElseThrow(() -> new NotFoundException("PRODUCT_NOT_FOUND", "No se encontró el repuesto."));
     }
 
@@ -323,6 +336,15 @@ public class ListingQueries {
      */
     @Transactional(readOnly = true)
     public Map<ListingKey, ProductResponse> purchasableListings(Collection<ListingKey> keys) {
+        return purchasableListings(keys, BuyerContext.anonymous());
+    }
+
+    /**
+     * Igual que {@link #purchasableListings(Collection)} con el precio calculado para {@code buyer}: el checkout lo usa
+     * con el mismo comprador que vio el catálogo, de modo que el precio cobrado sale siempre del servidor.
+     */
+    @Transactional(readOnly = true)
+    public Map<ListingKey, ProductResponse> purchasableListings(Collection<ListingKey> keys, BuyerContext buyer) {
         if (keys == null || keys.isEmpty()) {
             return Map.of();
         }
@@ -335,7 +357,7 @@ public class ListingQueries {
         }
         List<ListingRow> rows = jdbcTemplate.query(
                 PURCHASABLE_LISTINGS_SQL.replace(KEYS_PLACEHOLDER, values), ListingQueries::mapRow, args);
-        return toResponses(rows).stream().collect(Collectors.toMap(
+        return toResponses(rows, buyer).stream().collect(Collectors.toMap(
                 response -> new ListingKey(response.id(), response.branchId()),
                 Function.identity(),
                 (first, second) -> first,
@@ -374,7 +396,12 @@ public class ListingQueries {
                 .toList();
     }
 
+    /** Vistas del panel del almacén: precio general (comprador anónimo, solo promociones {@code ALL}). */
     private List<ProductResponse> toResponses(List<ListingRow> rows) {
+        return toResponses(rows, BuyerContext.anonymous());
+    }
+
+    private List<ProductResponse> toResponses(List<ListingRow> rows, BuyerContext buyer) {
         if (rows.isEmpty()) {
             return List.of();
         }
@@ -398,7 +425,8 @@ public class ListingQueries {
                         productsById.get(row.productId()),
                         rulesByProduct.getOrDefault(row.productId(), List.of()),
                         imagesByProduct.getOrDefault(row.productId(), List.of()),
-                        activePromotions))
+                        activePromotions,
+                        buyer))
                 .toList();
     }
 
@@ -408,6 +436,17 @@ public class ListingQueries {
             List<VehicleRuleResponse> rules,
             List<ProductImageResponse> images,
             List<PromotionRule> activePromotions
+    ) {
+        return toResponse(row, product, rules, images, activePromotions, BuyerContext.anonymous());
+    }
+
+    private ProductResponse toResponse(
+            ListingRow row,
+            Product product,
+            List<VehicleRuleResponse> rules,
+            List<ProductImageResponse> images,
+            List<PromotionRule> activePromotions,
+            BuyerContext buyer
     ) {
         PriceQuote quote = priceCalculator.bestPrice(new PricingSubject(
                 row.price(),
@@ -422,7 +461,7 @@ public class ListingQueries {
                 product.getState().getCode(),
                 product.getAttributes(),
                 ProductVehicleRules.vehicleIds(rules)
-        ), activePromotions);
+        ), activePromotions, buyer);
         return new ProductResponse(
                 product.getId(),
                 row.branchStoreId(),
@@ -445,7 +484,9 @@ public class ListingQueries {
                 product.isUniversal(),
                 product.getAttributes(),
                 rules,
-                images
+                images,
+                quote.promotionId(),
+                quote.audience()
         );
     }
 

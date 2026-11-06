@@ -81,6 +81,7 @@ public class WebSecurityConfig {
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/stores/*/brand/*"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/products"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/products/*"),
+                new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/products/*/frequently-bought"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/product-options"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/product-options/*"),
                 // marketplace: catálogo de vehículos en cascada.

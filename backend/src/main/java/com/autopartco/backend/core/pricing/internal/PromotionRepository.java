@@ -51,4 +51,15 @@ public interface PromotionRepository extends JpaRepository<Promotion, UUID> {
               and p.endsAt > :at
             """)
     List<Promotion> findActiveAt(@Param("at") OffsetDateTime at);
+
+    /** Vigentes en {@code at} con audiencia distinta de {@code ALL}, las que vencen antes primero. */
+    @Query("""
+            select p from Promotion p
+            where p.enabled = true
+              and p.startsAt <= :at
+              and p.endsAt > :at
+              and p.audience <> com.autopartco.backend.core.pricing.PromotionAudience.ALL
+            order by p.endsAt, p.name
+            """)
+    List<Promotion> findActiveWithAudienceAt(@Param("at") OffsetDateTime at);
 }

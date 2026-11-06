@@ -3,6 +3,7 @@ package com.autopartco.backend.core.pricing;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -11,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.autopartco.backend.core.pricing.internal.Promotion;
 import com.autopartco.backend.core.pricing.internal.PromotionRepository;
 import com.autopartco.backend.shared.error.BadRequestException;
+import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
 
 import lombok.AllArgsConstructor;
@@ -22,6 +24,9 @@ import lombok.AllArgsConstructor;
 @Service
 @AllArgsConstructor
 public class PromotionService {
+    /** Capacidad del plan que habilita la audiencia {@code PLATFORM_FREQUENT} en promociones de almacén. */
+    public static final String PLATFORM_AUDIENCE_CAPABILITY = "ADVANCED_REPORTS";
+
     private final PromotionRepository promotionRepository;
     private final PromotionTargets promotionTargets;
 
@@ -33,9 +38,18 @@ public class PromotionService {
                 .toList();
     }
 
+    /**
+     * @param platformAudienceAllowed el caso de uso confirmó que el almacén tiene la capacidad
+     *     {@value #PLATFORM_AUDIENCE_CAPABILITY}; sin ella, la audiencia {@code PLATFORM_FREQUENT} se rechaza
+     */
     @Transactional
-    public PromotionResponse createForStore(UUID storeId, PromotionUpsertRequest request) {
+    public PromotionResponse createForStore(
+            UUID storeId,
+            PromotionUpsertRequest request,
+            boolean platformAudienceAllowed
+    ) {
         validateTarget(request, PromotionScope.STORE, storeId);
+        validateAudience(request, PromotionScope.STORE, platformAudienceAllowed);
         return toResponse(promotionRepository.save(toPromotion(
                 request,
                 PromotionScope.STORE,
@@ -44,11 +58,18 @@ public class PromotionService {
         )));
     }
 
+    /** Ver {@link #createForStore} para {@code platformAudienceAllowed}. */
     @Transactional
-    public PromotionResponse updateForStore(UUID storeId, UUID promotionId, PromotionUpsertRequest request) {
+    public PromotionResponse updateForStore(
+            UUID storeId,
+            UUID promotionId,
+            PromotionUpsertRequest request,
+            boolean platformAudienceAllowed
+    ) {
         Promotion promotion = promotionRepository.findStorePromotion(storeId, promotionId)
                 .orElseThrow(PromotionService::notFound);
         validateTarget(request, PromotionScope.STORE, storeId);
+        validateAudience(request, PromotionScope.STORE, platformAudienceAllowed);
         applyRequest(promotion, request, storeId);
         return toResponse(promotion);
     }
@@ -58,6 +79,22 @@ public class PromotionService {
         Promotion promotion = promotionRepository.findStorePromotion(storeId, promotionId)
                 .orElseThrow(PromotionService::notFound);
         promotionRepository.delete(promotion);
+    }
+
+    /** Promoción del almacén; {@code PROMOTION_NOT_FOUND} si no existe o es de otro almacén. */
+    @Transactional(readOnly = true)
+    public PromotionResponse getForStore(UUID storeId, UUID promotionId) {
+        return promotionRepository.findStorePromotion(storeId, promotionId)
+                .map(this::toResponse)
+                .orElseThrow(PromotionService::notFound);
+    }
+
+    /** Promoción de plataforma; {@code PROMOTION_NOT_FOUND} si no existe o es de un almacén. */
+    @Transactional(readOnly = true)
+    public PromotionResponse getForPlatform(UUID promotionId) {
+        return promotionRepository.findPlatformPromotion(promotionId)
+                .map(this::toResponse)
+                .orElseThrow(PromotionService::notFound);
     }
 
     @Transactional(readOnly = true)
@@ -71,6 +108,7 @@ public class PromotionService {
     @Transactional
     public PromotionResponse createForPlatform(PromotionUpsertRequest request) {
         validateTarget(request, PromotionScope.PLATFORM, null);
+        validateAudience(request, PromotionScope.PLATFORM, true);
         return toResponse(promotionRepository.save(toPromotion(
                 request,
                 PromotionScope.PLATFORM,
@@ -84,6 +122,7 @@ public class PromotionService {
         Promotion promotion = promotionRepository.findPlatformPromotion(promotionId)
                 .orElseThrow(PromotionService::notFound);
         validateTarget(request, PromotionScope.PLATFORM, null);
+        validateAudience(request, PromotionScope.PLATFORM, true);
         applyRequest(
                 promotion,
                 request,
@@ -97,6 +136,18 @@ public class PromotionService {
         Promotion promotion = promotionRepository.findPlatformPromotion(promotionId)
                 .orElseThrow(PromotionService::notFound);
         promotionRepository.delete(promotion);
+    }
+
+    /**
+     * Promociones vigentes ahora con audiencia distinta de {@code ALL} (de almacén y de plataforma). Sin datos de
+     * compradores: el filtro por segmento lo hace quien conoce al comprador ({@link BuyerContext#qualifiesFor}).
+     */
+    @Transactional(readOnly = true)
+    public List<PromotionResponse> activeAudiencePromotions() {
+        return promotionRepository.findActiveWithAudienceAt(OffsetDateTime.now(ZoneOffset.UTC))
+                .stream()
+                .map(this::toResponse)
+                .toList();
     }
 
     /** {@code PROMOTION_NOT_FOUND}; lo usan también los casos de uso cuando el almacén no existe. */
@@ -132,6 +183,38 @@ public class PromotionService {
         promotion.setStartsAt(request.startsAt());
         promotion.setEndsAt(request.endsAt());
         promotion.setEnabled(request.enabled() == null || request.enabled());
+        promotion.setAudience(request.audienceOrDefault());
+    }
+
+    /**
+     * Plataforma: solo {@code ALL} o {@code PLATFORM_FREQUENT} (los segmentos {@code STORE_*} son de un almacén; 400
+     * {@code INVALID_PROMOTION_AUDIENCE}). Almacén: {@code ALL} y {@code STORE_*}; {@code PLATFORM_FREQUENT} solo con
+     * la capacidad {@value #PLATFORM_AUDIENCE_CAPABILITY} (409 {@code SELLER_PLAN_FEATURE_UNAVAILABLE}).
+     */
+    private void validateAudience(
+            PromotionUpsertRequest request,
+            PromotionScope scope,
+            boolean platformAudienceAllowed
+    ) {
+        PromotionAudience audience = request.audienceOrDefault();
+        if (scope == PromotionScope.PLATFORM) {
+            if (audience.isStoreAudience()) {
+                throw new BadRequestException(
+                        "INVALID_PROMOTION_AUDIENCE",
+                        "Las promociones de plataforma solo pueden dirigirse a todos los compradores "
+                                + "o a los clientes frecuentes de Autopartco."
+                );
+            }
+            return;
+        }
+        if (audience == PromotionAudience.PLATFORM_FREQUENT && !platformAudienceAllowed) {
+            throw new ConflictException(
+                    "SELLER_PLAN_FEATURE_UNAVAILABLE",
+                    "Dirigir promociones a los clientes frecuentes de Autopartco requiere un plan con reportes "
+                            + "avanzados.",
+                    Map.of("capability", PLATFORM_AUDIENCE_CAPABILITY, "audience", audience.name())
+            );
+        }
     }
 
     private void validateTarget(PromotionUpsertRequest request, PromotionScope scope, UUID ownerStoreId) {
@@ -217,7 +300,8 @@ public class PromotionService {
                 promotion.getStartsAt(),
                 promotion.getEndsAt(),
                 promotion.isEnabled(),
-                active
+                active,
+                promotion.getAudience() == null ? PromotionAudience.ALL : promotion.getAudience()
         );
     }
 

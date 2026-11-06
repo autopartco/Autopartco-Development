@@ -38,6 +38,10 @@ class CustomerAnalyticsQueries {
             GROUP BY o.person_id, pe.name, pe.surname
             """.formatted(Analytics.VALID_SALE_STATES);
 
+    /** Igual que {@link #ACTIVITY_SQL} pero solo con ventas anteriores a {@code :until} (foto a una fecha pasada). */
+    static final String ACTIVITY_UNTIL_SQL = ACTIVITY_SQL.replace("WHERE s.deleted_at IS NULL",
+            "WHERE s.deleted_at IS NULL\n              AND s.created_at < :until");
+
     static final String CONTACTS_SQL = """
             SELECT pe.id AS person_id,
                    (SELECT a.email FROM accounts a
@@ -66,6 +70,23 @@ class CustomerAnalyticsQueries {
         return jdbcClient.sql(ACTIVITY_SQL)
                 .param("storeId", storeId == null ? null : storeId.toString())
                 .param("windowStart", windowStart)
+                .query((result, row) -> new Activity(
+                        result.getObject("person_id", UUID.class),
+                        result.getString("name"),
+                        result.getLong("orders"),
+                        Analytics.nonNull(result.getBigDecimal("revenue")),
+                        result.getLong("stores"),
+                        result.getObject("first_order_at", OffsetDateTime.class),
+                        result.getObject("last_order_at", OffsetDateTime.class)))
+                .list();
+    }
+
+    /** Actividad como estaba antes de {@code until}: ventana desde {@code windowStart} y última compra anterior. */
+    List<Activity> activityUntil(UUID storeId, OffsetDateTime windowStart, OffsetDateTime until) {
+        return jdbcClient.sql(ACTIVITY_UNTIL_SQL)
+                .param("storeId", storeId == null ? null : storeId.toString())
+                .param("windowStart", windowStart)
+                .param("until", until)
                 .query((result, row) -> new Activity(
                         result.getObject("person_id", UUID.class),
                         result.getString("name"),

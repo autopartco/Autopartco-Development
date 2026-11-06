@@ -38,7 +38,14 @@ public record NewOrder(
     ) {
     }
 
-    /** Una línea de detalle: listado de inventario, producto, unidades y precio unitario efectivo cobrado. */
-    public record NewLine(UUID inventoryId, UUID productId, int units, BigDecimal unitPrice) {
+    /**
+     * Una línea de detalle: listado de inventario, producto, unidades, precio unitario efectivo cobrado y promoción
+     * que lo fijó ({@code null} si ninguna; se guarda en {@code order_details.promotion_id}).
+     */
+    public record NewLine(UUID inventoryId, UUID productId, int units, BigDecimal unitPrice, UUID promotionId) {
+        /** Línea sin promoción. */
+        public NewLine(UUID inventoryId, UUID productId, int units, BigDecimal unitPrice) {
+            this(inventoryId, productId, units, unitPrice, null);
+        }
     }
 }
