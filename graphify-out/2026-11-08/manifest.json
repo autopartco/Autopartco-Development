@@ -2334,9 +2334,9 @@
     "semantic_hash": ""
   },
   "frontend/package.json": {
-    "mtime": 1794150222.7715533,
-    "seen": 1794151336.2289271,
-    "ast_hash": "b1646d90c0b8ba9f535976dc0a9e7603",
+    "mtime": 1794151449.7948043,
+    "seen": 1794152258.6611805,
+    "ast_hash": "3e3610e6011f3f5b420f6d101888387b",
     "semantic_hash": ""
   },
   "frontend/src/App.tsx": {
@@ -7332,9 +7332,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/operations/metrics/TrafficController.java": {
-    "mtime": 1794150221.714866,
-    "seen": 1794151336.2256744,
-    "ast_hash": "a995091b2b4ea1ca3e9440f980802ee0",
+    "mtime": 1794151759.4226375,
+    "seen": 1794152258.324636,
+    "ast_hash": "2e9ddbe4057d8386825f72d41adddcbf",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/core/analytics/TrafficRecorderTest.java": {
@@ -7584,9 +7584,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/marketplace/stores/BranchMapController.java": {
-    "mtime": 1794150380.084089,
-    "seen": 1794151336.2255964,
-    "ast_hash": "99fe2f2fb5c96a43b1b1fd7a0deaf80b",
+    "mtime": 1794151792.9138474,
+    "seen": 1794152258.3107266,
+    "ast_hash": "8fb3f78665dcde349eb499a7cb60db57",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/core/organization/BranchMapQueriesTest.java": {
@@ -7596,15 +7596,27 @@
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/marketplace/stores/BranchMapControllerTest.java": {
-    "mtime": 1794150421.6991866,
-    "seen": 1794151336.2277558,
-    "ast_hash": "1ecd7e904c32d3efeb9a5814091be1d6",
+    "mtime": 1794151816.592958,
+    "seen": 1794152258.6227996,
+    "ast_hash": "77be25e97d5b62a572b9d1b67d07c99b",
     "semantic_hash": ""
   },
   "docs/architecture/2026-11-08-mapa-cobertura-plan.md": {
     "mtime": 1794150834.9002254,
     "seen": 1794151336.2329676,
     "ast_hash": "3a760b9dc7e3644886c3d7421d3ed40f",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/shared/web/SlidingWindowRateLimiter.java": {
+    "mtime": 1794151748.3205955,
+    "seen": 1794152258.370783,
+    "ast_hash": "3aea46632fc1127b44b1fa28d2922d00",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/shared/web/SlidingWindowRateLimiterTest.java": {
+    "mtime": 1794151797.693475,
+    "seen": 1794152258.630353,
+    "ast_hash": "f15f920d9e5da87375310715510460c3",
     "semantic_hash": ""
   }
 }
