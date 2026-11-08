@@ -7,6 +7,7 @@ import { searchPlaces, reverseInColombia } from '../api/photon-geocoder'
 import type { GeoPoint, PlaceSuggestion } from '../api/types'
 import { useLocationService, useMapArea } from '../hooks'
 import { DEFAULT_MAP_AREA, setMapArea } from '../location-store'
+import { roundCoord } from '../lib/geo'
 import { isInColombia } from '../lib/map-config'
 
 /* Mismo aspecto que el selector de ciudad: texto blanco y chincheta en rojo para fondo oscuro. */
@@ -113,11 +114,12 @@ export function LocationPicker({ className }: { className?: string }) {
     setLocating(true)
     const outside = 'Solo mostramos almacenes en Colombia'
     try {
-      const point = await getPosition().catch(() => null)
-      if (!point) {
+      const raw = await getPosition().catch(() => null)
+      if (!raw) {
         toast.error('No pudimos obtener tu ubicación')
         return
       }
+      const point = { lat: roundCoord(raw.lat), lng: roundCoord(raw.lng) }
       if (!isInColombia(point)) {
         toast.error(outside)
         return

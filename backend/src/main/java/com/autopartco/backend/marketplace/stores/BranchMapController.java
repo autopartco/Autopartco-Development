@@ -58,6 +58,10 @@ public class BranchMapController {
         if ((lat == null) != (lng == null)) {
             throw new BadRequestException("MAP_POINT_INCOMPLETE", "Envía lat y lng juntos o ninguno.");
         }
+        if (lat != null && (lat.compareTo(MIN_LAT) < 0 || lat.compareTo(MAX_LAT) > 0 || lng.compareTo(MIN_LNG) < 0
+                || lng.compareTo(MAX_LNG) > 0)) {
+            throw new BadRequestException("MAP_POINT_OUTSIDE_COVERAGE", "La ubicación está fuera de Colombia.");
+        }
         if (limit < 1 || limit > MAX_LIMIT) {
             throw new BadRequestException("MAP_LIMIT_INVALID", "El límite debe estar entre 1 y " + MAX_LIMIT + ".");
         }

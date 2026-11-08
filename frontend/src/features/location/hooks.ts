@@ -1,5 +1,5 @@
-import { useMemo, useState, useSyncExternalStore } from 'react'
-import { useAsync } from '@/lib/use-async'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { invalidateAsync, useAsync } from '@/lib/use-async'
 import { getLocationService } from './api/location-service'
 import type { LocationService, MapArea } from './api/types'
 import { DEFAULT_MAP_AREA, getMapArea, subscribeMapArea } from './location-store'
@@ -61,5 +61,7 @@ export function useMapBranches() {
   const { south, west, north, east } = area.bounds
   const user = area.precision === 'exact' ? area.user : undefined
   const key = `location:map:${south},${west},${north},${east}:${area.precision}:${user ? `${user.lat},${user.lng}` : '-'}:${nonce}`
+  // La clave es única por montaje: se descarta al desmontar para que la caché no crezca.
+  useEffect(() => () => invalidateAsync(key), [key])
   return useLocation(key, (service) => service.getMapBranches(area))
 }

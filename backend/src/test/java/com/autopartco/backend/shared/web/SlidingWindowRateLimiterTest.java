@@ -57,6 +57,19 @@ class SlidingWindowRateLimiterTest {
     }
 
     @Test
+    void hardCapRejectsNewKeysWhileActiveAndAdmitsAfterWindow() {
+        SlidingWindowRateLimiter capped =
+                new SlidingWindowRateLimiter("CAP_LIMITED", 3, Duration.ofMinutes(1), 2, clock);
+        capped.acquire("a");
+        capped.acquire("b");
+        TooManyRequestsException ex = assertThrows(TooManyRequestsException.class, () -> capped.acquire("c"));
+        assertThat(ex.getCode()).isEqualTo("CAP_LIMITED");
+        assertDoesNotThrow(() -> capped.acquire("a"));
+        clock.now = clock.now.plus(Duration.ofMinutes(1));
+        assertDoesNotThrow(() -> capped.acquire("c"));
+    }
+
+    @Test
     void nullKeyIsTrackedTogether() {
         for (int i = 0; i < 3; i++) {
             limiter.acquire(null);

@@ -114,6 +114,14 @@ class BranchMapControllerTest {
     }
 
     @Test
+    void pointOutsideColombiaIs400() throws Exception {
+        mvc.perform(get(URL + BOX + "&lat=1e400&lng=10"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("MAP_POINT_OUTSIDE_COVERAGE"));
+        verifyNoInteractions(queries);
+    }
+
+    @Test
     void limitOutOfRangeIs400() throws Exception {
         mvc.perform(get(URL + BOX + "&limit=9")).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.code").value("MAP_LIMIT_INVALID"));

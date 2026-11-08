@@ -1,3 +1,4 @@
+import { roundCoord } from '../lib/geo'
 import { COLOMBIA_BOUNDS } from '../lib/map-config'
 import type { GeoPoint, MapArea, PlaceSuggestion } from './types'
 
@@ -152,7 +153,7 @@ export async function searchPlaces(text: string, signal?: AbortSignal): Promise<
 
 /** Confirma que el punto está en Colombia y devuelve su etiqueta (barrio, ciudad); `null` fuera de CO. */
 export async function reverseInColombia(point: GeoPoint): Promise<{ label: string } | null> {
-  const params = new URLSearchParams({ lat: String(point.lat), lon: String(point.lng), limit: '1' })
+  const params = new URLSearchParams({ lat: String(roundCoord(point.lat)), lon: String(roundCoord(point.lng)), limit: '1' })
   const response = await fetch(`${PHOTON_URL}/reverse?${params}`, { headers: { Accept: 'application/json' } })
   if (!response.ok) throw new Error(`Photon respondió ${response.status}`)
   const features = ((await response.json()) as { features?: PhotonFeature[] }).features

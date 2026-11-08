@@ -30,3 +30,8 @@ export function formatKmValue(km: number): string {
 export function formatKm(km: number): string {
   return `${formatKmValue(km)} km`
 }
+
+/** Minimización de datos: coordenadas a 3 decimales (~110 m) antes de salir del dispositivo. */
+export function roundCoord(n: number): number {
+  return Math.round(n * 1000) / 1000
+}

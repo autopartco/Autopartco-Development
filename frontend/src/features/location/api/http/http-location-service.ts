@@ -1,4 +1,5 @@
 import { apiRequest } from '@/lib/api'
+import { roundCoord } from '../../lib/geo'
 import type { LocationService, MapBranch } from '../types'
 
 interface MapBranchDto {
@@ -44,8 +45,8 @@ export function createHttpLocationService(): LocationService {
         limit: exact ? '5' : '4',
       })
       if (exact) {
-        params.set('lat', String(user.lat))
-        params.set('lng', String(user.lng))
+        params.set('lat', String(roundCoord(user.lat)))
+        params.set('lng', String(roundCoord(user.lng)))
       }
       const rows = await apiRequest<MapBranchDto[]>(`/marketplace/branches/map?${params}`)
       return rows.map(

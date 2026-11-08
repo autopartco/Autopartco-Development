@@ -25,8 +25,11 @@ function parseZoneArea(value: unknown): MapArea | undefined {
   if (!b || !isNum(b.south) || !isNum(b.west) || !isNum(b.north) || !isNum(b.east)) return undefined
   if (b.south >= b.north || b.west >= b.east) return undefined
   if (!c || !isNum(c.lat) || !isNum(c.lng)) return undefined
+  if (b.south > COLOMBIA_BOUNDS.north || b.north < COLOMBIA_BOUNDS.south || b.west > COLOMBIA_BOUNDS.east || b.east < COLOMBIA_BOUNDS.west) {
+    return undefined
+  }
   return {
-    label,
+    label: label.trim().slice(0, 120),
     precision: 'zone',
     bounds: { south: b.south, west: b.west, north: b.north, east: b.east },
     center: { lat: c.lat, lng: c.lng },

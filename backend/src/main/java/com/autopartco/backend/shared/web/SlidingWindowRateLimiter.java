@@ -21,6 +21,7 @@ public final class SlidingWindowRateLimiter {
     private final int maxTracked;
     private final Clock clock;
     private final Map<String, Deque<Instant>> calls = new ConcurrentHashMap<>();
+    private Instant lastPurge;
 
     public SlidingWindowRateLimiter(String errorCode, int maxPerWindow, Duration window, int maxTracked, Clock clock) {
         this.errorCode = errorCode;
@@ -37,14 +38,14 @@ public final class SlidingWindowRateLimiter {
      */
     public void acquire(String key) {
         Instant now = clock.instant();
-        if (calls.size() > maxTracked) {
-            calls.entrySet().removeIf(entry -> {
-                synchronized (entry.getValue()) {
-                    return entry.getValue().isEmpty() || !entry.getValue().peekLast().isAfter(now.minus(window));
-                }
-            });
+        String mapKey = key == null ? "?" : key;
+        if (calls.size() >= maxTracked && !calls.containsKey(mapKey)) {
+            purgeIfDue(now);
+            if (calls.size() >= maxTracked && !calls.containsKey(mapKey)) {
+                throw new TooManyRequestsException(errorCode, "Demasiadas solicitudes.");
+            }
         }
-        Deque<Instant> deque = calls.computeIfAbsent(key == null ? "?" : key, ignored -> new ArrayDeque<>());
+        Deque<Instant> deque = calls.computeIfAbsent(mapKey, ignored -> new ArrayDeque<>());
         synchronized (deque) {
             while (!deque.isEmpty() && !deque.peekFirst().isAfter(now.minus(window))) {
                 deque.pollFirst();
@@ -54,5 +55,18 @@ public final class SlidingWindowRateLimiter {
             }
             deque.addLast(now);
         }
+    }
+
+    /** Purga claves inactivas como mucho una vez por ventana. */
+    private synchronized void purgeIfDue(Instant now) {
+        if (lastPurge != null && lastPurge.plus(window).isAfter(now)) {
+            return;
+        }
+        lastPurge = now;
+        calls.entrySet().removeIf(entry -> {
+            synchronized (entry.getValue()) {
+                return entry.getValue().isEmpty() || !entry.getValue().peekLast().isAfter(now.minus(window));
+            }
+        });
     }
 }
