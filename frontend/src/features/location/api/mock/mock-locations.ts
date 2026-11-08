@@ -1,13 +1,10 @@
 /**
  * Ciudades y sedes simuladas para desarrollar la UI de cercanía sin backend.
  * Barrios reales; las sedes y sus coordenadas son ficticias (aproximadas al barrio).
- * Cada ciudad tiene un punto de referencia porque aún no hay geolocalización real.
  */
 import type { City, GeoPoint } from '../types'
 
-export interface MockCity extends City {
-  origin: { label: string; point: GeoPoint }
-}
+export type MockCity = City
 
 export interface MockBranch {
   cityId: string
@@ -17,15 +14,13 @@ export interface MockBranch {
   point: GeoPoint
 }
 
-export const DEFAULT_CITY_ID = 'bogota'
-
 export const MOCK_CITIES: MockCity[] = [
-  { id: 'bogota', name: 'Bogotá', department: 'Bogotá D.C.', origin: { label: 'Chapinero', point: { lat: 4.6486, lng: -74.0628 } } },
-  { id: 'medellin', name: 'Medellín', department: 'Antioquia', origin: { label: 'El Poblado', point: { lat: 6.2088, lng: -75.567 } } },
-  { id: 'cali', name: 'Cali', department: 'Valle del Cauca', origin: { label: 'San Fernando', point: { lat: 3.43, lng: -76.541 } } },
-  { id: 'barranquilla', name: 'Barranquilla', department: 'Atlántico', origin: { label: 'El Prado', point: { lat: 10.999, lng: -74.805 } } },
-  { id: 'bucaramanga', name: 'Bucaramanga', department: 'Santander', origin: { label: 'Cabecera', point: { lat: 7.118, lng: -73.11 } } },
-  { id: 'pereira', name: 'Pereira', department: 'Risaralda', origin: { label: 'Circunvalar', point: { lat: 4.81, lng: -75.69 } } },
+  { id: 'bogota', name: 'Bogotá', department: 'Bogotá D.C.' },
+  { id: 'medellin', name: 'Medellín', department: 'Antioquia' },
+  { id: 'cali', name: 'Cali', department: 'Valle del Cauca' },
+  { id: 'barranquilla', name: 'Barranquilla', department: 'Atlántico' },
+  { id: 'bucaramanga', name: 'Bucaramanga', department: 'Santander' },
+  { id: 'pereira', name: 'Pereira', department: 'Risaralda' },
 ]
 
 export const MOCK_BRANCHES: MockBranch[] = [

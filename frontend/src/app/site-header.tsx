@@ -7,7 +7,7 @@ import { Logo } from '@/components/common/logo'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
-import { CityPicker } from '@/features/location/components/city-picker'
+import { LocationPicker } from '@/features/location/components/location-picker'
 import { SearchBar } from '@/features/marketplace/components/search-bar'
 import { CartIndicator } from '@/features/cart/components/cart-indicator'
 import { HeaderAccount, MobileMenuAccount } from '@/features/auth/components/account-menu'
@@ -134,7 +134,7 @@ export function SiteHeader() {
         <div className="flex items-center gap-0.5 [grid-area:actions]">
           <SellerHeaderLink />
           <span className="mx-1.5 hidden h-5 w-px bg-ap-line-on-dark xl:block" aria-hidden />
-          <CityPicker />
+          <LocationPicker />
           <CartIndicator />
           <HeaderAccount />
           <MobileMenu className="xl:hidden" />
