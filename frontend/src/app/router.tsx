@@ -3,7 +3,10 @@ import { createBrowserRouter, Navigate } from 'react-router'
 import NotFoundPage from '@/features/marketplace/pages/not-found-page'
 import {
   AdminApplicationsPage,
+  AdminCatalogPage,
   AdminCustomersPage,
+  AdminOverviewPage,
+  AdminPlansPage,
   AdminPromotionsPage,
   AdminSearchesPage,
   AdminRoot,
@@ -164,12 +167,15 @@ export const router = createBrowserRouter([
     ),
     errorElement: <RouteError />,
     children: [
-      { index: true, element: <Navigate to="solicitudes" replace /> },
+      { index: true, element: <Navigate to="resumen" replace /> },
+      { path: 'resumen', element: <AdminOverviewPage /> },
       { path: 'solicitudes', element: <AdminApplicationsPage /> },
+      { path: 'planes', element: <AdminPlansPage /> },
+      { path: 'promociones', element: <AdminPromotionsPage /> },
+      { path: 'catalogo', element: <AdminCatalogPage /> },
       { path: 'clientes', element: <AdminCustomersPage /> },
       { path: 'busquedas', element: <AdminSearchesPage /> },
-      { path: 'promociones', element: <AdminPromotionsPage /> },
-      { path: '*', element: <Navigate to="solicitudes" replace /> },
+      { path: '*', element: <Navigate to="resumen" replace /> },
     ],
   },
 ])

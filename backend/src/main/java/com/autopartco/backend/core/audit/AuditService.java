@@ -1,5 +1,6 @@
 package com.autopartco.backend.core.audit;
 
+import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -28,6 +29,15 @@ public class AuditService {
     public void recordAccountLocked(UUID accountId, String email, String ipAddress, int failedAttempts, String state) {
         log.debug("Recording account lock: accountId={}, failedAttempts={}", accountId, failedAttempts);
         repository.save(auditLogMapper.toAccountLocked(accountId, email, ipAddress, failedAttempts, state));
+    }
+
+    /**
+     * Registro genérico de auditoría. {@code metadata} nunca debe llevar contraseñas, tokens ni datos de pago.
+     *
+     * @param accountId cuenta que actuó (o afectada si actúa el sistema); puede ser {@code null}
+     */
+    public void record(UUID accountId, String action, String entityType, UUID entityId, Map<String, Object> metadata) {
+        repository.save(auditLogMapper.toEvent(accountId, action, entityType, entityId, metadata));
     }
 
     public void recordAccountUnlocked(UUID accountId, String email, String state) {

@@ -77,6 +77,13 @@ wompi:
 
 app:
   public-base-url: "${APP_PUBLIC_BASE_URL:http://localhost:8081}"
+  # Ingreso social. Vacío: el proveedor queda deshabilitado (POST /auth/social/{provider} responde 404).
+  social:
+    google:
+      client-id: "${GOOGLE_CLIENT_ID:}"
+    facebook:
+      app-id: "${FACEBOOK_APP_ID:}"
+      app-secret: "${FACEBOOK_APP_SECRET:}"
   billing:
     # Cobro simulado del portal (sin pasarela). Apagado por defecto: solo local y demo lo encienden.
     simulated-payments-enabled: "${SIMULATED_PAYMENTS_ENABLED:false}"

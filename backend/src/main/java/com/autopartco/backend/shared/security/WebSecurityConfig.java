@@ -61,6 +61,7 @@ public class WebSecurityConfig {
                 // core.identity: flujos sin sesión (logout y logout/others siguen autenticados).
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/register"),
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/login"),
+                new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/social/*"),
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/refresh"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.BASE + "/auth/verify-email"),
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/unlock/request"),
