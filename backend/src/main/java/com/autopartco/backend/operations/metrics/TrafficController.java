@@ -2,12 +2,7 @@ package com.autopartco.backend.operations.metrics;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -20,8 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 import com.autopartco.backend.core.analytics.TrafficRecorder;
 import com.autopartco.backend.core.identity.AccountLookup;
 import com.autopartco.backend.core.identity.AccountRef;
-import com.autopartco.backend.shared.error.TooManyRequestsException;
 import com.autopartco.backend.shared.web.ApiPaths;
+import com.autopartco.backend.shared.web.SlidingWindowRateLimiter;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -35,13 +30,11 @@ import jakarta.validation.constraints.Size;
 @RequestMapping(ApiPaths.BASE + "/events")
 public class TrafficController {
     static final int MAX_PER_MINUTE = 60;
-    private static final Duration WINDOW = Duration.ofMinutes(1);
     private static final int MAX_TRACKED = 20_000;
 
     private final TrafficRecorder trafficRecorder;
     private final AccountLookup accountLookup;
-    private final Clock clock;
-    private final Map<String, Deque<Instant>> calls = new ConcurrentHashMap<>();
+    private final SlidingWindowRateLimiter rateLimiter;
 
     @Autowired
     public TrafficController(TrafficRecorder trafficRecorder, AccountLookup accountLookup) {
@@ -51,7 +44,8 @@ public class TrafficController {
     TrafficController(TrafficRecorder trafficRecorder, AccountLookup accountLookup, Clock clock) {
         this.trafficRecorder = trafficRecorder;
         this.accountLookup = accountLookup;
-        this.clock = clock;
+        this.rateLimiter = new SlidingWindowRateLimiter("TRAFFIC_RATE_LIMITED", MAX_PER_MINUTE, Duration.ofMinutes(1),
+                MAX_TRACKED, clock);
     }
 
     public record PageviewRequest(
@@ -72,23 +66,6 @@ public class TrafficController {
     }
 
     void acquire(String key) {
-        Instant now = clock.instant();
-        if (calls.size() > MAX_TRACKED) {
-            calls.entrySet().removeIf(entry -> {
-                synchronized (entry.getValue()) {
-                    return entry.getValue().isEmpty() || !entry.getValue().peekLast().isAfter(now.minus(WINDOW));
-                }
-            });
-        }
-        Deque<Instant> window = calls.computeIfAbsent(key == null ? "?" : key, ignored -> new ArrayDeque<>());
-        synchronized (window) {
-            while (!window.isEmpty() && !window.peekFirst().isAfter(now.minus(WINDOW))) {
-                window.pollFirst();
-            }
-            if (window.size() >= MAX_PER_MINUTE) {
-                throw new TooManyRequestsException("TRAFFIC_RATE_LIMITED", "Demasiadas solicitudes.");
-            }
-            window.addLast(now);
-        }
+        rateLimiter.acquire(key);
     }
 }

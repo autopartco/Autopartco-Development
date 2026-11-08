@@ -81,6 +81,8 @@ public class WebSecurityConfig {
                 new PublicRoute(HttpMethod.GET, ApiPaths.BASE + "/plans"),
                 // marketplace: navegación de compradores.
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/stores"),
+                // marketplace: sedes para el mapa de cobertura (solo coordenadas de sede, sin datos de contacto).
+                new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/branches/map"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/stores/*/brand/*"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/products"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/products/*"),

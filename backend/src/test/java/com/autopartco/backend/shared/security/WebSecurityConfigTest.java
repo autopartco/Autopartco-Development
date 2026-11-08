@@ -177,6 +177,7 @@ class WebSecurityConfigTest {
                         "POST /api/v1/staff-invitations/accept",
                         "GET /api/v1/plans",
                         "GET /api/v1/marketplace/stores",
+                        "GET /api/v1/marketplace/branches/map",
                         "GET /api/v1/marketplace/stores/*/brand/*",
                         "GET /api/v1/marketplace/products",
                         "GET /api/v1/marketplace/products/*",
