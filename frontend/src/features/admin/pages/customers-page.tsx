@@ -237,7 +237,7 @@ export default function AdminCustomersPage() {
   }
 
   return (
-    <main>
+    <div>
       <title>Clientes frecuentes | Administración | Autopartco</title>
       <AuroraHeader
         label="Inteligencia comercial"
@@ -257,6 +257,6 @@ export default function AdminCustomersPage() {
           )}
         </QueryBoundary>
       </div>
-    </main>
+    </div>
   )
 }

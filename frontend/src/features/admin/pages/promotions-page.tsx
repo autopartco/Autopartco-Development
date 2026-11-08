@@ -35,7 +35,7 @@ const CONFIG: PromotionConfig = {
 /** `/admin/promociones`: promociones de plataforma con audiencia (todos o clientes frecuentes) y resultados. */
 export default function AdminPromotionsPage() {
   return (
-    <main>
+    <div>
       <title>Promociones | Administración | Autopartco</title>
       <AuroraHeader
         label="Plataforma"
@@ -45,6 +45,6 @@ export default function AdminPromotionsPage() {
       <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <PromotionsManager config={CONFIG} />
       </div>
-    </main>
+    </div>
   )
 }

@@ -76,6 +76,7 @@ class WebSecurityConfigTest {
         return Stream.of(
                 Arguments.of(HttpMethod.POST, BASE + "/auth/register"),
                 Arguments.of(HttpMethod.POST, BASE + "/auth/login"),
+                Arguments.of(HttpMethod.POST, BASE + "/auth/social/google"),
                 Arguments.of(HttpMethod.POST, BASE + "/auth/refresh"),
                 Arguments.of(HttpMethod.GET, BASE + "/auth/verify-email"),
                 Arguments.of(HttpMethod.POST, BASE + "/auth/unlock/request"),
@@ -161,6 +162,7 @@ class WebSecurityConfigTest {
                 .containsExactlyInAnyOrder(
                         "POST /api/v1/auth/register",
                         "POST /api/v1/auth/login",
+                        "POST /api/v1/auth/social/*",
                         "POST /api/v1/auth/refresh",
                         "GET /api/v1/auth/verify-email",
                         "POST /api/v1/auth/unlock/request",
