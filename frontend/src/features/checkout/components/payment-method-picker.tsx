@@ -16,7 +16,7 @@ const METHOD_HINTS: Record<string, { icon: typeof CreditCardIcon; hint: string }
 }
 
 const OPTION_CLASS =
-  'flex min-h-14 cursor-pointer items-center gap-3 rounded-lg border border-border bg-card p-3 transition-colors hover:bg-concrete/60 has-data-checked:border-primary has-data-checked:bg-primary/5 has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-(--focus)'
+  'flex min-h-14 cursor-pointer items-center gap-3 rounded-md border border-ap-line-strong bg-ap-white p-3 transition-colors hover:bg-ap-paper has-data-checked:border-ap-red has-data-checked:bg-ap-red-tint has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-(--focus)'
 
 /** Id del contenedor, para devolver el foco aquí desde el aviso de pago rechazado. */
 export const METHOD_PICKER_ID = 'checkout-metodo-pago'
@@ -52,7 +52,7 @@ export function PaymentMethodPicker({ status, options, method, outcome, disabled
       <div role="status" aria-busy className="flex flex-col gap-2.5">
         <span className="sr-only">Cargando los métodos de pago</span>
         <Skeleton className="h-4 w-32" />
-        <Skeleton className="h-16 w-full rounded-lg" />
+        <Skeleton className="h-16 w-full" />
       </div>
     )
   }
@@ -61,7 +61,7 @@ export function PaymentMethodPicker({ status, options, method, outcome, disabled
   }
   if (options.methods.length === 0) {
     return (
-      <p role="alert" className="rounded-lg bg-concrete px-3 py-2.5 text-sm">
+      <p role="alert" className="rounded-md border border-ap-warning/30 bg-ap-warning-soft px-3 py-2.5 text-sm text-ap-ink">
         Los pagos no están disponibles en este momento. Inténtalo de nuevo en unos minutos; tu carrito sigue guardado.
       </p>
     )
@@ -71,7 +71,7 @@ export function PaymentMethodPicker({ status, options, method, outcome, disabled
   return (
     <div className="flex flex-col gap-6">
       {simulated ? (
-        <p className="flex items-start gap-2 rounded-lg bg-concrete px-3 py-2.5 text-sm text-foreground/85">
+        <p className="flex items-start gap-2 rounded-md border border-ap-info/25 bg-ap-info-soft px-3 py-2.5 text-sm text-ap-ink">
           <FlaskConicalIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
           <span>
             <strong className="font-semibold">Demostración:</strong> no se hace ningún cobro real.
@@ -80,7 +80,7 @@ export function PaymentMethodPicker({ status, options, method, outcome, disabled
       ) : null}
 
       <div id={METHOD_PICKER_ID} className="flex flex-col gap-2.5">
-        <p id={methodLabel} className="text-sm font-semibold">
+        <p id={methodLabel} className="text-sm font-semibold text-ap-ink">
           Método de pago
         </p>
         <RadioGroup aria-labelledby={methodLabel} value={method} disabled={disabled} onValueChange={(value) => onMethodChange(value as PaymentMethodCode)}>
@@ -90,23 +90,23 @@ export function PaymentMethodPicker({ status, options, method, outcome, disabled
             return (
               <label key={option.code} className={OPTION_CLASS}>
                 <RadioGroupItem value={option.code} />
-                <Icon className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+                <Icon className="size-5 shrink-0 text-ap-muted" aria-hidden />
                 <span className="flex min-w-0 flex-col">
-                  <span className="font-medium">{option.name}</span>
-                  {known ? <span className="text-sm text-muted-foreground">{known.hint}</span> : null}
+                  <span className="font-medium text-ap-ink">{option.name}</span>
+                  {known ? <span className="text-sm text-ap-muted">{known.hint}</span> : null}
                 </span>
               </label>
             )
           })}
         </RadioGroup>
         {!simulated ? (
-          <p className="text-xs text-muted-foreground">Al pulsar «Pagar» te llevamos a Wompi. Al terminar, vuelves a Autopartco para ver el estado de tu pedido.</p>
+          <p className="text-xs text-ap-muted">Al pulsar «Pagar» te llevamos a Wompi. Al terminar, vuelves a Autopartco para ver el estado de tu pedido.</p>
         ) : null}
       </div>
 
       {simulated ? (
         <div className="flex flex-col gap-2.5">
-          <p id={outcomeLabel} className="text-sm font-semibold">
+          <p id={outcomeLabel} className="text-sm font-semibold text-ap-ink">
             Resultado de la simulación
           </p>
           <RadioGroup
@@ -124,11 +124,11 @@ export function PaymentMethodPicker({ status, options, method, outcome, disabled
             ).map(([value, label]) => (
               <label key={value} className={cn(OPTION_CLASS, 'min-h-11')}>
                 <RadioGroupItem value={value} />
-                <span className="font-medium">{label}</span>
+                <span className="font-medium text-ap-ink">{label}</span>
               </label>
             ))}
           </RadioGroup>
-          <p className="text-xs text-muted-foreground">Sirve para ver cómo responde la tienda cuando el pago se aprueba o se rechaza.</p>
+          <p className="text-xs text-ap-muted">Sirve para ver cómo responde la tienda cuando el pago se aprueba o se rechaza.</p>
         </div>
       ) : null}
     </div>

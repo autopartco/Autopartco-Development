@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { GiftIcon, SparklesIcon } from 'lucide-react'
+import { GiftIcon } from 'lucide-react'
 import { Container, PageIntro } from '@/components/common/page-header'
 import { EmptyState, ErrorState } from '@/components/common/states'
 import { Button } from '@/components/ui/button'
@@ -46,26 +46,34 @@ function reasonText(benefit: Benefit): string {
   }
 }
 
-function BenefitCard({ benefit }: { benefit: Benefit }) {
+/**
+ * Fila de un beneficio: quién lo ofrece y hasta cuándo, el descuento como dato principal, a qué
+ * aplica y por qué lo recibes. La acción queda alineada a la derecha desde `md`.
+ */
+function BenefitRow({ benefit }: { benefit: Benefit }) {
   return (
-    <article className="flex flex-col gap-3 rounded-xl bg-card p-5 shadow-[0_0_0_1px_rgb(0_0_0/0.07)]">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <span className="inline-flex items-center gap-1 rounded-full bg-recommended-soft px-2 py-0.5 text-xs font-semibold text-recommended">
-          <SparklesIcon className="size-3.5" aria-hidden />
-          {benefit.storeName ?? 'Autopartco'}
-        </span>
-        <p className="text-xs text-muted-foreground">
-          Vence el <time dateTime={benefit.endsAt}>{dateFormatter.format(new Date(benefit.endsAt))}</time>
+    <article className="grid gap-x-6 gap-y-3 py-5 md:grid-cols-[minmax(0,1fr)_auto] md:items-center">
+      <div className="flex min-w-0 flex-col gap-1.5">
+        <p className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-sm">
+          <span className="font-semibold text-ap-ink">{benefit.storeName ?? 'Autopartco'}</span>
+          <span className="text-ap-muted">
+            · Vence el{' '}
+            <time dateTime={benefit.endsAt} className="tabular-nums">
+              {dateFormatter.format(new Date(benefit.endsAt))}
+            </time>
+          </span>
+        </p>
+        <h2 className="text-base font-semibold text-ap-ink">{benefit.name}</h2>
+        <p className="flex flex-wrap items-baseline gap-x-2">
+          <span className="ap-price text-xl text-ap-ink">{discountLabel(benefit)}</span>
+          <span className="text-sm text-ap-muted">{TARGET_TEXT[benefit.targetType]}</span>
+        </p>
+        <p className="max-w-prose text-sm text-ap-ink">
+          {reasonText(benefit)} El precio con descuento se ve en cada repuesto y se confirma al pagar.
         </p>
       </div>
-      <div className="flex flex-col gap-1">
-        <h2 className="text-lg font-bold tracking-tight">{benefit.name}</h2>
-        <p className="text-2xl leading-tight font-extrabold tracking-[-0.03em]">{discountLabel(benefit)}</p>
-        <p className="text-sm text-muted-foreground">{TARGET_TEXT[benefit.targetType]}</p>
-      </div>
-      <p className="text-sm text-foreground/85">{reasonText(benefit)} El precio con descuento se ve en cada repuesto y se confirma al pagar.</p>
       <div>
-        <Button variant="outline" className="h-11 px-4" nativeButton={false} render={<Link to={benefit.storeId ? storeProductsPath(benefit.storeId) : '/buscar'} />}>
+        <Button variant="outline" nativeButton={false} render={<Link to={benefit.storeId ? storeProductsPath(benefit.storeId) : '/buscar'} />}>
           {benefit.storeId ? 'Ver repuestos de la tienda' : 'Buscar repuestos'}
         </Button>
       </div>
@@ -90,10 +98,16 @@ export default function BenefitsPage() {
       {benefits.status === 'error' ? (
         <ErrorState title="No pudimos cargar tus beneficios" onRetry={benefits.retry} />
       ) : !benefits.data ? (
-        <div role="status" aria-busy className="grid gap-4 md:grid-cols-2">
-          <span className="sr-only">Cargando tus beneficios</span>
-          {[0, 1].map((key) => (
-            <Skeleton key={key} className="h-48 w-full rounded-xl" />
+        <div className="flex flex-col divide-y divide-ap-line border-y border-ap-line">
+          <span className="sr-only" role="status">
+            Cargando tus beneficios
+          </span>
+          {[0, 1, 2].map((key) => (
+            <div key={key} className="flex flex-col gap-2 py-5" aria-hidden>
+              <Skeleton className="h-4 w-48" />
+              <Skeleton className="h-5 w-2/3" />
+              <Skeleton className="h-6 w-56" />
+            </div>
           ))}
         </div>
       ) : benefits.data.length === 0 ? (
@@ -102,15 +116,15 @@ export default function BenefitsPage() {
           title="Por ahora no tienes beneficios"
           description="Cuando compres seguido en Autopartco o en una tienda, aquí aparecerán los descuentos que tienen para ti."
         >
-          <Button className="h-11 px-5" nativeButton={false} render={<Link to="/buscar" />}>
+          <Button nativeButton={false} render={<Link to="/buscar" />}>
             Buscar repuestos
           </Button>
         </EmptyState>
       ) : (
-        <ul className="grid gap-4 md:grid-cols-2">
+        <ul className="flex flex-col divide-y divide-ap-line border-y border-ap-line">
           {benefits.data.map((benefit) => (
             <li key={benefit.promotionId}>
-              <BenefitCard benefit={benefit} />
+              <BenefitRow benefit={benefit} />
             </li>
           ))}
         </ul>

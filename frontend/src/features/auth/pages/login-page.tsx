@@ -145,17 +145,17 @@ export default function LoginPage() {
           />
           <Link
             to="/recuperar-contrasena"
-            className="inline-flex min-h-11 w-fit items-center text-sm font-medium text-brand underline-offset-4 hover:underline"
+            className="inline-flex min-h-11 w-fit items-center text-sm font-medium text-ap-red underline-offset-4 hover:text-ap-red-hover hover:underline"
           >
             ¿Olvidaste tu contraseña?
           </Link>
         </div>
-        <Button type="submit" className="h-11 text-base" disabled={submitting}>
+        <Button type="submit" className="w-full sm:w-auto sm:self-start" disabled={submitting}>
           {submitting ? 'Ingresando…' : 'Ingresar'}
         </Button>
-        <p className="text-sm text-muted-foreground">
+        <p className="border-t border-ap-line pt-4 text-sm text-ap-muted">
           ¿Aún no tienes cuenta?{' '}
-          <Link to="/registro" className="font-medium text-brand underline-offset-4 hover:underline">
+          <Link to="/registro" className="inline-flex min-h-11 items-center font-medium text-ap-red underline-offset-4 hover:text-ap-red-hover hover:underline">
             Crear cuenta
           </Link>
         </p>

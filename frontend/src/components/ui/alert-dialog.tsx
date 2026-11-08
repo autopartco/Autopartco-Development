@@ -20,12 +20,12 @@ function AlertDialogContent({ className, children, ...props }: AlertDialogPrimit
     <AlertDialogPrimitive.Portal>
       <AlertDialogPrimitive.Backdrop
         data-slot="alert-dialog-overlay"
-        className="fixed inset-0 z-50 bg-asphalt/40 transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0 supports-backdrop-filter:backdrop-blur-xs"
+        className="fixed inset-0 z-50 bg-ap-graphite/50 transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0"
       />
       <AlertDialogPrimitive.Popup
         data-slot="alert-dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-xl bg-popover p-5 text-sm text-popover-foreground shadow-lg ring-1 ring-foreground/10 outline-none transition duration-150 data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0 sm:p-6",
+          "fixed top-1/2 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-2xl border border-ap-line bg-popover p-5 text-sm text-popover-foreground shadow-overlay outline-none transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0 sm:p-6",
           className
         )}
         {...props}
@@ -54,7 +54,7 @@ function AlertDialogTitle({ className, ...props }: AlertDialogPrimitive.Title.Pr
   return (
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
-      className={cn("text-lg leading-tight font-extrabold tracking-tight text-foreground", className)}
+      className={cn("text-xl leading-tight font-semibold tracking-tight text-ap-ink", className)}
       {...props}
     />
   )

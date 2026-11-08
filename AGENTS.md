@@ -61,3 +61,7 @@ Tareas medianas o grandes de diseño, planificación o desarrollo:
 - `main` es producción y es generada: nunca recibe commits, merges ni PR directos. Solo la escribe el workflow `.github/workflows/promote-to-main.yml`, que publica una copia filtrada de `develop`.
 - `main` contiene únicamente lo necesario para deploy: `backend/` (sin `bin/` ni `src/test/`), `frontend/`, `database/`, `.gitignore` y `README.md`. La lista blanca está en `tools/release/promote-to-main.sh`; si el deploy necesita otra ruta, se añade ahí.
 - Publicar en producción es un despliegue y requiere autorización del usuario: `git tag vX.Y.Z origin/develop` y `git push origin vX.Y.Z`. Para revisar antes: `DRY_RUN=1 bash tools/release/promote-to-main.sh`.
+
+## Diseño visual
+
+Toda implementación visual (pantallas, componentes, gráficos) sigue `docs/design/AUTOPARTCO_DESIGN_SYSTEM.md`: leerlo antes de tocar la interfaz y cumplir sus criterios de aceptación (§17 y §20.15).

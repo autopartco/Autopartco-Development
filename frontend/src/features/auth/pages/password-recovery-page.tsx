@@ -131,7 +131,7 @@ export default function PasswordRecoveryPage() {
               required
               error={errors.email}
             />
-            <Button type="submit" className="h-11 text-base" disabled={submitting}>
+            <Button type="submit" disabled={submitting}>
               {submitting ? 'Enviando…' : 'Enviar código'}
             </Button>
             <button
@@ -140,7 +140,7 @@ export default function PasswordRecoveryPage() {
                 setErrors({})
                 setStep('reset')
               }}
-              className="inline-flex min-h-11 w-fit items-center text-sm font-medium text-brand underline-offset-4 hover:underline"
+              className="inline-flex min-h-11 w-fit items-center text-sm font-medium text-ap-red underline-offset-4 hover:text-ap-red-hover hover:underline"
             >
               Ya tengo un código
             </button>
@@ -181,7 +181,7 @@ export default function PasswordRecoveryPage() {
               required
               error={errors.confirm}
             />
-            <Button type="submit" className="h-11 text-base" disabled={submitting}>
+            <Button type="submit" disabled={submitting}>
               {submitting ? 'Guardando…' : 'Cambiar contraseña'}
             </Button>
             <button
@@ -191,7 +191,7 @@ export default function PasswordRecoveryPage() {
                 setNotice(undefined)
                 setStep('request')
               }}
-              className="inline-flex min-h-11 w-fit items-center text-sm font-medium text-brand underline-offset-4 hover:underline"
+              className="inline-flex min-h-11 w-fit items-center text-sm font-medium text-ap-red underline-offset-4 hover:text-ap-red-hover hover:underline"
             >
               Pedir otro código
             </button>
@@ -201,10 +201,10 @@ export default function PasswordRecoveryPage() {
         {step === 'done' ? (
           <div className="flex flex-col items-start gap-4">
             <p className="flex items-start gap-2">
-              <CheckCircle2Icon className="mt-0.5 size-5 shrink-0 text-stock" aria-hidden />
+              <CheckCircle2Icon className="mt-0.5 size-5 shrink-0 text-ap-success" aria-hidden />
               {notice ?? 'Tu contraseña fue actualizada.'}
             </p>
-            <Button className="h-11 px-5" nativeButton={false} render={<Link to="/ingresar" />}>
+            <Button nativeButton={false} render={<Link to="/ingresar" />}>
               Ingresar
             </Button>
           </div>

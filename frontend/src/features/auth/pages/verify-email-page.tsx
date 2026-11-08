@@ -57,17 +57,17 @@ export default function VerifyEmailPage() {
     <AuthShell crumbs={[{ label: 'Inicio', to: '/' }, { label: 'Verificar correo' }]} label="Cuenta Autopartco" title="Verificar correo">
       <title>Verificar correo | Autopartco</title>
       {current.status === 'loading' ? (
-        <p role="status" className="text-muted-foreground">
+        <p role="status" className="text-ap-muted">
           Verificando tu correo…
         </p>
       ) : current.status === 'success' ? (
         <div role="status" className="flex flex-col items-start gap-4">
           <p className="flex items-start gap-2 text-lg font-semibold">
-            <CheckCircle2Icon className="mt-1 size-5 shrink-0 text-stock" aria-hidden />
+            <CheckCircle2Icon className="mt-1 size-5 shrink-0 text-ap-success" aria-hidden />
             {current.result.message}
           </p>
-          <p className="text-muted-foreground">Tu cuenta {current.result.email} ya está activa.</p>
-          <Button className="h-11 px-5" nativeButton={false} render={<Link to="/ingresar" />}>
+          <p className="text-ap-muted">Tu cuenta {current.result.email} ya está activa.</p>
+          <Button nativeButton={false} render={<Link to="/ingresar" />}>
             Ingresar
           </Button>
         </div>
@@ -80,7 +80,7 @@ export default function VerifyEmailPage() {
             </p>
           </FormAlert>
           {/* TODO(api): no hay endpoint para reenviar el correo de verificación. */}
-          <Button variant="outline" className="h-11 px-5" nativeButton={false} render={<Link to="/ingresar" />}>
+          <Button variant="outline" nativeButton={false} render={<Link to="/ingresar" />}>
             Ir a ingresar
           </Button>
         </div>

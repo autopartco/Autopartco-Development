@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
-import { CarFrontIcon, InfoIcon, SearchXIcon, SlidersHorizontalIcon } from 'lucide-react'
+import { InfoIcon, SlidersHorizontalIcon } from 'lucide-react'
 import { Container, PageIntro, type Crumb } from '@/components/common/page-header'
 import { EmptyState, ErrorState } from '@/components/common/states'
 import { Button } from '@/components/ui/button'
@@ -27,7 +27,7 @@ import type {
 } from '../api/types'
 import { ActiveFilters } from '../components/active-filters'
 import { FiltersPanel } from '../components/filters-panel'
-import { ProductCard, ProductGrid, ProductGridSkeleton } from '../components/product-card'
+import { ProductList, ProductListSkeleton, ProductRow } from '../components/product-card'
 import { ResultsPagination } from '../components/results-pagination'
 import { useCapabilities, useFilterOptions, useProductQueryState, useProductSearch, useStores, useVehicleFilterLabel } from '../hooks'
 import { categoryPath } from '../lib/paths'
@@ -53,11 +53,11 @@ const SORT_ITEMS = (Object.keys(SORT_LABELS) as SortOption[]).map((value) => ({ 
 function SortSelect({ value, onChange }: { value: SortOption; onChange: (value: SortOption) => void }) {
   return (
     <div className="flex items-center gap-2">
-      <Label htmlFor="orden-resultados" className="hidden text-sm text-muted-foreground sm:block">
-        Ordenar por
+      <Label htmlFor="orden-resultados" className="hidden text-sm font-normal text-ap-muted sm:block">
+        Orden
       </Label>
       <Select items={SORT_ITEMS} value={value} onValueChange={(next) => next && onChange(next as SortOption)}>
-        <SelectTrigger id="orden-resultados" aria-label="Ordenar por" className="h-11 min-w-40 bg-card lg:h-10">
+        <SelectTrigger id="orden-resultados" aria-label="Ordenar por" className="h-11 min-w-40 bg-ap-white">
           <SelectValue />
         </SelectTrigger>
         <SelectContent align="end">
@@ -110,6 +110,7 @@ function FiltersSlot({ query, capabilities, options, onChange, fixedCategory }: 
   )
 }
 
+/** Filtros en móvil y tablet: botón "Filtrar (n)" que abre un panel lateral accesible. */
 function MobileFilters({
   activeCount,
   total,
@@ -119,32 +120,32 @@ function MobileFilters({
   const [open, setOpen] = useState(false)
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger render={<Button variant="outline" className="h-11 gap-2 px-3 lg:hidden" />}>
+      <SheetTrigger
+        render={<Button variant="outline" className="gap-2 px-3 lg:hidden" />}
+        aria-label={
+          activeCount > 0
+            ? `Filtrar: ${activeCount} ${activeCount === 1 ? 'filtro activo' : 'filtros activos'}`
+            : 'Filtrar resultados'
+        }
+      >
         <SlidersHorizontalIcon aria-hidden />
-        Filtros
-        {activeCount > 0 ? (
-          <span className="grid min-w-5 place-items-center rounded-full bg-brand px-1.5 text-xs font-semibold text-primary-foreground tabular-nums">
-            <span className="sr-only">(</span>
-            {activeCount}
-            <span className="sr-only"> activos)</span>
-          </span>
-        ) : null}
+        <span className="tabular-nums">{activeCount > 0 ? `Filtrar (${activeCount})` : 'Filtrar'}</span>
       </SheetTrigger>
       {/* Cabecera y pie fijos; solo la lista de filtros hace scroll, así las acciones siempre se ven. */}
       <SheetContent side="right" className="gap-0 p-0 data-[side=right]:w-full">
-        <SheetHeader className="shrink-0 border-b border-border px-5 py-4 pr-16">
-          <SheetTitle className="text-block-title">Filtros</SheetTitle>
+        <SheetHeader className="shrink-0 border-b border-ap-line px-5 py-4 pr-16">
+          <SheetTitle className="text-block-title">Filtrar resultados</SheetTitle>
           <SheetDescription>Los resultados se actualizan al elegir cada filtro.</SheetDescription>
         </SheetHeader>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5">
           <FiltersSlot {...slot} />
         </div>
-        <SheetFooter className="mt-0 grid shrink-0 grid-cols-2 gap-2 border-t border-border px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-          <Button variant="outline" className="h-11" onClick={onClear} disabled={activeCount === 0}>
+        <SheetFooter className="mt-0 grid shrink-0 grid-cols-2 gap-2 border-t border-ap-line px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+          <Button variant="outline" onClick={onClear} disabled={activeCount === 0}>
             Limpiar
           </Button>
-          <SheetClose render={<Button className="h-11" />}>
-            {total === undefined ? 'Ver resultados' : `Ver ${pluralize(total, 'repuesto', 'repuestos')}`}
+          <SheetClose render={<Button />}>
+            {total === undefined ? 'Ver resultados' : `Ver ${pluralize(total, 'resultado', 'resultados')}`}
           </SheetClose>
         </SheetFooter>
       </SheetContent>
@@ -165,7 +166,6 @@ function EmptyResults({
 }) {
   return (
     <EmptyState
-      icon={<SearchXIcon />}
       title={query.q ? `No encontramos repuestos para “${query.q}”` : 'Ningún repuesto coincide con estos filtros'}
       description={
         <ul className="mt-1 flex list-disc flex-col gap-1 pl-5">
@@ -177,19 +177,19 @@ function EmptyResults({
     >
       <div className="flex flex-col gap-4">
         {activeCount > 0 ? (
-          <Button variant="outline" className="h-10 w-fit px-4" onClick={onClear}>
+          <Button variant="outline" className="w-fit px-4" onClick={onClear}>
             Quitar todos los filtros
           </Button>
         ) : null}
         {options && options.categories.length > 0 ? (
           <div className="flex flex-col gap-2">
-            <p className="text-sm font-medium">O explora por categoría</p>
+            <p className="text-sm font-semibold text-ap-ink">O explora por categoría</p>
             <ul className="flex flex-wrap gap-2">
               {options.categories.slice(0, 8).map((category) => (
                 <li key={category.id}>
                   <Link
                     to={categoryPath(category.slug)}
-                    className="inline-flex h-10 items-center rounded-full border border-border bg-card px-3.5 text-sm transition-colors hover:border-foreground/40 pointer-coarse:h-11"
+                    className="inline-flex h-10 items-center rounded-sm border border-ap-line-strong bg-ap-white px-3 text-sm text-ap-ink transition-colors hover:border-ap-graphite hover:bg-ap-paper pointer-coarse:h-11"
                   >
                     {category.name}
                   </Link>
@@ -203,23 +203,26 @@ function EmptyResults({
   )
 }
 
-function ResultCount({ page, loading, q }: { page: ProductPage | undefined; loading: boolean; q: string }) {
-  let message = 'Buscando repuestos…'
-  if (page && !loading) {
-    const count = pluralize(page.total, 'repuesto', 'repuestos')
-    const range =
-      page.totalPages > 1
-        ? ` (página ${page.page} de ${page.totalPages})`
-        : ''
-    message = `${count}${q ? ` para “${q}”` : ''}${range}`
-  }
+function ResultCount({ page, loading }: { page: ProductPage | undefined; loading: boolean }) {
   return (
-    <p role="status" aria-live="polite" className="text-sm text-muted-foreground tabular-nums">
-      {message}
+    <p role="status" aria-live="polite" className="text-sm text-ap-muted tabular-nums">
+      {page && !loading ? (
+        <>
+          <strong className="font-semibold text-ap-ink">{pluralize(page.total, 'resultado', 'resultados')}</strong>
+          {page.totalPages > 1 ? ` · página ${page.page} de ${page.totalPages}` : ''}
+        </>
+      ) : (
+        'Buscando repuestos…'
+      )}
     </p>
   )
 }
 
+/**
+ * Resultados de catálogo (§7.2, §15): cabecera con la consulta visible, línea de control
+ * con conteo y orden, filtros laterales en escritorio (panel en móvil) y resultados en
+ * filas con divisores.
+ */
 export function SearchResultsView({ fixedCategory }: { fixedCategory?: string }) {
   const [query, update] = useProductQueryState(fixedCategory)
   const capabilities = useCapabilities()
@@ -256,6 +259,15 @@ export function SearchResultsView({ fixedCategory }: { fixedCategory?: string })
   if (isCategoryRoute) crumbs.push({ label: 'Categorías', to: '/categorias' }, { label: category?.name ?? 'Categoría' })
   else crumbs.push({ label: 'Buscar' })
 
+  // Índice de sección: en qué parte del catálogo está la persona.
+  const sectionIndex = store
+    ? 'Catálogo / Tienda'
+    : isCategoryRoute
+      ? 'Catálogo / Categoría'
+      : query.q
+        ? 'Catálogo / Búsqueda'
+        : 'Catálogo / Todo'
+
   const slot: FiltersSlotProps = {
     query,
     capabilities,
@@ -271,31 +283,25 @@ export function SearchResultsView({ fixedCategory }: { fixedCategory?: string })
       <title>{`${title} | Autopartco`}</title>
       <PageIntro
         crumbs={crumbs}
-        label={store ? 'Catálogo de la tienda' : isCategoryRoute ? 'Categoría' : query.q ? 'Búsqueda' : 'Catálogo'}
+        label={sectionIndex}
         title={title}
         description={isCategoryRoute && category?.description ? category.description : undefined}
-        className="mb-6 sm:mb-8"
+        className="mb-6"
       />
 
       {query.makeId ? (
-        <div className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border-l-4 border-brand bg-concrete px-4 py-3">
-          <CarFrontIcon className="size-5 text-brand" aria-hidden />
-          <p className="min-w-0 flex-1 text-sm">
-            Mostrando repuestos publicados como compatibles con{' '}
-            <strong className="font-semibold">{vehicleLabel ?? 'tu vehículo'}</strong>.{' '}
-            <span className="text-muted-foreground">Los repuestos universales aparecen siempre.</span>
+        <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-1 border-l-2 border-ap-red bg-ap-paper py-2 pr-3 pl-4">
+          <p className="min-w-0 flex-1 py-1 text-sm text-ap-ink">
+            <span className="text-ap-muted">Vehículo:</span> <strong className="font-semibold">{vehicleLabel ?? 'tu vehículo'}</strong>.{' '}
+            <span className="text-ap-muted">Ves los repuestos publicados como compatibles; los universales aparecen siempre.</span>
           </p>
-          <Button
-            variant="link"
-            className="h-10 px-0"
-            onClick={() => update({ makeId: undefined, modelId: undefined, versionId: undefined })}
-          >
+          <Button variant="link" className="px-0" onClick={() => update({ makeId: undefined, modelId: undefined, versionId: undefined })}>
             Ver para cualquier vehículo
           </Button>
         </div>
       ) : null}
 
-      <div className="grid gap-8 lg:grid-cols-[16.5rem_minmax(0,1fr)] lg:gap-10">
+      <div className="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-10">
         <aside aria-labelledby="filtros-titulo" className="hidden lg:block">
           {/*
            * Columna fija con su propio scroll. Es un `div` con `overflow-y-auto` (no
@@ -303,28 +309,29 @@ export function SearchResultsView({ fixedCategory }: { fixedCategory?: string })
            * dibuja fuera de la columna, ni encima del pie al final de la página.
            */}
           <div className="sticky top-[calc(var(--header-h)+1.5rem)] flex max-h-[calc(100svh-var(--header-h)-3rem)] flex-col">
-            <div className="mb-3 flex min-h-10 items-center justify-between gap-2 border-b border-border pb-3">
-              <h2 id="filtros-titulo" className="text-block-title">
-                Filtros
+            <div className="mb-4 flex min-h-11 items-center justify-between gap-2 border-b border-ap-graphite pb-1">
+              <h2 id="filtros-titulo" className="ap-index text-ap-ink">
+                Filtrar resultados
               </h2>
               {activeCount > 0 ? (
-                <Button variant="link" className="h-10 px-0" onClick={clearFilters}>
+                <Button variant="link" className="px-0" onClick={clearFilters}>
                   Limpiar ({activeCount})
                 </Button>
               ) : null}
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pt-2 pr-3 [scrollbar-width:thin]">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-3 [scrollbar-width:thin]">
               <FiltersSlot {...slot} />
             </div>
           </div>
         </aside>
 
-        <section aria-labelledby="resultados-titulo" className="flex min-w-0 flex-col gap-5">
+        <section aria-labelledby="resultados-titulo" className="flex min-w-0 flex-col gap-4">
           <h2 id="resultados-titulo" className="sr-only">
             Resultados
           </h2>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <ResultCount page={page} loading={result.isStale} q={query.q} />
+          {/* Línea de control: conteo a la izquierda; filtro (móvil) y orden a la derecha. */}
+          <div className="flex min-h-11 flex-wrap items-center justify-between gap-3 border-b border-ap-graphite pb-2">
+            <ResultCount page={page} loading={result.isStale} />
             <div className="flex items-center gap-2">
               <MobileFilters {...slot} activeCount={activeCount} total={page?.total} onClear={clearFilters} />
               {capabilities?.sorting ? <SortSelect value={query.sort} onChange={(sort) => update({ sort })} /> : null}
@@ -332,8 +339,8 @@ export function SearchResultsView({ fixedCategory }: { fixedCategory?: string })
           </div>
 
           {showTextSearchNotice ? (
-            <p className="flex items-start gap-2 rounded-lg bg-concrete px-4 py-3 text-sm">
-              <InfoIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
+            <p className="flex items-start gap-2 border-l-2 border-ap-info bg-ap-info-soft px-4 py-3 text-sm text-ap-ink">
+              <InfoIcon className="mt-0.5 size-4 shrink-0 text-ap-info" aria-hidden />
               La búsqueda por texto aún no está disponible. Te mostramos todo el catálogo publicado.
             </p>
           ) : null}
@@ -354,21 +361,22 @@ export function SearchResultsView({ fixedCategory }: { fixedCategory?: string })
               onRetry={result.retry}
             />
           ) : !page ? (
-            <ProductGridSkeleton count={6} />
+            <ProductListSkeleton count={5} />
           ) : page.items.length === 0 && !result.isStale ? (
             <EmptyResults query={query} options={options.data} activeCount={activeCount} onClear={clearFilters} />
           ) : (
             <>
-              <ProductGrid busy={result.isStale}>
-                {page.items.map((product, index) => (
-                  <ProductCard
-                    key={product.listingKey}
-                    product={product}
-                    eager={index < 3}
-                    distanceKm={product.store ? distances.get(product.store.id) : undefined}
-                  />
+              <ProductList busy={result.isStale}>
+                {page.items.map((product, itemIndex) => (
+                  <li key={product.listingKey}>
+                    <ProductRow
+                      product={product}
+                      eager={itemIndex < 3}
+                      distanceKm={product.store ? distances.get(product.store.id) : undefined}
+                    />
+                  </li>
                 ))}
-              </ProductGrid>
+              </ProductList>
               {capabilities?.pagination ? <ResultsPagination page={page.page} totalPages={page.totalPages} /> : null}
             </>
           )}

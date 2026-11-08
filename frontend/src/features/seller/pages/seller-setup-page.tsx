@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router'
-import { CheckIcon } from 'lucide-react'
 import { FieldShell, FormAlert, INPUT_CLASS } from '@/components/common/form-fields'
+import { LoadingState } from '@/components/common/states'
+import { Stepper } from '@/components/common/stepper'
 import { Button } from '@/components/ui/button'
 import { useSessionState, useSignOut } from '@/features/auth/hooks'
 import { loginPathFor } from '@/features/auth/lib/return-path'
@@ -9,7 +10,6 @@ import { UnsavedChangesDialog } from '@/components/common/unsaved-changes-dialog
 import { ApiError } from '@/lib/api'
 import { useSubmitOnce } from '@/lib/use-submit-once'
 import { useUnsavedChanges } from '@/lib/use-unsaved-changes'
-import { cn } from '@/lib/utils'
 import { getSellerApplicationService } from '../api/seller-service'
 import { DOCUMENT_MAX_BYTES, type SetupDetails } from '../api/types'
 import { SELLER_SETUP_PATH, useSellerCta } from '../hooks'
@@ -18,7 +18,7 @@ import { replaceSessionAfterSetup } from '../lib/replace-session'
 const IMAGE_ACCEPT = 'image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp'
 const STEPS = ['Marca', 'Descripción', 'Revisar y activar'] as const
 const LAST_STEP = STEPS.length - 1
-const SHELL = 'mx-auto w-full max-w-xl px-4 py-10'
+const SHELL = 'mx-auto w-full max-w-2xl px-4 py-8 sm:px-6 sm:py-10'
 
 /** Mensaje para el usuario según el código de error del backend al configurar el almacén. */
 function setupErrorMessage(error: unknown): string {
@@ -43,7 +43,8 @@ function Shell({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className={SHELL}>
       <title>Configura tu almacén | Autopartco</title>
-      <h1 className="text-2xl font-semibold">{title}</h1>
+      <p className="ap-index mb-2">Almacén / Configuración</p>
+      <h1 className="text-page-title text-ap-ink">{title}</h1>
       {children}
     </div>
   )
@@ -125,65 +126,39 @@ function SetupWizard({ submit }: WizardProps) {
 
   return (
     <>
-      <p className="mt-2 text-muted-foreground">Tu solicitud fue aprobada. Completa los datos para empezar a vender.</p>
+      <p className="mt-2 text-ap-muted">Tu solicitud fue aprobada. Completa los datos para empezar a vender.</p>
 
-      <nav aria-label="Pasos de la configuración" className="mt-6">
-        <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-          {STEPS.map((label, index) => {
-            const done = index < step
-            const current = index === step
-            return (
-              <li key={label} className="flex items-center gap-2">
-                {done ? (
-                  <button
-                    type="button"
-                    onClick={() => setStep(index)}
-                    className="inline-flex min-h-11 items-center gap-1.5 rounded-lg px-2 font-medium text-brand underline-offset-4 hover:underline"
-                  >
-                    <CheckIcon className="size-4" aria-hidden />
-                    <span className="sr-only">Volver al paso {index + 1}: </span>
-                    {label}
-                  </button>
-                ) : (
-                  <span
-                    aria-current={current ? 'step' : undefined}
-                    className={cn('inline-flex min-h-11 items-center gap-1.5 px-2', current ? 'font-semibold text-foreground' : 'text-muted-foreground')}
-                  >
-                    <span
-                      className={cn(
-                        'inline-flex size-6 items-center justify-center rounded-full text-xs font-semibold',
-                        current ? 'bg-brand text-white' : 'bg-concrete text-muted-foreground',
-                      )}
-                      aria-hidden
-                    >
-                      {index + 1}
-                    </span>
-                    {label}
-                    <span className="sr-only">{current ? ' (paso actual)' : ''}</span>
-                  </span>
-                )}
-                {index < LAST_STEP ? <span className="text-muted-foreground" aria-hidden>›</span> : null}
-              </li>
-            )
-          })}
-        </ol>
-        <p className="sr-only" aria-live="polite">
-          Paso {step + 1} de {STEPS.length}: {STEPS[step]}
-        </p>
-      </nav>
+      {/* Pasos ya hechos se pueden revisar; los siguientes se desbloquean al avanzar con «Siguiente». */}
+      <Stepper
+        className="mt-6 border-b border-ap-line pb-4"
+        label="Pasos de la configuración"
+        current={String(step)}
+        onSelect={(id) => setStep(Number(id))}
+        steps={STEPS.map((label, index) => ({
+          id: String(index),
+          label,
+          status: index < step ? 'complete' : 'idle',
+          locked: index > step,
+        }))}
+      />
+      <p className="sr-only" aria-live="polite">
+        Paso {step + 1} de {STEPS.length}: {STEPS[step]}
+      </p>
 
       {formError ? (
-        <FormAlert ref={alertRef} title="No pudimos completar la configuración">
-          {formError}
-        </FormAlert>
+        <div className="mt-6">
+          <FormAlert ref={alertRef} title="No pudimos completar la configuración">
+            {formError}
+          </FormAlert>
+        </div>
       ) : null}
 
-      <form className="mt-4 flex flex-col gap-5" onSubmit={handleSubmit} noValidate aria-busy={submitting || undefined}>
+      <form className="mt-6 flex flex-col gap-5" onSubmit={handleSubmit} noValidate aria-busy={submitting || undefined}>
         <section hidden={step !== 0} className="flex flex-col gap-5" aria-labelledby="setup-paso-0">
-          <h2 id="setup-paso-0" ref={step === 0 ? headingRef : undefined} tabIndex={-1} className="text-lg font-semibold outline-none">
+          <h2 id="setup-paso-0" ref={step === 0 ? headingRef : undefined} tabIndex={-1} className="text-block-title text-ap-ink outline-none">
             Marca de tu almacén
           </h2>
-          <p className="-mt-3 text-sm text-muted-foreground">Súbelos ahora o más adelante: ambos son opcionales.</p>
+          <p className="-mt-3 text-sm text-ap-muted">Súbelos ahora o más adelante: ambos son opcionales.</p>
           <FieldShell id="setup-logo" label="Logo" optional error={errors.logo} hint="PNG, JPG o WebP, hasta 10 MB.">
             {(describedBy) => (
               <input
@@ -213,7 +188,7 @@ function SetupWizard({ submit }: WizardProps) {
         </section>
 
         <section hidden={step !== 1} className="flex flex-col gap-5" aria-labelledby="setup-paso-1">
-          <h2 id="setup-paso-1" ref={step === 1 ? headingRef : undefined} tabIndex={-1} className="text-lg font-semibold outline-none">
+          <h2 id="setup-paso-1" ref={step === 1 ? headingRef : undefined} tabIndex={-1} className="text-block-title text-ap-ink outline-none">
             Descripción
           </h2>
           <FieldShell id="setup-descripcion" label="Descripción del almacén" optional hint="Cuéntale a tus clientes qué vendes.">
@@ -231,40 +206,40 @@ function SetupWizard({ submit }: WizardProps) {
         </section>
 
         <section hidden={step !== 2} className="flex flex-col gap-4" aria-labelledby="setup-paso-2">
-          <h2 id="setup-paso-2" ref={step === 2 ? headingRef : undefined} tabIndex={-1} className="text-lg font-semibold outline-none">
+          <h2 id="setup-paso-2" ref={step === 2 ? headingRef : undefined} tabIndex={-1} className="text-block-title text-ap-ink outline-none">
             Revisar y activar
           </h2>
-          <dl className="flex flex-col gap-3 rounded-xl bg-card p-4 text-sm ring-1 ring-foreground/10">
-            <div>
-              <dt className="font-semibold">Logo</dt>
-              <dd className="text-muted-foreground">{logo ? logo.name : 'Sin logo por ahora'}</dd>
+          <dl className="flex flex-col divide-y divide-ap-line border-y border-ap-line text-sm">
+            <div className="grid gap-1 py-3 sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-4">
+              <dt className="font-semibold text-ap-ink">Logo</dt>
+              <dd className="break-all text-ap-muted">{logo ? logo.name : 'Sin logo por ahora'}</dd>
             </div>
-            <div>
-              <dt className="font-semibold">Banner</dt>
-              <dd className="text-muted-foreground">{banner ? banner.name : 'Sin banner por ahora'}</dd>
+            <div className="grid gap-1 py-3 sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-4">
+              <dt className="font-semibold text-ap-ink">Banner</dt>
+              <dd className="break-all text-ap-muted">{banner ? banner.name : 'Sin banner por ahora'}</dd>
             </div>
-            <div>
-              <dt className="font-semibold">Descripción</dt>
-              <dd className="break-words text-muted-foreground">{description.trim() || 'Sin descripción por ahora'}</dd>
+            <div className="grid gap-1 py-3 sm:grid-cols-[8rem_minmax(0,1fr)] sm:gap-4">
+              <dt className="font-semibold text-ap-ink">Descripción</dt>
+              <dd className="break-words text-ap-muted">{description.trim() || 'Sin descripción por ahora'}</dd>
             </div>
           </dl>
-          <p className="text-sm text-muted-foreground">Al activar, tu almacén queda abierto y empieza tu prueba gratuita.</p>
+          <p className="text-sm text-ap-muted">Al activar, tu almacén queda abierto y empieza tu prueba gratuita.</p>
         </section>
 
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-ap-line pt-5">
           {step > 0 ? (
-            <Button type="button" variant="outline" className="h-11 px-5" disabled={submitting} onClick={() => setStep(step - 1)}>
+            <Button type="button" variant="outline" disabled={submitting} onClick={() => setStep(step - 1)}>
               Atrás
             </Button>
           ) : (
             <span />
           )}
           {step < LAST_STEP ? (
-            <Button type="button" className="h-11 px-5" onClick={goNext}>
+            <Button type="button" onClick={goNext}>
               Siguiente
             </Button>
           ) : (
-            <Button type="submit" className="h-11 px-5" disabled={submitting}>
+            <Button type="submit" disabled={submitting}>
               {submitting ? 'Activando…' : 'Activar mi almacén'}
             </Button>
           )}
@@ -301,17 +276,18 @@ function WrongAccount() {
   return (
     <div className={SHELL}>
       <title>Configura tu almacén | Autopartco</title>
-      <h1 ref={headingRef} tabIndex={-1} className="text-2xl font-semibold outline-none">
+      <p className="ap-index mb-2">Almacén / Configuración</p>
+      <h1 ref={headingRef} tabIndex={-1} className="text-page-title text-ap-ink outline-none">
         Esta cuenta no puede configurar el almacén
       </h1>
-      <p className="mt-2 text-muted-foreground" role="status">
+      <p className="mt-2 text-ap-muted" role="status">
         Esta cuenta no tiene una configuración de almacén pendiente. Si el enlace era de otra cuenta, cámbiala.
       </p>
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-        <Button className="h-11 px-5" disabled={pending} onClick={() => void switchAccount()}>
+        <Button disabled={pending} onClick={() => void switchAccount()}>
           {pending ? 'Cerrando sesión…' : 'Cambiar de cuenta'}
         </Button>
-        <Button variant="outline" className="h-11 px-5" nativeButton={false} render={<Link to="/" />}>
+        <Button variant="outline" nativeButton={false} render={<Link to="/" />}>
           Ir al inicio
         </Button>
       </div>
@@ -336,10 +312,20 @@ export default function SellerSetupPage() {
     }
   }, [])
 
-  if (!ready) return <Shell title="Configura tu almacén"><p className="mt-4 text-muted-foreground" role="status">Cargando…</p></Shell>
+  if (!ready) {
+    return (
+      <Shell title="Configura tu almacén">
+        <LoadingState label="Cargando…" rows={2} className="mt-6" />
+      </Shell>
+    )
+  }
   if (!session) return <Navigate to={loginPathFor(SELLER_SETUP_PATH)} replace />
   if (seller.state === 'loading') {
-    return <Shell title="Configura tu almacén"><p className="mt-4 text-muted-foreground" role="status">Buscando tu solicitud…</p></Shell>
+    return (
+      <Shell title="Configura tu almacén">
+        <LoadingState label="Buscando tu solicitud…" rows={2} className="mt-6" />
+      </Shell>
+    )
   }
   // Almacén ya activo (solicitud ACTIVE o rol de almacén): nada que configurar.
   if (seller.state === 'manage') return <Navigate to="/portal" replace />

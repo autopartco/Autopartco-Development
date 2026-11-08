@@ -18,21 +18,24 @@ const NAV = [
   { to: '/tiendas', label: 'Tiendas' },
 ]
 
-/** Enlace de la cabecera oscura: la página activa se marca con un tramo del hilo rojo. */
+/**
+ * Enlace de la cabecera grafito (§3.5): la página activa se marca con una línea roja
+ * (`ap-red-on-dark`, 4.6:1 sobre grafito) y texto blanco; el resto en gris claro.
+ */
 function navClass({ isActive }: { isActive: boolean }) {
   return cn(
-    'relative inline-flex h-11 shrink-0 items-center whitespace-nowrap rounded-lg px-2 text-sm font-medium transition-colors lg:h-10',
-    'hover:bg-header-hover hover:text-white',
-    'after:absolute after:inset-x-2 after:bottom-1 after:h-0.5 after:origin-left after:scale-x-0 after:rounded-full after:bg-thread-on-asphalt after:transition-transform after:duration-200 after:ease-out-snap',
-    isActive ? 'text-white after:scale-x-100' : 'text-asphalt-muted',
+    'relative inline-flex h-11 shrink-0 items-center whitespace-nowrap rounded-md px-2.5 text-sm font-medium transition-colors duration-150 lg:h-10',
+    'hover:bg-header-hover hover:text-ap-white',
+    'after:absolute after:inset-x-2.5 after:-bottom-0.5 after:h-0.5 after:bg-ap-red-on-dark after:opacity-0 after:transition-opacity after:duration-150',
+    isActive ? 'text-ap-white after:opacity-100' : 'text-ap-on-dark-muted',
   )
 }
 
-/** Enlace del menú móvil (panel claro). */
+/** Enlace del menú móvil (panel claro): el activo lleva fondo papel y línea de acento roja. */
 function menuLinkClass({ isActive }: { isActive: boolean }) {
   return cn(
-    'flex min-h-12 items-center justify-between rounded-lg px-3 text-base font-semibold transition-colors hover:bg-concrete',
-    isActive && 'bg-concrete',
+    'flex min-h-12 items-center justify-between rounded-md px-3 text-base font-semibold text-ap-ink transition-colors hover:bg-ap-paper',
+    isActive && 'bg-ap-paper shadow-[inset_3px_0_0_var(--ap-red)]',
   )
 }
 
@@ -47,9 +50,9 @@ function SellerHeaderLink() {
       to={cta.to}
       aria-label={label}
       title={label}
-      className="hidden h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-lg px-2 text-sm font-semibold text-white transition-colors hover:bg-header-hover md:inline-flex lg:h-10"
+      className="hidden h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-md px-2.5 text-sm font-semibold text-ap-white transition-colors hover:bg-header-hover md:inline-flex lg:h-10"
     >
-      <StoreIcon className="size-4 text-brand-on-asphalt" aria-hidden />
+      <StoreIcon className="size-4 text-ap-red-on-dark" aria-hidden />
       <span className="hidden whitespace-nowrap md:inline">{label}</span>
     </Link>
   )
@@ -66,7 +69,7 @@ function MobileMenu({ className }: { className?: string }) {
         render={
           <Button
             variant="ghost"
-            className={cn('size-11 text-white hover:bg-header-hover hover:text-white aria-expanded:bg-header-hover aria-expanded:text-white', className)}
+            className={cn('size-11 text-ap-white hover:bg-header-hover hover:text-ap-white aria-expanded:bg-header-hover aria-expanded:text-ap-white', className)}
             aria-label="Abrir menú"
           />
         }
@@ -74,8 +77,8 @@ function MobileMenu({ className }: { className?: string }) {
         <MenuIcon className="size-5" aria-hidden />
       </SheetTrigger>
       <SheetContent side="right" className="gap-0 p-0">
-        <SheetHeader className="border-b border-border px-5 py-4 pr-16">
-          <SheetTitle className="text-lg font-extrabold tracking-tight">Menú</SheetTitle>
+        <SheetHeader className="border-b border-ap-line px-5 py-4 pr-16">
+          <SheetTitle>Menú</SheetTitle>
           <SheetDescription className="sr-only">Secciones de Autopartco</SheetDescription>
         </SheetHeader>
         <nav aria-label="Principal" className="flex flex-col gap-1 px-3 py-4">
@@ -85,18 +88,18 @@ function MobileMenu({ className }: { className?: string }) {
             </NavLink>
           ))}
         </nav>
-        <section aria-labelledby="menu-cuenta" className="mx-5 mt-2 flex flex-col gap-3 border-t border-border pt-5">
-          <h2 id="menu-cuenta" className="label-mono text-muted-foreground">
+        <section aria-labelledby="menu-cuenta" className="mx-5 mt-2 flex flex-col gap-3 border-t border-ap-line pt-5">
+          <h2 id="menu-cuenta" className="ap-index">
             Tu cuenta
           </h2>
           <MobileMenuAccount onNavigate={close} />
         </section>
-        <div className="mx-5 mt-5 flex flex-col items-start gap-1 border-t border-border pt-5">
-          <p className="label-mono text-muted-foreground">Para almacenes</p>
+        <div className="mx-5 mt-5 flex flex-col items-start gap-1 border-t border-ap-line pt-5">
+          <p className="ap-index">Para almacenes</p>
           <Link
             to={cta.state === 'loading' ? '/vender/registro' : cta.to}
             onClick={close}
-            className="inline-flex min-h-11 items-center gap-2 font-semibold text-brand underline-offset-4 hover:underline"
+            className="inline-flex min-h-11 items-center gap-2 font-semibold text-ap-red underline-offset-4 hover:text-ap-red-hover hover:underline"
           >
             <StoreIcon className="size-5" aria-hidden />
             {cta.state === 'loading' ? 'Registra tu almacén' : cta.label}
@@ -108,13 +111,13 @@ function MobileMenu({ className }: { className?: string }) {
 }
 
 /**
- * Cabecera carbón. En móvil y tablet son dos filas (logo y acciones: ciudad, cuenta y menú; buscador a
+ * Cabecera grafito. En móvil y tablet son dos filas (logo y acciones: ciudad, cuenta y menú; buscador a
  * todo el ancho) y desde xl una sola: logo, buscador, navegación y acciones. El buscador va justo
  * después del logo en el orden del documento: es lo primero que se usa.
  */
 export function SiteHeader() {
   return (
-    <header className="surface-asphalt sticky top-0 z-40 bg-header">
+    <header className="surface-asphalt sticky top-0 z-40 bg-ap-graphite">
       <Container className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 [grid-template-areas:'logo_actions'_'search_search'] xl:h-16 xl:grid-cols-[auto_minmax(0,1fr)_auto_auto] xl:gap-x-4 xl:[grid-template-areas:'logo_search_nav_actions'] 2xl:gap-x-6">
         <div className="flex h-14 min-w-0 items-center [grid-area:logo] xl:h-auto">
           <Logo tone="dark" />
@@ -130,7 +133,7 @@ export function SiteHeader() {
         </nav>
         <div className="flex items-center gap-0.5 [grid-area:actions]">
           <SellerHeaderLink />
-          <span className="mx-1.5 hidden h-5 w-px bg-white/15 xl:block" aria-hidden />
+          <span className="mx-1.5 hidden h-5 w-px bg-ap-line-on-dark xl:block" aria-hidden />
           <CityPicker />
           <CartIndicator />
           <HeaderAccount />
