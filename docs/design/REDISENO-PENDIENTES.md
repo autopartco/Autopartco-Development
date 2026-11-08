@@ -15,7 +15,7 @@ Norma: `docs/design/AUTOPARTCO_DESIGN_SYSTEM.md`.
 
 ## Pendiente
 
-1. **Borrar** `features/admin/components/aurora-header.tsx` y `features/admin/admin.css` (sin uso; requiere autorización).
+1. ~~Borrar `aurora-header.tsx` y `admin.css`~~ (hecho).
 2. **QA visual** en escritorio y móvil con datos reales (no se hizo: build y lint en verde).
    - Carrito y pedidos en móvil; foco y teclado; contraste de bordes de campos sobre papel.
    - Celdas del mapa de calor de ventas (20–24 px) en táctil.
