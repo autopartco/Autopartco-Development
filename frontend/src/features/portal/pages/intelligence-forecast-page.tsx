@@ -10,7 +10,7 @@ import type { Forecast, ForecastProduct } from '../api/analytics-types'
 import { AnalyticsChart, type ChartPoint } from '../components/analytics-chart'
 import { ChartEmpty, ChartSection, ChartSkeleton, LegendItem } from '../components/chart-section'
 import { AnalyticsBoundary, BranchSelect, IntelligencePage } from '../components/intelligence-shell'
-import { useStoreQuery } from '../hooks'
+import { branchParamValue, useBranchSearchParam, useStoreQuery } from '../hooks'
 import { monthLabel, periodLabel } from '../lib/analytics'
 import { CHART_COLOR } from '../lib/chart-palette'
 
@@ -131,8 +131,8 @@ function ForecastView({ forecast }: { forecast: Forecast }) {
 
 /** `/portal/:storeId/inteligencia/proyeccion`: proyección de ventas del próximo mes. */
 export default function IntelligenceForecastPage() {
-  const [params, setParams] = useSearchParams()
-  const branchId = params.get('sucursal') ?? ''
+  const [, setParams] = useSearchParams()
+  const branchId = useBranchSearchParam()
   const result = useStoreQuery(`analytics:forecast:${branchId}`, async (id) => (await getAnalyticsService()).forecast(id, branchId || undefined))
   return (
     <IntelligencePage title="Proyección" description="Cuánto podrías vender el próximo mes según el ritmo de tus ventas recientes.">
@@ -144,8 +144,7 @@ export default function IntelligenceForecastPage() {
               setParams(
                 (current) => {
                   const next = new URLSearchParams(current)
-                  if (value) next.set('sucursal', value)
-                  else next.delete('sucursal')
+                  next.set('sucursal', branchParamValue(value))
                   return next
                 },
                 { replace: true },

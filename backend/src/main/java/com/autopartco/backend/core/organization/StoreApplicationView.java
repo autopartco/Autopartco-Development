@@ -21,8 +21,14 @@ public record StoreApplicationView(
         UUID selectedPlanId,
         List<Document> documents,
         String reviewNotes,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        LocalDateTime reviewedAt,
+        Reviewer reviewer
 ) {
+    /** Cuenta que revisó la solicitud; {@code null} en la vista si no hay revisor o la cuenta ya no existe. */
+    public record Reviewer(UUID accountId, String name, String email) {
+    }
+
     public record Document(
             UUID id,
             ApplicationDocumentType type,

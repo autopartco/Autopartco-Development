@@ -11,6 +11,7 @@ import { SelectField } from '../components/form-controls'
 import { ResultCount, SearchField } from '../components/search-field'
 import { normalizeText } from '../lib/fuzzy'
 import { PageHeader } from '../components/page-header'
+import { ListSkeleton } from '../components/list-skeleton'
 import { QueryBoundary } from '../components/query-boundary'
 import { StatusBadge } from '../components/status-badge'
 import { usePortal } from '../context'
@@ -132,12 +133,25 @@ function OrdersView({ rows }: { rows: OrderSummary[] }) {
 
 /** `/portal/:storeId/pedidos`: pedidos recibidos con filtro por estado. */
 export default function PortalOrdersPage() {
-  const { storeId, can } = usePortal()
-  const orders = useStoreQuery('orders', async (id) => (await getOrderService()).list(id))
+  const { branchReady, branchName } = usePortal()
   return (
     <>
       <title>Pedidos | Autopartco</title>
-      <PageHeader title="Pedidos" description="Las compras que te hicieron en el marketplace, de la más reciente a la más antigua." />
+      <PageHeader
+        title="Pedidos"
+        description={`Las compras que te hicieron en el marketplace, de la más reciente a la más antigua${branchName ? `, en ${branchName}` : ''}.`}
+      />
+      {/* Espera a conocer la sucursal activa para no mostrar antes los pedidos de todo el almacén. */}
+      {branchReady ? <OrdersQuery /> : <ListSkeleton rows={5} label="Cargando tus pedidos" />}
+    </>
+  )
+}
+
+function OrdersQuery() {
+  const { storeId, can, branchId } = usePortal()
+  const orders = useStoreQuery(`orders:${branchId ?? 'all'}`, async (id) => (await getOrderService()).list(id, { branchId }))
+  return (
+    <>
       <QueryBoundary result={orders} what="tus pedidos">
         {(rows) =>
           rows.length === 0 ? (

@@ -84,6 +84,8 @@ export interface MyStoreApplication {
   reviewNotes?: string
   /** `LocalDateTime` sin zona (`AAAA-MM-DDTHH:mm:ss`). */
   createdAt: string
+  /** Fecha de la revisión (`LocalDateTime` sin zona); ausente si aún no se revisa o no quedó registrada. */
+  reviewedAt?: string | null
 }
 
 /** Estados que el backend considera "en curso" (`StoreApplications.requireNoOpenApplication`). */

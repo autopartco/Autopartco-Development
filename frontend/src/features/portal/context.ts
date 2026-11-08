@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react'
-import type { MyStore, StorePermission, Subscription } from './api/types'
+import type { Branch, MyStore, StorePermission, Subscription } from './api/types'
 
 export interface PortalContextValue {
   storeId: string
@@ -24,6 +24,19 @@ export interface PortalContextValue {
   promptUpgrade: (error: unknown) => boolean
   /** Descarta los datos en memoria de esta tienda y recarga la suscripción. */
   invalidateStore: () => void
+  /** Sucursales activas del almacén (vacío sin `BRANCH_READ` o mientras cargan). */
+  activeBranches: Branch[]
+  /**
+   * Sucursal activa de la barra de contexto; `undefined` = todas las sucursales. Es el filtro por defecto de
+   * resumen, inventario, traslados y analítica. Solo existe con dos o más sucursales activas.
+   */
+  branchId: string | undefined
+  /** Nombre de la sucursal activa (`undefined` = todas). */
+  branchName: string | undefined
+  /** Cambia la sucursal activa y la recuerda para esta persona y este almacén. */
+  setBranchId: (branchId: string | undefined) => void
+  /** `true` cuando ya se sabe qué sucursal está activa (sucursales cargadas o sin permiso para verlas). */
+  branchReady: boolean
 }
 
 export const PortalContext = createContext<PortalContextValue | undefined>(undefined)

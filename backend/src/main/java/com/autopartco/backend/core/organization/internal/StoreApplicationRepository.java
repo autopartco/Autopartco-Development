@@ -5,6 +5,8 @@ import java.util.Optional;
 import java.util.Collection;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -23,6 +25,30 @@ public interface StoreApplicationRepository extends JpaRepository<StoreApplicati
             """)
     List<StoreApplication> findAllByStatusWithOwner(
             @Param("status") StoreApplicationStatus status
+    );
+
+    /**
+     * Historial para root ({@code status} nulo = todas): las de {@code pendingStatus} primero, de la más antigua a la
+     * más reciente; el resto por {@code reviewedAt} desc (nulos al final) y {@code createdAt} desc.
+     */
+    @Query(value = """
+            select application from StoreApplication application
+            join fetch application.store store
+            where (:status is null or application.status = :status)
+            order by case when application.status = :pendingStatus then 0 else 1 end,
+                     case when application.status = :pendingStatus then application.createdAt end asc,
+                     application.reviewedAt desc nulls last,
+                     application.createdAt desc,
+                     application.id
+            """,
+            countQuery = """
+            select count(application) from StoreApplication application
+            where (:status is null or application.status = :status)
+            """)
+    Page<StoreApplication> findHistory(
+            @Param("status") StoreApplicationStatus status,
+            @Param("pendingStatus") StoreApplicationStatus pendingStatus,
+            Pageable pageable
     );
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)

@@ -38,7 +38,10 @@ function StoreCard({ store }: { store: MyStore }) {
           <StatusBadge tone={application.tone}>{application.label}</StatusBadge>
           {openable && store.subscription ? (
             <StatusBadge tone={SUBSCRIPTION_STATUS_TONE[store.subscription.status]}>
-              {store.subscription.planName} · {SUBSCRIPTION_STATUS_LABEL[store.subscription.status].toLowerCase()}
+              {store.subscription.planName}
+              {SUBSCRIPTION_STATUS_LABEL[store.subscription.status].toLowerCase() === store.subscription.planName.toLowerCase()
+                ? ''
+                : ` · ${SUBSCRIPTION_STATUS_LABEL[store.subscription.status].toLowerCase()}`}
               {store.subscription.validThrough ? ` · hasta ${formatDate(store.subscription.validThrough)}` : ''}
             </StatusBadge>
           ) : null}

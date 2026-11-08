@@ -56,6 +56,6 @@ class ReviewStoreApplicationTest {
     }
 
     private static StoreApplicationView view() {
-        return new StoreApplicationView(null, null, null, null, null, null, null, null, null, null, java.util.List.of(), null, null);
+        return new StoreApplicationView(null, null, null, null, null, null, null, null, null, null, java.util.List.of(), null, null, null, null);
     }
 }

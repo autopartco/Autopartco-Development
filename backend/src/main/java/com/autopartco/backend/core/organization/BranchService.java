@@ -104,6 +104,12 @@ public class BranchService {
         }
     }
 
+    /** Exige que la sucursal sea del almacén (en cualquier estado); si no, {@code BRANCH_NOT_FOUND}. */
+    @Transactional(readOnly = true)
+    public void requireInStore(UUID storeId, UUID branchId) {
+        findBranch(storeId, branchId);
+    }
+
     private Store requireStore(UUID storeId) {
         return storeRepository.findById(storeId)
                 .orElseThrow(() -> new NotFoundException("STORE_NOT_FOUND", "No se encontró el almacén."));

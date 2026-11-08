@@ -28,8 +28,14 @@ public record StoreApplicationResponse(
         PlanResponse selectedPlan,
         List<Document> documents,
         String reviewNotes,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        LocalDateTime reviewedAt,
+        Reviewer reviewer
 ) {
+    /** Cuenta root que revisó la solicitud; {@code null} si no hay revisor o la cuenta ya no existe. */
+    public record Reviewer(UUID accountId, String name, String email) {
+    }
+
     public record Document(
             UUID id,
             ApplicationDocumentType type,
@@ -61,7 +67,13 @@ public record StoreApplicationResponse(
                         ))
                         .toList(),
                 view.reviewNotes(),
-                view.createdAt()
+                view.createdAt(),
+                view.reviewedAt(),
+                view.reviewer() == null ? null : new Reviewer(
+                        view.reviewer().accountId(),
+                        view.reviewer().name(),
+                        view.reviewer().email()
+                )
         );
     }
 }

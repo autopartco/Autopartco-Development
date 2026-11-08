@@ -61,6 +61,9 @@ public class StoreApplication extends BaseEntity {
     @Column(name = "reviewed_by")
     private UUID reviewedByAccountId;
 
+    @Column(name = "reviewed_at")
+    private LocalDateTime reviewedAt;
+
     @Column(name = "review_notes", columnDefinition = "TEXT")
     private String reviewNotes;
 

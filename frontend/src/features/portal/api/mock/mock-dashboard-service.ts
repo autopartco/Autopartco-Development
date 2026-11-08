@@ -1,18 +1,27 @@
+import { ApiError } from '@/lib/api'
 import type { DashboardService } from '../dashboard-service'
 import type { Dashboard } from '../types'
 import { getStore, requirePermission, simulateNetwork, statusOf, subscriptionOf, usageOf } from './mock-state'
 
-/** Resumen simulado calculado desde los mismos datos que las demás pantallas. */
+/**
+ * Resumen simulado calculado desde los mismos datos que las demás pantallas. Con `branchId`, ventas e
+ * inventario se limitan a esa sucursal (como el servidor); plan, uso y suscripción siguen siendo del almacén.
+ */
 export function createMockDashboardService(): DashboardService {
   return {
-    async dashboard(storeId) {
+    async dashboard(storeId, branchId) {
       await simulateNetwork()
       const store = getStore(storeId)
       requirePermission(store, 'STORE_READ')
+      if (branchId && !store.branches.some((branch) => branch.id === branchId)) {
+        throw new ApiError('No encontramos esa sucursal en tu almacén.', { status: 404, code: 'BRANCH_NOT_FOUND' })
+      }
       const usage = usageOf(store)
       const subscription = subscriptionOf(store)
       const month = new Date().getMonth()
-      const inThisMonth = store.orders.filter((sale) => new Date(sale.createdAt).getMonth() === month && sale.status !== 'CANCELLED')
+      const orders = branchId ? store.orders.filter((sale) => sale.branchId === branchId) : store.orders
+      const products = branchId ? store.products.filter((row) => row.branchId === branchId) : store.products
+      const inThisMonth = orders.filter((sale) => new Date(sale.createdAt).getMonth() === month && sale.status !== 'CANCELLED')
       const dashboard: Dashboard = {
         storeId,
         storeName: store.summary.businessName,
@@ -31,16 +40,17 @@ export function createMockDashboardService(): DashboardService {
         sales: {
           ordersThisMonth: inThisMonth.length,
           revenueThisMonth: inThisMonth.reduce((sum, sale) => sum + sale.total, 0),
-          pendingOrders: store.orders.filter((sale) => sale.status === 'PENDING').length,
-          preparingOrders: store.orders.filter((sale) => sale.status === 'PREPARING').length,
+          pendingOrders: orders.filter((sale) => sale.status === 'PENDING').length,
+          preparingOrders: orders.filter((sale) => sale.status === 'PREPARING').length,
         },
         subscriptionStatus: subscription.status,
         daysRemaining: subscription.daysRemaining,
         inventory: {
-          listings: store.products.length,
-          outOfStock: store.products.filter((row) => row.quantity === 0).length,
-          lowStock: store.products.filter((row) => row.quantity > 0 && row.quantity <= 3).length,
+          listings: products.length,
+          outOfStock: products.filter((row) => row.quantity === 0).length,
+          lowStock: products.filter((row) => row.quantity > 0 && row.quantity <= 3).length,
         },
+        branchId: branchId ?? null,
       }
       return dashboard
     },

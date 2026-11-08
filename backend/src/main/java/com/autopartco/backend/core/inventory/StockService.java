@@ -228,7 +228,13 @@ public class StockService {
      */
     @Transactional(readOnly = true)
     public StockSummary summaryForStore(UUID storeId) {
-        InventoryRepository.StockCounts counts = inventoryRepository.countStockForStore(storeId);
+        return summaryForStore(storeId, null);
+    }
+
+    /** Como {@link #summaryForStore(UUID)}, solo de la sucursal {@code branchId} ({@code null} = todo el almacén). */
+    @Transactional(readOnly = true)
+    public StockSummary summaryForStore(UUID storeId, UUID branchId) {
+        InventoryRepository.StockCounts counts = inventoryRepository.countStockForStore(storeId, branchId);
         return new StockSummary(counts.getListings(), counts.getOutOfStock(), counts.getLowStock());
     }
 

@@ -1,4 +1,5 @@
-import type { LegalType } from '@/features/seller/api/types'
+import type { Tone } from '@/features/portal/lib/labels'
+import type { LegalType, StoreApplicationStatus } from '@/features/seller/api/types'
 import type { ApplicationDocumentType } from '../api/types'
 
 export const LEGAL_TYPE_LABEL: Record<LegalType, string> = {
@@ -28,4 +29,12 @@ export function startOfDay(ms: number): number {
   const date = new Date(ms)
   date.setHours(0, 0, 0, 0)
   return date.getTime()
+}
+
+/** Estado de una solicitud en la consola: texto siempre visible, el tono solo acompaña. */
+export const APPLICATION_STATUS: Record<StoreApplicationStatus, { label: string; tone: Tone; decision: string }> = {
+  PENDING_REVIEW: { label: 'En revisión', tone: 'warning', decision: 'Pendiente' },
+  CONFIGURATION_PENDING: { label: 'Aprobada, por configurar', tone: 'info', decision: 'Aprobada' },
+  ACTIVE: { label: 'Activa', tone: 'success', decision: 'Aprobada' },
+  REJECTED: { label: 'Rechazada', tone: 'danger', decision: 'Rechazada' },
 }

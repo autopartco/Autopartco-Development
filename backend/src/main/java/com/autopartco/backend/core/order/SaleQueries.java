@@ -5,6 +5,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -111,36 +112,56 @@ public class SaleQueries {
     /** Pedidos del mes en curso, ingresos (sin cancelados) y pedidos pendientes o en preparación. */
     @Transactional(readOnly = true)
     public SalesSummary monthlySummary(UUID storeId) {
-        return jdbcTemplate.queryForObject(MONTHLY_SUMMARY_SQL, (result, row) -> new SalesSummary(
-                result.getLong("month_orders"),
-                result.getBigDecimal("month_revenue"),
-                result.getLong("pending_orders"),
-                result.getLong("preparing_orders")
-        ), storeId);
+        return jdbcTemplate.queryForObject(MONTHLY_SUMMARY_SQL, SALES_SUMMARY_MAPPER, storeId);
     }
+
+    /** Como {@link #monthlySummary(UUID)}, solo de la sucursal {@code branchId} ({@code null} = todo el almacén). */
+    @Transactional(readOnly = true)
+    public SalesSummary monthlySummary(UUID storeId, UUID branchId) {
+        if (branchId == null) {
+            return monthlySummary(storeId);
+        }
+        return jdbcTemplate.queryForObject(
+                MONTHLY_SUMMARY_SQL + "  AND sale.branch_id = ?\n",
+                SALES_SUMMARY_MAPPER,
+                storeId,
+                branchId
+        );
+    }
+
+    private static final RowMapper<SalesSummary> SALES_SUMMARY_MAPPER = (result, row) -> new SalesSummary(
+            result.getLong("month_orders"),
+            result.getBigDecimal("month_revenue"),
+            result.getLong("pending_orders"),
+            result.getLong("preparing_orders")
+    );
 
     /** Ventas del almacén, más recientes primero; {@code status} opcional, tamaño de página entre 1 y 100. */
     @Transactional(readOnly = true)
     public List<SaleSummaryResponse> list(UUID storeId, String status, int page, int size) {
+        return list(storeId, status, null, page, size);
+    }
+
+    /** Como {@link #list(UUID, String, int, int)}, solo de la sucursal {@code branchId} ({@code null} = todas). */
+    @Transactional(readOnly = true)
+    public List<SaleSummaryResponse> list(UUID storeId, String status, UUID branchId, int page, int size) {
         int safeSize = Math.max(1, Math.min(size, MAX_PAGE_SIZE));
         int safePage = Math.max(0, page);
         StringBuilder query = new StringBuilder(ORDER_SELECT);
+        List<Object> args = new ArrayList<>();
+        args.add(storeId);
         if (status != null && !status.isBlank()) {
             query.append(" AND sale_state.code = ?");
+            args.add(status.trim().toUpperCase(Locale.ROOT));
+        }
+        if (branchId != null) {
+            query.append(" AND sale.branch_id = ?");
+            args.add(branchId);
         }
         query.append(" ORDER BY sale.created_at DESC, sale.id LIMIT ? OFFSET ?");
-        Object[] args;
-        if (status == null || status.isBlank()) {
-            args = new Object[] { storeId, safeSize, (long) safePage * safeSize };
-        } else {
-            args = new Object[] {
-                    storeId,
-                    status.trim().toUpperCase(Locale.ROOT),
-                    safeSize,
-                    (long) safePage * safeSize
-            };
-        }
-        return jdbcTemplate.query(query.toString(), ORDER_SUMMARY_MAPPER, args);
+        args.add(safeSize);
+        args.add((long) safePage * safeSize);
+        return jdbcTemplate.query(query.toString(), ORDER_SUMMARY_MAPPER, args.toArray());
     }
 
     /** Detalle de una venta del almacén; si no existe, {@code SELLER_ORDER_NOT_FOUND}. */

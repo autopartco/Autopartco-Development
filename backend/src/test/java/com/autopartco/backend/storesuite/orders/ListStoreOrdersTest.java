@@ -15,8 +15,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.access.AccessDeniedException;
 
 import com.autopartco.backend.core.order.SaleQueries;
+import com.autopartco.backend.core.organization.BranchService;
 import com.autopartco.backend.core.organization.StoreAccess;
 import com.autopartco.backend.core.organization.StorePermissionCodes;
+import com.autopartco.backend.shared.error.NotFoundException;
 
 @ExtendWith(MockitoExtension.class)
 class ListStoreOrdersTest {
@@ -25,6 +27,9 @@ class ListStoreOrdersTest {
 
     @Mock
     private SaleQueries saleQueries;
+
+    @Mock
+    private BranchService branchService;
 
     @InjectMocks
     private ListStoreOrders listStoreOrders;
@@ -46,5 +51,30 @@ class ListStoreOrdersTest {
                 StorePermissionCodes.ORDER_READ
         );
         verifyNoInteractions(saleQueries);
+    }
+
+    @Test
+    void rejectsBranchFromAnotherStoreBeforeQuerying() {
+        UUID storeId = UUID.randomUUID();
+        UUID branchId = UUID.randomUUID();
+        doThrow(new NotFoundException("BRANCH_NOT_FOUND", "No se encontró la sucursal."))
+                .when(branchService).requireInStore(storeId, branchId);
+
+        assertThrows(
+                NotFoundException.class,
+                () -> listStoreOrders.execute(storeId, "user@example.com", null, branchId, 0, 20)
+        );
+        verifyNoInteractions(saleQueries);
+    }
+
+    @Test
+    void filtersByBranchWhenGiven() {
+        UUID storeId = UUID.randomUUID();
+        UUID branchId = UUID.randomUUID();
+
+        listStoreOrders.execute(storeId, "user@example.com", "PENDING", branchId, 1, 20);
+
+        verify(branchService).requireInStore(storeId, branchId);
+        verify(saleQueries).list(storeId, "PENDING", branchId, 1, 20);
     }
 }
