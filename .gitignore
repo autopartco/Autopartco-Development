@@ -24,3 +24,5 @@ graphify-out/.graphify_analysis.json
 *.p12
 *.pfx
 *.jks
+# Salida del generador de datos sintéticos
+tools/seed/out/
