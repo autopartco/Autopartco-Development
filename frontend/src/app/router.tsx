@@ -32,6 +32,7 @@ import {
   PortalIntelligenceAssociationsPage,
   PortalIntelligenceCustomersPage,
   PortalIntelligenceForecastPage,
+  PortalIntelligenceVisibilityPage,
   PortalIntelligenceProductsPage,
   PortalIntelligenceReportsPage,
   PortalInventoryTransfersPage,
@@ -55,6 +56,7 @@ import {
   SellerRegisterPage,
   SellerSetupPage,
   SellPage,
+  StorePage,
   StoresPage,
   VerifyEmailPage,
 } from './lazy-pages'
@@ -89,6 +91,8 @@ export const router = createBrowserRouter([
           { path: 'categoria/:slug', element: <CategoryPage /> },
           { path: 'producto/:id', element: <ProductPage /> },
           { path: 'tiendas', element: <StoresPage /> },
+          // Perfil público del almacén (GET /marketplace/stores/{id}).
+          { path: 'tiendas/:storeId', element: <StorePage /> },
           // Carrito (localStorage) y pago (POST /marketplace/orders; Wompi o SIMULATED en desarrollo).
           { path: 'carrito', element: <CartPage /> },
           { path: 'checkout', element: <CheckoutPage /> },
@@ -150,6 +154,7 @@ export const router = createBrowserRouter([
           { path: 'inteligencia/clientes', element: <RequirePermission permission="ANALYTICS_READ"><PortalIntelligenceCustomersPage /></RequirePermission> },
           { path: 'inteligencia/productos', element: <RequirePermission permission="ANALYTICS_READ"><PortalIntelligenceProductsPage /></RequirePermission> },
           { path: 'inteligencia/se-compran-juntos', element: <RequirePermission permission="ANALYTICS_READ"><PortalIntelligenceAssociationsPage /></RequirePermission> },
+          { path: 'inteligencia/visibilidad', element: <RequirePermission permission="ANALYTICS_READ"><PortalIntelligenceVisibilityPage /></RequirePermission> },
           { path: 'inteligencia/proyeccion', element: <RequirePermission permission="ANALYTICS_READ"><PortalIntelligenceForecastPage /></RequirePermission> },
           { path: 'productos', element: <RequirePermission permission="PRODUCT_READ"><PortalProductsPage /></RequirePermission> },
           { path: 'productos/nuevo', element: <RequirePermission permission="PRODUCT_CREATE"><PortalProductFormPage /></RequirePermission> },

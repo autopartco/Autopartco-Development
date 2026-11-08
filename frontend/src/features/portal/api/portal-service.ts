@@ -1,5 +1,5 @@
 import { DATA_SOURCE } from '@/lib/api'
-import type { MyStore, StorePermission, StoreProfile, StoreProfileUpdate } from './types'
+import type { MyStore, StoreBrandAsset, StorePermission, StoreProfile, StoreProfileUpdate } from './types'
 
 /** Tiendas de la persona, permisos y perfil del almacén. */
 export interface PortalService {
@@ -11,6 +11,10 @@ export interface PortalService {
   profile(storeId: string): Promise<StoreProfile>
   /** `PATCH /stores/{id}`. */
   updateProfile(storeId: string, input: StoreProfileUpdate): Promise<void>
+  /** `POST /stores/{id}/brand/{logo|banner}` (multipart `file`; PNG, JPEG o WebP; logo ≤ 2 MB, banner ≤ 4 MB). */
+  uploadBrand(storeId: string, asset: StoreBrandAsset, file: File): Promise<StoreProfile>
+  /** `DELETE /stores/{id}/brand/{logo|banner}`. */
+  removeBrand(storeId: string, asset: StoreBrandAsset): Promise<void>
 }
 
 let servicePromise: Promise<PortalService> | undefined

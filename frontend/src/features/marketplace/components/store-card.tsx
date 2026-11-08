@@ -5,7 +5,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { formatKm } from '@/features/location/lib/geo'
 import { initials, pluralize } from '@/lib/format'
 import type { StoreSummary } from '../api/types'
-import { storeProductsPath } from '../lib/paths'
+import { storePath } from '../lib/paths'
 import { RecommendedMark } from './product-meta'
 
 function NoData() {
@@ -53,7 +53,7 @@ export function StoreRow({ store, distanceKm }: { store: StoreSummary; distanceK
       <div className="flex min-w-0 flex-col gap-1">
         <h2 className="text-base leading-snug font-semibold text-ap-ink">
           <Link
-            to={storeProductsPath(store.id)}
+            to={storePath(store.id)}
             data-stretched-link
             className="after:absolute after:inset-0 focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-[var(--focus)] group-hover:text-ap-red"
           >

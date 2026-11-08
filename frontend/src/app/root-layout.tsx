@@ -3,6 +3,7 @@ import { Outlet, ScrollRestoration, useLocation } from 'react-router'
 import { SiteFooter } from './site-footer'
 import { SiteHeader } from './site-header'
 import { PageFallback } from './page-fallback'
+import { Toaster } from '@/components/ui/sonner'
 import { usePageviews } from '@/lib/pageview'
 
 /** Mueve el foco al contenido al cambiar de ruta, para lectores de pantalla y teclado. */
@@ -39,6 +40,8 @@ export function RootLayout() {
         </Suspense>
       </main>
       <SiteFooter />
+      {/* Avisos del marketplace (compartir, carrito, reseñas). */}
+      <Toaster position="bottom-center" closeButton />
       <ScrollRestoration />
     </div>
   )

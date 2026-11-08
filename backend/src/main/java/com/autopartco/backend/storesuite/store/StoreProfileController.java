@@ -3,6 +3,13 @@ package com.autopartco.backend.storesuite.store;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestPart;
+import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -28,6 +35,7 @@ public class StoreProfileController {
     private final GetStoreStatus getStoreStatus;
     private final ListMyStorePermissions listMyStorePermissions;
     private final GetStoreProfile getStoreProfile;
+    private final UploadStoreBrand uploadStoreBrand;
 
     @GetMapping("/{storeId}/profile")
     public StoreProfileResponse profile(@PathVariable UUID storeId, Authentication authentication) {
@@ -41,6 +49,23 @@ public class StoreProfileController {
             Authentication authentication
     ) {
         return updateStoreProfile.execute(storeId, authentication.getName(), request);
+    }
+
+    /** Logo o banner (PNG, JPEG o WebP; logo ≤ 2 MB, banner ≤ 4 MB). */
+    @PostMapping(path = "/{storeId}/brand/{assetType}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public StoreProfileResponse uploadBrand(
+            @PathVariable UUID storeId,
+            @PathVariable String assetType,
+            @RequestPart("file") MultipartFile file,
+            Authentication authentication
+    ) {
+        return uploadStoreBrand.upload(storeId, authentication.getName(), assetType, file);
+    }
+
+    @DeleteMapping("/{storeId}/brand/{assetType}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void removeBrand(@PathVariable UUID storeId, @PathVariable String assetType, Authentication authentication) {
+        uploadStoreBrand.remove(storeId, authentication.getName(), assetType);
     }
 
     @GetMapping("/{storeId}/status")

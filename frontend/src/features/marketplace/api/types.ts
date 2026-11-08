@@ -165,6 +165,57 @@ export interface MarketplaceCapabilities {
   filters: ReadonlySet<FilterKey>
 }
 
+/** Contacto público que el almacén decide mostrar; redes como usuario, sin URL. */
+export interface StoreContact {
+  whatsapp?: string
+  phone?: string
+  website?: string
+  instagram?: string
+  facebook?: string
+  tiktok?: string
+}
+
+/** Perfil público del almacén (`GET /marketplace/stores/{id}`). Nunca incluye NIT ni correo. */
+export interface StoreProfile {
+  id: string
+  name: string
+  description?: string
+  logoUrl?: string
+  bannerUrl?: string
+  /** Ciudades de las sedes activas, sin repetir. */
+  cities: string[]
+  branchCount: number
+  /** `YYYY-MM-DD`. */
+  memberSince?: string
+  /** Promedio con un decimal; `undefined` sin reseñas. */
+  ratingAverage?: number
+  ratingCount: number
+  publishedProducts: number
+  contact: StoreContact
+}
+
+export interface StoreReview {
+  id: string
+  rating: number
+  comment?: string
+  /** «Ana P.»: nombre + inicial del apellido. */
+  authorName: string
+  createdAt: string
+}
+
+export interface StoreReviewPage {
+  items: StoreReview[]
+  page: number
+  totalPages: number
+  total: number
+}
+
+export interface StoreReviewInput {
+  orderId: string
+  rating: number
+  comment?: string
+}
+
 export interface MarketplaceService {
   readonly capabilities: MarketplaceCapabilities
   searchProducts(query: ProductQuery): Promise<ProductPage>
@@ -179,6 +230,14 @@ export interface MarketplaceService {
   listVehicleVersions(modelId: string): Promise<VehicleOption[]>
   getCategories(): Promise<Category[]>
   listStores(): Promise<StoreSummary[]>
+  /** 404 (`isNotFoundError`) si el almacén no está publicado. */
+  getStoreProfile(storeId: string): Promise<StoreProfile>
+  /** Páginas desde 1. */
+  listStoreReviews(storeId: string, page: number): Promise<StoreReviewPage>
+  /** Pedidos entregados del comprador con sesión que aún no tienen reseña; vacío sin sesión. */
+  getReviewEligibility(storeId: string): Promise<string[]>
+  /** Exige sesión. 409 `REVIEW_NOT_ALLOWED` o `REVIEW_ALREADY_EXISTS`. */
+  createStoreReview(storeId: string, input: StoreReviewInput): Promise<StoreReview>
 }
 
 export class MarketplaceError extends Error {

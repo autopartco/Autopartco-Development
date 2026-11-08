@@ -1,3 +1,4 @@
+import { apiRequest } from '@/lib/api'
 import { getAnonymousSessionId } from '@/lib/anonymous-session'
 import { getAuthService } from '@/features/auth/api/auth-service'
 import { getAccessToken } from '@/features/auth/api/http/http-auth-service'
@@ -7,7 +8,10 @@ import type {
   ProductImageResponseDto,
   ProductOptionsResponseDto,
   ProductResponseDto,
+  PageResponseDto,
+  StorePublicProfileDto,
   StoreResponseDto,
+  StoreReviewResponseDto,
   VehicleNameOptionDto,
   VehicleVersionOptionDto,
 } from '../dto'
@@ -20,6 +24,8 @@ import {
   type Product,
   type ProductImage,
   type ProductQuery,
+  type StoreProfile,
+  type StoreReview,
   type StoreSummary,
 } from '../types'
 
@@ -41,7 +47,13 @@ const PATHS = {
   stores: '/marketplace/stores',
   storeAsset: (storeId: string, assetType: 'logo' | 'banner') =>
     `/marketplace/stores/${encodeURIComponent(storeId)}/brand/${assetType}`,
+  store: (storeId: string) => `/marketplace/stores/${encodeURIComponent(storeId)}`,
+  storeReviews: (storeId: string) => `/marketplace/stores/${encodeURIComponent(storeId)}/reviews`,
 } as const
+
+function toReview(dto: StoreReviewResponseDto): StoreReview {
+  return { id: dto.id, rating: dto.rating, comment: dto.comment ?? undefined, authorName: dto.authorName, createdAt: dto.createdAt }
+}
 
 /** `FrequentlyBoughtController`: `GET /marketplace/products/{id}/frequently-bought` (público, hasta 6). */
 type FrequentlyBoughtDto = Omit<FrequentlyBoughtItem, 'image'> & { image: string | null }
@@ -136,6 +148,11 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
     return (await response.json()) as T
   }
 
+  /** Las rutas de marca llegan como `/api/v1/...`; con una API en otro dominio se resuelven contra su origen. */
+  function assetUrl(path: string): string {
+    return /^https?:\/\//.test(root) ? new URL(path, root).toString() : path
+  }
+
   function toStore(dto: StoreResponseDto): StoreSummary {
     // TODO(api): StoreResponse no informa ciudad ni cuántos productos publica. Tampoco el distintivo
     // "Recomendado" (`recommended`): sin él no se muestra el badge ni el filtro de tiendas recomendadas.
@@ -201,7 +218,8 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
       textSearch: false,
       sorting: false,
       pagination: true,
-      filters: new Set(['vehicle']),
+      // `storeId` lo filtra el servidor (perfil de la tienda y «Ver más repuestos de esta tienda»).
+      filters: new Set(['vehicle', 'store']),
     },
 
     async searchProducts(query) {
@@ -214,6 +232,7 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
       if (text) params.set('q', text)
       const category = query.category ? [...maps.categories.values()].find((item) => item.slug === query.category) : undefined
       if (category) params.set('categoryId', category.id)
+      if (query.store) params.set('storeId', query.store)
       params.set('page', String(Math.max(0, query.page - 1)))
       params.set('size', String(query.pageSize))
       const qs = params.toString()
@@ -278,6 +297,44 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
     async listStores() {
       const stores = await get<StoreResponseDto[]>(PATHS.stores)
       return stores.map(toStore)
+    },
+
+    async getStoreProfile(storeId): Promise<StoreProfile> {
+      const dto = await get<StorePublicProfileDto>(PATHS.store(storeId))
+      const contact = Object.fromEntries(Object.entries(dto.contact ?? {}).filter(([, value]) => Boolean(value)))
+      return {
+        id: dto.id,
+        name: dto.name,
+        description: dto.description ?? undefined,
+        logoUrl: dto.logoUrl ? assetUrl(dto.logoUrl) : undefined,
+        bannerUrl: dto.bannerUrl ? assetUrl(dto.bannerUrl) : undefined,
+        cities: dto.cities ?? [],
+        branchCount: dto.branchCount,
+        memberSince: dto.memberSince ?? undefined,
+        ratingAverage: dto.rating.average ?? undefined,
+        ratingCount: dto.rating.count,
+        publishedProducts: dto.publishedProducts,
+        contact,
+      }
+    },
+
+    async listStoreReviews(storeId, page) {
+      const dto = await get<PageResponseDto<StoreReviewResponseDto>>(`${PATHS.storeReviews(storeId)}?page=${page}&size=10`)
+      return { items: dto.items.map(toReview), page: dto.page, totalPages: dto.totalPages, total: dto.total }
+    },
+
+    async getReviewEligibility(storeId) {
+      const token = await bearer()
+      if (!token) return []
+      const dto = await apiRequest<{ eligibleOrderIds: string[] }>(`${PATHS.storeReviews(storeId)}/eligibility`, { token })
+      return dto.eligibleOrderIds
+    },
+
+    async createStoreReview(storeId, input) {
+      const token = await bearer()
+      if (!token) throw new MarketplaceError('Inicia sesión para calificar la tienda.', { status: 401 })
+      const dto = await apiRequest<StoreReviewResponseDto>(PATHS.storeReviews(storeId), { method: 'POST', body: input, token })
+      return toReview(dto)
     },
   }
 }

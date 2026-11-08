@@ -76,6 +76,21 @@ export function useStores() {
   return useMarketplace('stores', (service) => service.listStores())
 }
 
+export function useStoreProfile(storeId: string) {
+  return useMarketplace(`store-profile:${storeId}`, (service) => service.getStoreProfile(storeId))
+}
+
+export function useStoreReviews(storeId: string, page: number) {
+  return useMarketplace(`store-reviews:${storeId}:${page}`, (service) => service.listStoreReviews(storeId, page))
+}
+
+/** Pedidos con los que el comprador puede calificar; la clave incluye la sesión para no reutilizar la de otro usuario. */
+export function useReviewEligibility(storeId: string, sessionKey: string | undefined) {
+  return useMarketplace(`store-review-eligibility:${storeId}:${sessionKey ?? 'anon'}`, (service) =>
+    sessionKey ? service.getReviewEligibility(storeId).catch(() => []) : Promise.resolve([]),
+  )
+}
+
 /**
  * Estado de búsqueda guardado en la URL. `fixedCategory` viene de rutas como
  * `/categoria/:slug` y no se escribe en los query params.
