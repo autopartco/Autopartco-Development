@@ -1,4 +1,3 @@
-import { getMarketplaceService } from '@/features/marketplace/api/marketplace-service'
 import { apiRequest } from '@/lib/api'
 import type { LocationService, MapBranch } from '../types'
 
@@ -28,16 +27,10 @@ interface MapBranchDto {
  */
 export function createHttpLocationService(): LocationService {
   return {
-    capabilities: { citySelection: false, distances: false, geolocation: true },
+    capabilities: { geolocation: true },
 
     async listCities() {
       return []
-    },
-
-    async getNearbyStores() {
-      const marketplace = await getMarketplaceService()
-      const stores = await marketplace.listStores()
-      return { stores: stores.map((store) => ({ key: store.id, store })) }
     },
 
     async getMapBranches(area) {

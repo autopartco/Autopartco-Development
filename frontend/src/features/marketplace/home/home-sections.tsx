@@ -4,7 +4,7 @@ import { ChevronRightIcon } from 'lucide-react'
 import { Container } from '@/components/common/page-header'
 import { EmptyState, ErrorState } from '@/components/common/states'
 import { Skeleton } from '@/components/ui/skeleton'
-import { useNearbyStores, useStoreDistances } from '@/features/location/hooks'
+import { useDistanceOrigin, useStoreDistances } from '@/features/location/hooks'
 import { pluralize } from '@/lib/format'
 import { ProductCard, ProductGrid, ProductGridSkeleton } from '../components/product-card'
 import { useCategories, useProductSearch } from '../hooks'
@@ -111,7 +111,7 @@ function CategoriesSection() {
 function FeaturedSection() {
   const result = useProductSearch(FEATURED_QUERY)
   const distances = useStoreDistances()
-  const place = useNearbyStores().data?.origin?.label
+  const place = useDistanceOrigin()
   const items = result.data?.items.slice(0, FEATURED_COUNT)
   return (
     <section aria-labelledby="destacados-titulo" className="border-t border-ap-line py-14 sm:py-20">

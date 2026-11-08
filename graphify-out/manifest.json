@@ -2706,9 +2706,9 @@
     "semantic_hash": ""
   },
   "frontend/src/app/site-header.tsx": {
-    "mtime": 1794150222.8007228,
-    "seen": 1794151336.2292042,
-    "ast_hash": "3380af6241f6c7d27a8eb81952c37689",
+    "mtime": 1794154213.8623428,
+    "seen": 1794156475.8924868,
+    "ast_hash": "ec239b588b67d94e3c2757ed2b09d8ae",
     "semantic_hash": ""
   },
   "frontend/src/components/common/logo.tsx": {
@@ -2880,9 +2880,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/pages/product-page.tsx": {
-    "mtime": 1794150223.3258605,
-    "seen": 1794151336.230604,
-    "ast_hash": "6e5edda373163663865f4ade5352f5b6",
+    "mtime": 1794156189.0171812,
+    "seen": 1794156476.0563254,
+    "ast_hash": "f74bd66bd68be978ed4dac718d470d87",
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/pages/search-page.tsx": {
@@ -2898,9 +2898,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/pages/stores-page.tsx": {
-    "mtime": 1794150223.3415124,
-    "seen": 1794151336.2306237,
-    "ast_hash": "28164d76a9c78be8f94eb508078dfdaf",
+    "mtime": 1794156188.600744,
+    "seen": 1794156476.0583272,
+    "ast_hash": "0e5ebb63c2bbb619a2959f721daadc38",
     "semantic_hash": ""
   },
   "frontend/src/lib/format.ts": {
@@ -3276,9 +3276,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/location/api/http/http-location-service.ts": {
-    "mtime": 1794150223.2129729,
-    "seen": 1794151336.2303205,
-    "ast_hash": "bb1e8d5e81ab5a1e195a71a4c8b1db7f",
+    "mtime": 1794156107.2661343,
+    "seen": 1794156476.031379,
+    "ast_hash": "dfcbb9c9fccd01a8b7c9508ae48083b3",
     "semantic_hash": ""
   },
   "frontend/src/features/location/api/location-service.ts": {
@@ -3288,21 +3288,21 @@
     "semantic_hash": ""
   },
   "frontend/src/features/location/api/mock/mock-location-service.ts": {
-    "mtime": 1794150223.2200975,
-    "seen": 1794151336.2303317,
-    "ast_hash": "785eda4709aac16f61d4164414da4905",
+    "mtime": 1794156129.2360232,
+    "seen": 1794156476.0321715,
+    "ast_hash": "3832e1ca3b76b85983da60c3d7d2a2f7",
     "semantic_hash": ""
   },
   "frontend/src/features/location/api/mock/mock-locations.ts": {
-    "mtime": 1794150223.226269,
-    "seen": 1794151336.2303374,
-    "ast_hash": "d76fa72323054df874e55522b12b5b00",
+    "mtime": 1794156175.621669,
+    "seen": 1794156476.0321753,
+    "ast_hash": "51759c24e4923ae2c78f83cca9705125",
     "semantic_hash": ""
   },
   "frontend/src/features/location/api/types.ts": {
-    "mtime": 1794150223.2316844,
-    "seen": 1794151336.230342,
-    "ast_hash": "044cd1b76e6a8ab954794e92f507bf9a",
+    "mtime": 1794156096.797919,
+    "seen": 1794156476.0321834,
+    "ast_hash": "a95d4d937c5f51d6c73577e56744cca1",
     "semantic_hash": ""
   },
   "frontend/src/features/location/city-store.ts": {
@@ -3318,9 +3318,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/location/hooks.ts": {
-    "mtime": 1794150223.241958,
-    "seen": 1794151336.2303567,
-    "ast_hash": "58a73bcd1a86ad150255922b0250c66c",
+    "mtime": 1794156162.911501,
+    "seen": 1794156476.0335875,
+    "ast_hash": "9d9e936ac467b4f532aadf9cfc8a4fcd",
     "semantic_hash": ""
   },
   "frontend/src/features/location/lib/geo.ts": {
@@ -3360,9 +3360,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/home/home-sections.tsx": {
-    "mtime": 1794150223.3042228,
-    "seen": 1794151336.2305422,
-    "ast_hash": "a301916019428e44ecf2ebc929bdfc57",
+    "mtime": 1794156189.1964283,
+    "seen": 1794156476.0467432,
+    "ast_hash": "90843fd7974a423ceaa41190a4acb9f0",
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/home/how-it-works.tsx": {
@@ -7500,9 +7500,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/home/home-hero.tsx": {
-    "mtime": 1794150223.3015254,
-    "seen": 1794151336.2305222,
-    "ast_hash": "1a9beca5e87223d6e377e8f69482d54c",
+    "mtime": 1794156322.0594988,
+    "seen": 1794156476.046738,
+    "ast_hash": "e88b71dfe839bd24f685f607c1ccd68f",
     "semantic_hash": ""
   },
   "frontend/src/features/portal/components/segmented.ts": {
@@ -7602,9 +7602,9 @@
     "semantic_hash": ""
   },
   "docs/architecture/2026-11-08-mapa-cobertura-plan.md": {
-    "mtime": 1794150834.9002254,
-    "seen": 1794151336.2329676,
-    "ast_hash": "3a760b9dc7e3644886c3d7421d3ed40f",
+    "mtime": 1794155995.7248328,
+    "seen": 1794156476.4277408,
+    "ast_hash": "f75879a30ca23af541ca7ba36732ee41",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/shared/web/SlidingWindowRateLimiter.java": {
@@ -7620,15 +7620,39 @@
     "semantic_hash": ""
   },
   "frontend/public/map/autopartco-style.json": {
-    "mtime": 1794153343.810914,
-    "seen": 1794153714.5005324,
-    "ast_hash": "508fb5eadeb10046a8539960f72fb3b6",
+    "mtime": 1794155365.8621082,
+    "seen": 1794156475.8884506,
+    "ast_hash": "b96f59da66d24c9750795379a7f85c22",
     "semantic_hash": ""
   },
   "frontend/src/features/location/lib/map-config.ts": {
     "mtime": 1794152527.3081224,
     "seen": 1794153714.6970472,
     "ast_hash": "30b41f1f42bb28fdf430118ee24ba3ce",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/location/api/photon-geocoder.ts": {
+    "mtime": 1794155043.1544497,
+    "seen": 1794156476.032179,
+    "ast_hash": "fefeafed8d0e996cfee54c34997aa39b",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/location/components/coverage-map.tsx": {
+    "mtime": 1794155353.855673,
+    "seen": 1794156476.033574,
+    "ast_hash": "7d693b44ad5bf4f006122ff91437500f",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/location/components/location-picker.tsx": {
+    "mtime": 1794154401.9613738,
+    "seen": 1794156476.03358,
+    "ast_hash": "0eafb1511b5e3b79906ff642d3587371",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/location/location-store.ts": {
+    "mtime": 1794153777.6596105,
+    "seen": 1794156476.0355546,
+    "ast_hash": "906e67fa0ac445dc4c6faff8c70b961e",
     "semantic_hash": ""
   }
 }

@@ -3324,8 +3324,8 @@
     "semantic_hash": ""
   },
   "frontend/src/features/location/lib/geo.ts": {
-    "mtime": 1794150223.2460644,
-    "seen": 1794151336.2303617,
+    "mtime": 1794152836.3904614,
+    "seen": 1794153714.697038,
     "ast_hash": "a1df359698f8c59874c148c9740f39a8",
     "semantic_hash": ""
   },
@@ -7617,6 +7617,18 @@
     "mtime": 1794151797.693475,
     "seen": 1794152258.630353,
     "ast_hash": "f15f920d9e5da87375310715510460c3",
+    "semantic_hash": ""
+  },
+  "frontend/public/map/autopartco-style.json": {
+    "mtime": 1794153343.810914,
+    "seen": 1794153714.5005324,
+    "ast_hash": "508fb5eadeb10046a8539960f72fb3b6",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/location/lib/map-config.ts": {
+    "mtime": 1794152527.3081224,
+    "seen": 1794153714.6970472,
+    "ast_hash": "30b41f1f42bb28fdf430118ee24ba3ce",
     "semantic_hash": ""
   }
 }

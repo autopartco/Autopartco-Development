@@ -10,7 +10,7 @@ const SEARCH_EXAMPLES = ['Pastillas de freno', 'Filtro de aceite', 'Kit de embra
 
 /**
  * Inicio (§7.1): titular a la izquierda, el buscador como herramienta principal con
- * ejemplos, y al lado la cobertura real (almacenes con sede en la ciudad elegida).
+ * ejemplos, y al lado la cobertura real (almacenes con sede en el área elegida).
  * En móvil se apila: titular, buscador, ejemplos y almacenes.
  */
 export function HomeHero() {
