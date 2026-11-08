@@ -16,7 +16,9 @@ interface FormSectionProps {
 }
 
 /**
- * Sección de un formulario: agrupa campos relacionados con un título y una ayuda. Usa `fieldset`
+ * Sección de un formulario (§8.2/§8.3): sección abierta, sin tarjeta ni borde propio; no
+ * envolverla en `Card` ni anidar tarjetas dentro. Agrupa campos relacionados con un título
+ * y una ayuda. Usa `fieldset`
  * para que `disabled` bloquee los controles y los lectores de pantalla anuncien el grupo; el
  * título (`h2`) es el nombre accesible.
  */
@@ -36,11 +38,11 @@ export function FormSection({ title, description, aside, disabled, className, ch
     >
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div className="flex min-w-0 flex-col gap-1">
-          <h2 id={titleId} tabIndex={-1} className="text-xl font-extrabold tracking-tight outline-offset-4 focus-visible:rounded-sm">
+          <h2 id={titleId} tabIndex={-1} className="text-block-title text-ap-ink outline-offset-4 focus-visible:rounded-sm">
             {title}
           </h2>
           {description ? (
-            <p id={descriptionId} className="max-w-prose text-sm text-muted-foreground">
+            <p id={descriptionId} className="max-w-prose text-sm text-ap-muted">
               {description}
             </p>
           ) : null}

@@ -51,21 +51,28 @@ function Suggestion({ item }: { item: FrequentlyBoughtItem }) {
   }
 
   return (
-    <li className="flex gap-3 rounded-xl bg-card p-3 shadow-[0_0_0_1px_rgb(0_0_0/0.07)]">
-      <SmartImage src={item.image} alt="" width={96} height={72} frameClassName="aspect-[4/3] w-24 shrink-0 rounded-md" />
+    <li className="flex gap-4 py-4">
+      <SmartImage
+        src={item.image}
+        alt=""
+        width={80}
+        height={80}
+        frameClassName="aspect-square w-20 shrink-0 rounded-md border border-ap-line"
+        className="p-1"
+      />
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <Link to={productPath(item.productId)} className="line-clamp-2 text-sm leading-snug font-semibold underline-offset-4 hover:underline">
+        <Link to={productPath(item.productId)} className="line-clamp-2 text-sm leading-snug font-semibold text-ap-ink underline-offset-4 hover:text-ap-red hover:underline">
           {item.name}
         </Link>
-        <p className="text-xs text-muted-foreground">{REASON_TEXT[item.reason]}</p>
-        <p className="font-semibold tabular-nums">{formatCOP(item.price)}</p>
+        <p className="text-xs text-ap-muted">{REASON_TEXT[item.reason]}</p>
+        <p className="ap-price text-base text-ap-ink">{formatCOP(item.price)}</p>
         <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1">
-          <Button type="button" variant="outline" className="h-11 px-3" disabled={state === 'adding'} onClick={() => void add()}>
+          <Button type="button" variant="outline" className="px-3" disabled={state === 'adding'} onClick={() => void add()}>
             {state === 'added' ? <CheckIcon aria-hidden /> : <ShoppingCartIcon aria-hidden />}
             {state === 'adding' ? 'Agregando…' : state === 'added' ? 'Agregado' : 'Agregar al carrito'}
           </Button>
           {state === 'added' ? (
-            <Link to="/carrito" className="inline-flex min-h-11 items-center text-sm font-semibold text-brand underline-offset-4 hover:underline">
+            <Link to="/carrito" className="inline-flex min-h-11 items-center text-sm font-semibold text-ap-red underline-offset-4 hover:underline">
               Ver carrito
             </Link>
           ) : null}
@@ -80,11 +87,11 @@ export function FrequentlyBought({ productId }: { productId: string }) {
   const items = useFrequentlyBought(productId)
   if (!items.data || items.data.length === 0) return null
   return (
-    <section aria-labelledby="se-compran-juntos" className="flex flex-col gap-4">
-      <h2 id="se-compran-juntos" className="text-block-title">
+    <section aria-labelledby="se-compran-juntos" className="flex flex-col gap-3">
+      <h2 id="se-compran-juntos" className="text-block-title text-ap-ink">
         Se compran juntos
       </h2>
-      <ul className="grid gap-3 sm:grid-cols-2">
+      <ul className="grid border-t border-ap-line sm:grid-cols-2 sm:gap-x-8 [&>li]:border-b [&>li]:border-ap-line">
         {items.data.map((item) => (
           <Suggestion key={item.productId} item={item} />
         ))}

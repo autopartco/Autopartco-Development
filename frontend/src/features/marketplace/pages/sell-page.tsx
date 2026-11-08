@@ -1,5 +1,4 @@
 import { Link } from 'react-router'
-import { FileTextIcon } from 'lucide-react'
 import { Container, PageIntro } from '@/components/common/page-header'
 import { Button } from '@/components/ui/button'
 import { useSession } from '@/features/auth/hooks'
@@ -43,16 +42,18 @@ function stepsFor(signedIn: boolean) {
 
 function DocumentList({ title, keys }: { title: string; keys: readonly (keyof typeof DOCUMENT_LABELS)[] }) {
   return (
-    <div className="flex flex-col gap-3 rounded-xl bg-card p-5 shadow-[0_0_0_1px_rgb(0_0_0/0.07)]">
-      <h3 className="text-lg leading-tight font-bold tracking-tight">{title}</h3>
-      <ul className="flex flex-col gap-2 text-sm">
-        {keys.map((key) => (
-          <li key={key} className="flex items-start gap-2">
-            <FileTextIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+    <div className="flex flex-col gap-2">
+      <h3 className="text-base font-semibold text-ap-ink">{title}</h3>
+      <ol className="flex flex-col divide-y divide-ap-line border-y border-ap-line text-sm">
+        {keys.map((key, index) => (
+          <li key={key} className="grid grid-cols-[2rem_minmax(0,1fr)] gap-2 py-2.5 text-ap-ink">
+            <span className="ap-ref text-ap-muted" aria-hidden>
+              {String(index + 1).padStart(2, '0')}
+            </span>
             {DOCUMENT_LABELS[key]}
           </li>
         ))}
-      </ul>
+      </ol>
     </div>
   )
 }
@@ -71,7 +72,7 @@ export default function SellPage() {
       <title>Vende en Autopartco | Autopartco</title>
       <PageIntro
         crumbs={[{ label: 'Inicio', to: '/' }, { label: 'Vender en Autopartco' }]}
-        label="Para almacenes"
+        label="Almacenes / Registro"
         title="Vende en Autopartco"
         description={
           <p>
@@ -82,43 +83,47 @@ export default function SellPage() {
         className="max-w-3xl"
       >
         <div className="mt-3 flex flex-wrap gap-2">
-          <Button className="h-11 px-5 text-base" nativeButton={false} render={<Link to={cta.to} />}>
+          <Button size="lg" nativeButton={false} render={<Link to={cta.to} />}>
             {cta.label}
           </Button>
-          <Button variant="outline" className="h-11 px-5" nativeButton={false} render={<Link to="/tiendas" />}>
+          <Button variant="outline" size="lg" nativeButton={false} render={<Link to="/tiendas" />}>
             Ver almacenes que ya publican
           </Button>
         </div>
       </PageIntro>
 
-      <section aria-labelledby="vender-pasos" className="mt-14 sm:mt-20">
-        <p className="label-mono text-muted-foreground">4 pasos</p>
-        <h2 id="vender-pasos" className="mt-3 text-section">
+      <section aria-labelledby="vender-pasos" className="mt-12 sm:mt-16">
+        <p className="ap-index">Proceso / {steps.length} pasos</p>
+        <h2 id="vender-pasos" className="mt-2 text-section text-ap-ink">
           Así entra tu almacén
         </h2>
-        <ol className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <ol className="mt-6 grid max-w-3xl border-t border-ap-graphite">
           {steps.map((step, index) => (
-            <li key={step.title} className="flex flex-col gap-3 rounded-xl bg-card p-5 shadow-[0_0_0_1px_rgb(0_0_0/0.07)]">
-              <span className="grid size-8 place-items-center rounded-full bg-thread font-mono text-xs font-bold text-white" aria-hidden>
-                {index + 1}
+            <li key={step.title} className="grid grid-cols-[2.5rem_minmax(0,1fr)] gap-x-4 border-b border-ap-line py-4 sm:grid-cols-[2.5rem_14rem_minmax(0,1fr)]">
+              <span className="ap-ref pt-0.5 text-ap-muted" aria-hidden>
+                {String(index + 1).padStart(2, '0')}
               </span>
-              <h3 className="text-lg leading-tight font-bold tracking-tight">{step.title}</h3>
-              <p className="text-sm text-muted-foreground">{step.body}</p>
+              <h3 className="font-semibold text-ap-ink">
+                <span className="sr-only">Paso {index + 1}: </span>
+                {step.title}
+              </h3>
+              <p className="col-start-2 text-sm text-ap-muted sm:col-start-3">{step.body}</p>
             </li>
           ))}
         </ol>
       </section>
 
-      <section aria-labelledby="vender-documentos" className="mt-14 sm:mt-20">
-        <p className="label-mono text-muted-foreground">PDF, PNG o JPG de hasta 10 MB</p>
-        <h2 id="vender-documentos" className="mt-3 text-section">
+      <section aria-labelledby="vender-documentos" className="mt-12 sm:mt-16">
+        <p className="ap-index">Documentos / PDF, PNG o JPG de hasta 10 MB</p>
+        <h2 id="vender-documentos" className="mt-2 text-section text-ap-ink">
           Documentos que vas a necesitar
         </h2>
-        <div className="mt-8 grid gap-3 md:grid-cols-2">
+        <p className="mt-2 max-w-2xl text-ap-muted">Pedimos documentos distintos según el tipo de persona que registra el almacén.</p>
+        <div className="mt-6 grid gap-8 md:grid-cols-2 md:gap-10">
           <DocumentList title="Persona natural" keys={REQUIRED_DOCUMENTS.NATURAL_PERSON} />
           <DocumentList title="Empresa (persona jurídica)" keys={REQUIRED_DOCUMENTS.LEGAL_ENTITY} />
         </div>
-        <Button className="mt-8 h-11 px-5 text-base" nativeButton={false} render={<Link to={cta.to} />}>
+        <Button size="lg" className="mt-8" nativeButton={false} render={<Link to={cta.to} />}>
           {cta.label}
         </Button>
       </section>

@@ -28,7 +28,7 @@ export function RootLayout() {
       <a
         href="#contenido"
         // Aparece sobre la cabecera carbón: fondo blanco para que se distinga.
-        className="sr-only z-50 rounded-md bg-white px-4 py-2.5 font-semibold text-foreground shadow-lg focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+        className="sr-only z-50 rounded-md bg-ap-white px-4 py-2.5 font-semibold text-ap-ink shadow-overlay focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
       >
         Saltar al contenido
       </a>

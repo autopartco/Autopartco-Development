@@ -1,4 +1,3 @@
-import { AnimatePresence, m } from 'motion/react'
 import { XIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatCOP } from '@/lib/format'
@@ -68,29 +67,21 @@ export function ActiveFilters({ query, options, stores, fixedCategory = false, o
   if (chips.length === 0) return null
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <span className="sr-only">Filtros aplicados:</span>
+      <p className="ap-index mr-1">Filtros activos ({chips.length})</p>
       <ul className="contents">
-        <AnimatePresence initial={false}>
-          {chips.map((chip) => (
-            <m.li
-              key={chip.key}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95, transition: { duration: 0.1 } }}
-              transition={{ duration: 0.16, ease: [0.23, 1, 0.32, 1] }}
+        {chips.map((chip) => (
+          <li key={chip.key}>
+            <button
+              type="button"
+              onClick={() => onChange(chip.patch)}
+              aria-label={`Quitar filtro: ${chip.label}`}
+              className="inline-flex h-9 items-center gap-1.5 rounded-sm border border-ap-line-strong bg-ap-white pr-2 pl-2.5 text-sm text-ap-ink transition-colors hover:border-ap-graphite hover:bg-ap-paper pointer-coarse:h-11"
             >
-              <button
-                type="button"
-                onClick={() => onChange(chip.patch)}
-                className="inline-flex h-9 items-center gap-1.5 rounded-full border border-border bg-card pr-2.5 pl-3.5 text-sm pointer-coarse:h-11 transition-colors hover:border-foreground/40 active:scale-[0.97]"
-              >
-                {chip.label}
-                <XIcon className="size-3.5 text-muted-foreground" aria-hidden />
-                <span className="sr-only">(quitar filtro)</span>
-              </button>
-            </m.li>
-          ))}
-        </AnimatePresence>
+              {chip.label}
+              <XIcon className="size-3.5 text-ap-muted" aria-hidden />
+            </button>
+          </li>
+        ))}
       </ul>
       <Button variant="link" className="h-9 px-1 pointer-coarse:h-11" onClick={onClear}>
         Limpiar filtros

@@ -6,18 +6,16 @@ import { formatPaymentDeadline, isSafeCheckoutUrl } from '@/features/checkout/li
 import { orderResultPath } from '@/features/checkout/lib/paths'
 import { Container, PageIntro } from '@/components/common/page-header'
 import { EmptyState, ErrorState } from '@/components/common/states'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatOrderDate } from '@/features/checkout/lib/labels'
-import { StatusBadge } from '@/features/portal/components/status-badge'
 import { ApiError } from '@/lib/api'
 import { formatCOP } from '@/lib/format'
 import { useAsync } from '@/lib/use-async'
 import { getOrdersService } from '../api/orders-service'
 import { SaleTracking } from '../components/sale-tracking'
 import { buyerOrderStatus, isUnpaidOrder, orderStatus, ordersPath } from '../lib/labels'
-
-const CARD = 'flex flex-col gap-4 rounded-2xl bg-card p-5 shadow-[0_0_0_1px_rgb(0_0_0/0.07),0_18px_40px_-28px_rgb(23_27_32/0.35)]'
 
 export default function OrderDetailPage() {
   const { id = '' } = useParams()
@@ -32,7 +30,7 @@ export default function OrderDetailPage() {
         <title>{notFound ? 'Pedido no encontrado | Autopartco' : 'Mis pedidos | Autopartco'}</title>
         {notFound ? (
           <EmptyState icon={<PackageSearchIcon />} title="No encontramos este pedido" description="Puede que el enlace esté incompleto o que el pedido no sea de tu cuenta.">
-            <Button className="h-11 px-5" nativeButton={false} render={<Link to={ordersPath()} />}>
+            <Button nativeButton={false} render={<Link to={ordersPath()} />}>
               Ver mis pedidos
             </Button>
           </EmptyState>
@@ -46,11 +44,16 @@ export default function OrderDetailPage() {
   if (!order || result.isStale) {
     return (
       <Container className="py-6 sm:py-8">
-        <div role="status" aria-busy className="flex flex-col gap-4">
-          <span className="sr-only">Cargando el pedido</span>
+        <span className="sr-only" role="status">
+          Cargando el pedido
+        </span>
+        <div className="flex flex-col gap-4" aria-hidden>
           <Skeleton className="h-4 w-48" />
           <Skeleton className="h-9 w-2/3 max-w-xl" />
-          <Skeleton className="h-64 w-full rounded-2xl" />
+          <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
+            <Skeleton className="h-64 w-full" />
+            <Skeleton className="h-64 w-full rounded-xl" />
+          </div>
         </div>
       </Container>
     )
@@ -63,58 +66,70 @@ export default function OrderDetailPage() {
       <title>{`Pedido #${order.orderNumber} | Autopartco`}</title>
       <PageIntro
         crumbs={[{ label: 'Inicio', to: '/' }, { label: 'Mis pedidos', to: ordersPath() }, { label: `Pedido #${order.orderNumber}` }]}
-        label={`Realizado el ${formatOrderDate(order.createdAt)}`}
+        label={
+          <>
+            Realizado el <time dateTime={order.createdAt}>{formatOrderDate(order.createdAt)}</time>
+          </>
+        }
         title={`Pedido #${order.orderNumber}`}
       >
-        <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
+        <Badge variant={status.tone} className="h-auto min-h-6 px-2 py-0.5 text-sm whitespace-normal">
+          <span className="sr-only">Estado: </span>
+          {status.label}
+        </Badge>
       </PageIntro>
 
       {unpaid ? <UnpaidOrderNotice orderId={order.orderId} orderStatus={order.status} /> : null}
 
-      <div className="grid items-start gap-8 lg:grid-cols-[1fr_22rem]">
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="flex flex-col gap-4">
-          <h2 className="text-block-title">Tiendas y envíos</h2>
-          <ul className="flex flex-col gap-4">
+          <h2 className="text-block-title text-ap-ink">Tiendas y envíos</h2>
+          <ul className="flex flex-col gap-10">
             {order.sales.map((sale) => {
               const saleStatus = orderStatus(sale.status)
               return (
                 <li key={sale.saleId}>
-                  <section aria-label={`${sale.storeName}, ${sale.branchName}`} className={CARD}>
-                    <header className="flex flex-wrap items-start justify-between gap-2">
+                  <section aria-label={`${sale.storeName}, ${sale.branchName}`} className="flex flex-col">
+                    <header className="flex flex-wrap items-start justify-between gap-2 border-b border-ap-graphite pb-2">
                       <div className="flex min-w-0 items-start gap-2.5">
-                        <StoreIcon className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
+                        <StoreIcon className="mt-0.5 size-5 shrink-0 text-ap-muted" aria-hidden />
                         <div className="min-w-0">
-                          <h3 className="font-semibold">{sale.storeName}</h3>
-                          <p className="text-sm text-muted-foreground">{sale.branchName}</p>
+                          <h3 className="font-semibold text-ap-ink">{sale.storeName}</h3>
+                          <p className="text-sm text-ap-muted">Sucursal {sale.branchName}</p>
                         </div>
                       </div>
-                      {unpaid ? null : <StatusBadge tone={saleStatus.tone}>{saleStatus.label}</StatusBadge>}
+                      {unpaid ? null : (
+                        <Badge variant={saleStatus.tone}>
+                          <span className="sr-only">Estado de la venta: </span>
+                          {saleStatus.label}
+                        </Badge>
+                      )}
                     </header>
 
-                    <ul className="flex flex-col divide-y divide-border">
+                    <ul className="flex flex-col divide-y divide-ap-line">
                       {sale.items.map((item) => (
-                        <li key={item.productId} className="flex justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                        <li key={item.productId} className="flex justify-between gap-3 py-3">
                           <div className="min-w-0">
-                            <p className="text-sm font-medium">{item.name}</p>
-                            <p className="text-sm text-muted-foreground">
+                            {item.partNumber ? <p className="ap-ref text-xs text-ap-muted">REF. {item.partNumber}</p> : null}
+                            <p className="text-sm font-medium text-ap-ink">{item.name}</p>
+                            <p className="font-mono text-xs text-ap-muted tabular-nums">
                               {item.quantity} × {formatCOP(item.unitPrice)}
-                              {item.partNumber ? <span className="label-mono ml-2">Ref. {item.partNumber}</span> : null}
                             </p>
                           </div>
-                          <p className="shrink-0 text-sm font-semibold tabular-nums">{formatCOP(item.lineTotal)}</p>
+                          <p className="ap-price ap-num shrink-0 text-sm text-ap-ink">{formatCOP(item.lineTotal)}</p>
                         </li>
                       ))}
                     </ul>
 
-                    <dl className="flex flex-col gap-1 border-t border-border pt-3 text-sm">
+                    <dl className="flex flex-col gap-1 border-t border-ap-line pt-3 text-sm">
                       <Row label="Subtotal" value={formatCOP(sale.subtotal)} />
                       <Row label="Envío" value={sale.shippingCost > 0 ? formatCOP(sale.shippingCost) : 'Sin costo'} />
                       <Row label="Total de esta tienda" value={formatCOP(sale.total)} strong />
                     </dl>
 
                     {unpaid ? null : (
-                      <div className="border-t border-border pt-4">
-                        <h4 className="mb-3 text-sm font-semibold">Envío</h4>
+                      <div className="mt-5 border-t border-ap-line pt-4">
+                        <h4 className="ap-index mb-3">Seguimiento del envío</h4>
                         <SaleTracking shipment={sale.shipment} />
                       </div>
                     )}
@@ -125,22 +140,22 @@ export default function OrderDetailPage() {
           </ul>
         </div>
 
-        <aside className="flex flex-col gap-4" aria-label="Pago y entrega">
-          <section className={CARD}>
-            <h2 className="text-block-title">Pago</h2>
-            <p className="text-3xl font-extrabold tracking-tight tabular-nums">{formatCOP(order.total)}</p>
-            <dl className="flex flex-col gap-1 text-sm">
-              <Row label="Subtotal" value={formatCOP(order.subtotal)} />
-              <Row label="Envío" value={order.shippingTotal > 0 ? formatCOP(order.shippingTotal) : 'Sin costo'} />
-              <Row label="Método" value={order.payment.methodName} />
-              <Row label="Fecha" value={formatOrderDate(order.payment.paidAt ?? order.createdAt)} />
-              <Row label="Referencia" value={<span className="label-mono break-all normal-case">{order.payment.reference}</span>} />
+        <aside className="flex flex-col gap-5 rounded-xl border border-ap-line bg-ap-white p-5" aria-label="Pago y entrega">
+          <section className="flex flex-col gap-3">
+            <h2 className="text-block-title text-ap-ink">Pago</h2>
+            <p className="ap-price text-2xl text-ap-ink">{formatCOP(order.total)}</p>
+            <dl className="flex flex-col divide-y divide-ap-line border-y border-ap-line text-sm">
+              <Row label="Subtotal" value={formatCOP(order.subtotal)} spaced />
+              <Row label="Envío" value={order.shippingTotal > 0 ? formatCOP(order.shippingTotal) : 'Sin costo'} spaced />
+              <Row label="Método" value={order.payment.methodName} spaced />
+              <Row label="Fecha" value={formatOrderDate(order.payment.paidAt ?? order.createdAt)} spaced />
+              <Row label="Referencia" value={<span className="ap-ref break-all">{order.payment.reference}</span>} spaced />
             </dl>
           </section>
 
-          <section className={CARD}>
-            <h2 className="text-block-title">Entrega en</h2>
-            <address className="text-sm not-italic text-foreground/85">
+          <section className="flex flex-col gap-2 border-t border-ap-line pt-5">
+            <h2 className="text-block-title text-ap-ink">Entrega en</h2>
+            <address className="text-sm not-italic text-ap-ink">
               {order.deliveryAddress.addressLine}
               {order.deliveryAddress.addressComplement ? `, ${order.deliveryAddress.addressComplement}` : ''}
               <br />
@@ -149,7 +164,7 @@ export default function OrderDetailPage() {
             </address>
           </section>
 
-          <Button variant="outline" className="h-11 px-5" nativeButton={false} render={<Link to={ordersPath()} />}>
+          <Button variant="outline" nativeButton={false} render={<Link to={ordersPath()} />}>
             Volver a mis pedidos
           </Button>
         </aside>
@@ -170,23 +185,23 @@ function UnpaidOrderNotice({ orderId, orderStatus: code }: { orderId: string; or
   if (code === 'AWAITING_PAYMENT') {
     const deadline = formatPaymentDeadline(data?.expiresAt ?? null)
     return (
-      <div role="status" aria-busy={payment.status === 'loading' || undefined} className="mb-6 flex flex-col gap-3 rounded-lg border border-stock-low/40 bg-stock-low/10 p-4 text-sm sm:flex-row sm:items-center sm:justify-between">
+      <div
+        role="status"
+        aria-busy={payment.status === 'loading' || undefined}
+        className="mb-8 flex flex-col gap-3 rounded-xl border border-ap-warning/30 bg-ap-warning-soft p-4 text-sm text-ap-ink sm:flex-row sm:items-center sm:justify-between"
+      >
         <div className="flex items-start gap-2.5">
-          <ClockIcon className="mt-0.5 size-5 shrink-0 text-foreground/70" aria-hidden />
+          <ClockIcon className="mt-0.5 size-5 shrink-0 text-ap-warning" aria-hidden />
           <p>
             <strong className="font-semibold">Pago pendiente.</strong>{' '}
             {deadline ? `Completa el pago antes de las ${deadline} para confirmar tu pedido.` : 'Completa el pago para confirmar tu pedido.'}
           </p>
         </div>
         <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
-          <Button variant="outline" className="h-11 bg-card px-4" nativeButton={false} render={<Link to={orderResultPath(orderId)} />}>
+          <Button variant="outline" className="bg-ap-white" nativeButton={false} render={<Link to={orderResultPath(orderId)} />}>
             Ver estado del pago
           </Button>
-          {checkoutUrl ? (
-            <Button className="h-11 px-4" onClick={() => window.location.assign(checkoutUrl)}>
-              Ir a pagar
-            </Button>
-          ) : null}
+          {checkoutUrl ? <Button onClick={() => window.location.assign(checkoutUrl)}>Ir a pagar</Button> : null}
         </div>
       </div>
     )
@@ -194,8 +209,8 @@ function UnpaidOrderNotice({ orderId, orderStatus: code }: { orderId: string; or
 
   const late = data?.status === 'APPROVED'
   return (
-    <div role="status" className="mb-6 flex items-start gap-2.5 rounded-lg bg-concrete p-4 text-sm">
-      <InfoIcon className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
+    <div role="status" className="mb-8 flex items-start gap-2.5 rounded-xl border border-ap-line bg-ap-paper p-4 text-sm text-ap-ink">
+      <InfoIcon className="mt-0.5 size-5 shrink-0 text-ap-muted" aria-hidden />
       <p>
         <strong className="font-semibold">Cancelado: pago no completado.</strong>{' '}
         {late
@@ -206,11 +221,11 @@ function UnpaidOrderNotice({ orderId, orderStatus: code }: { orderId: string; or
   )
 }
 
-function Row({ label, value, strong }: { label: string; value: ReactNode; strong?: boolean }) {
+function Row({ label, value, strong, spaced }: { label: string; value: ReactNode; strong?: boolean; spaced?: boolean }) {
   return (
-    <div className={`flex justify-between gap-3 ${strong ? 'font-semibold' : ''}`}>
-      <dt className={strong ? '' : 'text-muted-foreground'}>{label}</dt>
-      <dd className="min-w-0 text-right tabular-nums">{value}</dd>
+    <div className={`flex items-baseline justify-between gap-3 ${spaced ? 'py-2.5' : ''} ${strong ? 'font-semibold text-ap-ink' : ''}`}>
+      <dt className={strong ? '' : 'shrink-0 text-ap-muted'}>{label}</dt>
+      <dd className={`ap-num min-w-0 text-ap-ink ${strong ? 'ap-price' : ''}`}>{value}</dd>
     </div>
   )
 }

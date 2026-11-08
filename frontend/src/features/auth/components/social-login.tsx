@@ -54,7 +54,7 @@ function GoogleButton({ mode, disabled, onToken }: { mode: 'login' | 'register';
       </Button>
     )
   }
-  if (failed) return <p className="text-sm text-muted-foreground">No pudimos cargar el botón de Google. Recarga la página o ingresa con tu correo.</p>
+  if (failed) return <p className="text-sm text-ap-muted">No pudimos cargar el botón de Google. Recarga la página o ingresa con tu correo.</p>
   return <div ref={ref} className={disabled ? 'pointer-events-none flex min-h-11 w-full justify-center opacity-60' : 'flex min-h-11 w-full justify-center'} />
 }
 
@@ -167,9 +167,9 @@ export function SocialLogin({ mode, onSession }: SocialLoginProps) {
           Continuar con Facebook
         </Button>
       ) : null}
-      {busy && !pendingSignup ? <p role="status" className="text-sm text-muted-foreground">Validando tu ingreso…</p> : null}
-      <div className="flex items-center gap-3 text-sm text-muted-foreground" aria-hidden>
-        <span className="h-px flex-1 bg-border" />o con tu correo<span className="h-px flex-1 bg-border" />
+      {busy && !pendingSignup ? <p role="status" className="text-sm text-ap-muted">Validando tu ingreso…</p> : null}
+      <div className="flex items-center gap-3 text-sm text-ap-muted" aria-hidden>
+        <span className="h-px flex-1 bg-ap-line" />o con tu correo<span className="h-px flex-1 bg-ap-line" />
       </div>
 
       <Dialog open={pendingSignup !== undefined} onOpenChange={(open) => !open && !busy && setPendingSignup(undefined)}>
@@ -191,7 +191,7 @@ export function SocialLogin({ mode, onSession }: SocialLoginProps) {
               <TextField id="social-dateBirth" name="dateBirth" type="date" label="Fecha de nacimiento" autoComplete="bday" required error={regErrors.dateBirth} />
               <TextField id="social-numberPhone" name="numberPhone" label="Celular" inputMode="tel" maxLength={10} autoComplete="tel-national" required error={regErrors.numberPhone} />
             </div>
-            <Button type="submit" className="h-11" disabled={busy}>
+            <Button type="submit" disabled={busy}>
               {busy ? 'Creando tu cuenta…' : 'Crear cuenta y continuar'}
             </Button>
           </form>

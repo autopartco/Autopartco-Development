@@ -84,7 +84,7 @@ export default function CustomerRegisterPage() {
       <title>Crear cuenta de cliente | Autopartco</title>
       {result ? (
         <CheckEmail email={result.email} sent={result.verificationEmailSent} expiresAt={result.verificationExpiresAt}>
-          <Button variant="outline" className="h-11 px-5" nativeButton={false} render={<Link to="/ingresar" />}>
+          <Button variant="outline" nativeButton={false} render={<Link to="/ingresar" />}>
             Ir a ingresar
           </Button>
         </CheckEmail>
@@ -99,15 +99,15 @@ export default function CustomerRegisterPage() {
         />
         <form noValidate onSubmit={handleSubmit} {...form.formProps} className="flex flex-col gap-6" aria-busy={submitting || undefined}>
           {formError ? <FormAlert ref={alertRef} title={formError} /> : null}
-          <p className="text-sm text-muted-foreground">Todos los campos son obligatorios.</p>
+          <p className="text-sm text-ap-muted">Todos los campos son obligatorios.</p>
           <AccountFields prefix={PREFIX} errors={errors} />
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <Button type="submit" className="h-11 px-6 text-base" disabled={submitting}>
+            <Button type="submit" disabled={submitting}>
               {submitting ? 'Creando cuenta…' : 'Crear cuenta'}
             </Button>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-ap-muted">
               ¿Tienes un almacén?{' '}
-              <Link to="/vender/registro" className="font-medium text-brand underline-offset-4 hover:underline">
+              <Link to="/vender/registro" className="font-medium text-ap-red underline-offset-4 hover:text-ap-red-hover hover:underline">
                 Regístralo aquí
               </Link>
             </p>

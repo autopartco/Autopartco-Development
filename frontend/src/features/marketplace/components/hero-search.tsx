@@ -38,17 +38,22 @@ export function HeroSearch({ className }: { className?: string }) {
       aria-label="Buscar repuestos"
       onSubmit={handleSubmit}
       className={cn(
-        'flex flex-col gap-3 rounded-2xl bg-card p-3 text-foreground shadow-[0_0_0_1px_rgb(0_0_0/0.06),0_1px_2px_-1px_rgb(0_0_0/0.06),0_18px_40px_-24px_rgb(23_27_32/0.45)] sm:p-4',
+        'flex flex-col gap-4 rounded-xl border border-ap-line-strong bg-ap-white p-4 text-ap-ink sm:p-5',
         className,
       )}
     >
-      <label htmlFor={id} className="px-1 text-sm font-semibold">
-        ¿Qué repuesto buscas?
-      </label>
+      <div className="flex flex-col gap-1">
+        <label htmlFor={id} className="text-sm font-semibold">
+          Repuesto o referencia
+        </label>
+        <p id={`${id}-hint`} className="text-xs text-ap-muted">
+          Escribe el nombre de la pieza o el número de parte que trae la caja.
+        </p>
+      </div>
       <div className={cn('flex flex-col gap-3', !showVehicle && 'sm:flex-row')}>
         <div className="relative min-w-0 flex-1">
           <SearchIcon
-            className="pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2 text-muted-foreground"
+            className="pointer-events-none absolute top-1/2 left-3.5 size-5 -translate-y-1/2 text-ap-muted"
             aria-hidden
           />
           <input
@@ -57,8 +62,9 @@ export function HeroSearch({ className }: { className?: string }) {
             type="search"
             autoComplete="off"
             enterKeyHint="search"
-            placeholder="Pastillas de freno, filtro o referencia"
-            className="h-12 w-full min-w-0 rounded-lg border border-input bg-paper pr-14 pl-11 text-base placeholder:text-muted-foreground"
+            placeholder="Ej.: pastillas de freno o el número de parte"
+            aria-describedby={`${id}-hint`}
+            className="h-12 w-full min-w-0 rounded-md border border-input bg-ap-white pr-14 pl-11 text-base placeholder:text-ap-muted focus-visible:border-ap-graphite"
           />
           <PhotoSearchButton className="absolute top-0.5 right-0.5" />
         </div>
@@ -66,11 +72,13 @@ export function HeroSearch({ className }: { className?: string }) {
           // Vehículo y botón en una fila desde sm: el formulario cabe fijo en el hero de escritorio.
           <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
             <fieldset className="min-w-0">
-              <legend className="sr-only">Vehículo (opcional)</legend>
+              <legend className="mb-2 text-sm font-semibold">
+                Vehículo <span className="font-normal text-ap-muted">(opcional, filtra por compatibilidad)</span>
+              </legend>
               <VehiclePicker
                 value={vehicle}
                 onChange={setVehicle}
-                className="grid-cols-1 sm:grid-cols-3 [&_[data-slot=select-trigger]]:h-11 [&_label]:text-xs [&_label]:font-normal [&_label]:text-muted-foreground"
+                className="grid-cols-1 sm:grid-cols-3 [&_[data-slot=select-trigger]]:h-11 [&_label]:text-xs [&_label]:font-normal [&_label]:text-ap-muted"
               />
             </fieldset>
             {submit}

@@ -20,7 +20,7 @@ export function PhotoSearchButton({ className }: { className?: string }) {
         // El botón vive dentro de un campo blanco, también en la cabecera oscura: foco rojo e
         // interior (5.7:1 sobre blanco) en vez del blanco de `surface-asphalt`, que no se vería.
         className={cn(
-          'grid size-11 shrink-0 place-items-center rounded-md text-muted-foreground [--focus:var(--color-brand)] focus-visible:-outline-offset-2! transition-colors hover:bg-concrete hover:text-foreground data-popup-open:bg-concrete data-popup-open:text-foreground',
+          'grid size-11 shrink-0 place-items-center rounded-md text-ap-muted [--focus:var(--color-brand)] focus-visible:-outline-offset-2! transition-colors hover:bg-ap-paper hover:text-ap-ink data-popup-open:bg-ap-paper data-popup-open:text-ap-ink',
           className,
         )}
       >
@@ -28,10 +28,10 @@ export function PhotoSearchButton({ className }: { className?: string }) {
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Positioner side="bottom" align="end" sideOffset={8} collisionPadding={12} className="isolate z-50">
-          <Popover.Popup className="w-[min(20rem,calc(100vw-1.5rem))] origin-(--transform-origin) rounded-xl bg-popover p-4 text-popover-foreground shadow-lg ring-1 ring-foreground/10 outline-none transition-[opacity,transform] duration-150 data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0">
+          <Popover.Popup className="w-[min(20rem,calc(100vw-1.5rem))] origin-(--transform-origin) rounded-2xl bg-popover p-4 text-popover-foreground shadow-overlay ring-1 ring-ap-line outline-none transition-[opacity,transform] duration-150 data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0">
             <div className="flex items-start justify-between gap-3">
               <div className="flex flex-col gap-1.5">
-                <span className="w-fit rounded-sm bg-concrete px-1.5 py-0.5 label-mono text-muted-foreground">
+                <span className="w-fit rounded-sm bg-ap-paper px-1.5 py-0.5 ap-index">
                   Próximamente
                 </span>
                 <Popover.Title className="text-base leading-tight font-bold tracking-tight">
@@ -40,12 +40,12 @@ export function PhotoSearchButton({ className }: { className?: string }) {
               </div>
               <Popover.Close
                 aria-label="Cerrar"
-                className="-mt-1 -mr-1 grid size-11 shrink-0 place-items-center rounded-md text-muted-foreground hover:bg-concrete hover:text-foreground"
+                className="-mt-1 -mr-1 grid size-11 shrink-0 place-items-center rounded-md text-ap-muted hover:bg-ap-paper hover:text-ap-ink"
               >
                 <XIcon className="size-4" aria-hidden />
               </Popover.Close>
             </div>
-            <Popover.Description className="mt-2 text-sm text-muted-foreground">
+            <Popover.Description className="mt-2 text-sm text-ap-muted">
               Pronto podrás fotografiar el repuesto o su referencia para identificarlo y ver en qué almacenes está.
             </Popover.Description>
             <ul className="mt-3 flex flex-col gap-1" aria-label="Opciones de foto">
@@ -54,7 +54,7 @@ export function PhotoSearchButton({ className }: { className?: string }) {
                   <button
                     type="button"
                     disabled
-                    className="flex min-h-11 w-full cursor-not-allowed items-center gap-3 rounded-lg px-3 text-left text-sm font-medium text-muted-foreground"
+                    className="flex min-h-11 w-full cursor-not-allowed items-center gap-3 rounded-lg px-3 text-left text-sm font-medium text-ap-muted"
                   >
                     <option.icon className="size-4 shrink-0" aria-hidden />
                     {option.label}

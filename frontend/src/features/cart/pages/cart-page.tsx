@@ -1,5 +1,5 @@
 import { Link } from 'react-router'
-import { PackageIcon, ShoppingCartIcon, Trash2Icon } from 'lucide-react'
+import { ShoppingCartIcon, Trash2Icon } from 'lucide-react'
 import { Container, PageIntro } from '@/components/common/page-header'
 import { SmartImage } from '@/components/common/smart-image'
 import { EmptyState } from '@/components/common/states'
@@ -13,7 +13,6 @@ import { formatCOP, pluralize } from '@/lib/format'
 import { QuantityStepper } from '../components/quantity-stepper'
 
 const CRUMBS = [{ label: 'Inicio', to: '/' }, { label: 'Carrito' }]
-const CARD = 'rounded-2xl bg-card shadow-[0_0_0_1px_rgb(0_0_0/0.07),0_18px_40px_-28px_rgb(23_27_32/0.35)]'
 
 function groupByStore(lines: CartLine[]) {
   const groups = new Map<string, { id: string; name: string; branch?: string; lines: CartLine[] }>()
@@ -37,7 +36,7 @@ export default function CartPage() {
         <title>Carrito | Autopartco</title>
         <PageIntro crumbs={CRUMBS} label="Carrito" title="Tu carrito está vacío" />
         <EmptyState icon={<ShoppingCartIcon />} title="Aún no has agregado repuestos" description="Busca el repuesto que necesitas, compara tiendas y agrégalo al carrito.">
-          <Button className="h-11 px-5" nativeButton={false} render={<Link to="/buscar" />}>
+          <Button nativeButton={false} render={<Link to="/buscar" />}>
             Buscar repuestos
           </Button>
         </EmptyState>
@@ -50,36 +49,54 @@ export default function CartPage() {
       <title>Carrito | Autopartco</title>
       <PageIntro crumbs={CRUMBS} label={pluralize(units, 'repuesto', 'repuestos')} title="Tu carrito" description="Revisa las cantidades. El precio y las existencias se confirman al pagar." />
 
-      <div className="grid items-start gap-6 lg:grid-cols-[1fr_22rem] lg:gap-8">
-        <div className="flex flex-col gap-4">
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="flex flex-col gap-8">
           {groupByStore(lines).map((group) => (
-            <section key={group.id} aria-label={`Repuestos de ${group.name}`} className={`${CARD} p-5`}>
-              <p className="label-mono mb-3 text-muted-foreground">
+            <section key={group.id} aria-label={`Repuestos de ${group.name}`}>
+              <h2 className="flex flex-wrap items-baseline gap-x-2 border-b border-ap-graphite pb-2 text-sm font-semibold text-ap-ink">
                 {group.name}
-                {group.branch ? ` · ${group.branch}` : ''}
-              </p>
-              <ul className="flex flex-col divide-y divide-border">
+                {group.branch ? <span className="font-normal text-ap-muted">Sucursal {group.branch}</span> : null}
+              </h2>
+              <ul className="flex flex-col divide-y divide-ap-line border-b border-ap-line">
                 {group.lines.map((line) => (
-                  <li key={lineKey(line)} className="flex flex-col gap-3 py-4 first:pt-0 last:pb-0 sm:flex-row sm:items-center">
-                    <div className="flex min-w-0 flex-1 gap-3">
-                      {line.imageUrl ? (
-                        <SmartImage src={line.imageUrl} alt="" width={72} height={72} frameClassName="size-[4.5rem] shrink-0 rounded-lg" />
-                      ) : (
-                        <div className="grid size-[4.5rem] shrink-0 place-items-center rounded-lg bg-concrete text-muted-foreground" aria-hidden>
-                          <PackageIcon className="size-7" />
-                        </div>
-                      )}
-                      <div className="flex min-w-0 flex-col gap-0.5">
-                        <Link to={productPath(line.productId)} className="line-clamp-2 font-medium underline-offset-4 hover:underline">
-                          {line.name}
-                        </Link>
-                        <p className="text-sm text-muted-foreground">{formatCOP(line.unitPrice)} c/u</p>
-                      </div>
+                  <li
+                    key={lineKey(line)}
+                    className="grid grid-cols-[4.5rem_minmax(0,1fr)] gap-x-4 gap-y-3 py-4 sm:grid-cols-[4.5rem_minmax(0,1fr)_auto_7.5rem_2.75rem] sm:items-center"
+                  >
+                    <SmartImage
+                      src={line.imageUrl}
+                      alt=""
+                      width={72}
+                      height={72}
+                      frameClassName="row-span-2 size-[4.5rem] shrink-0 rounded-md border border-ap-line sm:row-span-1"
+                      className="p-1"
+                    />
+                    <div className="flex min-w-0 flex-col gap-1">
+                      <Link
+                        to={productPath(line.productId)}
+                        className="line-clamp-2 font-semibold text-ap-ink underline-offset-4 hover:text-ap-red hover:underline"
+                      >
+                        {line.name}
+                      </Link>
+                      <p className="text-sm text-ap-muted">
+                        <span className="tabular-nums">{formatCOP(line.unitPrice)}</span> c/u
+                      </p>
                     </div>
-                    <div className="flex items-center justify-between gap-3 sm:justify-end">
+                    {/* En móvil: cantidad, subtotal y quitar en una fila bajo el nombre; desde sm, columnas propias. */}
+                    <div className="col-start-2 flex items-center justify-between gap-3 sm:contents">
                       <QuantityStepper label={line.name} value={line.quantity} onChange={(value) => setCartLineQuantity(line, value)} />
-                      <p className="w-24 text-right font-semibold tabular-nums">{formatCOP(line.unitPrice * line.quantity)}</p>
-                      <Button type="button" variant="ghost" className="size-11" aria-label={`Quitar ${line.name} del carrito`} onClick={() => removeCartLines([line])}>
+                      <p className="ap-price ap-num text-ap-ink">
+                        <span className="sr-only">Subtotal: </span>
+                        {formatCOP(line.unitPrice * line.quantity)}
+                      </p>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="text-ap-muted hover:text-ap-danger"
+                        aria-label={`Quitar ${line.name} del carrito`}
+                        onClick={() => removeCartLines([line])}
+                      >
                         <Trash2Icon aria-hidden />
                       </Button>
                     </div>
@@ -89,25 +106,34 @@ export default function CartPage() {
             </section>
           ))}
           <div>
-            <Button type="button" variant="ghost" className="h-11 px-3 text-muted-foreground" onClick={clearCart}>
+            <Button type="button" variant="ghost" className="px-3 text-ap-muted" onClick={clearCart}>
               Vaciar carrito
             </Button>
           </div>
         </div>
 
-        <aside aria-labelledby="carrito-resumen" className={`${CARD} flex flex-col gap-4 p-5 lg:sticky lg:top-[calc(var(--header-h)+1rem)]`}>
-          <h2 id="carrito-resumen" className="text-block-title">
+        <aside
+          aria-labelledby="carrito-resumen"
+          className="flex flex-col gap-4 rounded-xl border border-ap-line bg-ap-white p-5 lg:sticky lg:top-[calc(var(--header-h)+1rem)]"
+        >
+          <h2 id="carrito-resumen" className="text-block-title text-ap-ink">
             Resumen
           </h2>
-          <div className="flex items-baseline justify-between gap-3">
-            <p className="font-medium">Total estimado</p>
-            <p className="text-2xl font-extrabold tracking-tight tabular-nums">{formatCOP(total)}</p>
-          </div>
-          <p className="text-xs text-muted-foreground">Sin costo de envío por ahora. El total final lo confirma Autopartco al pagar.</p>
-          <Button className="h-12 text-base" nativeButton={false} render={<Link to={checkoutPath()} />}>
+          <dl className="flex flex-col divide-y divide-ap-line border-y border-ap-line text-sm">
+            <div className="flex items-baseline justify-between gap-3 py-2.5">
+              <dt className="text-ap-muted">Unidades</dt>
+              <dd className="font-mono tabular-nums text-ap-ink">{units}</dd>
+            </div>
+            <div className="flex items-baseline justify-between gap-3 py-3">
+              <dt className="font-medium text-ap-ink">Total estimado</dt>
+              <dd className="ap-price text-xl text-ap-ink">{formatCOP(total)}</dd>
+            </div>
+          </dl>
+          <p className="text-xs text-ap-muted">Sin costo de envío por ahora. El total final lo confirma Autopartco al pagar.</p>
+          <Button nativeButton={false} render={<Link to={checkoutPath()} />}>
             Continuar al pago
           </Button>
-          <Button variant="outline" className="h-11" nativeButton={false} render={<Link to="/buscar" />}>
+          <Button variant="outline" nativeButton={false} render={<Link to="/buscar" />}>
             Seguir comprando
           </Button>
         </aside>

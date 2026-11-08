@@ -24,7 +24,7 @@ function DropdownMenuContent({
         <MenuPrimitive.Popup
           data-slot="dropdown-menu-content"
           className={cn(
-            "min-w-56 origin-(--transform-origin) rounded-xl bg-popover p-1.5 text-popover-foreground shadow-lg ring-1 ring-foreground/10 outline-none transition-[opacity,transform] duration-150 data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0",
+            "min-w-56 origin-(--transform-origin) rounded-xl border border-ap-line bg-popover p-1 text-popover-foreground shadow-overlay outline-none transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0",
             className
           )}
           {...props}
@@ -44,7 +44,7 @@ function DropdownMenuItem({
       data-slot="dropdown-menu-item"
       data-variant={variant}
       className={cn(
-        "flex min-h-10 cursor-pointer items-center gap-2.5 rounded-lg px-3 text-sm font-medium outline-none select-none pointer-coarse:min-h-11 data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:bg-concrete data-[variant=destructive]:text-destructive [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground data-[variant=destructive]:[&_svg]:text-destructive",
+        "flex min-h-10 cursor-pointer items-center gap-2.5 rounded-md px-3 text-sm font-medium text-ap-ink outline-none select-none pointer-coarse:min-h-11 data-disabled:pointer-events-none data-disabled:opacity-50 data-highlighted:bg-ap-paper data-[variant=destructive]:text-ap-danger data-[variant=destructive]:data-highlighted:bg-ap-danger-soft [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 [&_svg:not([class*='text-'])]:text-muted-foreground data-[variant=destructive]:[&_svg]:text-destructive",
         className
       )}
       {...props}
@@ -56,7 +56,7 @@ function DropdownMenuLabel({ className, ...props }: MenuPrimitive.GroupLabel.Pro
   return (
     <MenuPrimitive.GroupLabel
       data-slot="dropdown-menu-label"
-      className={cn("px-3 py-1.5 text-xs font-semibold text-muted-foreground", className)}
+      className={cn("px-3 py-1.5 ap-index", className)}
       {...props}
     />
   )

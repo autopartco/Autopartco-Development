@@ -68,14 +68,14 @@ function AccountIdentity({ session }: { session: Session }) {
   const kind = accountKindOf(session.roles)
   return (
     <div className="min-w-0">
-      <p className="truncate font-semibold">{session.user.name}</p>
-      <p className="truncate text-sm text-muted-foreground">{session.user.email}</p>
+      <p className="truncate font-semibold text-ap-ink">{session.user.name}</p>
+      <p className="truncate text-sm text-ap-muted">{session.user.email}</p>
       <p className="mt-1.5 flex flex-wrap items-center gap-1.5">
-        <span className="inline-flex h-5 items-center rounded-full bg-concrete px-2 label-mono text-foreground">
+        <span className="inline-flex h-5 items-center rounded-sm border border-ap-line bg-ap-paper px-1.5 label-mono text-ap-ink">
           <span className="sr-only">Tipo de cuenta: </span>
           {ACCOUNT_KIND_LABEL[kind]}
         </span>
-        {session.simulated ? <span className="label-mono text-muted-foreground">Sesión simulada</span> : null}
+        {session.simulated ? <span className="ap-index">Sesión simulada</span> : null}
       </p>
     </div>
   )
@@ -98,7 +98,7 @@ export function HeaderAccount({ className, ...context }: { className?: string } 
       <div className={cn('flex items-center gap-1', className)}>
         <Button
           variant="ghost"
-          className={cn('h-11 gap-1.5 px-2.5 lg:h-10', ON_DARK)}
+          className={cn('h-11 gap-1.5 px-2.5', ON_DARK)}
           nativeButton={false}
           render={<Link to="/ingresar" aria-label="Ingresar" />}
         >
@@ -107,7 +107,7 @@ export function HeaderAccount({ className, ...context }: { className?: string } 
         </Button>
         <Button
           variant="outline"
-          className="hidden h-10 border-white/40 bg-transparent px-3 text-white hover:border-white hover:bg-header-hover hover:text-white xl:inline-flex"
+          className="hidden h-11 border-white/40 bg-transparent px-3 text-white hover:border-white hover:bg-header-hover hover:text-white xl:inline-flex"
           nativeButton={false}
           render={<Link to="/registro" />}
         >
@@ -122,7 +122,7 @@ export function HeaderAccount({ className, ...context }: { className?: string } 
       <DropdownMenuTrigger
         aria-label={`Cuenta de ${session.user.name}`}
         className={cn(
-          'group/account inline-flex h-11 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium transition-colors data-popup-open:bg-header-hover lg:h-10',
+          'group/account inline-flex h-11 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium transition-colors data-popup-open:bg-header-hover',
           ON_DARK,
           className,
         )}
@@ -130,7 +130,7 @@ export function HeaderAccount({ className, ...context }: { className?: string } 
         <CircleUserRoundIcon className="size-5" aria-hidden />
         <span className="hidden max-w-[8rem] truncate sm:inline">{firstName(session.user.name)}</span>
         <ChevronDownIcon
-          className="hidden size-4 text-asphalt-muted transition-transform duration-200 ease-out-snap group-data-popup-open/account:rotate-180 sm:block"
+          className="hidden size-4 text-ap-on-dark-muted transition-transform duration-200 ease-out-snap group-data-popup-open/account:rotate-180 sm:block"
           aria-hidden
         />
       </DropdownMenuTrigger>
@@ -176,9 +176,9 @@ export function MobileMenuAccount({ onNavigate }: { onNavigate: () => void }) {
                 <Link
                   to={item.to}
                   onClick={onNavigate}
-                  className="flex min-h-12 items-center gap-3 rounded-lg px-3 text-base font-semibold transition-colors hover:bg-concrete"
+                  className="flex min-h-12 items-center gap-3 rounded-md px-3 text-base font-medium text-ap-ink transition-colors hover:bg-ap-paper"
                 >
-                  <item.icon className="size-5 text-muted-foreground" aria-hidden />
+                  <item.icon className="size-5 text-ap-muted" aria-hidden />
                   {item.label}
                 </Link>
               </li>
@@ -202,10 +202,10 @@ export function MobileMenuAccount({ onNavigate }: { onNavigate: () => void }) {
   }
   return (
     <div className="grid grid-cols-2 gap-2">
-      <Button className="h-11" nativeButton={false} render={<Link to="/ingresar" onClick={onNavigate} />}>
+      <Button nativeButton={false} render={<Link to="/ingresar" onClick={onNavigate} />}>
         Ingresar
       </Button>
-      <Button variant="outline" className="h-11" nativeButton={false} render={<Link to="/registro" onClick={onNavigate} />}>
+      <Button variant="outline" nativeButton={false} render={<Link to="/registro" onClick={onNavigate} />}>
         Crear cuenta
       </Button>
     </div>

@@ -35,7 +35,7 @@ export function Stepper({ steps, current, onSelect, label = 'Pasos del formulari
     <nav aria-label={label} className={cn('flex flex-col gap-2', className)}>
       <p className="text-sm font-semibold sm:sr-only" aria-hidden>
         Paso {index + 1} de {steps.length}
-        {active ? <span className="font-normal text-muted-foreground"> · {active.label}</span> : null}
+        {active ? <span className="font-normal text-ap-muted"> · {active.label}</span> : null}
       </p>
       <ol className="flex items-center gap-1 sm:gap-2">
         {steps.map((step, position) => {
@@ -49,17 +49,17 @@ export function Stepper({ steps, current, onSelect, label = 'Pasos del formulari
                 disabled={step.locked && !isCurrent}
                 aria-current={isCurrent ? 'step' : undefined}
                 className={cn(
-                  'flex min-h-11 items-center gap-2 rounded-full pr-1 text-sm outline-none transition-colors focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 sm:pr-3',
-                  isCurrent ? 'font-semibold text-foreground' : 'text-muted-foreground hover:text-foreground',
+                  'flex min-h-11 items-center gap-2 rounded-md pr-1 text-sm outline-none transition-colors disabled:cursor-not-allowed disabled:opacity-50 sm:pr-2',
+                  isCurrent ? 'font-semibold text-ap-ink' : 'text-ap-muted hover:text-ap-ink',
                 )}
               >
                 <span
                   aria-hidden
                   className={cn(
-                    'grid size-8 shrink-0 place-items-center rounded-full border text-xs font-bold',
-                    isCurrent && 'border-primary bg-primary text-primary-foreground',
-                    !isCurrent && status === 'complete' && 'border-primary/40 bg-primary/10 text-primary',
-                    !isCurrent && status === 'error' && 'border-destructive bg-destructive/10 text-destructive',
+                    'grid size-8 shrink-0 place-items-center rounded-md border border-ap-line-strong bg-ap-white font-mono text-xs font-semibold tabular-nums',
+                    isCurrent && 'border-ap-red bg-ap-red text-ap-white',
+                    !isCurrent && status === 'complete' && 'border-ap-success/40 bg-ap-success-soft text-ap-success',
+                    !isCurrent && status === 'error' && 'border-ap-danger bg-ap-danger-soft text-ap-danger',
                   )}
                 >
                   {status === 'complete' && !isCurrent ? (
@@ -73,7 +73,7 @@ export function Stepper({ steps, current, onSelect, label = 'Pasos del formulari
                 <span className="sr-only sm:not-sr-only">{step.label}</span>
                 {STATUS_TEXT[status] ? <span className="sr-only">({STATUS_TEXT[status]})</span> : null}
               </button>
-              {position < steps.length - 1 ? <span aria-hidden className="hidden h-px flex-1 bg-border sm:block" /> : null}
+              {position < steps.length - 1 ? <span aria-hidden className="hidden h-px flex-1 bg-ap-line-strong sm:block" /> : null}
             </li>
           )
         })}
