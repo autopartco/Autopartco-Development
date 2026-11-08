@@ -75,6 +75,9 @@ function PortalHomeRedirect() {
 export const router = createBrowserRouter([
   {
     element: <RootLayout />,
+    // Red de seguridad: si falla la propia carcasa (cabecera o pie), se muestra la página
+    // de error de Autopartco en lugar de la pantalla por defecto de React Router.
+    errorElement: <RouteError />,
     children: [
       {
         // Ruta sin path: los errores se muestran dentro del layout (con cabecera y pie).
