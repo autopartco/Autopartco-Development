@@ -107,7 +107,7 @@ export function HeaderAccount({ className, ...context }: { className?: string } 
         </Button>
         <Button
           variant="outline"
-          className="hidden h-11 border-white/40 bg-transparent px-3 text-white hover:border-white hover:bg-sidebar-accent hover:text-white xl:inline-flex"
+          className="hidden h-11 border-white/40 bg-transparent px-3 text-white hover:border-white hover:bg-sidebar-accent hover:text-white 2xl:inline-flex"
           nativeButton={false}
           render={<Link to="/registro" />}
         >
