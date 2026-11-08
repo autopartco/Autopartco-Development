@@ -14,9 +14,10 @@ interface TimelineScrubberProps {
 }
 
 /**
- * Línea temporal de solicitudes por fecha: un punto por solicitud y dos deslizadores
- * (Desde / Hasta) que acotan el rango de la tabla. Los deslizadores son controles nativos
- * (teclado y lectores de pantalla); los puntos son botones que abren la solicitud.
+ * Filtro por fecha de envío: un punto por solicitud sobre una línea de tiempo y dos deslizadores nativos
+ * (Desde / Hasta, con teclado y lector de pantalla) que acotan la tabla. Los puntos dentro del rango van en
+ * rojo y los de fuera en blanco con borde (forma además de color); cada punto abre su solicitud.
+ * La misma información está en la tabla (columna «Enviada»), que es la alternativa accesible.
  */
 export function TimelineScrubber({ applications, range, onRangeChange, selectedId, onSelect }: TimelineScrubberProps) {
   const id = useId()
@@ -31,20 +32,28 @@ export function TimelineScrubber({ applications, range, onRangeChange, selectedI
   }).length
 
   return (
-    <div className="flex flex-col gap-3 rounded-xl bg-white/5 p-4 ring-1 ring-white/10">
+    <fieldset className="flex min-w-0 flex-col gap-3 border-t border-ap-line-strong pt-4">
+      <legend className="sr-only">Fecha de envío</legend>
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="label-mono text-asphalt-muted">Línea de tiempo</h2>
-        <p className="text-sm" aria-live="polite">
-          {inRange} de {applications.length} {applications.length === 1 ? 'solicitud' : 'solicitudes'} en el rango
+        <div className="flex flex-col gap-1">
+          <p className="text-base font-semibold text-ap-ink" aria-hidden>
+            ¿Cuándo llegaron las solicitudes?
+          </p>
+          <p className="ap-ref text-ap-muted">
+            {dateAt(0)} – {dateAt(days)} · una marca por solicitud
+          </p>
+        </div>
+        <p className="text-sm text-ap-muted" aria-live="polite">
+          <span className="ap-num font-semibold text-ap-ink">{inRange}</span> de {applications.length} en el rango
         </p>
       </div>
 
-      <div className="relative h-10 px-2">
-        <div aria-hidden className="absolute inset-x-2 top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-white/20" />
+      <div className="relative h-11 px-2">
+        <div aria-hidden className="absolute inset-x-2 top-1/2 h-px -translate-y-1/2 bg-ap-line-strong" />
         {days > 0 ? (
           <div
             aria-hidden
-            className="absolute top-1/2 h-0.5 -translate-y-1/2 rounded-full bg-thread-on-asphalt"
+            className="absolute top-1/2 h-0.5 -translate-y-1/2 bg-ap-red"
             style={{ left: `calc(0.5rem + (100% - 1rem) * ${position(lo) / 100})`, width: `calc((100% - 1rem) * ${(position(hi) - position(lo)) / 100})` }}
           />
         ) : null}
@@ -58,14 +67,13 @@ export function TimelineScrubber({ applications, range, onRangeChange, selectedI
                 <button
                   type="button"
                   onClick={() => onSelect(item.applicationId)}
-                  aria-label={`${item.businessName}, ${formatDate(item.createdAt)}`}
+                  aria-label={`Abrir la solicitud de ${item.businessName}, enviada el ${formatDate(item.createdAt)}${active ? '' : ' (fuera del rango)'}`}
                   aria-current={selected || undefined}
                   title={`${item.businessName} · ${formatDate(item.createdAt)}`}
                   className={cn(
-                    'timeline-dot relative -translate-x-1/2 -translate-y-1/2 rounded-full after:absolute after:-inset-2 after:content-[""] hover:scale-125',
-                    'size-3.5 ring-2 ring-asphalt',
-                    active ? 'bg-thread-on-asphalt' : 'bg-white/35',
-                    selected && 'scale-125 bg-white ring-thread-on-asphalt',
+                    'relative block size-3 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 transition-colors duration-150 after:absolute after:-inset-3 after:content-[""] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ap-red',
+                    active ? 'border-ap-red bg-ap-red' : 'border-ap-steel bg-ap-white',
+                    selected && 'size-4 border-ap-graphite',
                   )}
                 />
               </li>
@@ -83,13 +91,13 @@ export function TimelineScrubber({ applications, range, onRangeChange, selectedI
         ).map(([key, label, value, min, max]) => (
           <div key={key} className="flex flex-col gap-1">
             <label htmlFor={`${id}-${key}`} className="flex items-baseline justify-between gap-2 text-sm">
-              <span className="font-semibold">{label}</span>
-              <span className="text-asphalt-muted">{dateAt(value)}</span>
+              <span className="font-semibold text-ap-ink">{label}</span>
+              <span className="ap-ref text-ap-muted">{dateAt(value)}</span>
             </label>
             <input
               id={`${id}-${key}`}
               type="range"
-              className="timeline-range h-6 w-full"
+              className="h-11 w-full accent-ap-red disabled:opacity-50"
               min={min}
               max={max}
               step={1}
@@ -104,6 +112,7 @@ export function TimelineScrubber({ applications, range, onRangeChange, selectedI
           </div>
         ))}
       </div>
-    </div>
+      {days === 0 ? <p className="text-xs text-ap-muted">Todas las solicitudes llegaron el mismo día: no hay rango que acotar.</p> : null}
+    </fieldset>
   )
 }

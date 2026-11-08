@@ -172,7 +172,7 @@ export function BranchSheet({ open, onOpenChange, branch }: { open: boolean; onO
     <Sheet open={open} onOpenChange={(next) => (next ? onOpenChange(true) : guard.requestClose())}>
       <SheetContent side="right" className="w-full gap-0 p-0 sm:max-w-md">
         <SheetHeader className="p-4 pr-16">
-          <SheetTitle className="text-lg font-extrabold tracking-tight">{branch ? 'Editar sucursal' : 'Nueva sucursal'}</SheetTitle>
+          <SheetTitle className="text-block-title">{branch ? 'Editar sucursal' : 'Nueva sucursal'}</SheetTitle>
           <SheetDescription>
             {branch ? 'Cambia los datos de contacto y la dirección.' : 'Una sucursal es un punto desde el que despachas pedidos.'}
           </SheetDescription>

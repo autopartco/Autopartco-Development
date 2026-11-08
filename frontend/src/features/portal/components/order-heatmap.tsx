@@ -5,20 +5,32 @@ import { formatCOP, pluralize } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import type { SalesHeatCell } from '../api/types'
 import { usePortal } from '../context'
+import { HEAT_LEVEL_CLASS } from '../lib/chart-palette'
 import { ORDER_STATUS_LABEL, ORDER_STATUS_TONE } from '../lib/labels'
-import { Reveal } from './bento'
 import { StatusBadge } from './status-badge'
 
 const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
 const HOURS = Array.from({ length: 24 }, (_, hour) => hour)
 
-const LEVEL_CLASS = ['bg-muted', 'bg-primary/20', 'bg-primary/40', 'bg-primary/65', 'bg-primary']
-
 const hourLabel = (hour: number) => `${String(hour).padStart(2, '0')}:00`
+const slotLabel = (hour: number) => `${hourLabel(hour)} a ${String(hour).padStart(2, '0')}:59`
+
+/** Pedidos que representa cada nivel de intensidad, para que la leyenda diga qué significa cada tono (§20.10). */
+function levelRanges(max: number): { level: number; text: string }[] {
+  const ranges = [{ level: 0, text: '0' }]
+  for (let level = 1; level <= 4; level += 1) {
+    const low = Math.floor(((level - 1) * max) / 4) + 1
+    const high = Math.floor((level * max) / 4)
+    if (low <= high) ranges.push({ level, text: low === high ? String(low) : `${low}–${high}` })
+  }
+  return ranges
+}
 
 /**
- * Mapa de calor día × hora de los pedidos del rango. Es una cuadrícula con una sola celda en el
- * orden de tabulación (flechas para moverse); Enter o clic abren el detalle de esa franja.
+ * Mapa de calor matricial día × hora (§20.4 C): responde «¿a qué horas entran más pedidos?». Un solo
+ * tono (rojo) cuya intensidad es el número de pedidos de la franja; la leyenda dice cuántos pedidos
+ * representa cada tono y un resumen en texto nombra la franja más activa. Es una cuadrícula con una sola
+ * celda en el orden de tabulación (flechas para moverse); Enter o clic abren el detalle de esa franja.
  */
 export function OrderHeatmap({ cells }: { cells: SalesHeatCell[] }) {
   const { storeId, can } = usePortal()
@@ -28,6 +40,10 @@ export function OrderHeatmap({ cells }: { cells: SalesHeatCell[] }) {
 
   const byKey = useMemo(() => new Map(cells.map((cell) => [`${cell.day}-${cell.hour}`, cell])), [cells])
   const max = useMemo(() => Math.max(1, ...cells.map((cell) => cell.orders.length)), [cells])
+  const busiest = useMemo(
+    () => cells.reduce<SalesHeatCell | undefined>((found, cell) => (cell.orders.length > (found?.orders.length ?? 0) ? cell : found), undefined),
+    [cells],
+  )
   const detail = selected ? byKey.get(`${selected.day}-${selected.hour}`) : undefined
 
   function level(count: number): number {
@@ -57,7 +73,16 @@ export function OrderHeatmap({ cells }: { cells: SalesHeatCell[] }) {
 
   return (
     <>
-      <p className="text-xs text-muted-foreground sm:hidden">Desliza hacia los lados para ver todas las horas.</p>
+      {busiest ? (
+        <p className="text-sm text-ap-ink">
+          La franja con más pedidos es el{' '}
+          <strong className="font-semibold">
+            {DAYS[busiest.day]?.toLowerCase()} de {slotLabel(busiest.hour)}
+          </strong>
+          , con {pluralize(busiest.orders.length, 'pedido', 'pedidos')}.
+        </p>
+      ) : null}
+      <p className="text-xs text-ap-muted sm:hidden">Desliza hacia los lados para ver todas las horas.</p>
       <div className="relative -mx-1 overflow-x-auto px-1 pb-2">
         <div ref={grid} role="grid" aria-label="Pedidos por día de la semana y hora" onKeyDown={onKeyDown} className="w-full min-w-[34rem]">
           <div role="row" className="grid grid-cols-[5rem_repeat(24,minmax(0,1fr))] gap-0.5 pb-1">
@@ -66,15 +91,15 @@ export function OrderHeatmap({ cells }: { cells: SalesHeatCell[] }) {
             </span>
             <span aria-hidden />
             {HOURS.map((hour) => (
-              <span key={hour} role="columnheader" className="text-center text-[0.625rem] text-muted-foreground tabular-nums">
+              <span key={hour} role="columnheader" className="ap-ref text-center text-[0.625rem] text-ap-muted">
                 <span className="sr-only">{hourLabel(hour)}</span>
                 <span aria-hidden>{hour % 3 === 0 ? hour : ''}</span>
               </span>
             ))}
           </div>
           {DAYS.map((day, row) => (
-            <Reveal key={day} index={row} step={60} role="row" className="mb-0.5 grid grid-cols-[5rem_repeat(24,minmax(0,1fr))] items-center gap-0.5">
-              <span role="rowheader" className="pr-2 text-xs text-muted-foreground">
+            <div key={day} role="row" className="mb-0.5 grid grid-cols-[5rem_repeat(24,minmax(0,1fr))] items-center gap-0.5">
+              <span role="rowheader" className="pr-2 text-xs text-ap-muted">
                 {day}
               </span>
               {HOURS.map((hour) => {
@@ -89,32 +114,31 @@ export function OrderHeatmap({ cells }: { cells: SalesHeatCell[] }) {
                       aria-label={`${day} ${hourLabel(hour)}: ${count} ${pluralize(count, 'pedido', 'pedidos')}`}
                       onFocus={() => setFocus({ row, col: hour })}
                       onClick={() => setSelected({ day: row, hour })}
-                      className={cn(
-                        'block h-5 w-full rounded-[3px] transition-transform duration-150 hover:scale-110 sm:h-6 motion-reduce:transition-none',
-                        LEVEL_CLASS[level(count)],
-                      )}
+                      className={cn('block h-5 w-full rounded-[2px] hover:outline-2 hover:outline-offset-1 hover:outline-ap-graphite sm:h-6', HEAT_LEVEL_CLASS[level(count)])}
                     />
                   </span>
                 )
               })}
-            </Reveal>
+            </div>
           ))}
         </div>
       </div>
-      <div className="flex items-center justify-end gap-1.5 text-xs text-muted-foreground" aria-hidden>
-        Menos
-        {LEVEL_CLASS.map((cls) => (
-          <span key={cls} className={cn('size-3 rounded-[3px]', cls)} />
-        ))}
-        Más
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-xs text-ap-muted">
+        <p>Cada celda es una hora; el tono indica cuántos pedidos entraron en esa franja durante el rango.</p>
+        <ul aria-label="Leyenda: pedidos por franja" className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          {levelRanges(max).map((range) => (
+            <li key={range.level} className="inline-flex items-center gap-1.5">
+              <span aria-hidden className={cn('size-3 rounded-[2px]', HEAT_LEVEL_CLASS[range.level])} />
+              <span className="ap-ref">{range.text}</span>
+            </li>
+          ))}
+        </ul>
       </div>
 
       <Dialog open={selected !== undefined} onOpenChange={(open) => !open && setSelected(undefined)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              {selected ? `${DAYS[selected.day]}, ${hourLabel(selected.hour)} a ${String(selected.hour).padStart(2, '0')}:59` : 'Franja'}
-            </DialogTitle>
+            <DialogTitle>{selected ? `${DAYS[selected.day]}, ${slotLabel(selected.hour)}` : 'Franja'}</DialogTitle>
             <DialogDescription>
               {detail
                 ? `${detail.orders.length} ${pluralize(detail.orders.length, 'pedido', 'pedidos')} en esta franja durante el rango elegido.`
@@ -122,22 +146,22 @@ export function OrderHeatmap({ cells }: { cells: SalesHeatCell[] }) {
             </DialogDescription>
           </DialogHeader>
           {detail ? (
-            <ul className="flex max-h-72 flex-col divide-y divide-border overflow-y-auto">
+            <ul className="flex max-h-72 flex-col divide-y divide-ap-line overflow-y-auto">
               {detail.orders.map((order) => (
                 <li key={order.saleId} className="flex flex-wrap items-center justify-between gap-2 py-2.5">
                   <div className="min-w-0">
                     {can('ORDER_READ') ? (
-                      <Link to={`${base}/pedidos/${encodeURIComponent(order.saleId)}`} className="font-semibold tabular-nums underline-offset-4 hover:underline">
+                      <Link to={`${base}/pedidos/${encodeURIComponent(order.saleId)}`} className="ap-ref inline-flex min-h-11 items-center font-semibold text-ap-ink underline-offset-4 hover:underline">
                         Pedido #{order.orderNumber}
                       </Link>
                     ) : (
-                      <span className="font-semibold tabular-nums">Pedido #{order.orderNumber}</span>
+                      <span className="ap-ref font-semibold text-ap-ink">Pedido #{order.orderNumber}</span>
                     )}
-                    <p className="truncate text-xs text-muted-foreground">{order.customerName ?? 'Comprador'}</p>
+                    <p className="truncate text-xs text-ap-muted">{order.customerName ?? 'Comprador'}</p>
                   </div>
                   <div className="flex items-center gap-2">
                     <StatusBadge tone={ORDER_STATUS_TONE[order.status]}>{ORDER_STATUS_LABEL[order.status]}</StatusBadge>
-                    <span className="text-sm font-semibold tabular-nums">{formatCOP(order.total)}</span>
+                    <span className="ap-price text-sm text-ap-ink">{formatCOP(order.total)}</span>
                   </div>
                 </li>
               ))}

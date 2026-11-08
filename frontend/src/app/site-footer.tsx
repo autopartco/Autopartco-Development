@@ -26,7 +26,7 @@ function ColumnTitle({ id, children }: { id?: string; children: string }) {
 export function SiteFooter() {
   const cta = useSellerCta()
   return (
-    <footer className="surface-asphalt mt-16 border-t-2 border-ap-red-on-dark sm:mt-20">
+    <footer className="ap-surface-dark mt-16 border-t-2 border-ap-red-on-dark sm:mt-20">
       <Container className="grid gap-x-10 gap-y-10 py-12 sm:grid-cols-2 lg:grid-cols-[1.6fr_1fr_1fr]">
         <div className="flex flex-col items-start gap-4 sm:col-span-2 lg:col-span-1">
           <Logo tone="dark" />

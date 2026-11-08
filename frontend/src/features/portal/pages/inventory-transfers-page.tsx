@@ -4,9 +4,10 @@ import { toast } from 'sonner'
 import { ArrowLeftRightIcon, ArrowRightIcon, SearchXIcon } from 'lucide-react'
 import { DataTable, type DataColumn } from '@/components/common/data-table'
 import { FormAlert, INPUT_CLASS, TextField } from '@/components/common/form-fields'
-import { EmptyState } from '@/components/common/states'
+import { AccessState, EmptyState } from '@/components/common/states'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ApiError } from '@/lib/api'
 import { formatNumber, pluralize } from '@/lib/format'
@@ -142,8 +143,8 @@ function NewTransfer({ branches }: { branches: { id: string; name: string }[] })
   }
 
   return (
-    <section aria-labelledby="nueva-transferencia" className="flex flex-col gap-5 rounded-lg bg-card p-5 ring-1 ring-foreground/10">
-      <h2 id="nueva-transferencia" className="text-xl font-extrabold tracking-tight">
+    <section aria-labelledby="nueva-transferencia" className="flex flex-col gap-5 border-t border-ap-line-strong pt-4">
+      <h2 id="nueva-transferencia" className="text-block-title text-ap-ink">
         Nueva transferencia
       </h2>
       <form
@@ -157,7 +158,7 @@ function NewTransfer({ branches }: { branches: { id: string; name: string }[] })
       >
         <div className="grid items-end gap-3 sm:grid-cols-[1fr_auto_1fr]">
           <SelectField id="transf-origen" label="Sucursal de origen" placeholder="Elige el origen" options={branches.map((branch) => ({ value: branch.id, label: branch.name }))} value={from} onChange={(event) => changeFrom(event.target.value)} />
-          <ArrowRightIcon className="mb-3 hidden size-5 text-muted-foreground sm:block" aria-hidden />
+          <ArrowRightIcon className="mb-3 hidden size-5 text-ap-muted sm:block" aria-hidden />
           <SelectField
             id="transf-destino"
             label="Sucursal de destino"
@@ -169,24 +170,24 @@ function NewTransfer({ branches }: { branches: { id: string; name: string }[] })
         </div>
 
         <fieldset className="flex flex-col gap-2">
-          <legend className="mb-1 text-sm font-semibold">Qué quieres mover</legend>
+          <legend className="mb-1 text-sm font-semibold text-ap-ink">Qué quieres mover</legend>
           {MODE_OPTIONS.map((option) => (
-            <label key={option.value} className="flex min-h-11 cursor-pointer items-start gap-3 rounded-lg border border-input p-3 has-checked:border-foreground has-checked:bg-concrete">
-              <input type="radio" name="transf-modo" value={option.value} checked={mode === option.value} onChange={() => setMode(option.value)} className="mt-1 size-4" />
+            <label key={option.value} className="flex min-h-11 cursor-pointer items-start gap-3 rounded-md border border-ap-line-strong p-3 transition-colors hover:bg-ap-paper has-checked:border-ap-graphite has-checked:bg-ap-paper has-checked:shadow-[inset_3px_0_0_var(--ap-red)]">
+              <input type="radio" name="transf-modo" value={option.value} checked={mode === option.value} onChange={() => setMode(option.value)} className="mt-1 size-4 accent-ap-red" />
               <span className="flex flex-col">
-                <span className="text-sm font-semibold">{option.label}</span>
-                <span className="text-xs text-muted-foreground">{option.hint}</span>
+                <span className="text-sm font-semibold text-ap-ink">{option.label}</span>
+                <span className="text-xs text-ap-muted">{option.hint}</span>
               </span>
             </label>
           ))}
         </fieldset>
 
-        {from && products.status === 'loading' && !products.data ? <p role="status" className="text-sm text-muted-foreground">Cargando los productos de la sucursal…</p> : null}
+        {from && products.status === 'loading' && !products.data ? <p role="status" className="text-sm text-ap-muted">Cargando los productos de la sucursal…</p> : null}
         {products.status === 'error' ? <QueryError error={products.error} what="los productos" onRetry={products.retry} /> : null}
 
         {from && mode === 'SELECTION' && products.data ? (
           originRows.length === 0 ? (
-            <p className="text-sm text-muted-foreground">La sucursal de origen no tiene productos con existencias.</p>
+            <p className="text-sm text-ap-muted">La sucursal de origen no tiene productos con existencias.</p>
           ) : (
             <div className="flex flex-col gap-3">
               <SearchField label="Buscar producto" value={q} onChange={setQ} placeholder="Nombre, SKU o referencia" />
@@ -196,7 +197,7 @@ function NewTransfer({ branches }: { branches: { id: string; name: string }[] })
                   const text = selected[row.id] ?? ''
                   const invalid = checked && parseQuantity(text, row.quantity) === undefined
                   return (
-                    <li key={row.id} className="flex flex-wrap items-center gap-3 p-3">
+                    <li key={row.id} className={`flex flex-wrap items-center gap-3 p-3 ${checked ? 'bg-ap-red-tint shadow-[inset_3px_0_0_var(--ap-red)]' : ''}`}>
                       <label className="flex min-h-11 min-w-0 flex-1 cursor-pointer items-center gap-3">
                         <Checkbox
                           checked={checked}
@@ -210,9 +211,9 @@ function NewTransfer({ branches }: { branches: { id: string; name: string }[] })
                           }
                         />
                         <span className="min-w-0">
-                          <span className="block truncate text-sm font-semibold">{row.name}</span>
-                          <span className="block text-xs text-muted-foreground">
-                            {row.sku ?? row.partNumber ?? 'Sin SKU'} · {pluralize(row.quantity, 'unidad disponible', 'unidades disponibles')}
+                          <span className="block truncate text-sm font-semibold text-ap-ink">{row.name}</span>
+                          <span className="block text-xs text-ap-muted">
+                            <span className="ap-ref">{row.sku ?? row.partNumber ?? 'Sin SKU'}</span> · <span className="tabular-nums">{pluralize(row.quantity, 'unidad disponible', 'unidades disponibles')}</span>
                           </span>
                         </span>
                       </label>
@@ -230,14 +231,14 @@ function NewTransfer({ branches }: { branches: { id: string; name: string }[] })
                             onChange={(event) => setSelected((current) => ({ ...current, [row.id]: event.target.value }))}
                             className={`${INPUT_CLASS} w-24 text-right tabular-nums`}
                           />
-                          {invalid ? <p className="text-xs font-medium text-destructive">1 a {formatNumber(row.quantity)}</p> : null}
+                          {invalid ? <p className="text-xs font-medium text-ap-danger">1 a {formatNumber(row.quantity)}</p> : null}
                         </div>
                       ) : null}
                     </li>
                   )
                 })}
                 {visible.length === 0 ? (
-                  <li className="flex items-center gap-2 p-4 text-sm text-muted-foreground">
+                  <li className="flex items-center gap-2 p-4 text-sm text-ap-muted">
                     <SearchXIcon className="size-4" aria-hidden />
                     Ningún producto coincide con la búsqueda.
                   </li>
@@ -264,7 +265,7 @@ function NewTransfer({ branches }: { branches: { id: string; name: string }[] })
         <TextAreaField id="transf-notas" label="Notas" optional rows={2} maxLength={255} value={notes} onChange={(event) => setNotes(event.target.value)} />
 
         {from && to && productCount > 0 ? (
-          <p role="status" className="rounded-lg bg-concrete p-3 text-sm">
+          <p role="status" className="rounded-md border border-ap-line bg-ap-paper p-3 text-sm text-ap-ink">
             Moverás <strong className="font-semibold">{pluralize(units, 'unidad', 'unidades')}</strong> de {pluralize(productCount, 'producto', 'productos')} desde <strong className="font-semibold">{fromName}</strong> hacia <strong className="font-semibold">{toName}</strong>.
           </p>
         ) : null}
@@ -299,32 +300,34 @@ function TransferDetail({ transferId }: { transferId: string }) {
     <QueryBoundary result={result} what="la transferencia">
       {(transfer: StockTransfer) => (
         <div className="flex flex-col gap-3">
-          <p className="text-sm">
-            {formatDateTime(transfer.createdAt)} · {MODE_LABEL[transfer.mode]} · {pluralize(transfer.totalUnits, 'unidad', 'unidades')} · {actorLabel(transfer.actorName)}
+          <p className="text-sm text-ap-ink">
+            <time dateTime={transfer.createdAt} className="ap-ref">{formatDateTime(transfer.createdAt)}</time> · {MODE_LABEL[transfer.mode]} · {pluralize(transfer.totalUnits, 'unidad', 'unidades')} · {actorLabel(transfer.actorName)}
           </p>
-          {transfer.notes ? <p className="rounded-lg bg-concrete p-3 text-sm">{transfer.notes}</p> : null}
-          <div className="max-h-80 overflow-auto rounded-lg border border-border" tabIndex={0} role="region" aria-label="Productos de la transferencia">
-            <table className="w-full text-left text-sm">
-              <caption className="sr-only">Productos de la transferencia</caption>
-              <thead className="sticky top-0 bg-card text-xs text-muted-foreground">
-                <tr>
-                  <th scope="col" className="px-3 py-2 font-semibold">Producto</th>
-                  <th scope="col" className="px-3 py-2 text-right font-semibold">Cantidad</th>
-                  <th scope="col" className="px-3 py-2 text-right font-semibold">Quedó en {transfer.fromBranchName}</th>
-                  <th scope="col" className="px-3 py-2 text-right font-semibold">Quedó en {transfer.toBranchName}</th>
-                </tr>
-              </thead>
-              <tbody>
+          {transfer.notes ? <p className="rounded-md border border-ap-line bg-ap-paper p-3 text-sm text-ap-ink">{transfer.notes}</p> : null}
+          <div className="max-h-80 overflow-auto rounded-lg border border-ap-line" tabIndex={0} role="region" aria-label={`Productos movidos (${transfer.items.length})`}>
+            <Table>
+              <caption className="sr-only">Productos movidos y existencias resultantes</caption>
+              <TableHeader className="sticky top-0">
+                <TableRow>
+                  <TableHead>Producto</TableHead>
+                  <TableHead numeric>Cantidad</TableHead>
+                  <TableHead numeric>Quedó en {transfer.fromBranchName}</TableHead>
+                  <TableHead numeric>Quedó en {transfer.toBranchName}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {transfer.items.map((item) => (
-                  <tr key={item.productId} className="border-t border-border">
-                    <th scope="row" className="px-3 py-2 font-medium">{item.productName}</th>
-                    <td className="px-3 py-2 text-right tabular-nums">{formatNumber(item.quantity)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{formatNumber(item.fromStock)}</td>
-                    <td className="px-3 py-2 text-right tabular-nums">{formatNumber(item.toStock)}</td>
-                  </tr>
+                  <TableRow key={item.productId}>
+                    <TableHead scope="row" className="h-auto border-b-ap-line bg-transparent py-3 text-sm font-medium whitespace-normal text-ap-ink">
+                      {item.productName}
+                    </TableHead>
+                    <TableCell numeric className="font-semibold">{formatNumber(item.quantity)}</TableCell>
+                    <TableCell numeric>{formatNumber(item.fromStock)}</TableCell>
+                    <TableCell numeric>{formatNumber(item.toStock)}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </div>
       )}
@@ -341,20 +344,21 @@ function History({ branches }: { branches: { id: string; name: string }[] }) {
   )
 
   const columns: DataColumn<StockTransferSummary>[] = [
-    { id: 'fecha', header: 'Fecha', rowHeader: true, cell: (row) => <span className="tabular-nums">{formatDateTime(row.createdAt)}</span> },
+    { id: 'fecha', header: 'Fecha', rowHeader: true, cell: (row) => <time dateTime={row.createdAt} className="ap-ref text-ap-ink">{formatDateTime(row.createdAt)}</time> },
     {
       id: 'ruta',
       header: 'Origen y destino',
       cell: (row) => (
         <span className="inline-flex flex-wrap items-center gap-1.5">
           {row.fromBranchName}
-          <ArrowRightIcon className="size-3.5 text-muted-foreground" aria-label="hacia" />
+          <ArrowRightIcon className="size-3.5 text-ap-muted" aria-label="hacia" />
           {row.toBranchName}
         </span>
       ),
     },
     { id: 'modo', header: 'Qué se movió', cell: (row) => <StatusBadge tone={row.mode === 'ALL' ? 'info' : 'neutral'}>{MODE_LABEL[row.mode]}</StatusBadge> },
-    { id: 'unidades', header: 'Unidades', align: 'end', cell: (row) => <span className="tabular-nums">{formatNumber(row.totalUnits)} en {pluralize(row.itemCount, 'producto', 'productos')}</span> },
+    { id: 'unidades', header: 'Unidades', align: 'end', cell: (row) => <span className="ap-num font-semibold text-ap-ink">{formatNumber(row.totalUnits)}</span> },
+    { id: 'productos', header: 'Productos', align: 'end', cell: (row) => <span className="ap-num">{formatNumber(row.itemCount)}</span> },
     { id: 'responsable', header: 'Responsable', cell: (row) => actorLabel(row.actorName) },
     {
       id: 'detalle',
@@ -372,7 +376,7 @@ function History({ branches }: { branches: { id: string; name: string }[] }) {
   return (
     <section aria-labelledby="historial-transferencias" className="flex flex-col gap-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <h2 id="historial-transferencias" className="text-xl font-extrabold tracking-tight">
+        <h2 id="historial-transferencias" className="text-block-title text-ap-ink">
           Historial
         </h2>
         <SelectField
@@ -433,12 +437,14 @@ export default function PortalInventoryTransfersPage() {
         {() => (
           <div className="flex flex-col gap-8">
             {!known ? (
-              <EmptyState icon={<ArrowLeftRightIcon />} title="No puedes ver las sucursales" description="Para transferir inventario necesitas permiso para ver las sucursales del almacén. Pídelo a quien administra tu almacén." />
+              <AccessState title="No puedes ver las sucursales" description="Para transferir inventario necesitas permiso para ver las sucursales del almacén. Pídelo a quien administra tu almacén." />
             ) : branches.length < MIN_BRANCHES_TO_TRANSFER ? (
               <TransfersRequirement />
             ) : mayTransfer ? (
               <NewTransfer branches={branches} />
-            ) : null}
+            ) : (
+              <AccessState title="Solo puedes consultar el historial" description="Tu cuenta no tiene permiso para transferir inventario. Si lo necesitas, pídelo a quien administra tu almacén." />
+            )}
             {known ? <History branches={branches} /> : null}
           </div>
         )}

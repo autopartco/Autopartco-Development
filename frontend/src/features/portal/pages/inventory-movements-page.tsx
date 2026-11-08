@@ -48,15 +48,15 @@ function MovementsList({ filters, page, onPageChange }: { filters: Filters; page
       id: 'fecha',
       header: 'Fecha',
       rowHeader: true,
-      cell: (row) => <span className="tabular-nums">{formatDateTime(row.occurredAt)}</span>,
+      cell: (row) => <time dateTime={row.occurredAt} className="ap-ref text-ap-ink">{formatDateTime(row.occurredAt)}</time>,
     },
     {
       id: 'producto',
       header: 'Producto',
       cell: (row) => (
         <div className="min-w-0">
-          <p className="font-semibold">{row.productName}</p>
-          <p className="text-xs text-muted-foreground">{row.sku ?? 'Sin SKU'}</p>
+          <p className="font-semibold text-ap-ink">{row.productName}</p>
+          <p className="ap-ref text-ap-muted">{row.sku ?? 'Sin SKU'}</p>
         </div>
       ),
     },
@@ -68,21 +68,28 @@ function MovementsList({ filters, page, onPageChange }: { filters: Filters; page
         row.movementType === 'IN' ? (
           <StatusBadge tone="success">
             <ArrowUpIcon className="size-3" aria-hidden />
-            Entrada · +{row.quantity}
+            Entrada
           </StatusBadge>
         ) : (
           <StatusBadge tone="warning">
             <ArrowDownIcon className="size-3" aria-hidden />
-            Salida · −{row.quantity}
+            Salida
           </StatusBadge>
         ),
     },
     {
+      id: 'cantidad',
+      header: 'Cantidad',
+      align: 'end',
+      cell: (row) => <span className="ap-num font-semibold text-ap-ink">{row.movementType === 'IN' ? '+' : '−'}{row.quantity}</span>,
+    },
+    {
       id: 'existencias',
       header: 'Existencias',
+      align: 'end',
       cell: (row) => (
-        <span className="tabular-nums">
-          {row.previousStock} → <strong className="font-semibold">{row.newStock}</strong>
+        <span className="ap-num whitespace-nowrap text-ap-muted">
+          {row.previousStock} <span aria-label="pasa a">→</span> <strong className="font-semibold text-ap-ink">{row.newStock}</strong>
         </span>
       ),
     },
@@ -92,7 +99,7 @@ function MovementsList({ filters, page, onPageChange }: { filters: Filters; page
       cell: (row) => (
         <div className="min-w-0">
           <p>{row.reasonLabel}</p>
-          {row.notes ? <p className="text-xs text-muted-foreground">{row.notes}</p> : null}
+          {row.notes ? <p className="text-xs text-ap-muted">{row.notes}</p> : null}
         </div>
       ),
     },

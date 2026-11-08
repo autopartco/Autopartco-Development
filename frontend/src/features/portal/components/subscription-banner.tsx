@@ -21,13 +21,13 @@ export function SubscriptionBanner({ subscription, plansPath, canManage }: { sub
       aria-label="Estado de tu suscripción"
       className={
         expired
-          ? 'border-b border-destructive/25 bg-destructive/5 text-foreground'
-          : 'border-b border-stock-low/25 bg-stock-low/10 text-foreground'
+          ? 'border-b border-ap-danger/25 bg-ap-danger-soft text-ap-ink'
+          : 'border-b border-ap-warning/25 bg-ap-warning-soft text-ap-ink'
       }
     >
       <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
         <div className="flex items-start gap-3">
-          <Icon className={expired ? 'mt-0.5 size-5 shrink-0 text-destructive' : 'mt-0.5 size-5 shrink-0 text-stock-low'} aria-hidden />
+          <Icon className={expired ? 'mt-0.5 size-5 shrink-0 text-ap-danger' : 'mt-0.5 size-5 shrink-0 text-ap-warning'} aria-hidden />
           <p className="text-sm">
             {expired ? (
               <>

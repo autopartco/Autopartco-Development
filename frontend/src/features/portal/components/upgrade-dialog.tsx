@@ -87,10 +87,10 @@ export function UpgradeDialog({ error, planName, plansPath, onClose }: UpgradeDi
               <DialogDescription>{copy.description}</DialogDescription>
             </DialogHeader>
             {copy.rows.length > 0 ? (
-              <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1.5 rounded-lg bg-concrete p-3 text-sm">
+              <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1.5 rounded-md border border-ap-line bg-ap-paper p-3 text-sm">
                 {copy.rows.map((row) => (
                   <div key={row.label} className="contents">
-                    <dt className="text-muted-foreground">{row.label}</dt>
+                    <dt className="text-ap-muted">{row.label}</dt>
                     <dd className="text-right font-semibold tabular-nums">{row.value}</dd>
                   </div>
                 ))}

@@ -1,6 +1,6 @@
-import { useId, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
+import { useRef, useState, type KeyboardEvent, type PointerEvent } from 'react'
 import { cn } from '@/lib/utils'
-import { useRevealed } from '../lib/motion'
+import { CHART_COLOR } from '../lib/chart-palette'
 
 export interface SparkPoint {
   label: string
@@ -12,6 +12,8 @@ interface SparklineProps {
   formatValue: (value: number) => string
   /** Qué mide la serie ("Ventas diarias"): nombra el gráfico para lectores de pantalla. */
   label: string
+  /** `primary` (rojo) para la métrica principal del panel; `secondary` (grafito) para las demás. */
+  tone?: 'primary' | 'secondary'
   className?: string
 }
 
@@ -20,13 +22,11 @@ const H = 80
 const PAD = 5
 
 /**
- * Minigráfico de línea en SVG con tooltip por punto. Con puntero: pasa el cursor; con teclado:
- * enfoca el gráfico y usa las flechas (Inicio/Fin saltan a los extremos). La línea se dibuja
- * con un `scaleX` (solo transform) una vez al entrar en pantalla.
+ * Minigráfico de línea (§20.4 A) con tooltip por punto. La escala parte de 0 (sin truncar) y se
+ * rotulan el primer y el último día; sin relleno degradado ni animación de entrada. Con puntero: pasa
+ * el cursor; con teclado: enfoca el gráfico y usa las flechas (Inicio/Fin saltan a los extremos).
  */
-export function Sparkline({ points, formatValue, label, className }: SparklineProps) {
-  const revealed = useRevealed()
-  const gradientId = useId()
+export function Sparkline({ points, formatValue, label, tone = 'primary', className }: SparklineProps) {
   const wrapper = useRef<HTMLDivElement>(null)
   const [active, setActive] = useState<number | null>(null)
   const [announce, setAnnounce] = useState('')
@@ -39,7 +39,7 @@ export function Sparkline({ points, formatValue, label, className }: SparklinePr
   const xOf = (index: number) => (count <= 1 ? W / 2 : (index / (count - 1)) * W)
   const yOf = (value: number) => H - PAD - ((value - min) / span) * (H - PAD * 2)
   const line = points.map((point, index) => `${index === 0 ? 'M' : 'L'}${xOf(index).toFixed(1)} ${yOf(point.value).toFixed(1)}`).join(' ')
-  const area = `${line} L${xOf(count - 1).toFixed(1)} ${H} L${xOf(0).toFixed(1)} ${H} Z`
+  const color = tone === 'primary' ? CHART_COLOR.primary : CHART_COLOR.secondary
 
   function move(index: number, announceIt: boolean) {
     const next = Math.min(count - 1, Math.max(0, index))
@@ -71,60 +71,52 @@ export function Sparkline({ points, formatValue, label, className }: SparklinePr
   if (count === 0) return null
 
   return (
-    <div
-      ref={wrapper}
-      role="group"
-      tabIndex={0}
-      aria-label={`${label}. Usa las flechas izquierda y derecha para recorrer los puntos.`}
-      onPointerMove={onPointerMove}
-      onPointerLeave={() => {
-        if (document.activeElement !== wrapper.current) setActive(null)
-      }}
-      onKeyDown={onKeyDown}
-      onFocus={() => active === null && move(count - 1, true)}
-      onBlur={() => {
-        setActive(null)
-        setAnnounce('')
-      }}
-      className={cn('relative mt-5 touch-pan-y rounded-md', className)}
-    >
+    <div className={cn('mt-5 flex flex-col gap-1', className)}>
       <div
-        aria-hidden
-        className={cn(
-          'origin-left scale-x-0 transition-transform duration-1000 ease-out-thread motion-reduce:scale-x-100 motion-reduce:transition-none',
-          revealed && 'scale-x-100',
-        )}
+        ref={wrapper}
+        role="group"
+        tabIndex={0}
+        aria-label={`${label}, del ${points[0]?.label} al ${points[count - 1]?.label}. Usa las flechas izquierda y derecha para recorrer los puntos.`}
+        onPointerMove={onPointerMove}
+        onPointerLeave={() => {
+          if (document.activeElement !== wrapper.current) setActive(null)
+        }}
+        onKeyDown={onKeyDown}
+        onFocus={() => active === null && move(count - 1, true)}
+        onBlur={() => {
+          setActive(null)
+          setAnnounce('')
+        }}
+        className="relative touch-pan-y rounded-sm"
       >
-        <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="block h-20 w-full overflow-visible">
-          <defs>
-            <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0%" stopColor="var(--color-thread)" stopOpacity="0.22" />
-              <stop offset="100%" stopColor="var(--color-thread)" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <path d={area} fill={`url(#${gradientId})`} />
-          <path d={line} fill="none" stroke="var(--color-thread)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+        <svg aria-hidden viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" className="block h-20 w-full overflow-visible">
+          <line x1="0" x2={W} y1={yOf(0)} y2={yOf(0)} stroke={CHART_COLOR.reference} strokeWidth="1" vectorEffect="non-scaling-stroke" />
+          <path d={line} fill="none" stroke={color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
         </svg>
+        {point ? (
+          <>
+            <span
+              aria-hidden
+              className="pointer-events-none absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full ring-2 ring-ap-white"
+              style={{ left: `${left}%`, top: `${top}%`, backgroundColor: color }}
+            />
+            <span
+              aria-hidden
+              className="pointer-events-none absolute bottom-full z-10 mb-2 rounded-md bg-ap-graphite px-2 py-1 text-xs whitespace-nowrap text-ap-white shadow-overlay"
+              style={{ left: `${left}%`, transform: `translateX(${tooltipShift})` }}
+            >
+              <span className="text-ap-on-dark-muted">{point.label}</span> <strong className="font-semibold tabular-nums">{formatValue(point.value)}</strong>
+            </span>
+          </>
+        ) : null}
+        <span role="status" className="sr-only">
+          {announce}
+        </span>
       </div>
-      {point ? (
-        <>
-          <span
-            aria-hidden
-            className="pointer-events-none absolute size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary ring-2 ring-card"
-            style={{ left: `${left}%`, top: `${top}%` }}
-          />
-          <span
-            aria-hidden
-            className="pointer-events-none absolute bottom-full z-10 mb-2 rounded-md bg-asphalt px-2 py-1 text-xs whitespace-nowrap text-white shadow-md"
-            style={{ left: `${left}%`, transform: `translateX(${tooltipShift})` }}
-          >
-            <span className="text-asphalt-muted">{point.label}</span> <strong className="font-semibold tabular-nums">{formatValue(point.value)}</strong>
-          </span>
-        </>
-      ) : null}
-      <span role="status" className="sr-only">
-        {announce}
-      </span>
+      <div aria-hidden className="flex justify-between ap-ref text-xs text-ap-muted">
+        <span>{points[0]?.label}</span>
+        <span>{points[count - 1]?.label}</span>
+      </div>
     </div>
   )
 }

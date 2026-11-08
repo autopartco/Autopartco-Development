@@ -30,21 +30,21 @@ export function UsageMeter({ capacity, used, limit, upgradeTo, className }: Usag
   return (
     <div className={cn('flex flex-col gap-2', className)}>
       <div className="flex items-baseline justify-between gap-3">
-        <span className="text-sm font-semibold">{label}</span>
-        <span className="text-sm text-muted-foreground tabular-nums">{text}</span>
+        <span className="text-sm font-semibold text-ap-ink">{label}</span>
+        <span className="text-sm text-ap-muted tabular-nums">{text}</span>
       </div>
       {percent !== null ? (
         <Progress
           value={percent}
           aria-label={`Uso de ${names.plural}`}
           getAriaValueText={() => text}
-          indicatorClassName={cn(atLimit ? 'bg-destructive' : nearLimit ? 'bg-stock-low' : 'bg-foreground')}
+          indicatorClassName={cn(atLimit ? 'bg-ap-danger' : nearLimit ? 'bg-ap-warning' : 'bg-ap-graphite')}
         />
       ) : (
-        <p className="text-xs text-muted-foreground">Tu plan no limita este recurso.</p>
+        <p className="text-xs text-ap-muted">Tu plan no limita este recurso.</p>
       )}
       {nearLimit ? (
-        <p className={cn('flex items-start gap-1.5 text-sm font-medium', atLimit ? 'text-destructive' : 'text-stock-low')}>
+        <p className={cn('flex items-start gap-1.5 text-sm font-medium', atLimit ? 'text-ap-danger' : 'text-ap-warning')}>
           <TriangleAlertIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
           <span>
             {atLimit ? `Llegaste al límite de ${names.plural}.` : `Estás cerca del límite de ${names.plural}.`}{' '}

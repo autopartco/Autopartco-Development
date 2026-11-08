@@ -15,34 +15,26 @@ interface NodeProps {
   title: string
   subtitle: string
   strong?: boolean
-  delay: number
 }
 
-function Node({ x, y, width, title, subtitle, strong, delay }: NodeProps) {
+function Node({ x, y, width, title, subtitle, strong }: NodeProps) {
   return (
-    <g className="relation-node" style={{ animationDelay: `${delay}ms` }}>
-      <rect
-        x={x}
-        y={y}
-        width={width}
-        height={NODE_H}
-        rx={8}
-        className={strong ? 'fill-asphalt stroke-asphalt' : 'fill-card stroke-foreground/20'}
-      />
-      <text x={x + 12} y={y + 18} className={strong ? 'fill-white text-[12px] font-bold' : 'fill-foreground text-[12px] font-bold'}>
+    <g>
+      <rect x={x} y={y} width={width} height={NODE_H} rx={6} className={strong ? 'fill-ap-graphite stroke-ap-graphite' : 'fill-ap-white stroke-ap-line-strong'} />
+      <text x={x + 12} y={y + 18} className={strong ? 'fill-ap-white text-[12px] font-semibold' : 'fill-ap-ink text-[12px] font-semibold'}>
         {clip(title, Math.floor(width / 7.2))}
       </text>
-      <text x={x + 12} y={y + 34} className={strong ? 'fill-asphalt-muted text-[10.5px]' : 'fill-muted-foreground text-[10.5px]'}>
-        {clip(subtitle, Math.floor(width / 5.6))}
+      <text x={x + 12} y={y + 34} className={strong ? 'fill-ap-on-dark-muted font-mono text-[10.5px]' : 'fill-ap-muted font-mono text-[10.5px]'}>
+        {clip(subtitle, Math.floor(width / 6.4))}
       </text>
     </g>
   )
 }
 
 /**
- * Relaciones de la solicitud: solicitud, almacén que se crearía y documentos que la respaldan.
- * SVG puro; las líneas se dibujan al abrir (solo sin `prefers-reduced-motion`). La misma
- * información está en el resto del panel, por eso el gráfico expone una descripción de texto.
+ * Relaciones de la solicitud: la solicitud, el almacén que se crearía y los documentos que la respaldan.
+ * SVG estático (sin animación), nodos con borde y líneas en gris acero; el rojo queda para las acciones.
+ * La misma información está en el resto del panel; el gráfico expone una descripción de texto.
  */
 export function RelationsView({ application }: { application: StoreApplication }) {
   const rows = 1 + application.documents.length
@@ -62,9 +54,9 @@ export function RelationsView({ application }: { application: StoreApplication }
       subtitle: document.filename,
     })),
   ]
-  const description = `Solicitud de ${application.businessName} relacionada con el almacén y con ${application.documents.length} documentos: ${application.documents
-    .map((document) => DOCUMENT_TYPE_LABEL[document.type])
-    .join(', ')}.`
+  const description = `Solicitud de ${application.businessName} relacionada con el almacén y con ${application.documents.length} documentos${
+    application.documents.length > 0 ? `: ${application.documents.map((document) => DOCUMENT_TYPE_LABEL[document.type]).join(', ')}` : ''
+  }.`
 
   return (
     <figure className="flex flex-col gap-2">
@@ -77,35 +69,17 @@ export function RelationsView({ application }: { application: StoreApplication }
               key={`line-${target.key}`}
               d={`M ${leftX + leftW} ${sourceMid} C ${leftX + leftW + 45} ${sourceMid}, ${rightX - 45} ${mid}, ${rightX} ${mid}`}
               fill="none"
-              pathLength={1}
-              className="relation-line stroke-thread"
-              strokeWidth={1.75}
-              style={{ animationDelay: `${index * 90}ms` }}
+              className="stroke-ap-steel"
+              strokeWidth={1.5}
             />
           )
         })}
-        <Node
-          x={leftX}
-          y={sourceY}
-          width={leftW}
-          title="Solicitud"
-          subtitle={`${LEGAL_TYPE_LABEL[application.legalType]} · ${application.applicantEmail}`}
-          strong
-          delay={0}
-        />
+        <Node x={leftX} y={sourceY} width={leftW} title="Solicitud" subtitle={`${LEGAL_TYPE_LABEL[application.legalType]} · ${application.applicantEmail}`} strong />
         {targets.map((target, index) => (
-          <Node
-            key={target.key}
-            x={rightX}
-            y={index * ROW + (ROW - NODE_H) / 2}
-            width={rightW}
-            title={target.title}
-            subtitle={target.subtitle}
-            delay={120 + index * 90}
-          />
+          <Node key={target.key} x={rightX} y={index * ROW + (ROW - NODE_H) / 2} width={rightW} title={target.title} subtitle={target.subtitle} />
         ))}
       </svg>
-      <figcaption className="text-xs text-muted-foreground">Cada línea une la solicitud con lo que la respalda.</figcaption>
+      <figcaption className="text-xs text-ap-muted">Cada línea une la solicitud con el almacén y los documentos que la respaldan.</figcaption>
     </figure>
   )
 }

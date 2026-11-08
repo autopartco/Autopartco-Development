@@ -41,7 +41,7 @@ export function SellerCtaPanel({ className }: { className?: string }) {
   const sentOn = cta.state === 'review' && cta.application ? formatDate(cta.application.createdAt) : undefined
 
   return (
-    <section aria-labelledby="cta-almacen" className={cn('surface-asphalt flex flex-col items-start gap-3 rounded-xl border-t-2 border-ap-red-on-dark p-6', className)}>
+    <section aria-labelledby="cta-almacen" className={cn('ap-surface-dark flex flex-col items-start gap-3 rounded-xl border-t-2 border-ap-red-on-dark p-6', className)}>
       <p className="ap-index">Para almacenes en Colombia</p>
       <h3 id="cta-almacen" className="text-block-title">
         {copy.title}

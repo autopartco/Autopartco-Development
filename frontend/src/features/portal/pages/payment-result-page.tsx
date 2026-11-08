@@ -198,11 +198,11 @@ function viewOf(phase: Phase, checkout: PendingCheckout): ResultView {
 
 function Summary({ rows }: { rows: { label: string; value: ReactNode; strong?: boolean }[] }) {
   return (
-    <dl className="grid w-full grid-cols-[auto_1fr] gap-x-4 gap-y-2 rounded-lg bg-concrete p-4 text-left text-sm">
+    <dl className="grid w-full grid-cols-[auto_1fr] border-t border-ap-line text-left text-sm">
       {rows.map((row) => (
         <div key={row.label} className="contents">
-          <dt className="text-muted-foreground">{row.label}</dt>
-          <dd className={row.strong ? 'text-right text-base font-extrabold tabular-nums' : 'min-w-0 text-right break-all tabular-nums'}>{row.value}</dd>
+          <dt className="border-b border-ap-line py-2.5 pr-4 text-ap-muted">{row.label}</dt>
+          <dd className={row.strong ? 'ap-price border-b border-ap-line py-2.5 text-right text-lg text-ap-ink' : 'min-w-0 border-b border-ap-line py-2.5 text-right break-all text-ap-ink tabular-nums'}>{row.value}</dd>
         </div>
       ))}
     </dl>
@@ -210,7 +210,7 @@ function Summary({ rows }: { rows: { label: string; value: ReactNode; strong?: b
 }
 
 function Actions({ children }: { children: ReactNode }) {
-  return <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-center">{children}</div>
+  return <div className="flex w-full flex-col-reverse gap-2 sm:flex-row">{children}</div>
 }
 
 const BUTTON = 'h-11 w-full px-5 sm:w-auto'
@@ -237,7 +237,7 @@ function PendingResult({ checkout, transactionId }: { checkout: PendingCheckout;
             { label: 'Plan', value: payment.planName || checkout.planName },
             { label: 'Meses pagados', value: monthsLabel(payment.months || checkout.months) },
             ...(payment.periodEndsAt ? [{ label: 'Vigente hasta', value: formatDate(payment.periodEndsAt) }] : []),
-            { label: 'Referencia', value: <span className="font-mono text-xs">{payment.reference}</span> },
+            { label: 'Referencia', value: <span className="ap-ref">{payment.reference}</span> },
             { label: 'Total pagado', value: formatCOP(payment.amountCop), strong: true },
           ]}
         />
@@ -259,7 +259,7 @@ function PendingResult({ checkout, transactionId }: { checkout: PendingCheckout;
         <Summary
           rows={[
             { label: 'Plan', value: phase.payment.planName || checkout.planName },
-            { label: 'Referencia', value: <span className="font-mono text-xs">{phase.payment.reference}</span> },
+            { label: 'Referencia', value: <span className="ap-ref">{phase.payment.reference}</span> },
           ]}
         />
       )
@@ -325,7 +325,7 @@ function CheckoutSummary({ checkout }: { checkout: PendingCheckout }) {
       rows={[
         { label: 'Plan', value: checkout.planName },
         { label: 'Meses', value: monthsLabel(checkout.months) },
-        { label: 'Referencia', value: <span className="font-mono text-xs">{checkout.reference}</span> },
+        { label: 'Referencia', value: <span className="ap-ref">{checkout.reference}</span> },
         { label: 'Total', value: formatCOP(checkout.amountInCents / 100), strong: true },
       ]}
     />
@@ -334,10 +334,10 @@ function CheckoutSummary({ checkout }: { checkout: PendingCheckout }) {
 
 function TransactionNote({ id }: { id: string }) {
   return (
-    <p className="flex items-start gap-2 text-left text-xs text-muted-foreground">
+    <p className="flex items-start gap-2 text-left text-xs text-ap-muted">
       <ReceiptTextIcon className="mt-px size-4 shrink-0" aria-hidden />
       <span>
-        Transacción de Wompi: <span className="font-mono break-all text-foreground">{id}</span>. Compártela con soporte si necesitas ayuda.
+        Transacción de Wompi: <span className="ap-ref break-all text-ap-ink">{id}</span>. Compártela con soporte si necesitas ayuda.
       </span>
     </p>
   )
@@ -357,7 +357,7 @@ function ResultCard({
   children: ReactNode
 }) {
   return (
-    <section aria-busy={busy || undefined} className="flex flex-col items-center gap-6 rounded-xl bg-card p-5 text-center ring-1 ring-foreground/10 sm:p-8">
+    <section aria-busy={busy || undefined} className="flex flex-col items-start gap-6 border-t-2 border-ap-graphite pt-6">
       {indicator}
       <PageHeader label="Pago del plan" title={title} description={description} className="mb-0 w-full sm:mb-0" />
       {children}
@@ -375,7 +375,7 @@ export default function PaymentResultPage() {
   const transactionId = safeTransactionId(params.get('id'))
 
   return (
-    <div className="min-h-svh bg-background">
+    <div className="min-h-svh bg-ap-white">
       <PortalHeader innerClassName="mx-auto w-full max-w-3xl px-4 sm:px-6 lg:px-6" />
       <main id="contenido" tabIndex={-1} className="mx-auto w-full max-w-lg px-4 py-8 outline-none sm:px-6 sm:py-12">
         <title>Resultado del pago | Autopartco</title>

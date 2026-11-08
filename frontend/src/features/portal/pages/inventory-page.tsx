@@ -18,7 +18,8 @@ import { PageHeader } from '../components/page-header'
 import { QueryBoundary } from '../components/query-boundary'
 import { ResultCount, SearchField } from '../components/search-field'
 import { StockAdjustDialog, type AdjustTarget } from '../components/stock-adjust-dialog'
-import { StockBadge } from '../components/status-badge'
+import { StockQuantity } from '../components/status-badge'
+import { SEGMENT_GROUP_CLASS, segmentClass } from '../components/segmented'
 import { usePortal } from '../context'
 import { useActiveBranches, useStoreQuery } from '../hooks'
 import { inventoryErrorMessage, saveFile } from '../lib/inventory'
@@ -66,7 +67,7 @@ function MinStockEditor({ item }: { item: LowStockItem }) {
 
   return (
     <form
-      className="flex flex-wrap items-start gap-2"
+      className="flex flex-wrap items-start justify-end gap-2"
       onSubmit={(event) => {
         event.preventDefault()
         if (parsed !== undefined && parsed !== item.minStock) void run(parsed)
@@ -88,7 +89,7 @@ function MinStockEditor({ item }: { item: LowStockItem }) {
           className={`${INPUT_CLASS} w-24 text-right tabular-nums`}
         />
         {invalid ? (
-          <p id={`min-err-${key}`} className="text-xs font-medium text-destructive">
+          <p id={`min-err-${key}`} className="text-xs font-medium text-ap-danger">
             Escribe un entero, 0 o más.
           </p>
         ) : null}
@@ -120,17 +121,18 @@ function LowStockView({ q, branchId, canEditMin, onAdjust }: { q: string; branch
             sortValue: (item) => item.productName,
             cell: (item) => (
               <div className="min-w-0">
-                <p className="font-semibold">{item.productName}</p>
-                <p className="text-xs text-muted-foreground">{item.sku ?? 'Sin SKU'}</p>
+                <p className="font-semibold text-ap-ink">{item.productName}</p>
+                <p className="ap-ref text-ap-muted">{item.sku ?? 'Sin SKU'}</p>
               </div>
             ),
           },
           { id: 'sucursal', header: 'Sucursal', sortValue: (item) => item.branchName, cell: (item) => item.branchName },
-          { id: 'stock', header: 'Existencias', sortValue: (item) => item.stock, cell: (item) => <StockBadge quantity={item.stock} /> },
+          { id: 'stock', header: 'Existencias', align: 'end', sortValue: (item) => item.stock, cell: (item) => <StockQuantity quantity={item.stock} /> },
           {
             id: 'minimo',
             header: 'Stock mínimo',
-            cell: (item) => (canEditMin ? <MinStockEditor key={`${item.productId}:${item.branchId}:${item.minStock}`} item={item} /> : <span className="tabular-nums">{item.minStock}</span>),
+            align: 'end',
+            cell: (item) => (canEditMin ? <MinStockEditor key={`${item.productId}:${item.branchId}:${item.minStock}`} item={item} /> : <span className="ap-num">{item.minStock}</span>),
           },
           ...(onAdjust
             ? [
@@ -161,7 +163,7 @@ function LowStockView({ q, branchId, canEditMin, onAdjust }: { q: string; branch
         }
         return (
           <div className="flex flex-col gap-3">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-ap-muted">
               {pluralize(shown.length, 'publicación', 'publicaciones')} en o por debajo de su stock mínimo. Sin un mínimo propio se usa 3 unidades.
             </p>
             <DataTable
@@ -237,15 +239,15 @@ function InventoryView({ rows }: { rows: ProductRow[] }) {
       sortValue: (row) => row.name,
       cell: (row) => (
         <div className="min-w-0">
-          <Link to={`${base}/productos/${encodeURIComponent(row.id)}`} className="font-semibold underline-offset-4 hover:underline">
+          <Link to={`${base}/productos/${encodeURIComponent(row.id)}`} className="font-semibold text-ap-ink underline-offset-4 hover:underline">
             {row.name}
           </Link>
-          <p className="text-xs text-muted-foreground">{row.sku ?? row.partNumber ?? 'Sin SKU'}</p>
+          <p className="ap-ref text-ap-muted">{row.sku ?? row.partNumber ?? 'Sin SKU'}</p>
         </div>
       ),
     },
     { id: 'sucursal', header: 'Sucursal', sortValue: (row) => row.branchName, cell: (row) => row.branchName },
-    { id: 'stock', header: 'Existencias', sortValue: (row) => row.quantity, cell: (row) => <StockBadge quantity={row.quantity} /> },
+    { id: 'stock', header: 'Existencias', align: 'end', sortValue: (row) => row.quantity, cell: (row) => <StockQuantity quantity={row.quantity} /> },
     {
       id: 'acciones',
       header: 'Acciones',
@@ -281,17 +283,17 @@ function InventoryView({ rows }: { rows: ProductRow[] }) {
 
   return (
     <div className="flex flex-col gap-5">
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-ap-muted tabular-nums">
         {pluralize(rows.length, 'publicación', 'publicaciones')} · {formatNumber(totals.low)} en stock bajo · {pluralize(totals.out, 'agotada', 'agotadas')}
       </p>
 
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Vista del inventario">
-        <Button variant={lowView ? 'outline' : 'default'} className="h-11 px-4" aria-pressed={!lowView} onClick={() => setView(false)}>
+      <div className={SEGMENT_GROUP_CLASS} role="group" aria-label="Vista del inventario">
+        <button type="button" className={segmentClass(!lowView)} aria-pressed={!lowView} onClick={() => setView(false)}>
           Todas las existencias
-        </Button>
-        <Button variant={lowView ? 'default' : 'outline'} className="h-11 px-4" aria-pressed={lowView} onClick={() => setView(true)}>
-          Stock bajo ({formatNumber(totals.low)})
-        </Button>
+        </button>
+        <button type="button" className={segmentClass(lowView)} aria-pressed={lowView} onClick={() => setView(true)}>
+          Stock bajo <span className="tabular-nums">({formatNumber(totals.low)})</span>
+        </button>
       </div>
 
       <form
@@ -389,7 +391,14 @@ export default function PortalInventoryPage() {
       <QueryBoundary result={products} what="el inventario" keepPrevious>
         {(rows) =>
           rows.length === 0 ? (
-            <EmptyState icon={<PackageIcon />} title="Aún no hay productos" description="Agrega tu primer producto con sus existencias para verlo aquí por sucursal." />
+            <EmptyState icon={<PackageIcon />} title="Aún no hay productos" description="Agrega tu primer producto con sus existencias para verlo aquí por sucursal.">
+              {can('PRODUCT_CREATE') ? (
+                <Button variant="outline" className="h-11 px-4" nativeButton={false} render={<Link to={`${base}/productos/nuevo`} />}>
+                  <PlusIcon aria-hidden />
+                  Agregar producto
+                </Button>
+              ) : null}
+            </EmptyState>
           ) : (
             <InventoryView rows={rows} />
           )

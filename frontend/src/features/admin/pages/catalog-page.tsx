@@ -9,13 +9,12 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { ConfirmDialog } from '@/features/portal/components/confirm-dialog'
 import { SelectField } from '@/features/portal/components/form-controls'
-import { QueryBoundary } from '@/features/portal/components/query-boundary'
 import { ResultCount, SearchField } from '@/features/portal/components/search-field'
 import { StatusBadge } from '@/features/portal/components/status-badge'
 import { normalizeText } from '@/features/portal/lib/fuzzy'
 import { getAdminOpsService } from '../api/admin-ops-service'
 import type { AdminCategory, AdminManufacturer } from '../api/ops-types'
-import { AdminPage, FormSheet, RowActions } from '../components/admin-kit'
+import { AdminBoundary, AdminPage, FormSheet, RowActions } from '../components/admin-kit'
 import { reloadAdmin, useAdminCategories, useAdminManufacturers } from '../hooks'
 
 type Tab = 'categorias' | 'fabricantes'
@@ -84,8 +83,8 @@ function CategoriesTab() {
   }, [categories.data, q])
 
   const columns: DataColumn<AdminCategory>[] = [
-    { id: 'codigo', header: 'Código', rowHeader: true, sortValue: (row) => row.code, cell: (row) => <span className="font-mono font-semibold">{row.code}</span> },
-    { id: 'id', header: 'ID', className: 'hidden md:table-cell', cell: (row) => <span className="font-mono text-sm text-muted-foreground">{row.id}</span> },
+    { id: 'codigo', header: 'Código', rowHeader: true, sortValue: (row) => row.code, cell: (row) => <span className="ap-ref font-semibold text-ap-ink">{row.code}</span> },
+    { id: 'id', header: 'ID', className: 'hidden md:table-cell', cell: (row) => <span className="ap-ref text-ap-muted">{row.id}</span> },
     {
       id: 'acciones',
       header: 'Acciones',
@@ -112,7 +111,7 @@ function CategoriesTab() {
           Nueva categoría
         </Button>
       </div>
-      <QueryBoundary result={categories} what="las categorías" keepPrevious>
+      <AdminBoundary result={categories} what="las categorías" keepPrevious>
         {(all) =>
           all.length === 0 ? (
             <EmptyState icon={<TagsIcon />} title="Aún no hay categorías" description="Las categorías ordenan el catálogo del marketplace." />
@@ -127,7 +126,7 @@ function CategoriesTab() {
             </>
           )
         }
-      </QueryBoundary>
+      </AdminBoundary>
       {editing ? (
         <NameSheet
           title={editing.category ? `Renombrar ${editing.category.code}` : 'Nueva categoría'}
@@ -191,12 +190,22 @@ function ManufacturersTab() {
   }
 
   const columns: DataColumn<AdminManufacturer>[] = [
-    { id: 'nombre', header: 'Fabricante', rowHeader: true, sortValue: (row) => row.name, cell: (row) => <span className="font-semibold">{row.name}</span> },
+    { id: 'nombre', header: 'Fabricante', rowHeader: true, sortValue: (row) => row.name, cell: (row) => <span className="font-semibold text-ap-ink">{row.name}</span> },
     {
       id: 'origen',
       header: 'Origen',
       className: 'hidden md:table-cell',
-      cell: (row) => (row.suggestedByStoreId ? <span className="text-sm">Sugerido por almacén <span className="font-mono text-muted-foreground">{row.suggestedByStoreId}</span></span> : 'Catálogo oficial'),
+      cell: (row) =>
+        row.suggestedByStoreId ? (
+          <div className="min-w-0">
+            <p className="text-sm text-ap-ink">Sugerido por almacén</p>
+            <p className="ap-ref max-w-[16rem] truncate text-ap-muted" title={row.suggestedByStoreId}>
+              {row.suggestedByStoreId}
+            </p>
+          </div>
+        ) : (
+          <span className="text-sm text-ap-ink">Catálogo oficial</span>
+        ),
     },
     {
       id: 'estado',
@@ -212,7 +221,7 @@ function ManufacturersTab() {
       cell: (row) => (
         <div className="flex items-center justify-end gap-1">
           {!row.approved ? (
-            <Button variant="outline" className="h-10 px-3" aria-label={`Aprobar ${row.name}`} onClick={() => void approve(row)}>
+            <Button variant="outline" className="h-11 px-3" aria-label={`Aprobar ${row.name}`} onClick={() => void approve(row)}>
               <CheckIcon aria-hidden />
               Aprobar
             </Button>
@@ -241,7 +250,7 @@ function ManufacturersTab() {
           Nuevo fabricante
         </Button>
       </div>
-      <QueryBoundary result={manufacturers} what="los fabricantes" keepPrevious>
+      <AdminBoundary result={manufacturers} what="los fabricantes" keepPrevious>
         {(all) =>
           all.length === 0 ? (
             <EmptyState icon={<FactoryIcon />} title="Aún no hay fabricantes" description="Los almacenes eligen el fabricante de cada repuesto de esta lista." />
@@ -256,7 +265,7 @@ function ManufacturersTab() {
             </>
           )
         }
-      </QueryBoundary>
+      </AdminBoundary>
       {editing ? (
         <NameSheet
           title={editing.manufacturer ? `Renombrar ${editing.manufacturer.name}` : 'Nuevo fabricante'}
@@ -305,8 +314,8 @@ export default function AdminCatalogPage() {
   ]
 
   return (
-    <AdminPage label="Comercial" title="Catálogo" description="Categorías y fabricantes oficiales que usan todos los almacenes al publicar repuestos.">
-      <div role="tablist" aria-label="Datos del catálogo" className="-mt-2 mb-6 flex gap-1 overflow-x-auto overflow-y-hidden border-b border-border">
+    <AdminPage title="Catálogo" description="Categorías y fabricantes oficiales que usan todos los almacenes al publicar repuestos.">
+      <div role="tablist" aria-label="Datos del catálogo" className="-mt-2 mb-6 flex gap-1 overflow-x-auto overflow-y-hidden border-b border-ap-line">
         {tabs.map((item) => (
           <button
             key={item.id}
@@ -318,15 +327,15 @@ export default function AdminCatalogPage() {
             onClick={() => setParams(item.id === 'categorias' ? {} : { vista: item.id }, { replace: true })}
             className={cn(
               '-mb-px inline-flex min-h-11 items-center gap-2 border-b-2 px-3 text-sm font-semibold whitespace-nowrap transition-colors',
-              tab === item.id ? 'border-foreground text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground',
+              tab === item.id ? 'border-ap-red text-ap-ink' : 'border-transparent text-ap-muted hover:border-ap-line-strong hover:text-ap-ink',
             )}
           >
             {item.label}
             {item.badge ? (
-              <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-stock-low/15 px-1.5 text-xs text-stock-low tabular-nums">
+              <StatusBadge tone="warning" className="tabular-nums">
                 <span className="sr-only">, por aprobar: </span>
                 {item.badge}
-              </span>
+              </StatusBadge>
             ) : null}
           </button>
         ))}

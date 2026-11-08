@@ -19,7 +19,7 @@ export function ServerPager({ page, totalPages, total, singular, plural, onPageC
   const last = Math.max(totalPages, 1)
   return (
     <nav aria-label="Paginación" className="flex flex-wrap items-center justify-between gap-3">
-      <p role="status" className="text-sm text-muted-foreground">
+      <p role="status" className="text-sm text-ap-muted tabular-nums">
         Página {formatNumber(page)} de {formatNumber(last)} · {pluralize(total, singular, plural)}
       </p>
       <div className="flex gap-2">

@@ -161,9 +161,9 @@ type Job =
 
 function SummaryRow({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-0.5 sm:flex-row sm:gap-4">
-      <dt className="shrink-0 text-sm text-muted-foreground sm:w-36">{label}</dt>
-      <dd className="min-w-0 text-sm font-medium">{children}</dd>
+    <div className="flex flex-col gap-0.5 py-2 first:pt-0 sm:flex-row sm:gap-4">
+      <dt className="shrink-0 text-sm text-ap-muted sm:w-36">{label}</dt>
+      <dd className="min-w-0 text-sm font-medium text-ap-ink">{children}</dd>
     </div>
   )
 }
@@ -546,9 +546,9 @@ function ProductForm({
               />
             </div>
             {similarServer ? (
-              <div role="alert" className="flex flex-col gap-2 rounded-lg border border-stock-low/40 bg-stock-low/10 p-3">
-                <p className="text-sm font-semibold">¿Quisiste decir…?</p>
-                <p className="text-sm text-muted-foreground">
+              <div role="alert" className="flex flex-col gap-2 rounded-md border border-ap-warning/40 bg-ap-warning-soft p-4">
+                <p className="text-sm font-semibold text-ap-ink">¿Quisiste decir…?</p>
+                <p className="text-sm text-ap-muted">
                   El servidor encontró fabricantes con un nombre parecido a “{similarServer.name}”. Elige uno para no duplicarlo, o confirma que es distinto.
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -601,6 +601,7 @@ function ProductForm({
                 onBlur={() => draft.touch('sku')}
                 error={draft.errorFor('sku')}
                 maxLength={100}
+                className="font-mono"
                 autoComplete="off"
                 hint="Tu código interno para ubicar el producto en tu inventario."
               />
@@ -613,6 +614,7 @@ function ProductForm({
                 onBlur={() => draft.touch('partNumber')}
                 error={draft.errorFor('partNumber')}
                 maxLength={50}
+                className="font-mono"
                 autoComplete="off"
                 hint="El número de parte que pone el fabricante (OEM o de catálogo); ayuda a encontrar la pieza exacta."
               />
@@ -627,7 +629,7 @@ function ProductForm({
             description="Marca → modelo → versión. «Todos los modelos» (o «todas las versiones») significa que sirve para cualquiera de esa marca, incluidos los que se agreguen después."
             disabled={busy}
           >
-            <div className="flex flex-col gap-1 rounded-lg bg-card p-3 ring-1 ring-foreground/10">
+            <div className="flex flex-col gap-1 border-y border-ap-line py-2">
               <label htmlFor={fieldId('universal')} className="flex min-h-9 cursor-pointer items-center gap-3 text-sm font-medium pointer-coarse:min-h-11">
                 <Checkbox
                   id={fieldId('universal')}
@@ -641,12 +643,12 @@ function ProductForm({
                 />
                 Este producto no depende del vehículo (universal)
               </label>
-              <p id={`${fieldId('universal')}-ayuda`} className="pl-7 text-xs text-muted-foreground">
+              <p id={`${fieldId('universal')}-ayuda`} className="pl-7 text-xs text-ap-muted">
                 Aceites, herramientas, accesorios… se muestra en cualquier búsqueda por vehículo.
               </p>
             </div>
             {values.universal ? (
-              <p role="status" className="text-sm text-muted-foreground">
+              <p role="status" className="text-sm text-ap-muted">
                 Se publicará como universal y no se enviarán reglas de vehículo.
                 {values.vehicleRules.length > 0 ? ` Conservamos las ${values.vehicleRules.length} que escribiste por si desactivas la opción.` : ''}
               </p>
@@ -664,7 +666,7 @@ function ProductForm({
                   ruleErrors={ruleErrors}
                   disabled={busy}
                 />
-                <p className="text-sm text-muted-foreground">Puedes guardar un borrador sin vehículos, pero para publicar necesitas al menos uno o marcar el producto como universal.</p>
+                <p className="text-sm text-ap-muted">Puedes guardar un borrador sin vehículos, pero para publicar necesitas al menos uno o marcar el producto como universal.</p>
               </>
             )}
           </FormSection>
@@ -710,7 +712,7 @@ function ProductForm({
                 required
               />
             ) : (
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-ap-muted">
                 Sucursal: <strong className="font-semibold text-foreground">{branches[0]?.label ?? 'sin sucursal activa'}</strong>
               </p>
             )}
@@ -773,20 +775,20 @@ function ProductForm({
         return (
           <FormSection id="paso-revision" title="Revisión" description="Comprueba el resumen. Al final eliges si lo guardas como borrador o lo publicas." disabled={busy}>
             <ChecklistDetail items={checklist} onGoTo={(target) => goTo(target)} />
-            <div className="flex flex-col gap-4 rounded-xl bg-card p-4 ring-1 ring-foreground/10 sm:flex-row">
+            <div className="flex flex-col gap-4 border-t border-ap-line-strong pt-4 sm:flex-row">
               {mainItem ? (
                 <SmartImage
                   src={thumbOf(mainItem)}
                   alt={`Imagen principal de ${values.name || 'el producto'}`}
                   width={160}
                   height={160}
-                  frameClassName="aspect-square w-full shrink-0 rounded-lg sm:w-40"
+                  frameClassName="aspect-square w-full shrink-0 rounded-md sm:w-40"
                 />
               ) : (
-                <div className="grid aspect-square w-full shrink-0 place-items-center rounded-lg bg-concrete p-3 text-center text-xs text-muted-foreground sm:w-40">Sin imagen principal</div>
+                <div className="grid aspect-square w-full shrink-0 place-items-center rounded-md bg-ap-paper p-3 text-center text-xs text-ap-muted sm:w-40">Imagen no disponible</div>
               )}
-              <dl className="flex min-w-0 flex-1 flex-col gap-2">
-                <SummaryRow label="Producto">{values.name.trim() || <span className="text-destructive">Falta el nombre</span>}</SummaryRow>
+              <dl className="flex min-w-0 flex-1 flex-col divide-y divide-ap-line">
+                <SummaryRow label="Producto">{values.name.trim() || <span className="text-ap-danger">Falta el nombre</span>}</SummaryRow>
                 <SummaryRow label="Fabricante">
                   {manufacturerName ? (
                     <span className="flex flex-wrap items-center gap-2">
@@ -794,27 +796,27 @@ function ProductForm({
                       {values.newManufacturerName ? <StatusBadge tone="info">Nuevo · pendiente de revisión</StatusBadge> : null}
                     </span>
                   ) : (
-                    <span className="text-destructive">Falta el fabricante</span>
+                    <span className="text-ap-danger">Falta el fabricante</span>
                   )}
                 </SummaryRow>
-                <SummaryRow label="Categoría">{categoryOptions.find((item) => item.value === values.categoryId)?.label ?? <span className="text-destructive">Falta la categoría</span>}</SummaryRow>
-                <SummaryRow label="Precio">{values.price ? formatCOP(Number(values.price)) : <span className="text-destructive">Falta el precio</span>}</SummaryRow>
+                <SummaryRow label="Categoría">{categoryOptions.find((item) => item.value === values.categoryId)?.label ?? <span className="text-ap-danger">Falta la categoría</span>}</SummaryRow>
+                <SummaryRow label="Precio">{values.price ? formatCOP(Number(values.price)) : <span className="text-ap-danger">Falta el precio</span>}</SummaryRow>
                 {mode === 'create' ? (
                   <SummaryRow label={values.listings.length > 1 ? 'Sucursales' : 'Sucursal'}>
                     <ul className="flex flex-col gap-1">
                       {values.listings.map((listing) => (
                         <li key={listing.key} className="flex flex-wrap items-center gap-2">
-                          <span>{branches.find((item) => item.value === listing.branchId)?.label ?? <span className="text-destructive">Falta la sucursal</span>}</span>
-                          <span className="text-muted-foreground">·</span>
+                          <span>{branches.find((item) => item.value === listing.branchId)?.label ?? <span className="text-ap-danger">Falta la sucursal</span>}</span>
+                          <span className="text-ap-muted">·</span>
                           {listing.quantity ? (
                             <>
                               {`${formatNumber(Number(listing.quantity))} u.`}
                               <StockBadge quantity={Number(listing.quantity)} />
                             </>
                           ) : (
-                            <span className="text-destructive">Faltan las existencias</span>
+                            <span className="text-ap-danger">Faltan las existencias</span>
                           )}
-                          {listing.price ? <span className="text-muted-foreground">· {formatCOP(Number(listing.price))}</span> : null}
+                          {listing.price ? <span className="text-ap-muted">· {formatCOP(Number(listing.price))}</span> : null}
                         </li>
                       ))}
                     </ul>
@@ -840,7 +842,7 @@ function ProductForm({
                       {values.vehicleRules.slice(0, 6).map((rule) => (
                         <li key={`${rule.makeId}:${rule.modelId}:${rule.versionId}`}>{ruleLabel(rule)}</li>
                       ))}
-                      {values.vehicleRules.length > 6 ? <li className="text-muted-foreground">y {values.vehicleRules.length - 6} más</li> : null}
+                      {values.vehicleRules.length > 6 ? <li className="text-ap-muted">y {values.vehicleRules.length - 6} más</li> : null}
                     </ul>
                   )}
                 </SummaryRow>
@@ -862,8 +864,8 @@ function ProductForm({
       />
 
       {blockers.length > 0 ? (
-        <div ref={alertRef} tabIndex={-1} role="alert" className="flex flex-col gap-2 rounded-lg border border-destructive/25 bg-destructive/5 p-4 text-sm outline-none">
-          <p className="font-semibold text-destructive">No se pudo publicar: no se guardó nada. Falta lo siguiente</p>
+        <div ref={alertRef} tabIndex={-1} role="alert" className="flex flex-col gap-2 rounded-md border border-ap-danger/30 bg-ap-danger-soft p-4 text-sm text-ap-ink outline-none">
+          <p className="font-semibold text-ap-danger">No se pudo publicar: no se guardó nada. Falta lo siguiente</p>
           <ul className="flex flex-col gap-1.5">
             {blockers.map((item) => (
               <li key={item.code} className="flex flex-wrap items-center gap-2">
@@ -897,7 +899,7 @@ function ProductForm({
         <div className="min-w-0 lg:col-start-1 lg:row-start-1">{renderStep()}</div>
       </div>
 
-      <div className="sticky bottom-0 z-10 -mx-4 flex flex-wrap items-center gap-2 border-t border-border bg-background/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0">
+      <div className="sticky bottom-0 z-10 -mx-4 flex flex-wrap items-center gap-2 border-t border-ap-line bg-ap-white px-4 py-3 sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0">
         <Button type="button" variant="outline" className="h-11 px-4" onClick={goPrevious} disabled={busy || stepIndex(step) === 0}>
           <ArrowLeftIcon aria-hidden />
           Anterior

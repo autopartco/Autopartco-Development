@@ -129,7 +129,7 @@ function CheckoutForm({ storeId, plan, subscription, onPaid, onClose }: Omit<Che
       </DialogHeader>
 
       {simulated ? (
-        <p className="flex items-start gap-2.5 rounded-lg border border-recommended/30 bg-recommended-soft p-3 text-sm font-semibold text-recommended">
+        <p className="flex items-start gap-2.5 border-l-2 border-ap-info py-1 pl-3 text-sm font-semibold text-ap-info">
           <FlaskConicalIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
           Pago de prueba: no se realiza ningún cobro.
         </p>
@@ -143,15 +143,15 @@ function CheckoutForm({ storeId, plan, subscription, onPaid, onClose }: Omit<Che
 
       <SelectField id="pago-meses" label="Meses a pagar" options={MONTH_OPTIONS} value={months} onChange={(event) => setMonths(event.target.value)} disabled={pending} />
 
-      <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1.5 rounded-lg bg-concrete p-3 text-sm">
-        <dt className="text-muted-foreground">Precio mensual</dt>
-        <dd className="text-right tabular-nums">{formatCOP(plan.monthlyPriceCop)}</dd>
-        <dt className="text-muted-foreground">Meses</dt>
-        <dd className="text-right tabular-nums">{count}</dd>
-        <dt className="font-semibold">Total estimado</dt>
-        <dd className="text-right text-lg font-extrabold tabular-nums">{formatCOP(estimate)}</dd>
+      <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1.5 border-y border-ap-line py-3 text-sm">
+        <dt className="text-ap-muted">Precio mensual</dt>
+        <dd className="ap-num text-ap-ink">{formatCOP(plan.monthlyPriceCop)}</dd>
+        <dt className="text-ap-muted">Meses</dt>
+        <dd className="ap-num text-ap-ink">{count}</dd>
+        <dt className="border-t border-ap-line pt-1.5 font-semibold text-ap-ink">Total estimado</dt>
+        <dd className="ap-price border-t border-ap-line pt-1.5 text-right text-lg text-ap-ink">{formatCOP(estimate)}</dd>
       </dl>
-      <p className="-mt-2 text-xs text-muted-foreground">El valor final lo confirma el servidor al procesar el pago.</p>
+      <p className="-mt-2 text-xs text-ap-muted">El valor final lo confirma el servidor al procesar el pago.</p>
 
       {simulated ? (
         <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm">

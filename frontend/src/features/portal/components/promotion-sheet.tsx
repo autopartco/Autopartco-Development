@@ -316,11 +316,11 @@ function PromotionForm({ config, promotion, initialAudience, onDone, onCancel, o
           <TextField {...text('endsAt')} type="datetime-local" label="Termina" required />
         </div>
 
-        <label className="flex min-h-11 cursor-pointer items-start gap-3 rounded-lg bg-concrete p-3 text-sm">
+        <label className="flex min-h-11 cursor-pointer items-start gap-3 rounded-md border border-ap-line bg-ap-paper p-3 text-sm">
           <Checkbox checked={values.enabled} onCheckedChange={(checked) => draft.set('enabled', checked === true)} className="mt-0.5" />
           <span>
             <span className="block font-semibold">Promoción activa</span>
-            <span className="text-muted-foreground">Si la pausas, el descuento no se aplica aunque esté dentro de las fechas.</span>
+            <span className="text-ap-muted">Si la pausas, el descuento no se aplica aunque esté dentro de las fechas.</span>
           </span>
         </label>
       </div>
@@ -353,7 +353,7 @@ export function PromotionSheet({ config, open, onOpenChange, promotion, initialA
     <Sheet open={open} onOpenChange={(next) => (next ? onOpenChange(true) : guard.requestClose())}>
       <SheetContent side="right" className="w-full gap-0 p-0 sm:max-w-lg">
         <SheetHeader className="p-4 pr-16">
-          <SheetTitle className="text-lg font-extrabold tracking-tight">{promotion ? 'Editar promoción' : 'Nueva promoción'}</SheetTitle>
+          <SheetTitle className="text-block-title">{promotion ? 'Editar promoción' : 'Nueva promoción'}</SheetTitle>
           <SheetDescription>
             {promotion ? 'Cambia el descuento, las fechas o a quién se muestra.' : 'Define el descuento, cuándo corre y quién lo ve.'}
           </SheetDescription>

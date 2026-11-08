@@ -18,9 +18,9 @@ export function PhotoSearchButton({ className }: { className?: string }) {
       <Popover.Trigger
         aria-label="Buscar con una foto (próximamente)"
         // El botón vive dentro de un campo blanco, también en la cabecera oscura: foco rojo e
-        // interior (5.7:1 sobre blanco) en vez del blanco de `surface-asphalt`, que no se vería.
+        // interior (5.7:1 sobre blanco) en vez del blanco de `ap-surface-dark`, que no se vería.
         className={cn(
-          'grid size-11 shrink-0 place-items-center rounded-md text-ap-muted [--focus:var(--color-brand)] focus-visible:-outline-offset-2! transition-colors hover:bg-ap-paper hover:text-ap-ink data-popup-open:bg-ap-paper data-popup-open:text-ap-ink',
+          'grid size-11 shrink-0 place-items-center rounded-md text-ap-muted [--focus:var(--color-ap-red)] focus-visible:-outline-offset-2! transition-colors hover:bg-ap-paper hover:text-ap-ink data-popup-open:bg-ap-paper data-popup-open:text-ap-ink',
           className,
         )}
       >

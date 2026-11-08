@@ -27,7 +27,7 @@ const sortByName = <T extends { name: string }>(items: T[]) => items.toSorted((a
 /** Mensaje y reintento de una lista que no cargó. */
 function LoadError({ what, result }: { what: string; result: AsyncResult<unknown> }) {
   return (
-    <div role="alert" className="flex flex-wrap items-center gap-2 rounded-lg border border-destructive/25 bg-destructive/5 p-3 text-sm text-destructive">
+    <div role="alert" className="flex flex-wrap items-center gap-2 rounded-md border border-ap-danger/30 bg-ap-danger-soft p-3 text-sm text-ap-danger">
       <CircleAlertIcon className="size-4 shrink-0" aria-hidden />
       <span className="font-medium">No pudimos cargar {what}.</span>
       <Button type="button" variant="outline" size="sm" className="h-9 px-3" onClick={result.retry}>
@@ -127,8 +127,8 @@ export function VehicleRulesPicker({ id, value, onChange, error, ruleErrors, onB
       className="flex min-w-0 flex-col gap-3 outline-none"
       disabled={disabled}
     >
-      <legend className="mb-1.5 text-sm font-semibold">Vehículos compatibles</legend>
-      <p className="text-xs text-muted-foreground">
+      <legend className="mb-1.5 text-sm font-semibold text-ap-ink">Vehículos compatibles</legend>
+      <p className="text-xs text-ap-muted">
         Elige la marca y, si quieres, el modelo y la versión. Sin modelo o versión, la regla cubre todos. Puedes agregar varias reglas.
       </p>
 
@@ -170,18 +170,18 @@ export function VehicleRulesPicker({ id, value, onChange, error, ruleErrors, onB
       </div>
       {makeId && models.status === 'error' ? <LoadError what="los modelos" result={models} /> : null}
       {modelId && versions.status === 'error' ? <LoadError what="las versiones" result={versions} /> : null}
-      {full ? <p className="text-xs text-muted-foreground">Llegaste al máximo de {MAX_VEHICLE_RULES} reglas por producto.</p> : null}
+      {full ? <p className="text-xs text-ap-muted">Llegaste al máximo de {MAX_VEHICLE_RULES} reglas por producto.</p> : null}
 
-      <p className="min-h-4 text-xs text-muted-foreground" role="status" aria-live="polite">
+      <p className="min-h-4 text-xs text-ap-muted" role="status" aria-live="polite">
         {notice}
       </p>
 
-      <div className={cn('rounded-lg border bg-card p-3', error ? 'border-destructive' : 'border-input')}>
-        <p id={listId} className="mb-2 text-sm font-semibold">
-          Reglas agregadas <span className="font-normal text-muted-foreground">({value.length})</span>
+      <div className={cn('border-t pt-3', error ? 'border-ap-danger' : 'border-ap-line')}>
+        <p id={listId} className="mb-2 text-sm font-semibold text-ap-ink">
+          Reglas agregadas <span className="font-normal text-ap-muted">({value.length})</span>
         </p>
         {value.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Aún no agregas ningún vehículo. Elige una marca y pulsa «Agregar».</p>
+          <p className="text-sm text-ap-muted">Aún no agregas ningún vehículo. Elige una marca y pulsa «Agregar».</p>
         ) : (
           <ul aria-labelledby={listId} className="flex flex-wrap gap-2">
             {value.map((rule, index) => {
@@ -191,8 +191,8 @@ export function VehicleRulesPicker({ id, value, onChange, error, ruleErrors, onB
                 <li key={`${rule.makeId}:${rule.modelId ?? ''}:${rule.versionId ?? ''}`} className="flex max-w-full flex-col gap-1">
                   <span
                     className={cn(
-                      'inline-flex min-h-10 max-w-full items-center gap-1 rounded-full bg-concrete pr-1 pl-3 text-sm',
-                      problem && 'ring-1 ring-destructive',
+                      'inline-flex min-h-10 max-w-full items-center gap-1 rounded-sm border border-ap-line-strong bg-ap-white pr-1 pl-3 text-sm text-ap-ink',
+                      problem && 'border-ap-danger',
                     )}
                   >
                     <span className="min-w-0 truncate">{label}</span>
@@ -200,12 +200,12 @@ export function VehicleRulesPicker({ id, value, onChange, error, ruleErrors, onB
                       type="button"
                       onClick={() => remove(index)}
                       aria-label={`Quitar regla ${label}`}
-                      className="inline-grid size-8 shrink-0 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring pointer-coarse:size-9"
+                      className="inline-grid size-8 shrink-0 place-items-center rounded-sm text-ap-muted transition-colors hover:bg-ap-paper hover:text-ap-ink pointer-coarse:size-11"
                     >
                       <XIcon className="size-4" aria-hidden />
                     </button>
                   </span>
-                  {problem ? <span className="px-3 text-xs font-medium text-destructive">{problem}</span> : null}
+                  {problem ? <span className="px-3 text-xs font-medium text-ap-danger">{problem}</span> : null}
                 </li>
               )
             })}
@@ -214,7 +214,7 @@ export function VehicleRulesPicker({ id, value, onChange, error, ruleErrors, onB
       </div>
 
       {error ? (
-        <p id={errorId} className="flex items-start gap-1.5 text-sm font-medium text-destructive">
+        <p id={errorId} className="flex items-start gap-1.5 text-sm font-medium text-ap-danger">
           <CircleAlertIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
           {error}
         </p>

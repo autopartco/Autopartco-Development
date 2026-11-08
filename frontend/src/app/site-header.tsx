@@ -25,7 +25,7 @@ const NAV = [
 function navClass({ isActive }: { isActive: boolean }) {
   return cn(
     'relative inline-flex h-11 shrink-0 items-center whitespace-nowrap rounded-md px-2.5 text-sm font-medium transition-colors duration-150 lg:h-10',
-    'hover:bg-header-hover hover:text-ap-white',
+    'hover:bg-sidebar-accent hover:text-ap-white',
     'after:absolute after:inset-x-2.5 after:-bottom-0.5 after:h-0.5 after:bg-ap-red-on-dark after:opacity-0 after:transition-opacity after:duration-150',
     isActive ? 'text-ap-white after:opacity-100' : 'text-ap-on-dark-muted',
   )
@@ -50,7 +50,7 @@ function SellerHeaderLink() {
       to={cta.to}
       aria-label={label}
       title={label}
-      className="hidden h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-md px-2.5 text-sm font-semibold text-ap-white transition-colors hover:bg-header-hover md:inline-flex lg:h-10"
+      className="hidden h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-md px-2.5 text-sm font-semibold text-ap-white transition-colors hover:bg-sidebar-accent md:inline-flex lg:h-10"
     >
       <StoreIcon className="size-4 text-ap-red-on-dark" aria-hidden />
       <span className="hidden whitespace-nowrap md:inline">{label}</span>
@@ -69,7 +69,7 @@ function MobileMenu({ className }: { className?: string }) {
         render={
           <Button
             variant="ghost"
-            className={cn('size-11 text-ap-white hover:bg-header-hover hover:text-ap-white aria-expanded:bg-header-hover aria-expanded:text-ap-white', className)}
+            className={cn('size-11 text-ap-white hover:bg-sidebar-accent hover:text-ap-white aria-expanded:bg-sidebar-accent aria-expanded:text-ap-white', className)}
             aria-label="Abrir menú"
           />
         }
@@ -117,7 +117,7 @@ function MobileMenu({ className }: { className?: string }) {
  */
 export function SiteHeader() {
   return (
-    <header className="surface-asphalt sticky top-0 z-40 bg-ap-graphite">
+    <header className="ap-surface-dark sticky top-0 z-40 bg-ap-graphite">
       <Container className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 [grid-template-areas:'logo_actions'_'search_search'] xl:h-16 xl:grid-cols-[auto_minmax(0,1fr)_auto_auto] xl:gap-x-4 xl:[grid-template-areas:'logo_search_nav_actions'] 2xl:gap-x-6">
         <div className="flex h-14 min-w-0 items-center [grid-area:logo] xl:h-auto">
           <Logo tone="dark" />
