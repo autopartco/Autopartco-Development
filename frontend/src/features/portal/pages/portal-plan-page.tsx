@@ -36,7 +36,9 @@ function PlanSummary({ subscription }: { subscription: Subscription }) {
           <h2 id="plan-actual" className="text-block-title text-ap-ink">
             Plan {subscription.plan.name}
           </h2>
-          <StatusBadge tone={SUBSCRIPTION_STATUS_TONE[subscription.status]}>{SUBSCRIPTION_STATUS_LABEL[subscription.status]}</StatusBadge>
+          {SUBSCRIPTION_STATUS_LABEL[subscription.status].toLowerCase() !== subscription.plan.name.toLowerCase() ? (
+            <StatusBadge tone={SUBSCRIPTION_STATUS_TONE[subscription.status]}>{SUBSCRIPTION_STATUS_LABEL[subscription.status]}</StatusBadge>
+          ) : null}
         </div>
         <p className="text-sm text-ap-muted">
           {subscription.status === 'EXPIRED'

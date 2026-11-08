@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +32,7 @@ import com.autopartco.backend.shared.error.TooManyRequestsException;
 import com.autopartco.backend.shared.persistence.State;
 import com.autopartco.backend.shared.persistence.StateCodes;
 import com.autopartco.backend.shared.persistence.StateRepository;
+import com.autopartco.backend.shared.web.PageResponse;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +47,8 @@ import lombok.extern.slf4j.Slf4j;
 public class StoreApplications {
     private static final Duration SETUP_LINK_COOLDOWN = Duration.ofMinutes(5);
     private static final int MAX_COOLDOWN_ENTRIES = 1000;
+    public static final int DEFAULT_HISTORY_PAGE_SIZE = 20;
+    public static final int MAX_HISTORY_PAGE_SIZE = 100;
 
     private final StoreApplicationRepository applicationRepository;
     private final StoreApplicationDocumentRepository documentRepository;
@@ -190,6 +195,31 @@ public class StoreApplications {
                 .toList();
     }
 
+    /**
+     * Historial de solicitudes para root, con {@code status} opcional ({@code null} = todas). Primero las pendientes de
+     * revisión, de la más antigua a la más reciente; después el resto por fecha de revisión (más reciente primero, sin
+     * fecha al final) y fecha de creación descendente. Página desde 1; tamaño entre 1 y {@value #MAX_HISTORY_PAGE_SIZE}.
+     * A diferencia de {@link #pending()}, no omite solicitudes cuyo solicitante ya no existe ({@code applicantEmail}
+     * queda {@code null}) para que el total sea exacto.
+     */
+    @Transactional(readOnly = true)
+    public PageResponse<StoreApplicationView> history(StoreApplicationStatus status, int page, int size) {
+        int safePage = Math.max(page, 1);
+        int safeSize = Math.min(Math.max(size, 1), MAX_HISTORY_PAGE_SIZE);
+        Page<StoreApplication> result = applicationRepository.findHistory(
+                status,
+                StoreApplicationStatus.PENDING_REVIEW,
+                PageRequest.of(safePage - 1, safeSize)
+        );
+        List<StoreApplicationView> items = result.getContent().stream()
+                .map(application -> toView(
+                        application,
+                        accountLookup.findById(application.getApplicantAccountId()).orElse(null)
+                ))
+                .toList();
+        return PageResponse.of(items, safePage, safeSize, result.getTotalElements());
+    }
+
     /** Solicitudes de la cuenta con ese correo, de la más reciente a la más antigua. Vacío si no existe. */
     @Transactional(readOnly = true)
     public List<StoreApplicationView> ofApplicant(String email) {
@@ -217,18 +247,19 @@ public class StoreApplications {
                     "La solicitud ya fue revisada."
             );
         }
+        AccountRef reviewer = accountLookup.findByEmail(reviewerEmail)
+                .orElseThrow(() -> new NotFoundException("ACCOUNT_NOT_FOUND", "No se encontró el revisor."));
         application.setReviewNotes(cleanNotes(request.notes()));
-        application.setReviewedByAccountId(accountLookup.findByEmail(reviewerEmail)
-                .orElseThrow(() -> new NotFoundException("ACCOUNT_NOT_FOUND", "No se encontró el revisor."))
-                .accountId());
+        application.setReviewedByAccountId(reviewer.accountId());
+        application.setReviewedAt(LocalDateTime.now());
         AccountRef applicant = requireApplicant(application);
         if (!request.approved()) {
             application.setStatus(StoreApplicationStatus.REJECTED);
-            return new Reviewed(toView(application, applicant), applicant.email(), applicant.givenName(), false);
+            return new Reviewed(toView(application, applicant, reviewer), applicant.email(), applicant.givenName(), false);
         }
 
         application.setStatus(StoreApplicationStatus.CONFIGURATION_PENDING);
-        return new Reviewed(toView(application, applicant), applicant.email(), applicant.givenName(), true);
+        return new Reviewed(toView(application, applicant, reviewer), applicant.email(), applicant.givenName(), true);
     }
 
     /**
@@ -403,7 +434,15 @@ public class StoreApplications {
                 ));
     }
 
+    /** Vista con el revisor resuelto por ID ({@code null} si no hay revisor o la cuenta ya no existe). */
     private StoreApplicationView toView(StoreApplication application, AccountRef applicant) {
+        UUID reviewerId = application.getReviewedByAccountId();
+        AccountRef reviewer = reviewerId == null ? null : accountLookup.findById(reviewerId).orElse(null);
+        return toView(application, applicant, reviewer);
+    }
+
+    /** {@code applicant} puede ser {@code null} (cuenta borrada): el correo del solicitante queda {@code null}. */
+    private StoreApplicationView toView(StoreApplication application, AccountRef applicant, AccountRef reviewer) {
         List<StoreApplicationView.Document> documents =
                 documentRepository.findAllOfApplication(application.getId())
                         .stream()
@@ -422,14 +461,20 @@ public class StoreApplications {
                 store.getBusinessName(),
                 store.getNit(),
                 store.getBusinessEmail(),
-                applicant.email(),
+                applicant == null ? null : applicant.email(),
                 application.getLegalType(),
                 application.getStatus(),
                 application.getPlanId(),
                 application.getSelectedPlanId(),
                 documents,
                 application.getReviewNotes(),
-                application.getCreatedAt()
+                application.getCreatedAt(),
+                application.getReviewedAt(),
+                reviewer == null ? null : new StoreApplicationView.Reviewer(
+                        reviewer.accountId(),
+                        reviewer.fullName(),
+                        reviewer.email()
+                )
         );
     }
 

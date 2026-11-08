@@ -29,7 +29,7 @@ export function IntelligenceTabs() {
   return (
     // Pestañas subrayadas en una fila; en móvil la fila se desplaza en horizontal (sin píldoras). La activa lleva
     // la línea de acento roja (§3.5).
-    <nav aria-label="Secciones de inteligencia" className="-mt-2 mb-6 overflow-x-auto border-b border-ap-line">
+    <nav aria-label="Secciones de inteligencia" className="-mt-2 mb-6 overflow-x-auto overflow-y-hidden border-b border-ap-line">
       <ul className="flex w-max gap-1">
         {tabs.map((tab) => (
           <li key={tab.to}>

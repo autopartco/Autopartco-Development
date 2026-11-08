@@ -9,7 +9,7 @@ import { formatDateTime } from '@/features/portal/lib/labels'
 import { getAdminApplicationService } from '../api/admin-service'
 import type { ApplicationDocument, StoreApplication } from '../api/types'
 import { reloadPendingApplications } from '../hooks'
-import { DOCUMENT_TYPE_LABEL, formatBytes, LEGAL_TYPE_LABEL } from '../lib/labels'
+import { APPLICATION_STATUS, DOCUMENT_TYPE_LABEL, formatBytes, LEGAL_TYPE_LABEL } from '../lib/labels'
 import { RelationsView } from './relations-view'
 import { ReviewDialog } from './review-dialog'
 
@@ -65,6 +65,51 @@ function DocumentRow({ application, document }: { application: StoreApplication;
   )
 }
 
+/** Revisión ya registrada (solo lectura): decisión, quién, cuándo y la nota que quedó. */
+function ReviewSummary({ application }: { application: StoreApplication }) {
+  const status = APPLICATION_STATUS[application.status]
+  return (
+    <section aria-labelledby="revision-title" className="flex flex-col gap-3">
+      <h3 id="revision-title" className="text-base font-semibold text-ap-ink">
+        Revisión
+      </h3>
+      <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+        <Fact label="Decisión">
+          {status.decision}
+          {application.status === 'CONFIGURATION_PENDING' ? <span className="font-normal text-ap-muted"> · falta configurar el almacén</span> : null}
+          {application.status === 'ACTIVE' ? <span className="font-normal text-ap-muted"> · almacén activo</span> : null}
+        </Fact>
+        <Fact label="Fecha de revisión">
+          {application.reviewedAt ? (
+            <time dateTime={application.reviewedAt} className="ap-ref">
+              {formatDateTime(application.reviewedAt)}
+            </time>
+          ) : (
+            <span className="font-normal text-ap-muted">Fecha no registrada</span>
+          )}
+        </Fact>
+        <Fact label="Revisada por">
+          {application.reviewer ? (
+            <>
+              {application.reviewer.name}
+              <span className="block text-sm font-normal break-all text-ap-muted">{application.reviewer.email}</span>
+            </>
+          ) : (
+            <span className="font-normal text-ap-muted">Revisor no disponible</span>
+          )}
+        </Fact>
+        <Fact label="Notas de la revisión">
+          {application.reviewNotes ? (
+            <span className="font-normal whitespace-pre-line">{application.reviewNotes}</span>
+          ) : (
+            <span className="font-normal text-ap-muted">Sin notas</span>
+          )}
+        </Fact>
+      </dl>
+    </section>
+  )
+}
+
 interface ApplicationSheetProps {
   application: StoreApplication | undefined
   onClose: () => void
@@ -80,6 +125,8 @@ export function ApplicationSheet({ application, onClose }: ApplicationSheetProps
   const [shown, setShown] = useState<StoreApplication>()
   if (application && application !== shown) setShown(application)
   const current = application ?? shown
+  // Solo una solicitud pendiente admite decisión; las revisadas se muestran en solo lectura.
+  const pending = current?.status === 'PENDING_REVIEW'
 
   async function submit(notes: string) {
     if (!current || decision === undefined) return
@@ -99,14 +146,16 @@ export function ApplicationSheet({ application, onClose }: ApplicationSheetProps
               <p className="ap-index">Solicitud de almacén</p>
               <SheetTitle className="text-block-title text-ap-ink">{current.businessName}</SheetTitle>
               <SheetDescription>
-                Enviada por {current.applicantEmail} el <time dateTime={current.createdAt} className="ap-ref">{formatDateTime(current.createdAt)}</time>.
+                Enviada por {current.applicantEmail ?? 'una cuenta que ya no existe'} el <time dateTime={current.createdAt} className="ap-ref">{formatDateTime(current.createdAt)}</time>.
               </SheetDescription>
               <div className="mt-1">
-                <StatusBadge tone="warning">En revisión</StatusBadge>
+                <StatusBadge tone={APPLICATION_STATUS[current.status].tone}>{APPLICATION_STATUS[current.status].label}</StatusBadge>
               </div>
             </SheetHeader>
 
             <div className="flex flex-col gap-8 p-4 sm:p-6">
+              {pending ? null : <ReviewSummary application={current} />}
+
               <section aria-labelledby="datos-title" className="flex flex-col gap-3">
                 <h3 id="datos-title" className="text-base font-semibold text-ap-ink">
                   Datos del almacén
@@ -117,13 +166,13 @@ export function ApplicationSheet({ application, onClose }: ApplicationSheetProps
                   </Fact>
                   <Fact label="Tipo">{LEGAL_TYPE_LABEL[current.legalType]}</Fact>
                   <Fact label="Correo del almacén">{current.businessEmail}</Fact>
-                  <Fact label="Correo de quien solicita">{current.applicantEmail}</Fact>
+                  <Fact label="Correo de quien solicita">{current.applicantEmail ?? <span className="font-normal text-ap-muted">Cuenta eliminada</span>}</Fact>
                   <Fact label="Plan elegido">{current.selectedPlan?.name ?? current.plan?.name ?? 'Sin plan asignado'}</Fact>
                   <Fact label="ID de la solicitud" mono>
                     {current.applicationId}
                   </Fact>
                 </dl>
-                {current.reviewNotes ? (
+                {pending && current.reviewNotes ? (
                   <div className="border-l-2 border-ap-line-strong py-1 pl-3">
                     <p className="text-sm text-ap-muted">Nota registrada</p>
                     <p className="text-sm whitespace-pre-line text-ap-ink">{current.reviewNotes}</p>
@@ -135,10 +184,12 @@ export function ApplicationSheet({ application, onClose }: ApplicationSheetProps
                 <h3 id="docs-title" className="text-base font-semibold text-ap-ink">
                   Documentos <span className="ap-num font-normal text-ap-muted">({current.documents.length})</span>
                 </h3>
-                {current.documents.length === 0 ? (
+                {current.documents.length === 0 && pending ? (
                   <p className="mt-2 rounded-md border border-ap-warning/30 bg-ap-warning-soft p-3 text-sm text-ap-ink">
                     <strong className="font-semibold">Sin documentos.</strong> Sin respaldo no se puede verificar el almacén: lo recomendable es rechazarla indicando qué debe enviar.
                   </p>
+                ) : current.documents.length === 0 ? (
+                  <p className="mt-2 text-sm text-ap-muted">La solicitud no tiene documentos registrados.</p>
                 ) : (
                   <ul className="divide-y divide-ap-line border-y border-ap-line">
                     {current.documents.map((document) => (
@@ -156,27 +207,29 @@ export function ApplicationSheet({ application, onClose }: ApplicationSheetProps
               </section>
             </div>
 
-            <section aria-labelledby="decision-title" className="sticky bottom-0 mt-auto flex flex-col gap-3 border-t border-ap-line-strong bg-ap-white p-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-              <p id="decision-title" className="text-sm text-ap-muted">
-                <span className="font-semibold text-ap-ink">Decisión.</span> Antes de guardar te pedimos confirmarla.
-              </p>
-              <div className="flex flex-wrap justify-end gap-2">
-                <Button variant="outline" className="h-11 border-ap-danger/50 px-4 text-ap-danger hover:border-ap-danger hover:bg-ap-danger-soft" onClick={() => setDecision(false)}>
-                  <XIcon aria-hidden />
-                  Rechazar
-                </Button>
-                <Button className="h-11 px-5" onClick={() => setDecision(true)}>
-                  <CheckIcon aria-hidden />
-                  Aprobar
-                </Button>
-              </div>
-            </section>
+            {pending ? (
+              <section aria-labelledby="decision-title" className="sticky bottom-0 mt-auto flex flex-col gap-3 border-t border-ap-line-strong bg-ap-white p-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                <p id="decision-title" className="text-sm text-ap-muted">
+                  <span className="font-semibold text-ap-ink">Decisión.</span> Antes de guardar te pedimos confirmarla.
+                </p>
+                <div className="flex flex-wrap justify-end gap-2">
+                  <Button variant="outline" className="h-11 border-ap-danger/50 px-4 text-ap-danger hover:border-ap-danger hover:bg-ap-danger-soft" onClick={() => setDecision(false)}>
+                    <XIcon aria-hidden />
+                    Rechazar
+                  </Button>
+                  <Button className="h-11 px-5" onClick={() => setDecision(true)}>
+                    <CheckIcon aria-hidden />
+                    Aprobar
+                  </Button>
+                </div>
+              </section>
+            ) : null}
 
             <ReviewDialog
               key={`${current.applicationId}-${decision}`}
               application={current}
               approved={decision === true}
-              open={decision !== undefined}
+              open={pending && decision !== undefined}
               onOpenChange={(open) => !open && setDecision(undefined)}
               onSubmit={submit}
             />

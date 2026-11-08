@@ -74,7 +74,7 @@ export function RelationsView({ application }: { application: StoreApplication }
             />
           )
         })}
-        <Node x={leftX} y={sourceY} width={leftW} title="Solicitud" subtitle={`${LEGAL_TYPE_LABEL[application.legalType]} · ${application.applicantEmail}`} strong />
+        <Node x={leftX} y={sourceY} width={leftW} title="Solicitud" subtitle={`${LEGAL_TYPE_LABEL[application.legalType]} · ${application.applicantEmail ?? 'Solicitante eliminado'}`} strong />
         {targets.map((target, index) => (
           <Node key={target.key} x={rightX} y={index * ROW + (ROW - NODE_H) / 2} width={rightW} title={target.title} subtitle={target.subtitle} />
         ))}

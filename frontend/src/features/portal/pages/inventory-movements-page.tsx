@@ -14,7 +14,7 @@ import { PageHeader } from '../components/page-header'
 import { QueryBoundary } from '../components/query-boundary'
 import { ServerPager } from '../components/server-pager'
 import { StatusBadge } from '../components/status-badge'
-import { useActiveBranches, useStoreQuery } from '../hooks'
+import { branchParamValue, useActiveBranches, useBranchSearchParam, useStoreQuery } from '../hooks'
 import { actorLabel, endOfDay, startOfDay, SYSTEM_REASONS } from '../lib/inventory'
 import { formatDateTime } from '../lib/labels'
 
@@ -130,11 +130,13 @@ function MovementsList({ filters, page, onPageChange }: { filters: Filters; page
 export default function PortalInventoryMovementsPage() {
   const [params, setParams] = useSearchParams()
   const { branches } = useActiveBranches()
+  // Parte de la sucursal activa de la barra de contexto; el filtro de la pantalla puede cambiarla.
+  const branchFilter = useBranchSearchParam()
   const products = useStoreQuery('products', async (id) => (await getProductService()).list(id))
   const reasons = useStoreQuery('inventory-reasons', async (id) => (await getInventoryService()).listReasons(id))
 
   const filters: Filters = {
-    sucursal: params.get('sucursal') ?? '',
+    sucursal: branchFilter,
     producto: params.get('producto') ?? '',
     motivo: params.get('motivo') ?? '',
     desde: params.get('desde') ?? '',
@@ -168,7 +170,8 @@ export default function PortalInventoryMovementsPage() {
     return [...new Map(all.map((option) => [option.value, option])).values()]
   }, [reasons.data])
   const branchOptions = branches.map((branch) => ({ value: branch.id, label: branch.name }))
-  const filtering = Object.values(filters).some(Boolean)
+  // La sucursal que viene de la barra de contexto no cuenta: «Quitar filtros» vuelve a ella.
+  const filtering = Object.entries(filters).some(([name, value]) => (name === 'sucursal' ? params.has('sucursal') : Boolean(value)))
 
   return (
     <>
@@ -177,7 +180,7 @@ export default function PortalInventoryMovementsPage() {
       <InventoryTabs />
       <div className="flex flex-col gap-5">
         <form role="search" aria-label="Filtrar movimientos" onSubmit={(event) => event.preventDefault()} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <SelectField id="mov-sucursal" label="Sucursal" placeholder="Todas" options={branchOptions} value={filters.sucursal} onChange={(event) => setParam('sucursal', event.target.value)} />
+          <SelectField id="mov-sucursal" label="Sucursal" placeholder="Todas" options={branchOptions} value={filters.sucursal} onChange={(event) => setParam('sucursal', branchParamValue(event.target.value))} />
           <SelectField id="mov-producto" label="Producto" placeholder="Todos" options={productOptions} value={filters.producto} onChange={(event) => setParam('producto', event.target.value)} />
           <SelectField id="mov-motivo" label="Motivo" placeholder="Todos" options={reasonOptions} value={filters.motivo} onChange={(event) => setParam('motivo', event.target.value)} />
           <TextField id="mov-desde" type="date" label="Desde" value={filters.desde} max={filters.hasta || undefined} onChange={(event) => setParam('desde', event.target.value)} />

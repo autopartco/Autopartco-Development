@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router'
 import { toast } from 'sonner'
 import { useAsync, type AsyncResult } from '@/lib/use-async'
 import { getBranchService } from './api/branch-service'
@@ -23,6 +24,25 @@ export function useActiveBranches(): { branches: Branch[]; known: boolean; resul
   const result = useStoreQuery('branches', async (id) => (readable ? (await getBranchService()).list(id) : []))
   const branches = useMemo(() => (result.data ?? []).filter((branch) => branch.state === 'ACTIVE'), [result.data])
   return { branches, known: readable && result.status === 'success', result }
+}
+
+/** Valor de `?sucursal=` cuando la persona elige «Todas» en el filtro de una pantalla (distinto de no haber elegido). */
+export const ALL_BRANCHES_PARAM = 'todas'
+
+/** Valor que guarda en la URL el filtro de sucursal de una pantalla (`''` = todas). */
+export const branchParamValue = (value: string): string => value || ALL_BRANCHES_PARAM
+
+/**
+ * Filtro de sucursal de una pantalla (`?sucursal=`). Sin valor en la URL sigue a la sucursal activa de la barra de
+ * contexto; lo que la persona elija en el filtro de la pantalla (otra sucursal o «Todas») manda sobre ella y no la
+ * cambia. «Quitar filtros» vuelve a la sucursal activa. Devuelve el valor efectivo (`''` = todas).
+ */
+export function useBranchSearchParam(name = 'sucursal'): string {
+  const { branchId } = usePortal()
+  const [params] = useSearchParams()
+  const value = params.get(name)
+  if (value === null) return branchId ?? ''
+  return value === ALL_BRANCHES_PARAM ? '' : value
 }
 
 /** Pone el foco en el contenido principal (p. ej. cuando el elemento enfocado desaparece). */

@@ -74,8 +74,9 @@ public interface InventoryRepository extends JpaRepository<Inventory, UUID> {
             join branches b on b.id = i.branch_id and b.deleted_at is null
             left join inventory_reorder_policies rp on rp.inventory_id = i.id and rp.valid_to is null
             where i.deleted_at is null and b.store_id = :storeId
+              and (cast(:branchId as uuid) is null or i.branch_id = cast(:branchId as uuid))
             """, nativeQuery = true)
-    StockCounts countStockForStore(@Param("storeId") UUID storeId);
+    StockCounts countStockForStore(@Param("storeId") UUID storeId, @Param("branchId") UUID branchId);
 
     interface StockCounts {
         long getListings();

@@ -27,6 +27,7 @@ interface StoreApplicationDto {
   status: StoreApplicationStatus
   reviewNotes: string | null
   createdAt: string
+  reviewedAt: string | null
 }
 
 /** `StoreSetupResponse` (storesuite/onboarding). Solo los campos que usa la UI. */
@@ -122,6 +123,7 @@ export function createHttpSellerApplicationService(): SellerApplicationService {
         status: dto.status,
         reviewNotes: dto.reviewNotes ?? undefined,
         createdAt: dto.createdAt,
+        reviewedAt: dto.reviewedAt ?? undefined,
       }))
     },
   }

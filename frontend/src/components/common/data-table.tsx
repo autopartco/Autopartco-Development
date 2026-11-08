@@ -139,7 +139,7 @@ export function DataTable<T>({ caption, columns, rows, getRowId, defaultSort, cl
               }
               className={cn(
                 onRowClick && 'cursor-pointer',
-                'hover:bg-ap-paper/60 @max-[40rem]:mb-0 @max-[40rem]:block @max-[40rem]:overflow-hidden @max-[40rem]:rounded-xl @max-[40rem]:border @max-[40rem]:border-ap-line @max-[40rem]:hover:bg-transparent',
+                'hover:bg-ap-paper/60 @max-[40rem]:mb-0 @max-[40rem]:block @max-[40rem]:overflow-hidden @max-[40rem]:rounded-lg @max-[40rem]:border @max-[40rem]:border-ap-line @max-[40rem]:hover:bg-transparent',
               )}
             >
               {columns.map((column) => {
@@ -160,7 +160,7 @@ export function DataTable<T>({ caption, columns, rows, getRowId, defaultSort, cl
                     className={cn(
                       'h-auto border-b border-ap-line bg-transparent text-sm font-semibold whitespace-normal text-ap-ink',
                       common,
-                      '@max-[40rem]:bg-ap-paper @max-[40rem]:before:hidden',
+                      '@max-[40rem]:grid-cols-1 @max-[40rem]:bg-ap-paper @max-[40rem]:before:hidden',
                     )}
                   >
                     {content}

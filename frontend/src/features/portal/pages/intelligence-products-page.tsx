@@ -13,7 +13,7 @@ import type { ProductAction, ProductInsight, ProductReport } from '../api/analyt
 import { SelectField } from '../components/form-controls'
 import { AnalyticsBoundary, BranchSelect, IntelligencePage } from '../components/intelligence-shell'
 import { usePortal } from '../context'
-import { useActiveBranches, useStoreQuery } from '../hooks'
+import { branchParamValue, useActiveBranches, useBranchSearchParam, useStoreQuery } from '../hooks'
 import { ABC_INFO, ACTION_INFO, ACTION_ORDER, XYZ_INFO } from '../lib/analytics'
 import { inventoryErrorMessage } from '../lib/inventory'
 
@@ -227,7 +227,7 @@ export default function IntelligenceProductsPage() {
   const [needBranch, setNeedBranch] = useState(false)
 
   const filters = { abc: params.get('abc') ?? '', xyz: params.get('xyz') ?? '', action: params.get('accion') ?? '' }
-  const branchId = params.get('sucursal') ?? ''
+  const branchId = useBranchSearchParam()
   // Con una sola sucursal activa no hay nada que elegir: es esa.
   const targetBranch = branchId || (known && branches.length === 1 ? (branches[0]?.id ?? '') : '')
 
@@ -275,7 +275,7 @@ export default function IntelligenceProductsPage() {
           <SelectField id="prod-abc" label="Clase ABC" value={filters.abc} onChange={(event) => set('abc', event.target.value)} placeholder="Todas" options={ABC_OPTIONS} containerClassName="w-full sm:w-40" />
           <SelectField id="prod-xyz" label="Clase XYZ" value={filters.xyz} onChange={(event) => set('xyz', event.target.value)} placeholder="Todas" options={XYZ_OPTIONS} containerClassName="w-full sm:w-44" />
           <SelectField id="prod-accion" label="Acción sugerida" value={filters.action} onChange={(event) => set('accion', event.target.value)} placeholder="Todas" options={ACTION_OPTIONS} containerClassName="w-full sm:w-52" />
-          <BranchSelect value={branchId} onChange={(value) => set('sucursal', value)} />
+          <BranchSelect value={branchId} onChange={(value) => set('sucursal', branchParamValue(value))} />
         </form>
         {needBranch ? (
           <p role="alert" className="rounded-md border border-ap-warning/40 bg-ap-warning-soft p-4 text-sm font-medium text-ap-ink">

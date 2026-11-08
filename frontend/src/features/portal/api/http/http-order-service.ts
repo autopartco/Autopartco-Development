@@ -11,6 +11,7 @@ export function createHttpOrderService(): OrderService {
     list(storeId, query = {}) {
       const params = new URLSearchParams()
       if (query.status) params.set('status', query.status)
+      if (query.branchId) params.set('branchId', query.branchId)
       params.set('page', String(query.page ?? 0))
       params.set('size', String(query.size ?? 100))
       return portalRequest<OrderSummary[]>(`${storePath(storeId, '/orders')}?${params.toString()}`)

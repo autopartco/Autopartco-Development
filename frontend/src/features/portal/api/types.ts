@@ -185,6 +185,8 @@ export interface Dashboard {
   subscriptionStatus?: SubscriptionStatus
   daysRemaining?: number | null
   inventory?: { listings: number; outOfStock: number; lowStock: number }
+  /** Sucursal a la que corresponden `sales` e `inventory` (`null` = todo el almacén). Plan, uso y suscripción son siempre del almacén. */
+  branchId?: string | null
 }
 
 // -------------------------------------------------------------- productos

@@ -1,5 +1,5 @@
 import { Suspense } from 'react'
-import { createBrowserRouter, Navigate } from 'react-router'
+import { createBrowserRouter, Navigate, useParams } from 'react-router'
 import NotFoundPage from '@/features/marketplace/pages/not-found-page'
 import {
   AdminApplicationsPage,
@@ -65,6 +65,12 @@ import { LegacyRedirect } from './legacy-redirect'
 import { PageFallback } from './page-fallback'
 import { RootLayout } from './root-layout'
 import { RouteError } from './route-error'
+
+/** Ruta desconocida del portal: a Inicio con ruta absoluta (una relativa se anidaría en bucle). */
+function PortalHomeRedirect() {
+  const { storeId = '' } = useParams()
+  return <Navigate to={`/portal/${encodeURIComponent(storeId)}/inicio`} replace />
+}
 
 export const router = createBrowserRouter([
   {
@@ -154,7 +160,7 @@ export const router = createBrowserRouter([
           { path: 'equipo', element: <RequirePermission permission="COLLABORATOR_READ"><PortalTeamPage /></RequirePermission> },
           { path: 'tienda', element: <RequirePermission permission="STORE_READ"><PortalStorePage /></RequirePermission> },
           { path: 'plan', element: <RequirePermission permission="STORE_READ"><PortalPlanPage /></RequirePermission> },
-          { path: '*', element: <Navigate to="inicio" replace /> },
+          { path: '*', element: <PortalHomeRedirect /> },
         ],
       },
     ],

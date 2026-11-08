@@ -3,8 +3,8 @@ import type { OrderDetail, OrderStatusTarget, OrderSummary, ShipmentCreateInput,
 
 /** Pedidos (ventas) del almacén y sus envíos. */
 export interface OrderService {
-  /** `GET /stores/{id}/orders?status&page&size` (la página empieza en 0 y la respuesta es un arreglo). */
-  list(storeId: string, query?: { status?: string; page?: number; size?: number }): Promise<OrderSummary[]>
+  /** `GET /stores/{id}/orders?status&branchId&page&size` (la página empieza en 0 y la respuesta es un arreglo). 404 `BRANCH_NOT_FOUND`. */
+  list(storeId: string, query?: { status?: string; branchId?: string; page?: number; size?: number }): Promise<OrderSummary[]>
   /** `GET /stores/{id}/orders/{saleId}`. */
   get(storeId: string, saleId: string): Promise<OrderDetail>
   /** `PATCH /stores/{id}/orders/{saleId}/status`. */
