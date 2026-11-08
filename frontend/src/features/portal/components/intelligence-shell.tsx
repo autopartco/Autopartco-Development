@@ -21,6 +21,8 @@ export function IntelligenceTabs() {
   const base = `/portal/${encodeURIComponent(storeId)}/inteligencia`
   const tabs = [
     { to: base, label: 'Reportes', end: true },
+    // Visibilidad está en todos los planes (no exige ADVANCED_REPORTS).
+    { to: `${base}/visibilidad`, label: 'Visibilidad', end: false },
     { to: `${base}/clientes`, label: 'Clientes', end: false },
     { to: `${base}/productos`, label: 'Productos', end: false },
     { to: `${base}/se-compran-juntos`, label: 'Se compran juntos', end: false },

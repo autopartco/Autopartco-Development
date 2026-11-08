@@ -189,3 +189,40 @@ export interface AssociationReport {
   pairs: AssociationPair[]
   suggestedCombo: SuggestedCombo | null
 }
+
+/** Origen estimado de la visita (`core/analytics/TrafficSource`). */
+export type TrafficSource =
+  | 'WHATSAPP'
+  | 'FACEBOOK'
+  | 'INSTAGRAM'
+  | 'TIKTOK'
+  | 'X'
+  | 'TELEGRAM'
+  | 'CHATGPT'
+  | 'OTHER_AI'
+  | 'GOOGLE'
+  | 'OTHER_SEARCH'
+  | 'COPY_LINK'
+  | 'INTERNAL'
+  | 'DIRECT'
+  | 'OTHER'
+
+/**
+ * `GET /stores/{id}/analytics/visibility?from&to` (todos los planes, `ANALYTICS_READ`). «Visitantes» son visitantes
+ * diarios: la misma persona cuenta una vez por día.
+ */
+export interface VisibilityReport {
+  from: string
+  to: string
+  profileViews: number
+  profileVisitors: number
+  productViews: number
+  productVisitors: number
+  shares: number
+  /** Visitas (perfil + publicaciones) y compartidos por origen, de más a menos visitas. */
+  bySource: { source: TrafficSource; views: number; visitors: number; shares: number }[]
+  /** Hasta 20 publicaciones con más visitas. */
+  topProducts: { productId: string; name: string; views: number; visitors: number; shares: number }[]
+  /** Un día por fila, con ceros. */
+  daily: { day: string; profileViews: number; productViews: number }[]
+}

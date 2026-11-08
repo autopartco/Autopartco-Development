@@ -9,6 +9,11 @@ export function categoryPath(slug: string): string {
   return `/categoria/${encodeURIComponent(slug)}`
 }
 
+/** Perfil público del almacén. */
+export function storePath(storeId: string): string {
+  return `/tiendas/${encodeURIComponent(storeId)}`
+}
+
 export function storeProductsPath(storeId: string): string {
   return searchUrl({ store: storeId })
 }

@@ -14,6 +14,8 @@ import type {
   SegmentSummary,
   SeriesPoint,
   StoreCustomer,
+  TrafficSource,
+  VisibilityReport,
   XyzClass,
 } from '../analytics-types'
 import {
@@ -22,6 +24,7 @@ import {
   hashOf,
   daysBetween,
   parseYmd,
+  prng,
   segmentOf,
   SEGMENT_WINDOW_DAYS,
   startOfWeek,
@@ -394,6 +397,69 @@ export function createMockAnalyticsService(): AnalyticsService {
       const store = guard(storeId)
       return associationsOf(datasetFor(store))
     },
+
+    async visibility(storeId, range) {
+      await simulateNetwork(450)
+      // Como el servidor: solo `ANALYTICS_READ`, sin la capability del plan.
+      const store = getStore(storeId)
+      requirePermission(store, 'ANALYTICS_READ')
+      const from = parseYmd(range.from)
+      const to = parseYmd(range.to)
+      if (!from || !to || to < from || daysBetween(from, to) + 1 > 366) throw invalidRange()
+      return visibilityOf(datasetFor(store), store.summary.storeId, from, to)
+    },
+  }
+}
+
+const VISIBILITY_SOURCES: [TrafficSource, number][] = [
+  ['WHATSAPP', 0.34],
+  ['GOOGLE', 0.22],
+  ['INTERNAL', 0.18],
+  ['DIRECT', 0.1],
+  ['FACEBOOK', 0.07],
+  ['CHATGPT', 0.04],
+  ['TIKTOK', 0.03],
+  ['OTHER', 0.02],
+]
+
+/** Visitas simuladas y deterministas por día (datos de demostración del modo `mock`). */
+function visibilityOf(dataset: MockDataset, storeId: string, from: Date, to: Date): VisibilityReport {
+  const days = daysBetween(from, to) + 1
+  const daily: VisibilityReport['daily'] = []
+  for (let index = 0; index < days; index += 1) {
+    const day = addDays(from, index)
+    const rand = prng(hashOf(`${storeId}:${ymd(day)}`))
+    daily.push({ day: ymd(day), profileViews: Math.round(rand() * 14), productViews: Math.round(10 + rand() * 45) })
+  }
+  const profileViews = daily.reduce((sum, row) => sum + row.profileViews, 0)
+  const productViews = daily.reduce((sum, row) => sum + row.productViews, 0)
+  const views = profileViews + productViews
+  const shares = Math.round(views * 0.03)
+  const bySource = VISIBILITY_SOURCES.map(([source, weight]) => ({
+    source,
+    views: Math.round(views * weight),
+    visitors: Math.round(views * weight * 0.7),
+    shares: source === 'INTERNAL' || source === 'DIRECT' || source === 'GOOGLE' || source === 'CHATGPT' || source === 'OTHER' ? 0 : Math.round(shares * weight * 2),
+  }))
+  const rand = prng(hashOf(`${storeId}:top`))
+  const topProducts = dataset.catalog
+    .slice(0, 8)
+    .map((item) => {
+      const itemViews = Math.round(productViews * (0.04 + rand() * 0.12))
+      return { productId: item.productId, name: item.name, views: itemViews, visitors: Math.round(itemViews * 0.72), shares: Math.round(itemViews * 0.04) }
+    })
+    .toSorted((a, b) => b.views - a.views)
+  return {
+    from: ymd(from),
+    to: ymd(to),
+    profileViews,
+    profileVisitors: Math.round(profileViews * 0.75),
+    productViews,
+    productVisitors: Math.round(productViews * 0.7),
+    shares,
+    bySource,
+    topProducts,
+    daily,
   }
 }
 

@@ -1,4 +1,6 @@
 import { useRef, useState, type FormEvent } from 'react'
+import { Link } from 'react-router'
+import { ArrowUpRightIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { FormAlert, TextField } from '@/components/common/form-fields'
 import { FormSection } from '@/components/common/form-section'
@@ -10,7 +12,8 @@ import { useDraftForm, type FieldErrors } from '@/lib/use-draft-form'
 import { useSubmitOnce } from '@/lib/use-submit-once'
 import { useUnsavedChanges } from '@/lib/use-unsaved-changes'
 import { getPortalService } from '../api/portal-service'
-import type { StoreProfile, StoreProfileUpdate } from '../api/types'
+import type { StoreContact, StoreProfile, StoreProfileUpdate } from '../api/types'
+import { BrandUploader } from '../components/brand-uploader'
 import { TextAreaField } from '../components/form-controls'
 import { ListSkeleton } from '../components/list-skeleton'
 import { PageHeader } from '../components/page-header'
@@ -21,15 +24,32 @@ import { useStoreQuery } from '../hooks'
 import { actionErrorMessage } from '../lib/errors'
 import { EMAIL_PATTERN, focusById } from '../lib/forms'
 
-const FIELDS = ['businessName', 'businessEmail', 'description'] as const
+const CONTACT_FIELDS = ['whatsapp', 'phone', 'website', 'instagram', 'facebook', 'tiktok'] as const
+type ContactField = (typeof CONTACT_FIELDS)[number]
+const FIELDS = ['businessName', 'businessEmail', 'description', ...CONTACT_FIELDS] as const
 type Field = (typeof FIELDS)[number]
 const fieldId = (field: Field) => `tienda-${field}`
 const DESCRIPTION_MAX = 1000
 
-interface Values {
-  businessName: string
-  businessEmail: string
-  description: string
+type Values = Record<Field, string>
+
+/** En el formulario los teléfonos van sin indicativo (10 dígitos); el servidor los guarda como `+57…`. */
+const PHONE_FIELDS: ContactField[] = ['whatsapp', 'phone']
+const toLocalPhone = (value: string | null | undefined) => (value ?? '').replace(/^\+57/, '')
+const cleanUser = (value: string) => value.trim().replace(/^@/, '')
+
+/** Valor que se envía al servidor para un campo de contacto ya validado. */
+function contactValue(field: ContactField, raw: string): string {
+  const value = raw.trim()
+  if (!value) return ''
+  if (PHONE_FIELDS.includes(field)) return `+57${value.replace(/\D/g, '')}`
+  if (field === 'website') return value
+  return cleanUser(value)
+}
+
+function storedContact(contact: StoreContact | undefined, field: ContactField): string {
+  const value = contact?.[field] ?? ''
+  return PHONE_FIELDS.includes(field) ? toLocalPhone(value) : value
 }
 
 function validate(values: Values): FieldErrors {
@@ -40,6 +60,19 @@ function validate(values: Values): FieldErrors {
   else if (!EMAIL_PATTERN.test(values.businessEmail.trim())) errors.businessEmail = 'El correo debe tener un formato válido, por ejemplo ventas@tualmacen.co.'
   else if (values.businessEmail.trim().length > 200) errors.businessEmail = 'El correo no puede superar 200 caracteres.'
   if (values.description.length > DESCRIPTION_MAX) errors.description = `La descripción no puede superar ${DESCRIPTION_MAX} caracteres.`
+  for (const field of PHONE_FIELDS) {
+    const digits = values[field].replace(/[\s-]/g, '')
+    if (digits && !/^3\d{9}$|^60\d{8}$/.test(digits)) errors[field] = 'Escribe un número colombiano de 10 dígitos, por ejemplo 3001234567.'
+  }
+  const website = values.website.trim()
+  if (website && !/^https:\/\/[^\s/$.?#][^\s]*$/.test(website)) errors.website = 'El sitio web debe empezar por https://, por ejemplo https://tualmacen.co.'
+  else if (website.length > 200) errors.website = 'El sitio web no puede superar 200 caracteres.'
+  for (const field of ['instagram', 'tiktok'] as const) {
+    const user = cleanUser(values[field])
+    if (user && !/^[A-Za-z0-9._]{1,30}$/.test(user)) errors[field] = 'Escribe solo el usuario (letras, números, punto o guion bajo), sin el enlace.'
+  }
+  const facebook = cleanUser(values.facebook)
+  if (facebook && !/^[A-Za-z0-9.]{1,50}$/.test(facebook)) errors.facebook = 'Escribe solo el usuario de la página (lo que va después de facebook.com/).'
   return errors
 }
 
@@ -47,7 +80,12 @@ function ProfileForm({ profile }: { profile: StoreProfile }) {
   const { storeId, can, invalidateStore } = usePortal()
   const editable = can('STORE_UPDATE')
   const draft = useDraftForm<Values>({
-    initial: { businessName: profile.businessName, businessEmail: profile.businessEmail, description: profile.description ?? '' },
+    initial: {
+      businessName: profile.businessName,
+      businessEmail: profile.businessEmail,
+      description: profile.description ?? '',
+      ...(Object.fromEntries(CONTACT_FIELDS.map((field) => [field, storedContact(profile.publicProfile, field)])) as Record<ContactField, string>),
+    },
     validate,
   })
   const { values } = draft
@@ -82,6 +120,12 @@ function ProfileForm({ profile }: { profile: StoreProfile }) {
     if (values.businessName.trim() !== profile.businessName) input.businessName = values.businessName.trim()
     if (values.businessEmail.trim() !== profile.businessEmail) input.businessEmail = values.businessEmail.trim()
     if (values.description.trim() !== (profile.description ?? '')) input.description = values.description.trim()
+    const contact: NonNullable<StoreProfileUpdate['publicProfile']> = {}
+    for (const field of CONTACT_FIELDS) {
+      const next = contactValue(field, values[field])
+      if (next !== (profile.publicProfile?.[field] ?? '')) contact[field] = next
+    }
+    if (Object.keys(contact).length > 0) input.publicProfile = contact
     if (Object.keys(input).length === 0) {
       toast.info('No hay cambios para guardar.')
       return
@@ -97,8 +141,10 @@ function ProfileForm({ profile }: { profile: StoreProfile }) {
     } else if (result.status === 'error') {
       const error = result.error
       if (error instanceof ApiError && Object.keys(error.fieldErrors).length > 0) {
-        draft.setServerErrors(error.fieldErrors)
-        const target = FIELDS.find((field) => error.fieldErrors[field])
+        // En el contacto el servidor nombra los campos como `publicProfile.whatsapp`.
+        const serverErrors = Object.fromEntries(Object.entries(error.fieldErrors).map(([key, value]) => [key.replace(/^publicProfile\./, ''), value]))
+        draft.setServerErrors(serverErrors)
+        const target = FIELDS.find((field) => serverErrors[field])
         if (target) requestAnimationFrame(() => focusById(fieldId(target)))
       }
       setFormError(actionErrorMessage(error, 'No pudimos guardar los datos de la tienda. Inténtalo de nuevo.'))
@@ -142,6 +188,30 @@ function ProfileForm({ profile }: { profile: StoreProfile }) {
           onChange={(event) => change('description', event.target.value)}
         />
       </FormSection>
+      <FormSection
+        title="Imagen de marca"
+        description="El logo aparece en el directorio de tiendas, en tus publicaciones y en tu perfil; el banner, arriba de tu perfil."
+        className="border-t border-ap-line-strong pt-4"
+      >
+        <BrandUploader asset="logo" url={profile.logoUrl} editable={editable} published={profile.state === 'ACTIVE'} />
+        <BrandUploader asset="banner" url={profile.bannerUrl} editable={editable} published={profile.state === 'ACTIVE'} />
+      </FormSection>
+      <FormSection
+        title="Contacto público"
+        description="Se muestra en tu perfil para que los compradores te escriban. Todos son opcionales: deja vacío lo que no quieras publicar."
+        className="border-t border-ap-line-strong pt-4"
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <TextField {...bind('whatsapp')} label="WhatsApp" optional type="tel" inputMode="numeric" maxLength={13} autoComplete="off" placeholder="3001234567" hint="10 dígitos, sin +57." onChange={(event) => change('whatsapp', event.target.value)} />
+          <TextField {...bind('phone')} label="Teléfono" optional type="tel" inputMode="numeric" maxLength={13} autoComplete="off" placeholder="6015551234" hint="Fijo (60…) o celular, 10 dígitos." onChange={(event) => change('phone', event.target.value)} />
+        </div>
+        <TextField {...bind('website')} label="Sitio web" optional type="url" inputMode="url" maxLength={200} autoComplete="off" placeholder="https://tualmacen.co" onChange={(event) => change('website', event.target.value)} />
+        <div className="grid gap-4 sm:grid-cols-3">
+          <TextField {...bind('instagram')} label="Instagram" optional maxLength={31} autoComplete="off" placeholder="tualmacen" hint="Solo el usuario." onChange={(event) => change('instagram', event.target.value)} />
+          <TextField {...bind('facebook')} label="Facebook" optional maxLength={51} autoComplete="off" placeholder="tualmacen" hint="Lo que va tras facebook.com/." onChange={(event) => change('facebook', event.target.value)} />
+          <TextField {...bind('tiktok')} label="TikTok" optional maxLength={31} autoComplete="off" placeholder="tualmacen" hint="Solo el usuario." onChange={(event) => change('tiktok', event.target.value)} />
+        </div>
+      </FormSection>
       {editable ? (
         <div className="sticky bottom-0 z-10 -mx-4 flex flex-wrap items-center gap-3 border-t border-ap-line bg-ap-white px-4 py-3 sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0">
           <Button type="submit" className="h-11 px-6" disabled={submit.pending || !dirty}>
@@ -163,8 +233,20 @@ export default function PortalStorePage() {
   return (
     <>
       <title>Tienda | Autopartco</title>
-      <PageHeader title="Tienda" description="Los datos con los que te ven los compradores." />
-      <QueryBoundary result={profile} what="los datos de tu tienda" skeleton={<ListSkeleton rows={4} label="Cargando los datos de tu tienda" />}>
+      <PageHeader
+        title="Tienda"
+        description="Los datos con los que te ven los compradores."
+        actions={
+          profile.data?.state === 'ACTIVE' ? (
+            <Button variant="outline" className="h-11 px-4" nativeButton={false} render={<Link to={`/tiendas/${encodeURIComponent(profile.data.id)}`} target="_blank" rel="noopener" />}>
+              Ver mi perfil público
+              <ArrowUpRightIcon aria-hidden />
+            </Button>
+          ) : undefined
+        }
+      />
+      {/* `keepPrevious`: al subir el logo o el banner se recarga el perfil sin desmontar el formulario. */}
+      <QueryBoundary result={profile} what="los datos de tu tienda" keepPrevious skeleton={<ListSkeleton rows={4} label="Cargando los datos de tu tienda" />}>
         {(data) => <ProfileForm key={data.id} profile={data} />}
       </QueryBoundary>
     </>

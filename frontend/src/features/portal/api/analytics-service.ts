@@ -1,5 +1,14 @@
 import { DATA_SOURCE } from '@/lib/api'
-import type { AssociationReport, CustomerReport, CustomerSegmentCode, Forecast, ProductReport, ReportQuery, SalesReport } from './analytics-types'
+import type {
+  AssociationReport,
+  CustomerReport,
+  CustomerSegmentCode,
+  Forecast,
+  ProductReport,
+  ReportQuery,
+  SalesReport,
+  VisibilityReport,
+} from './analytics-types'
 
 /**
  * Inteligencia comercial del almacén (`/stores/{id}/analytics`). Exige `ANALYTICS_READ` y la capability
@@ -16,6 +25,11 @@ export interface AnalyticsService {
   forecast(storeId: string, branchId?: string): Promise<Forecast>
   /** `GET /associations`: productos que se compran juntos (se recalcula cada noche). */
   associations(storeId: string): Promise<AssociationReport>
+  /**
+   * `GET /visibility?from&to`: visitas al perfil y a las publicaciones, compartidos y origen. Solo exige
+   * `ANALYTICS_READ` (está en todos los planes, sin `ADVANCED_REPORTS`).
+   */
+  visibility(storeId: string, range: { from: string; to: string }): Promise<VisibilityReport>
 }
 
 let servicePromise: Promise<AnalyticsService> | undefined

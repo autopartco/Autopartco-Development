@@ -11,9 +11,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.autopartco.backend.core.catalog.ListingQueries;
+import com.autopartco.backend.core.organization.PublishedStoreProfile;
+import com.autopartco.backend.core.organization.PublishedStores;
 import com.autopartco.backend.core.organization.StoreFiles;
 import com.autopartco.backend.core.organization.StoreResponse;
 import com.autopartco.backend.core.organization.StoreService;
+import com.autopartco.backend.marketplace.reviews.StoreReviewService;
 import com.autopartco.backend.shared.web.ApiPaths;
 
 import lombok.AllArgsConstructor;
@@ -25,10 +29,21 @@ import lombok.AllArgsConstructor;
 public class StoreBrowseController {
     private final StoreService storeService;
     private final StoreFiles storeFiles;
+    private final PublishedStores publishedStores;
+    private final StoreReviewService storeReviewService;
+    private final ListingQueries listingQueries;
 
     @GetMapping
     public List<StoreResponse> published() {
         return storeService.published();
+    }
+
+    /** Perfil público: 404 {@code STORE_NOT_FOUND} si el almacén no está publicado. */
+    @GetMapping("/{storeId}")
+    public StorePublicProfile profile(@PathVariable UUID storeId) {
+        PublishedStoreProfile store = publishedStores.profile(storeId);
+        return StorePublicProfile.of(store, storeReviewService.rating(storeId),
+                listingQueries.publishedProductCount(storeId));
     }
 
     @GetMapping("/{storeId}/brand/{assetType}")
