@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="es-CO">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+    <title>Página no encontrada | Autopartco</title>
+    <!--
+      Vercel sirve este archivo en cualquier 404 que no llegue a la aplicación
+      (por ejemplo, archivos de /assets/ de una versión anterior). Es autónomo:
+      no depende del JavaScript ni del CSS de la app.
+    -->
+    <style>
+      :root {
+        --ap-red: #c9272c;
+        --ap-red-hover: #a91f25;
+        --ap-graphite: #202326;
+        --ap-ink: #292d31;
+        --ap-muted: #626a70;
+        --ap-line: #dde0e2;
+        --ap-steel: #8b9298;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+        color: var(--ap-ink);
+        font-family: 'IBM Plex Sans', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        line-height: 1.6;
+      }
+      header { background: var(--ap-graphite); }
+      header a {
+        display: inline-flex;
+        align-items: center;
+        min-height: 56px;
+        padding: 0 16px;
+        color: #fff;
+        font-weight: 700;
+        text-decoration: none;
+        letter-spacing: 0.01em;
+      }
+      main { flex: 1; width: 100%; max-width: 1200px; margin: 0 auto; padding: 48px 16px; }
+      .index {
+        margin: 0 0 12px;
+        font-family: 'IBM Plex Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+        font-size: 12px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--ap-muted);
+      }
+      h1 { margin: 0 0 12px; font-size: clamp(28px, 4vw, 32px); line-height: 1.2; font-weight: 600; }
+      p { margin: 0; max-width: 65ch; color: var(--ap-muted); }
+      .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 24px; }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 0 16px;
+        border-radius: 6px;
+        border: 1px solid var(--ap-steel);
+        background: #fff;
+        color: var(--ap-graphite);
+        font: inherit;
+        font-weight: 600;
+        font-size: 15px;
+        text-decoration: none;
+        transition: background-color 150ms;
+      }
+      .btn:hover { background: #f4f3ef; }
+      .btn-primary { background: var(--ap-red); border-color: var(--ap-red); color: #fff; }
+      .btn-primary:hover { background: var(--ap-red-hover); border-color: var(--ap-red-hover); }
+      a:focus-visible { outline: 2px solid var(--ap-red); outline-offset: 2px; }
+      header a:focus-visible { outline-color: #fff; }
+      footer { border-top: 1px solid var(--ap-line); padding: 16px; font-size: 13px; color: var(--ap-muted); text-align: center; }
+      @media (min-width: 768px) { main { padding: 64px 32px; } header a { padding: 0 32px; } }
+      @media (prefers-reduced-motion: reduce) { .btn { transition: none; } }
+    </style>
+  </head>
+  <body>
+    <header><a href="/">Autopartco</a></header>
+    <main>
+      <p class="index">Error / 404</p>
+      <h1>No encontramos esta página</h1>
+      <p>Puede que el enlace esté mal escrito o que la página ya no exista. Si acabamos de publicar una versión nueva, recargar desde el inicio lo resuelve.</p>
+      <div class="actions">
+        <a class="btn btn-primary" href="/">Ir al inicio</a>
+        <a class="btn" href="/buscar">Buscar repuestos</a>
+      </div>
+    </main>
+    <footer>Autopartco · Repuestos en almacenes de Colombia</footer>
+  </body>
+</html>
