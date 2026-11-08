@@ -10,7 +10,9 @@ import { FACEBOOK_APP_ID, GOOGLE_CLIENT_ID, facebookAccessToken, preloadFacebook
 
 const SIMULATED = DATA_SOURCE !== 'http'
 const showGoogle = SIMULATED || GOOGLE_CLIENT_ID !== ''
-const showFacebook = SIMULATED || FACEBOOK_APP_ID !== ''
+// Facebook desactivado por ahora: no se muestra aunque exista VITE_FACEBOOK_APP_ID. Para reactivarlo, poner `true`.
+const FACEBOOK_ENABLED = false
+const showFacebook = FACEBOOK_ENABLED && (SIMULATED || FACEBOOK_APP_ID !== '')
 
 // Al menos un proveedor configurado (o datos simulados).
 const socialLoginAvailable = showGoogle || showFacebook
