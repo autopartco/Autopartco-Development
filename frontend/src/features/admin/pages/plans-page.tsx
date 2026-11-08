@@ -9,12 +9,11 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { formatCOP, formatNumber } from '@/lib/format'
 import { ConfirmDialog } from '@/features/portal/components/confirm-dialog'
 import { TextAreaField } from '@/features/portal/components/form-controls'
-import { QueryBoundary } from '@/features/portal/components/query-boundary'
 import { StatusBadge } from '@/features/portal/components/status-badge'
 import { CAPABILITY_LABEL } from '@/features/portal/lib/labels'
 import { getAdminOpsService } from '../api/admin-ops-service'
 import type { AdminPlan, PlanInput } from '../api/ops-types'
-import { AdminPage, FormSheet, RowActions, SwitchField } from '../components/admin-kit'
+import { AdminBoundary, AdminPage, FormSheet, RowActions, SwitchField } from '../components/admin-kit'
 import { reloadAdmin, useAdminPlans } from '../hooks'
 
 const limit = (value: number | null) => (value === null ? '∞' : formatNumber(value))
@@ -137,19 +136,19 @@ function PlanSheet({ open, onOpenChange, plan }: { open: boolean; onOpenChange: 
       <TextAreaField {...text('description')} label="Descripción" optional maxLength={2000} />
       <TextField {...text('price')} label="Precio mensual (COP)" inputMode="numeric" required hint={values.price && Number(values.price) >= 0 ? formatCOP(Number(values.price) || 0) : 'Sin puntos ni signo de pesos.'} />
       <fieldset className="grid gap-4 sm:grid-cols-3">
-        <legend className="mb-2 text-sm font-semibold">Límites (vacío = ilimitado)</legend>
+        <legend className="mb-2 text-sm font-semibold text-ap-ink">Límites (vacío = ilimitado)</legend>
         <TextField {...text('maxBranches')} label="Sucursales" inputMode="numeric" />
         <TextField {...text('maxProducts')} label="Productos" inputMode="numeric" />
         <TextField {...text('maxUsers')} label="Usuarios" inputMode="numeric" />
       </fieldset>
       <TextAreaField {...text('features')} label="Beneficios visibles" optional hint="Uno por línea. Se muestran en la página de planes." />
       <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1 text-sm font-semibold">Funciones incluidas</legend>
+        <legend className="mb-1 text-sm font-semibold text-ap-ink">Funciones incluidas</legend>
         <div className="grid gap-2 sm:grid-cols-2">
           {Object.entries(CAPABILITY_LABEL).map(([key, label]) => {
             const id = `plan-cap-${key}`
             return (
-              <label key={key} htmlFor={id} className="flex min-h-11 items-center gap-3 rounded-lg border border-border px-3 text-sm">
+              <label key={key} htmlFor={id} className="flex min-h-11 items-center gap-3 rounded-md border border-ap-line px-3 text-sm text-ap-ink hover:bg-ap-paper">
                 <Checkbox
                   id={id}
                   checked={values.capabilities.includes(key)}
@@ -195,19 +194,19 @@ export default function AdminPlansPage() {
       sortValue: (row) => row.name,
       cell: (row) => (
         <div className="min-w-0">
-          <p className="font-semibold">{row.name}</p>
-          <p className="label-mono text-muted-foreground">{row.code}</p>
+          <p className="font-semibold text-ap-ink">{row.name}</p>
+          <p className="ap-ref text-ap-muted">{row.code}</p>
         </div>
       ),
     },
-    { id: 'precio', header: 'Precio mensual', align: 'end', sortValue: (row) => row.monthlyPriceCop, cell: (row) => <span className="tabular-nums">{row.monthlyPriceCop === 0 ? 'Gratis' : formatCOP(row.monthlyPriceCop)}</span> },
+    { id: 'precio', header: 'Precio mensual', align: 'end', sortValue: (row) => row.monthlyPriceCop, cell: (row) => <span className="ap-price text-ap-ink">{row.monthlyPriceCop === 0 ? 'Gratis' : formatCOP(row.monthlyPriceCop)}</span> },
     {
       id: 'limites',
       header: 'Sucursales · productos · usuarios',
       className: 'hidden md:table-cell',
-      cell: (row) => <span className="tabular-nums">{`${limit(row.maxBranches)} · ${limit(row.maxProducts)} · ${limit(row.maxUsers)}`}</span>,
+      cell: (row) => <span className="ap-ref text-ap-ink">{`${limit(row.maxBranches)} · ${limit(row.maxProducts)} · ${limit(row.maxUsers)}`}</span>,
     },
-    { id: 'funciones', header: 'Funciones', className: 'hidden lg:table-cell', sortValue: (row) => row.capabilities.length, cell: (row) => row.capabilities.length },
+    { id: 'funciones', header: 'Funciones', align: 'end', className: 'hidden lg:table-cell', sortValue: (row) => row.capabilities.length, cell: (row) => <span className="ap-num">{row.capabilities.length}</span> },
     {
       id: 'estado',
       header: 'Estado',
@@ -240,7 +239,6 @@ export default function AdminPlansPage() {
 
   return (
     <AdminPage
-      label="Comercial"
       title="Planes"
       description="Define precio, límites y funciones de cada plan de suscripción para almacenes."
       actions={
@@ -250,7 +248,7 @@ export default function AdminPlansPage() {
         </Button>
       }
     >
-      <QueryBoundary result={plans} what="los planes" keepPrevious>
+      <AdminBoundary result={plans} what="los planes" keepPrevious>
         {(rows) =>
           rows.length === 0 ? (
             <EmptyState icon={<CreditCardIcon />} title="Aún no hay planes" description="Crea el primero para que los almacenes puedan suscribirse.">
@@ -263,7 +261,7 @@ export default function AdminPlansPage() {
             <DataTable caption="Planes de suscripción" columns={columns} rows={rows} getRowId={(row) => row.id} defaultSort={{ columnId: 'precio', direction: 'asc' }} />
           )
         }
-      </QueryBoundary>
+      </AdminBoundary>
       {sheet ? <PlanSheet key={sheet.key} open onOpenChange={(next) => !next && setSheet(undefined)} plan={sheet.plan} /> : null}
       <ConfirmDialog
         open={toDisable !== undefined}

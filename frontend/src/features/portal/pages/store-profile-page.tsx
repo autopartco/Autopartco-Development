@@ -1,6 +1,7 @@
 import { useRef, useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
 import { FormAlert, TextField } from '@/components/common/form-fields'
+import { FormSection } from '@/components/common/form-section'
 import { Button } from '@/components/ui/button'
 import { ApiError } from '@/lib/api'
 import { UnsavedChangesDialog } from '@/components/common/unsaved-changes-dialog'
@@ -108,39 +109,45 @@ function ProfileForm({ profile }: { profile: StoreProfile }) {
   return (
     <form noValidate onSubmit={(event) => void handleSubmit(event)} className="flex max-w-2xl flex-col gap-5" aria-busy={submit.pending || undefined}>
       {!editable ? (
-        <p role="note" className="rounded-lg bg-concrete p-3 text-sm">
+        <p role="note" className="border-l-2 border-ap-line-strong py-1 pl-3 text-sm text-ap-ink">
           Estás en modo de solo lectura: tu rol no puede editar los datos de la tienda.
         </p>
       ) : null}
       {formError ? <FormAlert ref={alertRef} title="No se guardaron los cambios">{formError}</FormAlert> : null}
-      <TextField {...bind('businessName')} label="Nombre del almacén" maxLength={255} autoComplete="organization" required onChange={(event) => change('businessName', event.target.value)} />
-      <TextField {...bind('businessEmail')} label="Correo del almacén" type="email" inputMode="email" maxLength={200} autoComplete="off" required hint="Aquí te escribimos sobre pedidos y tu suscripción." onChange={(event) => change('businessEmail', event.target.value)} />
-      <TextField
-        id="tienda-nit"
-        label="NIT"
-        value={profile.nit}
-        readOnly
-        hint="El NIT no se puede cambiar desde el portal porque identifica legalmente al almacén. Si tiene un error, escríbenos."
-      />
-      <TextAreaField
-        {...bind('description')}
-        label="Descripción"
-        optional
-        maxLength={DESCRIPTION_MAX + 100}
-        className="min-h-32"
-        hint={`${values.description.length} de ${DESCRIPTION_MAX} caracteres. Cuéntales a los compradores qué vendes y desde cuándo.`}
-        onChange={(event) => change('description', event.target.value)}
-      />
-      <div className="flex items-center gap-3">
-        <span className="text-sm text-muted-foreground">Estado:</span>
-        <StatusBadge tone={profile.state === 'ACTIVE' ? 'success' : 'warning'}>{profile.state === 'ACTIVE' ? 'Activa' : 'Pendiente'}</StatusBadge>
-      </div>
+      <FormSection
+        title="Identificación"
+        description="Cómo aparece tu almacén en el marketplace."
+        aside={<StatusBadge tone={profile.state === 'ACTIVE' ? 'success' : 'warning'}>{profile.state === 'ACTIVE' ? 'Tienda activa' : 'Tienda pendiente'}</StatusBadge>}
+        className="border-t border-ap-line-strong pt-4"
+      >
+        <TextField {...bind('businessName')} label="Nombre del almacén" maxLength={255} autoComplete="organization" required onChange={(event) => change('businessName', event.target.value)} />
+        <TextField
+          id="tienda-nit"
+          label="NIT"
+          value={profile.nit}
+          readOnly
+          className="font-mono"
+          hint="El NIT no se puede cambiar desde el portal porque identifica legalmente al almacén. Si tiene un error, escríbenos."
+        />
+      </FormSection>
+      <FormSection title="Contacto y presentación" description="Lo que leen los compradores y por dónde te escribimos." className="border-t border-ap-line-strong pt-4">
+        <TextField {...bind('businessEmail')} label="Correo del almacén" type="email" inputMode="email" maxLength={200} autoComplete="off" required hint="Aquí te escribimos sobre pedidos y tu suscripción." onChange={(event) => change('businessEmail', event.target.value)} />
+        <TextAreaField
+          {...bind('description')}
+          label="Descripción"
+          optional
+          maxLength={DESCRIPTION_MAX + 100}
+          className="min-h-32"
+          hint={`${values.description.length} de ${DESCRIPTION_MAX} caracteres. Cuéntales a los compradores qué vendes y desde cuándo.`}
+          onChange={(event) => change('description', event.target.value)}
+        />
+      </FormSection>
       {editable ? (
-        <div className="sticky bottom-0 z-10 -mx-4 flex flex-wrap items-center gap-3 border-t border-border bg-background/95 px-4 py-3 backdrop-blur sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0">
+        <div className="sticky bottom-0 z-10 -mx-4 flex flex-wrap items-center gap-3 border-t border-ap-line bg-ap-white px-4 py-3 sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0">
           <Button type="submit" className="h-11 px-6" disabled={submit.pending || !dirty}>
             {submit.pending ? 'Guardando…' : 'Guardar cambios'}
           </Button>
-          <p role="status" className="text-sm text-muted-foreground">
+          <p role="status" className="text-sm text-ap-muted">
             {dirty ? 'Tienes cambios sin guardar.' : 'Sin cambios por guardar.'}
           </p>
         </div>

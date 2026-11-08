@@ -6,7 +6,7 @@ import { ResultCount, SearchField } from '../components/search-field'
 import { normalizeText } from '../lib/fuzzy'
 import { DataTable, type DataColumn } from '@/components/common/data-table'
 import { EmptyState } from '@/components/common/states'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { getStaffService } from '../api/staff-service'
 import type { Staff, StaffInvitation, StaffMember } from '../api/types'
@@ -27,7 +27,7 @@ const MEMBER_COLUMNS: DataColumn<StaffMember>[] = [
     header: 'Nombre',
     rowHeader: true,
     sortValue: (row) => `${row.name} ${row.surname}`,
-    cell: (row) => <span className="font-semibold">{`${row.name} ${row.surname}`.trim()}</span>,
+    cell: (row) => <span className="font-semibold text-ap-ink">{`${row.name} ${row.surname}`.trim()}</span>,
   },
   { id: 'correo', header: 'Correo', sortValue: (row) => row.email, cell: (row) => row.email },
   { id: 'roles', header: 'Rol', cell: (row) => row.roleNames.join(', ') || '—' },
@@ -66,14 +66,14 @@ function TeamView({ staff }: { staff: Staff }) {
   }
 
   const invitationColumns: DataColumn<StaffInvitation>[] = [
-    { id: 'correo', header: 'Correo', rowHeader: true, sortValue: (row) => row.email, cell: (row) => <span className="font-semibold">{row.email}</span> },
+    { id: 'correo', header: 'Correo', rowHeader: true, sortValue: (row) => row.email, cell: (row) => <span className="font-semibold text-ap-ink">{row.email}</span> },
     { id: 'rol', header: 'Rol', cell: (row) => row.roleName },
     {
       id: 'estado',
       header: 'Estado',
       cell: (row) => (row.expired ? <StatusBadge tone="danger">Vencida</StatusBadge> : <StatusBadge tone="warning">Pendiente</StatusBadge>),
     },
-    { id: 'vence', header: 'Vence', sortValue: (row) => row.expiresAt, cell: (row) => formatDate(row.expiresAt) },
+    { id: 'vence', header: 'Vence', sortValue: (row) => row.expiresAt, cell: (row) => <span className="ap-ref">{formatDate(row.expiresAt)}</span> },
     ...(manage
       ? [
           {
@@ -85,7 +85,7 @@ function TeamView({ staff }: { staff: Staff }) {
               <DropdownMenu>
                 <DropdownMenuTrigger
                   aria-label={`Acciones para la invitación de ${row.email}`}
-                  className="inline-flex size-10 items-center justify-center rounded-lg outline-none hover:bg-concrete data-popup-open:bg-concrete pointer-coarse:size-11"
+                  className={buttonVariants({ variant: 'ghost', size: 'icon' })}
                 >
                   <MoreHorizontalIcon className="size-5" aria-hidden />
                 </DropdownMenuTrigger>
@@ -109,14 +109,14 @@ function TeamView({ staff }: { staff: Staff }) {
   return (
     <div className="flex flex-col gap-8">
       {usage ? (
-        <UsageMeter capacity="USERS" used={usage.used} limit={usage.limit} upgradeTo={`/portal/${encodeURIComponent(storeId)}/plan`} className="max-w-md rounded-lg bg-card p-4 ring-1 ring-foreground/10" />
+        <UsageMeter capacity="USERS" used={usage.used} limit={usage.limit} upgradeTo={`/portal/${encodeURIComponent(storeId)}/plan`} className="max-w-md rounded-lg border border-ap-line p-4" />
       ) : null}
       {manage && lacksRoles ? (
-        <p role="note" className="flex items-start gap-2 rounded-lg bg-concrete p-3 text-sm">
-          <InfoIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+        <p role="note" className="flex items-start gap-2 rounded-lg border border-ap-info/25 bg-ap-info-soft p-3 text-sm text-ap-ink">
+          <InfoIcon className="mt-0.5 size-4 shrink-0 text-ap-info" aria-hidden />
           <span>
             Tu plan no incluye roles personalizados, así que por ahora no puedes invitar a más personas.{' '}
-            <Link to={`/portal/${encodeURIComponent(storeId)}/plan`} className="font-semibold underline underline-offset-4">
+            <Link to={`/portal/${encodeURIComponent(storeId)}/plan`} className="font-semibold text-ap-red underline underline-offset-4 hover:text-ap-red-hover">
               Ver planes
             </Link>
           </span>
@@ -124,7 +124,7 @@ function TeamView({ staff }: { staff: Staff }) {
       ) : null}
 
       <section aria-labelledby="miembros-titulo" className="flex flex-col gap-3">
-        <h2 id="miembros-titulo" className="text-xl font-extrabold tracking-tight">
+        <h2 id="miembros-titulo" className="text-block-title text-ap-ink">
           Colaboradores
         </h2>
         {staff.members.length === 0 ? (
@@ -151,13 +151,13 @@ function TeamView({ staff }: { staff: Staff }) {
       </section>
 
       <section aria-labelledby="invitaciones-titulo" className="flex flex-col gap-3">
-        <h2 id="invitaciones-titulo" className="text-xl font-extrabold tracking-tight">
+        <h2 id="invitaciones-titulo" className="text-block-title text-ap-ink">
           Invitaciones
         </h2>
         {staff.invitations.length === 0 ? (
           <EmptyState icon={<MailPlusIcon />} title="No hay invitaciones pendientes" description={manage ? 'Invita a tu equipo para repartir el trabajo: pedidos, productos o inventario.' : 'El propietario o un administrador puede invitar personas.'} className="py-8">
             {manage ? (
-              <Button className="h-11 px-5" onClick={() => setInviting(true)}>
+              <Button variant="outline" className="h-11 px-4" onClick={() => setInviting(true)}>
                 <MailPlusIcon aria-hidden />
                 Invitar colaborador
               </Button>

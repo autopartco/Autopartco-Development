@@ -4,7 +4,7 @@ import { PromotionsManager } from '@/features/portal/components/promotions-manag
 import type { PromotionConfig } from '@/features/portal/lib/promotion-config'
 import { PLATFORM_AUDIENCES } from '@/features/portal/lib/promotions'
 import { lazyAdminPromotionService } from '../api/admin-promotion-service'
-import { AuroraHeader } from '../components/aurora-header'
+import { AdminPage } from '../components/admin-kit'
 import { ADMIN_CACHE_PREFIX } from '../hooks'
 
 const CACHE_KEY = `${ADMIN_CACHE_PREFIX}promotions`
@@ -35,16 +35,11 @@ const CONFIG: PromotionConfig = {
 /** `/admin/promociones`: promociones de plataforma con audiencia (todos o clientes frecuentes) y resultados. */
 export default function AdminPromotionsPage() {
   return (
-    <div>
-      <title>Promociones | Administración | Autopartco</title>
-      <AuroraHeader
-        label="Plataforma"
-        title="Promociones"
-        description="Descuentos de Autopartco para los productos de todos los almacenes. Elige si los ve cualquier comprador o solo los clientes frecuentes, y mide su efecto."
-      />
-      <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <PromotionsManager config={CONFIG} />
-      </div>
-    </div>
+    <AdminPage
+      title="Promociones"
+      description="Descuentos de Autopartco para los productos de todos los almacenes. Elige si los ve cualquier comprador o solo los clientes frecuentes, y mide su efecto."
+    >
+      <PromotionsManager config={CONFIG} />
+    </AdminPage>
   )
 }

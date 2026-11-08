@@ -9,6 +9,7 @@ import { AlertCard } from '../components/alert-card'
 import { AlertPreferences } from '../components/alert-preferences'
 import { PageHeader } from '../components/page-header'
 import { QueryBoundary } from '../components/query-boundary'
+import { SEGMENT_GROUP_CLASS, segmentClass } from '../components/segmented'
 import { usePortal } from '../context'
 import { useAlertActions } from '../lib/use-alert-actions'
 
@@ -28,7 +29,7 @@ function AlertsList({ filter }: { filter: (typeof FILTERS)[number] }) {
         rows.length === 0 ? (
           <EmptyState icon={<BellOffIcon />} title="Sin alertas por ahora" description={filter.empty} />
         ) : (
-          <ul className="flex flex-col gap-3">
+          <ul className="divide-y divide-ap-line rounded-lg border border-ap-line">
             {rows.map((alert) => (
               <li key={alert.id}>
                 <AlertCard alert={alert} actions={actions} />
@@ -53,7 +54,7 @@ export default function PortalAlertsPage() {
   const tabClass = (active: boolean) =>
     cn(
       '-mb-px inline-flex min-h-11 items-center border-b-2 px-3 text-sm font-semibold whitespace-nowrap transition-colors',
-      active ? 'border-foreground text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground',
+      active ? 'border-ap-red text-ap-ink' : 'border-transparent text-ap-muted hover:border-ap-line-strong hover:text-ap-ink',
     )
 
   return (
@@ -61,7 +62,7 @@ export default function PortalAlertsPage() {
       <title>Alertas | Autopartco</title>
       <PageHeader title="Alertas" description="Avisos sobre ventas, existencias y clientes que conviene atender a tiempo." />
       {canManage ? (
-        <nav aria-label="Secciones de alertas" className="mb-6 flex gap-1 overflow-x-auto overflow-y-hidden border-b border-border">
+        <nav aria-label="Secciones de alertas" className="mb-6 flex gap-1 overflow-x-auto overflow-y-hidden border-b border-ap-line">
           <Link to={base} className={tabClass(!preferences)} aria-current={!preferences ? 'page' : undefined}>
             Alertas
           </Link>
@@ -74,17 +75,14 @@ export default function PortalAlertsPage() {
         <AlertPreferences />
       ) : (
         <div className="flex flex-col gap-5">
-          <nav aria-label="Filtrar alertas" className="flex flex-wrap gap-2">
+          <nav aria-label="Filtrar alertas" className={SEGMENT_GROUP_CLASS}>
             {FILTERS.map((item) => (
               <Link
                 key={item.param}
                 to={`${base}?estado=${item.param}`}
                 replace
                 aria-current={item === filter ? 'true' : undefined}
-                className={cn(
-                    'inline-flex min-h-11 items-center rounded-full px-4 text-sm font-semibold ring-1 transition-colors',
-                    item === filter ? 'bg-foreground text-background ring-foreground' : 'bg-card ring-foreground/15 hover:ring-foreground/40',
-                )}
+                className={segmentClass(item === filter)}
               >
                 {item.label}
               </Link>

@@ -47,7 +47,7 @@ export function StoreSwitcher() {
           if (typeof next === 'string' && next !== storeId) navigate(`/portal/${encodeURIComponent(next)}/${sectionOf(pathname)}`)
         }}
       >
-        <SelectTrigger id="selector-tienda" className="h-11 w-full min-w-0 max-w-[16rem] bg-card font-semibold sm:h-10">
+        <SelectTrigger id="selector-tienda" className="h-11 w-full min-w-0 max-w-[16rem] bg-ap-white font-semibold sm:h-10">
           <SelectValue />
         </SelectTrigger>
         <SelectContent alignItemWithTrigger={false} align="start" className="min-w-64">
@@ -58,7 +58,7 @@ export function StoreSwitcher() {
           ))}
         </SelectContent>
       </Select>
-      <Link to="/portal" className="hidden shrink-0 rounded-md px-2 py-2.5 text-sm font-medium text-muted-foreground underline-offset-4 hover:text-foreground hover:underline md:inline">
+      <Link to="/portal" className="hidden shrink-0 rounded-md px-2 py-2.5 text-sm font-medium text-ap-muted underline-offset-4 hover:text-foreground hover:underline md:inline">
         Mis almacenes
       </Link>
     </div>

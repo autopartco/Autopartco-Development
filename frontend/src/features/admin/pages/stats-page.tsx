@@ -1,72 +1,264 @@
 import { useSearchParams } from 'react-router'
-import { Card } from '@/components/ui/card'
-import { formatCOP, formatNumber } from '@/lib/format'
+import { formatCOP, formatNumber, pluralize } from '@/lib/format'
 import { useAsync } from '@/lib/use-async'
+import { cn } from '@/lib/utils'
 import { AnalyticsChart, type ChartPoint } from '@/features/portal/components/analytics-chart'
+import { ChartEmpty, ChartSection, ChartSkeleton } from '@/features/portal/components/chart-section'
 import { SelectField } from '@/features/portal/components/form-controls'
-import { ListSkeleton } from '@/features/portal/components/list-skeleton'
-import { QueryBoundary } from '@/features/portal/components/query-boundary'
-import { StatCard } from '@/features/portal/components/stat-card'
-import { GRANULARITY_OPTIONS, RANGE_PRESETS, isGranularity, isRangePreset, periodLabel, resolveRange, type RangePreset } from '@/features/portal/lib/analytics'
+import { SEGMENT_GROUP_CLASS, segmentClass } from '@/features/portal/components/segmented'
+import { CHART_BG } from '@/features/portal/lib/chart-palette'
+import { GRANULARITY_OPTIONS, RANGE_PRESETS, dateLabel, isGranularity, isRangePreset, periodLabel, resolveRange, type RangePreset } from '@/features/portal/lib/analytics'
 import { getAdminInsightsService } from '../api/admin-insights-service'
-import type { StatCount, StatsGranularity } from '../api/insights-types'
-import { AdminPage } from '../components/admin-kit'
+import type { PlatformStatsReport, StatCount, StatsGranularity } from '../api/insights-types'
+import { AdminBoundary, AdminPage, FigureList } from '../components/admin-kit'
 import { ADMIN_CACHE_PREFIX } from '../hooks'
 
 const PRESETS = RANGE_PRESETS.filter((preset) => preset.value !== 'personalizado')
 const percent = new Intl.NumberFormat('es-CO', { style: 'percent', maximumFractionDigits: 1 })
 const TYPE_LABEL: Record<string, string> = { CUSTOMER: 'Clientes', STORE_MANAGER: 'Almacenes', ROOT: 'Administración', ADMIN: 'Administración' }
 const PROVIDER_LABEL: Record<string, string> = { google: 'Google', facebook: 'Facebook' }
+const GRANULARITY_NOUN: Record<StatsGranularity, string> = { DAY: 'por día', WEEK: 'por semana', MONTH: 'por mes' }
+/** Fracción de ingresos fallidos a partir de la cual conviene revisar la auditoría. */
+const FAILED_ATTENTION = 0.2
 
-function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
+/** Encabezado de un grupo de preguntas (Tráfico, Cuentas…): índice mono y título de bloque. */
+function Group({ id, index, title, description, children }: { id: string; index: string; title: string; description?: string; children: React.ReactNode }) {
   return (
-    <section className="flex flex-col gap-3" aria-label={title}>
-      <div>
-        <h2 className="text-lg font-extrabold tracking-tight">{title}</h2>
-        {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
+    <section aria-labelledby={id} className="flex flex-col gap-6">
+      <div className="flex flex-col gap-1">
+        <p className="ap-index">{index}</p>
+        <h2 id={id} className="text-block-title text-ap-ink">
+          {title}
+        </h2>
+        {description ? <p className="max-w-prose text-sm text-ap-muted">{description}</p> : null}
       </div>
       {children}
     </section>
   )
 }
 
-/** Lista con barra proporcional (rutas, referentes, tipos de cuenta, planes). */
-function BarList({ title, rows, empty, format = formatNumber, label = (key: string) => key }: { title: string; rows: StatCount[]; empty: string; format?: (value: number) => string; label?: (key: string) => string }) {
-  const max = Math.max(1, ...rows.map((row) => row.count))
+/**
+ * Barras horizontales ordenadas (§20.4 B) para categorías sin orden temporal (rutas, referentes, tipos,
+ * planes): en grafito, con la cifra y la participación en texto. La lista es su propia alternativa accesible.
+ */
+function BarList({ rows, format = formatNumber, label = (key: string) => key, mono = false }: { rows: StatCount[]; format?: (value: number) => string; label?: (key: string) => string; mono?: boolean }) {
+  const sorted = [...rows].sort((a, b) => b.count - a.count)
+  const max = Math.max(1, ...sorted.map((row) => row.count))
+  const total = sorted.reduce((sum, row) => sum + row.count, 0)
   return (
-    <Card className="gap-3 p-5 ring-1 ring-foreground/10">
-      <h3 className="font-bold">{title}</h3>
-      {rows.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{empty}</p>
-      ) : (
-        <ul className="flex flex-col gap-2.5">
-          {rows.map((row) => (
-            <li key={row.key} className="flex flex-col gap-1">
-              <div className="flex items-baseline justify-between gap-3 text-sm">
-                <span className="min-w-0 truncate font-medium">{label(row.key)}</span>
-                <span className="shrink-0 tabular-nums text-muted-foreground">{format(row.count)}</span>
-              </div>
-              <div className="h-1.5 rounded-full bg-concrete" aria-hidden>
-                <div className="h-full rounded-full bg-asphalt" style={{ width: `${(row.count / max) * 100}%` }} />
-              </div>
-            </li>
-          ))}
-        </ul>
-      )}
-    </Card>
+    <ul className="flex flex-col divide-y divide-ap-line border-y border-ap-line">
+      {sorted.map((row) => (
+        <li key={row.key} className="flex flex-col gap-1.5 py-2.5">
+          <div className="flex items-baseline justify-between gap-3 text-sm">
+            <span className={cn('min-w-0 truncate text-ap-ink', mono ? 'ap-ref' : 'font-medium')} title={label(row.key)}>
+              {label(row.key)}
+            </span>
+            <span className="shrink-0 tabular-nums">
+              <span className="font-semibold text-ap-ink">{format(row.count)}</span>
+              {total > 0 ? <span className="ml-1.5 text-xs text-ap-muted">{percent.format(row.count / total)}</span> : null}
+            </span>
+          </div>
+          <div aria-hidden className={cn('h-1.5', CHART_BG.track)}>
+            <div className={cn('h-full', CHART_BG.secondary)} style={{ width: `${Math.max(1, (row.count / max) * 100)}%` }} />
+          </div>
+        </li>
+      ))}
+    </ul>
   )
 }
 
-function ChartCard({ title, points, label }: { title: string; points: ChartPoint[]; label: string }) {
+function StatsSkeleton() {
   return (
-    <Card className="gap-3 p-5 ring-1 ring-foreground/10">
-      <h3 className="font-bold">{title}</h3>
-      {points.length === 0 ? <p className="text-sm text-muted-foreground">Sin datos en este periodo.</p> : <AnalyticsChart mode="bars" points={points} label={label} formatAxis={(value) => formatNumber(Math.round(value))} />}
-    </Card>
+    <div className="flex flex-col gap-8">
+      <ChartSkeleton kind="bars" label="Cargando el tráfico" />
+      <div className="grid gap-8 lg:grid-cols-2">
+        <ChartSkeleton kind="list" label="Cargando las páginas más vistas" />
+        <ChartSkeleton kind="list" label="Cargando los referentes" />
+      </div>
+    </div>
   )
 }
 
-/** `/admin/estadisticas`: tráfico, cuentas, accesos y comercio de toda la plataforma. */
+function GranularityControl({ value, onChange }: { value: StatsGranularity; onChange: (value: StatsGranularity) => void }) {
+  return (
+    <fieldset className="flex flex-col gap-1.5">
+      <legend className="mb-1.5 text-sm font-semibold text-ap-ink">Agrupar</legend>
+      <div className={SEGMENT_GROUP_CLASS}>
+        {GRANULARITY_OPTIONS.map((option) => (
+          <label
+            key={option.value}
+            className={segmentClass(value === option.value, 'relative has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ap-red')}
+          >
+            <input type="radio" name="agrupar" value={option.value} checked={value === option.value} onChange={() => onChange(option.value as StatsGranularity)} className="sr-only" />
+            {option.label}
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  )
+}
+
+function StatsView({ data, granularity }: { data: PlatformStatsReport; granularity: StatsGranularity }) {
+  const period = `${dateLabel(data.from)} – ${dateLabel(data.to)}`
+  const unit = GRANULARITY_NOUN[granularity]
+  const points = <T extends { date: string }>(series: T[], pick: (row: T) => number, noun: string): ChartPoint[] =>
+    series.map((row) => {
+      const label = periodLabel(row.date, granularity)
+      return { label, detail: `${label}: ${formatNumber(pick(row))} ${noun}`, bar: pick(row) }
+    })
+  const axis = (value: number) => formatNumber(Math.round(value))
+
+  const devicesTotal = Object.values(data.traffic.devices).reduce((sum, value) => sum + value, 0)
+  const mobileShare = devicesTotal > 0 ? (data.traffic.devices.mobile ?? 0) / devicesTotal : 0
+  const attempts = data.access.logins + data.access.failedLogins
+  const failedShare = attempts > 0 ? data.access.failedLogins / attempts : 0
+
+  const visits = points(data.traffic.series, (row) => row.visits, 'visitas')
+  const accounts = points(data.accounts.series, (row) => row.created, 'cuentas nuevas')
+  const logins = points(data.access.series, (row) => row.logins, 'ingresos correctos')
+  const hasVisits = visits.some((point) => (point.bar ?? 0) > 0)
+  const hasAccounts = accounts.some((point) => (point.bar ?? 0) > 0)
+  const hasLogins = logins.some((point) => (point.bar ?? 0) > 0)
+
+  return (
+    <div className="flex flex-col gap-12">
+      <Group id="g-trafico" index="Estadísticas / 01" title="Tráfico del marketplace" description="Visitas al marketplace (sin consola ni portal). Medición propia, sin datos personales.">
+        <ChartSection
+          title="¿Cuántas visitas recibe el marketplace?"
+          meta={`${period} · visitas ${unit}`}
+          lead={
+            <FigureList
+              items={[
+                { label: 'Visitas', value: formatNumber(data.traffic.visits) },
+                { label: 'Visitantes únicos', value: formatNumber(data.traffic.uniqueVisitors), hint: 'Distintos por día' },
+                {
+                  label: 'Páginas por visitante',
+                  value: data.traffic.uniqueVisitors > 0 ? (data.traffic.visits / data.traffic.uniqueVisitors).toLocaleString('es-CO', { maximumFractionDigits: 1 }) : '—',
+                },
+                { label: 'Desde celular', value: devicesTotal > 0 ? percent.format(mobileShare) : '—' },
+              ]}
+            />
+          }
+          source="Fuente: medición de visitas propia de Autopartco."
+        >
+          {hasVisits ? (
+            <AnalyticsChart mode="bars" points={visits} label={`Visitas ${unit}`} formatAxis={axis} tableHeaders={['Periodo', 'Visitas']} />
+          ) : (
+            <ChartEmpty>No se registraron visitas en este periodo. Prueba con un periodo más largo.</ChartEmpty>
+          )}
+        </ChartSection>
+        <div className="grid gap-8 lg:grid-cols-2">
+          <ChartSection title="¿Qué páginas se ven más?" meta={`${period} · visitas por ruta`}>
+            {data.traffic.topPaths.length === 0 ? <ChartEmpty>Aún no hay visitas registradas en este periodo.</ChartEmpty> : <BarList rows={data.traffic.topPaths} mono />}
+          </ChartSection>
+          <ChartSection title="¿De dónde llegan las visitas?" meta={`${period} · visitas por sitio de origen`}>
+            {data.traffic.referrers.length === 0 ? <ChartEmpty>Sin referentes externos en este periodo: las visitas llegaron directo o desde buscadores sin referente.</ChartEmpty> : <BarList rows={data.traffic.referrers} mono />}
+          </ChartSection>
+        </div>
+      </Group>
+
+      <Group id="g-cuentas" index="Estadísticas / 02" title="Cuentas">
+        <ChartSection
+          title="¿Cuántas cuentas se crean?"
+          meta={`${period} · cuentas nuevas ${unit}`}
+          lead={
+            <FigureList
+              items={[
+                { label: 'Nuevas en el periodo', value: formatNumber(data.accounts.created) },
+                { label: 'Cuentas totales', value: formatNumber(data.accounts.total) },
+                { label: 'Con correo verificado', value: percent.format(data.accounts.verifiedRate) },
+                {
+                  label: 'Bloqueadas',
+                  value: formatNumber(data.accounts.locked),
+                  attention: data.accounts.locked > 0,
+                  hint: data.accounts.locked > 0 ? 'Ver en auditoría' : undefined,
+                  to: data.accounts.locked > 0 ? '/admin/auditoria?accion=ACCOUNT_LOCKED' : undefined,
+                },
+              ]}
+            />
+          }
+        >
+          {hasAccounts ? (
+            <AnalyticsChart mode="bars" points={accounts} label={`Cuentas nuevas ${unit}`} formatAxis={axis} tableHeaders={['Periodo', 'Cuentas nuevas']} />
+          ) : (
+            <ChartEmpty>No se crearon cuentas en este periodo.</ChartEmpty>
+          )}
+        </ChartSection>
+        <div className="grid gap-8 lg:grid-cols-2">
+          <ChartSection title="¿Qué tipo de cuentas hay?" meta="Total de cuentas por tipo">
+            {data.accounts.byType.length === 0 ? <ChartEmpty>Aún no hay cuentas.</ChartEmpty> : <BarList rows={data.accounts.byType} label={(key) => TYPE_LABEL[key] ?? key} />}
+          </ChartSection>
+          <ChartSection title="¿Cuántas están vinculadas a redes?" meta="Cuentas por proveedor de ingreso">
+            {data.accounts.socialShare.length === 0 ? (
+              <ChartEmpty>Nadie ha ingresado con Google o Facebook todavía.</ChartEmpty>
+            ) : (
+              <BarList rows={data.accounts.socialShare} label={(key) => PROVIDER_LABEL[key] ?? key} />
+            )}
+          </ChartSection>
+        </div>
+      </Group>
+
+      <Group id="g-accesos" index="Estadísticas / 03" title="Accesos" description="Usuarios activos: cuentas con al menos un ingreso correcto hasta el final del periodo.">
+        <ChartSection
+          title="¿Cuántas personas ingresan?"
+          meta={`${period} · ingresos correctos ${unit}`}
+          lead={
+            <FigureList
+              items={[
+                { label: 'Activos hoy', value: formatNumber(data.access.dau), hint: 'DAU' },
+                { label: 'Activos 7 días', value: formatNumber(data.access.wau), hint: 'WAU' },
+                { label: 'Activos 30 días', value: formatNumber(data.access.mau), hint: 'MAU' },
+                { label: 'Ingresos correctos', value: formatNumber(data.access.logins) },
+                {
+                  label: 'Ingresos fallidos',
+                  value: formatNumber(data.access.failedLogins),
+                  attention: failedShare > FAILED_ATTENTION,
+                  hint: attempts > 0 ? `${percent.format(failedShare)} de los intentos · ver en auditoría` : undefined,
+                  to: data.access.failedLogins > 0 ? '/admin/auditoria?accion=LOGIN_FAILED' : undefined,
+                },
+              ]}
+            />
+          }
+          source={failedShare > FAILED_ATTENTION ? `Más del ${percent.format(FAILED_ATTENTION)} de los intentos fallaron: revisa en auditoría si se concentran en pocas cuentas.` : undefined}
+        >
+          {hasLogins ? (
+            <AnalyticsChart mode="bars" points={logins} label={`Ingresos correctos ${unit}`} formatAxis={axis} tableHeaders={['Periodo', 'Ingresos']} />
+          ) : (
+            <ChartEmpty>No hubo ingresos correctos en este periodo.</ChartEmpty>
+          )}
+        </ChartSection>
+      </Group>
+
+      <Group id="g-comercio" index="Estadísticas / 04" title="Comercio" description={`${period}. Valores en pesos colombianos (COP).`}>
+        <FigureList
+          className="border-t border-ap-line-strong pt-4"
+          items={[
+            { label: 'Pedidos válidos', value: formatNumber(data.commerce.orders) },
+            { label: 'Ventas (GMV)', value: formatCOP(data.commerce.gmv) },
+            { label: 'Ticket promedio', value: formatCOP(data.commerce.averageTicket) },
+            { label: 'Ingreso recurrente (MRR)', value: formatCOP(data.commerce.mrr), hint: 'Suscripciones al día' },
+            {
+              label: 'Solicitudes por revisar',
+              value: formatNumber(data.commerce.pendingApplications),
+              attention: data.commerce.pendingApplications > 0,
+              hint: data.commerce.pendingApplications > 0 ? 'Ir a la cola' : undefined,
+              to: data.commerce.pendingApplications > 0 ? '/admin/solicitudes' : undefined,
+            },
+          ]}
+        />
+        <ChartSection
+          title="¿En qué plan están los almacenes?"
+          meta="Almacenes activos por plan"
+          source={`${pluralize(data.commerce.activeStores, 'almacén activo', 'almacenes activos')} en total.`}
+        >
+          {data.commerce.subscriptionsByPlan.length === 0 ? <ChartEmpty>Aún no hay almacenes activos con plan.</ChartEmpty> : <BarList rows={data.commerce.subscriptionsByPlan} />}
+        </ChartSection>
+      </Group>
+    </div>
+  )
+}
+
+/** `/admin/estadisticas`: tráfico, cuentas, accesos y comercio de toda la plataforma, organizados por pregunta (§20.6). */
 export default function AdminStatsPage() {
   const [params, setParams] = useSearchParams()
   const preset: RangePreset = isRangePreset(params.get('rango')) && params.get('rango') !== 'personalizado' ? (params.get('rango') as RangePreset) : '30'
@@ -82,85 +274,15 @@ export default function AdminStatsPage() {
     setParams(next, { replace: true })
   }
 
-  const points = <T extends { date: string }>(series: T[], pick: (row: T) => number, noun: string): ChartPoint[] =>
-    series.map((row) => {
-      const label = periodLabel(row.date, granularity)
-      return { label, detail: `${label}: ${formatNumber(pick(row))} ${noun}`, bar: pick(row) }
-    })
-
   return (
-    <AdminPage label="Inteligencia" title="Estadísticas" description="Tráfico del marketplace, cuentas, accesos y resultados comerciales de toda la plataforma.">
-      <div className="mb-6 grid gap-3 sm:max-w-lg sm:grid-cols-2">
-        <SelectField id="stats-rango" label="Periodo" options={PRESETS} value={preset} onChange={(event) => update('rango', event.target.value)} />
-        <SelectField id="stats-agrupar" label="Agrupar" options={GRANULARITY_OPTIONS} value={granularity} onChange={(event) => update('agrupar', event.target.value)} />
-      </div>
-      <QueryBoundary result={report} what="las estadísticas" keepPrevious skeleton={<ListSkeleton rows={6} label="Cargando estadísticas" />}>
-        {(data) => {
-          const devicesTotal = Object.values(data.traffic.devices).reduce((sum, value) => sum + value, 0)
-          const mobileShare = devicesTotal > 0 ? (data.traffic.devices.mobile ?? 0) / devicesTotal : 0
-          const failedShare = data.access.logins + data.access.failedLogins > 0 ? data.access.failedLogins / (data.access.logins + data.access.failedLogins) : 0
-          return (
-            <div className="flex flex-col gap-10">
-              <Section title="Tráfico" description="Visitas al marketplace (sin consola ni portal). Medición propia, sin datos personales.">
-                <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                  <StatCard label="Visitas" value={formatNumber(data.traffic.visits)} />
-                  <StatCard label="Visitantes únicos" value={formatNumber(data.traffic.uniqueVisitors)} hint="Distintos por día" />
-                  <StatCard label="Desde celular" value={percent.format(mobileShare)} />
-                  <StatCard label="Páginas por visitante" value={data.traffic.uniqueVisitors > 0 ? (data.traffic.visits / data.traffic.uniqueVisitors).toLocaleString('es-CO', { maximumFractionDigits: 1 }) : '—'} />
-                </div>
-                <ChartCard title="Visitas" label="Visitas por periodo" points={points(data.traffic.series, (row) => row.visits, 'visitas')} />
-                <div className="grid gap-4 lg:grid-cols-2">
-                  <BarList title="Páginas más vistas" rows={data.traffic.topPaths} empty="Aún no hay visitas registradas." />
-                  <BarList title="De dónde llegan" rows={data.traffic.referrers} empty="Sin referentes externos en este periodo." />
-                </div>
-              </Section>
-
-              <Section title="Cuentas">
-                <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                  <StatCard label="Cuentas totales" value={formatNumber(data.accounts.total)} />
-                  <StatCard label="Nuevas en el periodo" value={formatNumber(data.accounts.created)} />
-                  <StatCard label="Activas (verificadas)" value={percent.format(data.accounts.verifiedRate)} />
-                  <StatCard label="Bloqueadas" value={formatNumber(data.accounts.locked)} tone={data.accounts.locked > 0 ? 'attention' : 'default'} to="/admin/auditoria?accion=ACCOUNT_LOCKED" />
-                </div>
-                <ChartCard title="Cuentas nuevas" label="Cuentas nuevas por periodo" points={points(data.accounts.series, (row) => row.created, 'cuentas')} />
-                <div className="grid gap-4 lg:grid-cols-2">
-                  <BarList title="Por tipo" rows={data.accounts.byType} empty="Sin cuentas." label={(key) => TYPE_LABEL[key] ?? key} />
-                  <BarList title="Vinculadas a redes" rows={data.accounts.socialShare} empty="Nadie ha ingresado con Google o Facebook todavía." label={(key) => PROVIDER_LABEL[key] ?? key} />
-                </div>
-              </Section>
-
-              <Section title="Accesos" description="Usuarios activos: cuentas con al menos un ingreso correcto hasta el final del periodo.">
-                <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-                  <StatCard label="Activos hoy (DAU)" value={formatNumber(data.access.dau)} />
-                  <StatCard label="Activos 7 días (WAU)" value={formatNumber(data.access.wau)} />
-                  <StatCard label="Activos 30 días (MAU)" value={formatNumber(data.access.mau)} />
-                  <StatCard label="Ingresos" value={formatNumber(data.access.logins)} />
-                  <StatCard
-                    label="Ingresos fallidos"
-                    value={formatNumber(data.access.failedLogins)}
-                    hint={percent.format(failedShare)}
-                    tone={failedShare > 0.2 ? 'attention' : 'default'}
-                    to="/admin/auditoria?accion=LOGIN_FAILED"
-                  />
-                </div>
-                <ChartCard title="Ingresos correctos" label="Ingresos por periodo" points={points(data.access.series, (row) => row.logins, 'ingresos')} />
-              </Section>
-
-              <Section title="Comercio">
-                <div className="grid grid-cols-2 gap-3 lg:grid-cols-3">
-                  <StatCard label="Pedidos válidos" value={formatNumber(data.commerce.orders)} />
-                  <StatCard label="Ventas (GMV)" value={formatCOP(data.commerce.gmv)} />
-                  <StatCard label="Ticket promedio" value={formatCOP(data.commerce.averageTicket)} />
-                  <StatCard label="Almacenes activos" value={formatNumber(data.commerce.activeStores)} />
-                  <StatCard label="Solicitudes por revisar" value={formatNumber(data.commerce.pendingApplications)} to="/admin/solicitudes" tone={data.commerce.pendingApplications > 0 ? 'attention' : 'default'} />
-                  <StatCard label="Ingreso recurrente (MRR)" value={formatCOP(data.commerce.mrr)} hint="Suscripciones al día" />
-                </div>
-                <BarList title="Almacenes por plan" rows={data.commerce.subscriptionsByPlan} empty="Sin almacenes activos." />
-              </Section>
-            </div>
-          )
-        }}
-      </QueryBoundary>
+    <AdminPage title="Estadísticas" description="Tráfico del marketplace, cuentas, accesos y resultados comerciales de toda la plataforma.">
+      <form aria-label="Periodo y agrupación" className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end" onSubmit={(event) => event.preventDefault()}>
+        <SelectField id="stats-rango" label="Periodo" options={PRESETS} value={preset} onChange={(event) => update('rango', event.target.value)} containerClassName="w-full sm:w-56" />
+        <GranularityControl value={granularity} onChange={(value) => update('agrupar', value)} />
+      </form>
+      <AdminBoundary result={report} what="las estadísticas" keepPrevious skeleton={<StatsSkeleton />}>
+        {(data) => <StatsView data={data} granularity={granularity} />}
+      </AdminBoundary>
     </AdminPage>
   )
 }

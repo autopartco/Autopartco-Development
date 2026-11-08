@@ -55,7 +55,7 @@ function ShipmentCreateForm({ order }: { order: OrderDetail }) {
 
   return (
     <form noValidate onSubmit={(event) => void handleSubmit(event)} className="flex flex-col gap-4" aria-busy={pending || undefined}>
-      <p className="text-sm text-muted-foreground">El pedido está listo para salir. Registra la transportadora y la guía para que el cliente pueda seguirlo.</p>
+      <p className="text-sm text-ap-muted">El pedido está listo para salir. Registra la transportadora y la guía para que el cliente pueda seguirlo.</p>
       {formError ? <FormAlert ref={alertRef} title="No se registró el envío">{formError}</FormAlert> : null}
       <div className="grid gap-4 sm:grid-cols-2">
         <TextField id="envio-carrier" label="Transportadora" value={carrier} onChange={(event) => setCarrier(event.target.value)} error={shown('carrier')} maxLength={100} autoComplete="off" required hint="Ej.: Servientrega, Coordinadora." />
@@ -95,7 +95,7 @@ function ShipmentUpdateForm({ order, shipmentStatus }: { order: OrderDetail; shi
   return (
     <div className="flex flex-col gap-3">
       {error ? (
-        <p role="alert" className="rounded-lg border border-destructive/25 bg-destructive/5 p-3 text-sm font-medium text-destructive">
+        <p role="alert" className="rounded-md border border-ap-danger/25 bg-ap-danger-soft p-3 text-sm font-medium text-ap-danger">
           {error}
         </p>
       ) : null}
@@ -129,7 +129,7 @@ export function ShipmentPanel({ order }: { order: OrderDetail }) {
   if (!shipment) {
     if (order.status === 'PREPARING' && canUpdate) return <ShipmentCreateForm order={order} />
     return (
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-ap-muted">
         {order.status === 'PREPARING'
           ? 'Todavía no se registra el envío.'
           : order.status === 'CANCELLED' || order.status === 'REJECTED'
@@ -144,15 +144,15 @@ export function ShipmentPanel({ order }: { order: OrderDetail }) {
     <div className="flex flex-col gap-5">
       <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-3">
         <div>
-          <dt className="text-sm text-muted-foreground">Transportadora</dt>
+          <dt className="text-sm text-ap-muted">Transportadora</dt>
           <dd className="font-semibold">{shipment.carrier}</dd>
         </div>
         <div>
-          <dt className="text-sm text-muted-foreground">Guía</dt>
-          <dd className="font-mono font-semibold">{shipment.trackingNumber}</dd>
+          <dt className="text-sm text-ap-muted">Guía</dt>
+          <dd className="ap-ref font-semibold text-ap-ink">{shipment.trackingNumber}</dd>
         </div>
         <div>
-          <dt className="text-sm text-muted-foreground">Estado</dt>
+          <dt className="text-sm text-ap-muted">Estado</dt>
           <dd>
             <StatusBadge tone={shipmentStatus === 'DELIVERED' ? 'success' : 'info'}>{SHIPMENT_STATUS_LABEL[shipmentStatus]}</StatusBadge>
           </dd>
@@ -160,13 +160,13 @@ export function ShipmentPanel({ order }: { order: OrderDetail }) {
       </dl>
 
       <div>
-        <h3 className="mb-2 text-sm font-semibold">Historial</h3>
-        <ol className="flex flex-col gap-2 border-l-2 border-border pl-4">
+        <h3 className="mb-2 text-sm font-semibold text-ap-ink">Historial</h3>
+        <ol className="flex flex-col gap-2 border-l-2 border-ap-line-strong pl-4">
           {shipment.events.map((event, index) => (
             <li key={`${event.status}-${index}`} className="text-sm">
               <span className="font-semibold">{event.status in SHIPMENT_STATUS_LABEL ? SHIPMENT_STATUS_LABEL[event.status as ShipmentStatus] : event.status}</span>
-              <span className="text-muted-foreground"> · {formatDateTime(event.occurredAt)}</span>
-              {event.notes ? <p className="text-muted-foreground">{event.notes}</p> : null}
+              <span className="ap-ref text-ap-muted"> · {formatDateTime(event.occurredAt)}</span>
+              {event.notes ? <p className="text-ap-muted">{event.notes}</p> : null}
             </li>
           ))}
         </ol>

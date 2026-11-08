@@ -68,7 +68,7 @@ function ImportForm({ onClose }: { onClose: () => void }) {
           Primero revisamos el archivo y te mostramos qué cambiaría; solo se aplica cuando lo confirmas. Descarga el inventario actual para usarlo como modelo.
         </DialogDescription>
       </DialogHeader>
-      <ul className="list-disc space-y-1 pl-5 text-sm text-muted-foreground">
+      <ul className="list-disc space-y-1 pl-5 text-sm text-ap-muted">
         <li>Separado por punto y coma (;), hasta 2 MB y 5.000 filas.</li>
         <li>Columnas: sucursal, sku o referencia, y al menos una de stock, precio o stock_minimo.</li>
         <li>Si el archivo trae stock_base, no la edites: sirve para conservar las ventas hechas después de exportar.</li>
@@ -84,7 +84,7 @@ function ImportForm({ onClose }: { onClose: () => void }) {
           accept=".csv,text/csv"
           disabled={busy}
           onChange={(event) => choose(event.target.files?.[0])}
-          className="block w-full min-w-0 rounded-lg border border-input bg-card p-2 text-sm file:mr-3 file:min-h-9 file:rounded-md file:border-0 file:bg-concrete file:px-3 file:text-sm file:font-semibold"
+          className="block w-full min-w-0 rounded-md border border-input bg-ap-white p-2 text-sm file:mr-3 file:min-h-9 file:rounded-md file:border-0 file:bg-ap-paper file:px-3 file:text-sm file:font-semibold"
         />
       </div>
       {problem ? (
@@ -94,7 +94,7 @@ function ImportForm({ onClose }: { onClose: () => void }) {
       ) : null}
       {preview ? (
         <section aria-label="Resultado de la revisión" className="flex flex-col gap-3">
-          <p role="status" className="flex items-start gap-2 rounded-lg bg-concrete p-3 text-sm">
+          <p role="status" className="flex items-start gap-2 rounded-md border border-ap-line bg-ap-paper p-3 text-sm text-ap-ink">
             <CheckCircle2Icon className="mt-0.5 size-4 shrink-0" aria-hidden />
             <span>
               {pluralize(preview.rows, 'fila revisada', 'filas revisadas')}.{' '}
@@ -109,7 +109,7 @@ function ImportForm({ onClose }: { onClose: () => void }) {
             <div className="max-h-56 overflow-auto rounded-lg border border-border" tabIndex={0} role="region" aria-label="Filas con error">
               <table className="w-full text-left text-sm">
                 <caption className="sr-only">Filas con error del archivo</caption>
-                <thead className="sticky top-0 bg-card text-xs text-muted-foreground">
+                <thead className="sticky top-0 bg-ap-paper text-xs text-ap-graphite">
                   <tr>
                     <th scope="col" className="px-3 py-2 font-semibold">Línea</th>
                     <th scope="col" className="px-3 py-2 font-semibold">Qué corregir</th>
@@ -118,7 +118,7 @@ function ImportForm({ onClose }: { onClose: () => void }) {
                 <tbody>
                   {errors.slice(0, SHOWN_ERRORS).map((error, index) => (
                     <tr key={`${error.line}-${index}`} className="border-t border-border">
-                      <td className="px-3 py-2 tabular-nums">{formatNumber(error.line)}</td>
+                      <td className="ap-ref px-3 py-2">{formatNumber(error.line)}</td>
                       <td className="px-3 py-2">{csvRowErrorText(error)}</td>
                     </tr>
                   ))}
@@ -126,7 +126,7 @@ function ImportForm({ onClose }: { onClose: () => void }) {
               </table>
             </div>
           ) : null}
-          {errors.length > SHOWN_ERRORS ? <p className="text-xs text-muted-foreground">Mostramos las primeras {SHOWN_ERRORS} de {formatNumber(errors.length)} filas con error.</p> : null}
+          {errors.length > SHOWN_ERRORS ? <p className="text-xs text-ap-muted">Mostramos las primeras {SHOWN_ERRORS} de {formatNumber(errors.length)} filas con error.</p> : null}
         </section>
       ) : null}
       <DialogFooter>

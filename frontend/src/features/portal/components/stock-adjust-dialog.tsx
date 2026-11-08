@@ -112,7 +112,7 @@ function AdjustForm({ target, onClose }: { target: AdjustTarget; onClose: () => 
         required
       />
       {next !== undefined && next >= 0 && next !== target.stock ? (
-        <p role="status" className="rounded-lg bg-concrete p-3 text-sm">
+        <p role="status" className="rounded-md border border-ap-line bg-ap-paper p-3 text-sm text-ap-ink">
           Quedarán <strong className="font-semibold">{pluralize(next, 'unidad', 'unidades')}</strong> (hoy hay {target.stock}).
         </p>
       ) : null}

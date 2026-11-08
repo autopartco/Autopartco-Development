@@ -10,7 +10,7 @@ export function CartIndicator({ className }: { className?: string }) {
   return (
     <Button
       variant="ghost"
-      className={cn('relative size-11 text-white hover:bg-header-hover hover:text-white', className)}
+      className={cn('relative size-11 text-white hover:bg-sidebar-accent hover:text-white', className)}
       nativeButton={false}
       render={<Link to="/carrito" aria-label={units > 0 ? `Carrito, ${units} ${units === 1 ? 'unidad' : 'unidades'}` : 'Carrito vacío'} />}
     >

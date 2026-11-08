@@ -27,8 +27,8 @@ function ResultsSkeleton() {
 function StatusLine({ results, audience }: { results: PromotionResults; audience: Promotion['audience'] }) {
   if (results.status === 'INSUFFICIENT_DATA') {
     return (
-      <div role="note" className="flex items-start gap-2.5 rounded-lg bg-concrete p-4 text-sm">
-        <InfoIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+      <div role="note" className="flex items-start gap-2.5 rounded-md border border-ap-line bg-ap-paper p-4 text-sm text-ap-ink">
+        <InfoIcon className="mt-0.5 size-4 shrink-0 text-ap-muted" aria-hidden />
         {audience === 'ALL' ? (
           <p>
             Esta promoción es para todos los compradores, así que no hay un grupo de control con el que comparar. Te mostramos las ventas atribuidas:
@@ -52,10 +52,10 @@ function ResultsView({ promotion, results }: { promotion: Promotion; results: Pr
     results.status === 'RUNNING' ? <StatusBadge tone="success">En curso</StatusBadge> : results.status === 'FINISHED' ? <StatusBadge>Terminada</StatusBadge> : <StatusBadge tone="warning">Datos insuficientes</StatusBadge>
   return (
     <div className="flex flex-col gap-5 overflow-y-auto px-4 pb-6">
-      <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-2 text-sm text-ap-muted">
         {statusBadge}
         <span>
-          {discountText(promotion)} · {AUDIENCE_LABEL[promotion.audience]} · {formatDate(promotion.startsAt)} al {formatDate(promotion.endsAt)}
+          {discountText(promotion)} · {AUDIENCE_LABEL[promotion.audience]} · <span className="ap-ref">{formatDate(promotion.startsAt)} al {formatDate(promotion.endsAt)}</span>
         </span>
       </div>
       <StatusLine results={results} audience={promotion.audience} />
@@ -70,15 +70,15 @@ function ResultsView({ promotion, results }: { promotion: Promotion; results: Pr
         />
       </div>
       {hasEffect ? (
-        <section aria-labelledby="efecto-titulo" className="flex flex-col gap-3 rounded-xl bg-card p-4 ring-1 ring-foreground/10">
-          <h3 id="efecto-titulo" className="text-base font-semibold tracking-tight">
+        <section aria-labelledby="efecto-titulo" className="flex flex-col gap-3 border-t border-ap-line-strong pt-4">
+          <h3 id="efecto-titulo" className="text-base font-semibold text-ap-ink">
             Efecto frente al grupo de control
           </h3>
-          <p className="text-3xl leading-none font-extrabold tracking-[-0.035em] tabular-nums">
+          <p className="ap-price text-3xl leading-none text-ap-ink">
             {(results.lift ?? 0) >= 0 ? '+' : ''}
             {formatFraction(results.lift ?? 0)}
           </p>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-ap-muted">
             Con el precio de la promoción compró el {formatFraction(results.exposedConversion ?? 0)} de quienes lo vieron; en el grupo de control, que no lo
             vio, compró el {formatFraction(results.controlConversion ?? 0)}.
           </p>
@@ -100,7 +100,7 @@ export function PromotionResultsSheet({ config, promotion, onClose }: PromotionR
     <Sheet open={promotion !== undefined} onOpenChange={(open) => !open && onClose()}>
       <SheetContent side="right" className="w-full gap-0 p-0 sm:max-w-lg">
         <SheetHeader className="p-4 pr-16">
-          <SheetTitle className="text-lg font-extrabold tracking-tight">Resultados{promotion ? `: ${promotion.name}` : ''}</SheetTitle>
+          <SheetTitle className="text-block-title">Resultados{promotion ? `: ${promotion.name}` : ''}</SheetTitle>
           <SheetDescription>Qué logró esta promoción hasta hoy.</SheetDescription>
         </SheetHeader>
         {promotion ? <ResultsBody key={promotion.id} config={config} promotion={promotion} /> : null}

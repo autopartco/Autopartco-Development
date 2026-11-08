@@ -109,12 +109,12 @@ function InviteForm({ onDone, onCancel, onDirtyChange }: InviteFormProps) {
         <fieldset id="invitar-permisos" tabIndex={-1} className="flex flex-col gap-1 outline-none" aria-describedby={shown('permissionCodes') ? 'invitar-permisos-error' : undefined}>
           <legend className="mb-1.5 text-sm font-semibold">Permisos</legend>
           {options.data === undefined ? (
-            <p className="text-sm text-muted-foreground" role="status">
+            <p className="text-sm text-ap-muted" role="status">
               Cargando permisos…
             </p>
           ) : (
             options.data.map((option) => (
-              <label key={option.code} className="flex min-h-10 cursor-pointer items-center gap-3 rounded-md px-1 text-sm hover:bg-concrete pointer-coarse:min-h-11">
+              <label key={option.code} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-md px-1 text-sm hover:bg-ap-paper">
                 <Checkbox
                   checked={codes.includes(option.code)}
                   onCheckedChange={(checked) => draft.set('permissionCodes', checked === true ? [...codes, option.code] : codes.filter((code) => code !== option.code))}
@@ -124,7 +124,7 @@ function InviteForm({ onDone, onCancel, onDirtyChange }: InviteFormProps) {
             ))
           )}
           {shown('permissionCodes') ? (
-            <p id="invitar-permisos-error" className="mt-1 text-sm font-medium text-destructive">
+            <p id="invitar-permisos-error" className="mt-1 text-sm font-medium text-ap-danger">
               {shown('permissionCodes')}
             </p>
           ) : null}

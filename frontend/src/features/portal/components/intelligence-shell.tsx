@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link, NavLink } from 'react-router'
-import { ArrowUpRightIcon, BrainCircuitIcon } from 'lucide-react'
+import { ArrowUpRightIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
@@ -27,46 +27,44 @@ export function IntelligenceTabs() {
     { to: `${base}/proyeccion`, label: 'Proyección', end: false },
   ]
   return (
-    // Móvil: píldoras que bajan de línea y crecen hasta llenar cada fila (sin hueco al final). Desde `sm`: pestañas
-    // subrayadas en una fila.
-    <nav aria-label="Secciones de inteligencia" className="-mt-2 mb-6 flex flex-wrap gap-2 sm:gap-1 sm:border-b sm:border-border">
-      {tabs.map((tab) => (
-        <NavLink
-          key={tab.to}
-          to={tab.to}
-          end={tab.end}
-          className={({ isActive }) =>
-            cn(
-              'inline-flex min-h-11 grow items-center justify-center rounded-full px-4 text-sm font-semibold whitespace-nowrap ring-1 transition-colors',
-              'sm:-mb-px sm:grow-0 sm:rounded-none sm:border-b-2 sm:px-3 sm:ring-0',
-              isActive
-                ? 'bg-foreground text-background ring-foreground sm:border-foreground sm:bg-transparent sm:text-foreground'
-                : 'bg-card text-muted-foreground ring-foreground/15 hover:text-foreground sm:border-transparent sm:bg-transparent',
-            )
-          }
-        >
-          {tab.label}
-        </NavLink>
-      ))}
+    // Pestañas subrayadas en una fila; en móvil la fila se desplaza en horizontal (sin píldoras). La activa lleva
+    // la línea de acento roja (§3.5).
+    <nav aria-label="Secciones de inteligencia" className="-mt-2 mb-6 overflow-x-auto border-b border-ap-line">
+      <ul className="flex w-max gap-1">
+        {tabs.map((tab) => (
+          <li key={tab.to}>
+            <NavLink
+              to={tab.to}
+              end={tab.end}
+              className={({ isActive }) =>
+                cn(
+                  '-mb-px inline-flex min-h-11 items-center border-b-2 px-3 text-sm font-semibold whitespace-nowrap transition-colors duration-150',
+                  isActive ? 'border-ap-red text-ap-ink' : 'border-transparent text-ap-muted hover:border-ap-line-strong hover:text-ap-ink',
+                )
+              }
+            >
+              {tab.label}
+            </NavLink>
+          </li>
+        ))}
+      </ul>
     </nav>
   )
 }
 
-/** Tarjeta que explica que la inteligencia comercial es del plan Empresarial. */
+/** Explica que la inteligencia comercial es del plan Empresarial (sección abierta, sin tarjeta). */
 export function EnterpriseRequired() {
   const { storeId, can } = usePortal()
   const canSeePlan = can('STORE_READ')
   return (
-    <div className="flex flex-col items-start gap-4 rounded-lg bg-concrete p-6 sm:p-8">
-      <div className="flex items-center gap-2 font-semibold">
-        <BrainCircuitIcon className="size-5" aria-hidden />
-        <h2 className="text-xl tracking-tight">Inteligencia comercial es parte del plan Empresarial</h2>
-      </div>
-      <p className="max-w-prose text-foreground/85">
+    <section className="flex flex-col items-start gap-4 border-l-2 border-ap-graphite py-1 pl-5">
+      <p className="ap-index">Plan Empresarial</p>
+      <h2 className="text-block-title text-ap-ink">Inteligencia comercial es parte del plan Empresarial</h2>
+      <p className="max-w-prose text-ap-ink">
         Con el plan Empresarial ves cómo evolucionan tus ventas, qué clientes están por dejar de comprar, qué productos proteger o liquidar y cuánto
         podrías vender el próximo mes.
       </p>
-      <ul className="max-w-prose list-disc space-y-1 pl-5 text-sm text-foreground/85">
+      <ul className="max-w-prose list-disc space-y-1 pl-5 text-sm text-ap-ink">
         <li>Reportes por rango, sucursal y categoría, con exportación a CSV.</li>
         <li>Segmentos de clientes con una acción sugerida para cada uno.</li>
         <li>Clasificación ABC/XYZ de productos y stock mínimo sugerido.</li>
@@ -78,16 +76,17 @@ export function EnterpriseRequired() {
           <ArrowUpRightIcon aria-hidden />
         </Button>
       ) : (
-        <p className="text-sm font-semibold">Pídele al propietario del almacén que active el plan Empresarial.</p>
+        <p className="text-sm font-semibold text-ap-ink">Pídele al propietario del almacén que active el plan Empresarial.</p>
       )}
-    </div>
+    </section>
   )
 }
 
 function GateSkeleton() {
   return (
-    <div role="status">
-      <span className="sr-only">Cargando…</span>
+    <div role="status" className="flex flex-col gap-3">
+      <span className="sr-only">Comprobando tu plan…</span>
+      <Skeleton aria-hidden className="h-6 w-64" />
       <Skeleton aria-hidden className="h-40 w-full" />
     </div>
   )

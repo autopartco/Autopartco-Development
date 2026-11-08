@@ -23,13 +23,13 @@ function AlertsPanel({ onNavigate }: { onNavigate: () => void }) {
       <QueryBoundary result={alerts} what="las alertas" skeleton={<ListSkeleton rows={3} label="Cargando las alertas" />}>
         {(rows) =>
           rows.length === 0 ? (
-            <div className="flex flex-col items-start gap-2 rounded-lg bg-concrete p-5">
-              <BellOffIcon className="size-6 text-muted-foreground" aria-hidden />
-              <p className="font-semibold">Todo en orden</p>
-              <p className="text-sm text-muted-foreground">No tienes alertas abiertas. Te avisaremos aquí cuando algo necesite tu atención.</p>
+            <div className="flex flex-col items-start gap-2 rounded-lg border border-ap-line p-5">
+              <BellOffIcon className="size-6 text-ap-muted" aria-hidden />
+              <p className="font-semibold text-ap-ink">Todo en orden</p>
+              <p className="text-sm text-ap-muted">No tienes alertas abiertas. Te avisaremos aquí cuando algo necesite tu atención.</p>
             </div>
           ) : (
-            <ul className="flex flex-col gap-3">
+            <ul className="divide-y divide-ap-line rounded-lg border border-ap-line">
               {rows.slice(0, 8).map((alert) => (
                 <li key={alert.id}>
                   <AlertCard alert={alert} actions={actions} onNavigate={onNavigate} compact />
@@ -83,7 +83,7 @@ export function AlertsBell() {
         render={
           <Button
             variant="ghost"
-            className="relative size-11 shrink-0 text-white hover:bg-header-hover hover:text-white aria-expanded:bg-header-hover aria-expanded:text-white"
+            className="relative size-11 shrink-0 text-ap-white hover:bg-sidebar-accent hover:text-ap-white aria-expanded:bg-sidebar-accent aria-expanded:text-ap-white"
             aria-label={label}
           />
         }
@@ -92,7 +92,7 @@ export function AlertsBell() {
         {unread > 0 ? (
           <span
             aria-hidden
-            className={`absolute top-1 right-1 grid min-w-5 place-items-center rounded-full px-1 text-[0.7rem] leading-5 font-bold tabular-nums ${critical > 0 ? 'bg-destructive text-white' : 'bg-white text-foreground'}`}
+            className={`absolute top-1 right-1 grid min-w-5 place-items-center rounded-sm px-1 text-[0.7rem] leading-5 font-bold tabular-nums ${critical > 0 ? 'bg-ap-red-on-dark text-ap-graphite' : 'bg-ap-white text-ap-graphite'}`}
           >
             {unread > 99 ? '99+' : unread}
           </span>
@@ -100,7 +100,7 @@ export function AlertsBell() {
       </SheetTrigger>
       <SheetContent side="right" className="w-full gap-0 p-0 sm:max-w-md">
         <SheetHeader className="p-4 pr-16">
-          <SheetTitle className="text-lg font-extrabold tracking-tight">Alertas</SheetTitle>
+          <SheetTitle className="text-block-title">Alertas</SheetTitle>
           <SheetDescription>Lo que necesita tu atención en el almacén.</SheetDescription>
         </SheetHeader>
         <AlertsPanel onNavigate={() => setOpen(false)} />

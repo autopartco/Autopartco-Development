@@ -147,7 +147,7 @@ function PriceForm({ count, branches, onSubmit, onCancel }: Omit<BulkPriceDialog
         />
       )}
       {preview !== undefined ? (
-        <p role="status" className="rounded-lg bg-concrete p-3 text-sm">
+        <p role="status" className="rounded-md border border-ap-line bg-ap-paper p-3 text-sm text-ap-ink">
           {mode === 'PERCENT' ? (
             <>
               Ejemplo: un producto de {formatCOP(example)} quedaría en <strong className="font-semibold">{preview > 0 ? formatCOP(preview) : 'un precio no válido'}</strong>.

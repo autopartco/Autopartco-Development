@@ -80,7 +80,7 @@ export function SearchBar({ className, tone = 'light', autoFocus, shortcut }: Se
         <SearchIcon
           className={cn(
             'pointer-events-none ml-3.5 size-4 shrink-0 transition-colors',
-            dark ? 'text-asphalt-muted group-focus-within:text-muted-foreground' : 'text-muted-foreground',
+            dark ? 'text-ap-on-dark-muted group-focus-within:text-muted-foreground' : 'text-muted-foreground',
           )}
           aria-hidden
         />
@@ -98,7 +98,7 @@ export function SearchBar({ className, tone = 'light', autoFocus, shortcut }: Se
           className={cn(
             'h-full min-w-0 flex-1 appearance-none bg-transparent px-2.5 text-base text-ellipsis outline-none sm:text-sm [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden',
             dark
-              ? 'text-white placeholder:text-asphalt-muted focus:text-foreground focus:placeholder:text-muted-foreground'
+              ? 'text-white placeholder:text-ap-on-dark-muted focus:text-foreground focus:placeholder:text-muted-foreground'
               : 'text-foreground placeholder:text-muted-foreground',
           )}
         />
@@ -111,9 +111,9 @@ export function SearchBar({ className, tone = 'light', autoFocus, shortcut }: Se
               inputRef.current?.focus()
             }}
             className={cn(
-              'grid size-11 shrink-0 place-items-center rounded-md transition-colors [--focus:var(--color-brand)] focus-visible:-outline-offset-2! xl:size-10',
+              'grid size-11 shrink-0 place-items-center rounded-md transition-colors [--focus:var(--color-ap-red)] focus-visible:-outline-offset-2! xl:size-10',
               dark
-                ? 'text-asphalt-muted hover:text-white group-focus-within:text-muted-foreground group-focus-within:hover:text-foreground'
+                ? 'text-ap-on-dark-muted hover:text-white group-focus-within:text-muted-foreground group-focus-within:hover:text-foreground'
                 : 'text-muted-foreground hover:text-foreground',
             )}
           >
@@ -122,7 +122,7 @@ export function SearchBar({ className, tone = 'light', autoFocus, shortcut }: Se
         ) : shortcut ? (
           <kbd
             aria-hidden
-            className="mr-2 hidden h-5 min-w-5 items-center justify-center rounded border border-white/20 px-1 font-mono text-xs text-asphalt-muted group-focus-within:hidden xl:inline-flex"
+            className="mr-2 hidden h-5 min-w-5 items-center justify-center rounded border border-white/20 px-1 font-mono text-xs text-ap-on-dark-muted group-focus-within:hidden xl:inline-flex"
           >
             /
           </kbd>
@@ -131,13 +131,13 @@ export function SearchBar({ className, tone = 'light', autoFocus, shortcut }: Se
           className={cn(
             'rounded-md xl:size-10',
             dark &&
-              'text-asphalt-muted hover:bg-white/10 hover:text-white group-focus-within:text-muted-foreground group-focus-within:hover:bg-ap-paper group-focus-within:hover:text-foreground',
+              'text-ap-on-dark-muted hover:bg-white/10 hover:text-white group-focus-within:text-muted-foreground group-focus-within:hover:bg-ap-paper group-focus-within:hover:text-foreground',
           )}
         />
         <button
           type="submit"
           aria-label="Buscar"
-          className="grid h-full w-12 shrink-0 place-items-center bg-primary text-primary-foreground transition-colors [--focus:var(--color-brand-deep)] hover:bg-ap-red-hover focus-visible:-outline-offset-2!"
+          className="grid h-full w-12 shrink-0 place-items-center bg-primary text-primary-foreground transition-colors [--focus:var(--color-ap-red-hover)] hover:bg-ap-red-hover focus-visible:-outline-offset-2!"
         >
           <SearchIcon className="size-[18px]" aria-hidden />
         </button>

@@ -27,13 +27,13 @@ function StoreCard({ store }: { store: MyStore }) {
   const application = APPLICATION_LABEL[store.applicationStatus]
   const body = (
     <>
-      <Avatar className="size-12 rounded-lg text-base">
+      <Avatar className="size-11 rounded-md text-sm">
         {store.logoUrl ? <AvatarImage src={store.logoUrl} alt="" /> : null}
         <AvatarFallback aria-hidden>{initials(store.businessName) || store.businessName.slice(0, 2).toUpperCase()}</AvatarFallback>
       </Avatar>
       <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-        <p className="text-lg leading-tight font-extrabold tracking-tight">{store.businessName}</p>
-        <p className="text-sm text-muted-foreground">{store.roleNames.join(', ') || (store.isOwner ? 'Propietario' : 'Colaborador')}</p>
+        <p className="text-base leading-tight font-semibold text-ap-ink">{store.businessName}</p>
+        <p className="text-sm text-ap-muted">{store.roleNames.join(', ') || (store.isOwner ? 'Propietario' : 'Colaborador')}</p>
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge tone={application.tone}>{application.label}</StatusBadge>
           {openable && store.subscription ? (
@@ -46,22 +46,22 @@ function StoreCard({ store }: { store: MyStore }) {
       </div>
       {openable ? (
         <ArrowRightIcon
-          className="size-5 shrink-0 text-muted-foreground transition-[color,transform] duration-200 ease-out-snap group-hover:text-foreground motion-safe:group-hover:translate-x-0.5"
+          className="size-5 shrink-0 text-ap-muted transition-colors duration-150 group-hover:text-ap-ink"
           aria-hidden
         />
       ) : null}
     </>
   )
-  const base = 'flex items-center gap-4 rounded-xl bg-card p-4 ring-1 ring-foreground/10 sm:p-5'
+  const base = 'flex items-center gap-4 px-4 py-4 sm:px-5'
   if (!openable) {
     // Sin portal todavía: la tarjeta lleva al estado de la solicitud.
     return (
       <Link
         to={store.applicationStatus === 'CONFIGURATION_PENDING' ? SELLER_SETUP_PATH : SELLER_APPLICATION_PATH}
-        className={`${base} group transition-shadow hover:ring-foreground/30`}
+        className={`${base} group transition-colors hover:bg-ap-paper`}
       >
         {body}
-        <span className="shrink-0 text-sm font-medium text-brand group-hover:underline">
+        <span className="shrink-0 text-sm font-semibold text-ap-red group-hover:underline">
           {store.applicationStatus === 'CONFIGURATION_PENDING' ? 'Terminar configuración' : 'Ver solicitud'}
         </span>
       </Link>
@@ -70,7 +70,7 @@ function StoreCard({ store }: { store: MyStore }) {
   return (
     <Link
       to={`/portal/${encodeURIComponent(store.storeId)}/inicio`}
-      className={`${base} group transition-shadow hover:ring-foreground/30`}
+      className={`${base} group transition-colors hover:bg-ap-paper`}
     >
       {body}
     </Link>
@@ -95,15 +95,15 @@ export default function PortalIndexPage() {
     content = (
       <Link
         to={seller.application.status === 'CONFIGURATION_PENDING' ? SELLER_SETUP_PATH : seller.to}
-        className="group flex items-center gap-4 rounded-xl bg-card p-4 ring-1 ring-foreground/10 transition-shadow hover:ring-foreground/30 sm:p-5"
+        className="group flex items-center gap-4 rounded-lg border border-ap-line px-4 py-4 transition-colors hover:bg-ap-paper sm:px-5"
       >
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-          <p className="text-lg leading-tight font-extrabold tracking-tight">{seller.application.businessName}</p>
+          <p className="text-base leading-tight font-semibold text-ap-ink">{seller.application.businessName}</p>
           <StatusBadge tone="warning">
             {APPLICATION_LABEL[seller.application.status].label}
           </StatusBadge>
         </div>
-        <span className="shrink-0 text-sm font-medium text-brand group-hover:underline">
+        <span className="shrink-0 text-sm font-semibold text-ap-red group-hover:underline">
           {seller.application.status === 'CONFIGURATION_PENDING' ? 'Terminar configuración' : 'Ver solicitud'}
         </span>
       </Link>
@@ -127,7 +127,7 @@ export default function PortalIndexPage() {
       return <Navigate to={`/portal/${encodeURIComponent(only.storeId)}/inicio`} replace />
     }
     content = (
-      <ul className="flex flex-col gap-3">
+      <ul className="divide-y divide-ap-line rounded-lg border border-ap-line">
         {stores.data.map((store) => (
           <li key={store.storeId}>
             <StoreCard store={store} />

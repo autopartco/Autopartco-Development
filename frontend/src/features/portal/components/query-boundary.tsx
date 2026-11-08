@@ -14,13 +14,13 @@ export function QueryError({ error, what, onRetry, className }: { error: unknown
   return (
     <div
       role="alert"
-      className={cn('flex flex-col items-start gap-3 rounded-lg border border-destructive/25 bg-destructive/5 p-5', className)}
+      className={cn('flex flex-col items-start gap-3 rounded-xl border border-ap-danger/30 bg-ap-danger-soft p-5', className)}
     >
-      <div className="flex items-center gap-2 font-semibold text-destructive">
+      <div className="flex items-center gap-2 font-semibold text-ap-danger">
         <Icon className="size-5" aria-hidden />
         <p>{view.title}</p>
       </div>
-      <p className="max-w-prose text-sm text-foreground/85">{view.description}</p>
+      <p className="max-w-prose text-sm text-ap-ink">{view.description}</p>
       <div className="flex flex-wrap gap-2">
         {view.retryable && onRetry ? (
           <Button variant="outline" className="h-11 px-4" onClick={onRetry}>

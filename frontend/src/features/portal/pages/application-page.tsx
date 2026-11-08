@@ -69,7 +69,7 @@ function ResendSetupEmail({ applicationId }: { applicationId: string }) {
         {sending ? 'Enviando…' : 'Reenviarme el correo de configuración'}
       </Button>
       <div aria-live="polite">
-        {notice ? <p className={notice.error ? 'text-sm font-medium text-destructive' : 'text-sm text-muted-foreground'}>{notice.text}</p> : null}
+        {notice ? <p className={notice.error ? 'text-sm font-medium text-ap-danger' : 'text-sm text-ap-muted'}>{notice.text}</p> : null}
       </div>
     </div>
   )
@@ -78,17 +78,17 @@ function ResendSetupEmail({ applicationId }: { applicationId: string }) {
 function ApplicationCard({ application }: { application: MyStoreApplication }) {
   const status = STATUS[application.status]
   return (
-    <article className="flex flex-col gap-3 rounded-xl bg-card p-5 ring-1 ring-foreground/10">
+    <article className="flex flex-col gap-3 border-t border-ap-line-strong pt-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg leading-tight font-extrabold tracking-tight">{application.businessName}</h2>
+        <h2 className="text-block-title text-ap-ink">{application.businessName}</h2>
         <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
       </div>
-      <p className="text-sm text-muted-foreground">Enviada el {formatDate(application.createdAt)}</p>
-      <p className="text-sm">{status.next}</p>
+      <p className="text-sm text-ap-muted">Enviada el <time dateTime={application.createdAt} className="ap-ref text-ap-ink">{formatDate(application.createdAt)}</time></p>
+      <p className="max-w-prose text-sm text-ap-ink">{status.next}</p>
       {application.reviewNotes ? (
-        <div className="rounded-lg bg-concrete p-3 text-sm">
-          <p className="label-mono text-muted-foreground">Comentarios de la revisión</p>
-          <p className="mt-1">{application.reviewNotes}</p>
+        <div className="border-l-2 border-ap-line-strong py-1 pl-3 text-sm">
+          <p className="ap-index">Comentarios de la revisión</p>
+          <p className="mt-1 text-ap-ink">{application.reviewNotes}</p>
         </div>
       ) : null}
       <div className="flex flex-wrap gap-2">
@@ -141,7 +141,7 @@ export default function ApplicationPage() {
   } else {
     const list = [...result.data].sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     content = (
-      <ul className="flex flex-col gap-3">
+      <ul className="flex flex-col gap-8">
         {list.map((application) => (
           <li key={application.applicationId}>
             <ApplicationCard application={application} />
@@ -152,11 +152,11 @@ export default function ApplicationPage() {
   }
 
   return (
-    <div className="min-h-svh bg-background">
+    <div className="min-h-svh bg-ap-white">
       <PortalHeader innerClassName="mx-auto w-full max-w-3xl px-4 sm:px-6 lg:px-6" />
       <main id="contenido" className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
         <title>Mi solicitud de almacén | Autopartco</title>
-        <Link to="/portal" className="mb-4 inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-brand underline-offset-4 hover:underline">
+        <Link to="/portal" className="mb-4 inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-ap-ink underline underline-offset-4 hover:text-ap-red-hover">
           <ArrowLeftIcon className="size-4" aria-hidden />
           Mis almacenes
         </Link>

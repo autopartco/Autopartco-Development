@@ -128,13 +128,13 @@ export function ProductGalleryEditor({ id, items, mainKey, onChange, productName
         onDragLeave={() => setDragging(false)}
         onDrop={onDrop}
         className={cn(
-          'flex flex-col items-center gap-3 rounded-xl border-2 border-dashed p-6 text-center transition-colors',
-          dragging ? 'border-primary bg-primary/5' : 'border-border bg-card',
-          error && 'border-destructive',
+          'flex flex-col items-start gap-3 rounded-md border border-dashed p-5 transition-colors duration-150 sm:flex-row sm:items-center',
+          dragging ? 'border-ap-graphite bg-ap-paper' : 'border-ap-steel bg-ap-white',
+          error && 'border-ap-danger',
         )}
       >
-        <ImagePlusIcon className="size-8 text-muted-foreground" aria-hidden />
-        <p className="text-sm text-muted-foreground">
+        
+        <p className="flex-1 text-sm text-ap-muted">
           Arrastra tus fotos aquí o elígelas desde tu dispositivo.
           <br />
           JPG, PNG o WebP, hasta {MAX_IMAGES} imágenes de 5 MB. Las reducimos automáticamente para que carguen rápido.
@@ -167,16 +167,16 @@ export function ProductGalleryEditor({ id, items, mainKey, onChange, productName
           {busy ? <LoaderCircleIcon className="animate-spin" aria-hidden /> : <ImagePlusIcon aria-hidden />}
           {busy ? 'Optimizando…' : 'Agregar imágenes'}
         </Button>
-        {full ? <p className="text-sm text-muted-foreground">Llegaste al máximo de {MAX_IMAGES} imágenes.</p> : null}
+        {full ? <p className="text-sm text-ap-muted">Llegaste al máximo de {MAX_IMAGES} imágenes.</p> : null}
       </div>
 
       {error ? (
-        <p id={errorId} role="alert" className="text-sm font-medium text-destructive">
+        <p id={errorId} role="alert" className="text-sm font-medium text-ap-danger">
           {error}
         </p>
       ) : null}
       {notices.length > 0 ? (
-        <ul role="alert" className="flex flex-col gap-1 rounded-lg border border-stock-low/30 bg-stock-low/10 p-3 text-sm text-foreground">
+        <ul role="alert" className="flex flex-col gap-1 rounded-md border border-ap-warning/40 bg-ap-warning-soft p-3 text-sm text-ap-ink">
           {notices.map((notice) => (
             <li key={notice}>{notice}</li>
           ))}
@@ -187,13 +187,13 @@ export function ProductGalleryEditor({ id, items, mainKey, onChange, productName
       </p>
 
       {items.length === 0 ? (
-        <p className="rounded-lg bg-concrete p-4 text-sm text-muted-foreground">Aún no hay imágenes. Para publicar necesitas al menos una; una buena foto ayuda a vender más.</p>
+        <p className="border-l-2 border-ap-line-strong py-1 pl-3 text-sm text-ap-muted">Aún no hay imágenes. Para publicar necesitas al menos una; una buena foto ayuda a vender más.</p>
       ) : (
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
           {items.map((item, index) => {
             const isMain = item.key === main
             return (
-              <li key={item.key} className={cn('flex flex-col gap-2 rounded-lg bg-card p-2 ring-1 ring-foreground/10', isMain && 'ring-2 ring-primary')}>
+              <li key={item.key} className={cn('flex flex-col gap-2 rounded-md border bg-ap-white p-2', isMain ? 'border-ap-graphite border-t-2 border-t-ap-red' : 'border-ap-line')}>
                 <SmartImage
                   src={thumbOf(item)}
                   alt={`${productName || 'Producto'}, imagen ${index + 1}${isMain ? ' (principal)' : ''}`}
@@ -202,14 +202,14 @@ export function ProductGalleryEditor({ id, items, mainKey, onChange, productName
                   frameClassName="aspect-square w-full rounded-md"
                 />
                 <div className="flex min-h-7 flex-wrap items-center gap-1.5 text-xs font-semibold">
-                  <span className="text-muted-foreground">{index + 1} de {items.length}</span>
+                  <span className="ap-ref text-ap-muted">{index + 1} de {items.length}</span>
                   {isMain ? (
-                    <span className="inline-flex items-center gap-1 text-recommended">
+                    <span className="inline-flex items-center gap-1 text-ap-ink">
                       <StarIcon className="size-3.5 fill-current" aria-hidden />
                       Principal
                     </span>
                   ) : null}
-                  {item.kind === 'new' ? <span className="text-muted-foreground">· Nueva</span> : null}
+                  {item.kind === 'new' ? <span className="text-ap-muted">· Nueva</span> : null}
                 </div>
                 <div className="flex flex-wrap gap-1">
                   <Button

@@ -7,7 +7,7 @@ import { ResultCount, SearchField } from '../components/search-field'
 import { normalizeText } from '../lib/fuzzy'
 import { DataTable, type DataColumn } from '@/components/common/data-table'
 import { EmptyState } from '@/components/common/states'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { getBranchService } from '../api/branch-service'
 import type { Branch } from '../api/types'
@@ -44,7 +44,7 @@ function BranchesView({ branches }: { branches: Branch[] }) {
       header: 'Sucursal',
       rowHeader: true,
       sortValue: (row) => row.name,
-      cell: (row) => <span className="font-semibold">{row.name}</span>,
+      cell: (row) => <span className="font-semibold text-ap-ink">{row.name}</span>,
     },
     {
       id: 'direccion',
@@ -65,7 +65,7 @@ function BranchesView({ branches }: { branches: Branch[] }) {
       sortValue: (row) => row.location?.city ?? '',
       cell: (row) => (row.location ? `${row.location.city}, ${row.location.department}` : '—'),
     },
-    { id: 'telefono', header: 'Teléfono', cell: (row) => <span className="tabular-nums">{row.numberPhone}</span> },
+    { id: 'telefono', header: 'Teléfono', cell: (row) => <span className="ap-ref">{row.numberPhone}</span> },
     {
       id: 'estado',
       header: 'Estado',
@@ -83,7 +83,7 @@ function BranchesView({ branches }: { branches: Branch[] }) {
               <DropdownMenu>
                 <DropdownMenuTrigger
                   aria-label={`Acciones para ${row.name}`}
-                  className="inline-flex size-10 items-center justify-center rounded-lg outline-none hover:bg-concrete data-popup-open:bg-concrete pointer-coarse:size-11"
+                  className={buttonVariants({ variant: 'ghost', size: 'icon' })}
                 >
                   <MoreHorizontalIcon className="size-5" aria-hidden />
                 </DropdownMenuTrigger>
@@ -127,7 +127,7 @@ function BranchesView({ branches }: { branches: Branch[] }) {
           used={usage.used}
           limit={usage.limit}
           upgradeTo={`/portal/${encodeURIComponent(storeId)}/plan`}
-          className="max-w-md rounded-lg bg-card p-4 ring-1 ring-foreground/10"
+          className="max-w-md rounded-lg border border-ap-line p-4"
         />
       ) : null}
       {branches.length > 4 ? (

@@ -36,45 +36,45 @@ function ProductsSkeleton() {
 
 function Guide() {
   return (
-    <details className="rounded-lg bg-concrete p-4 text-sm">
-      <summary className="inline-flex min-h-11 cursor-pointer items-center font-semibold">¿Qué significan las clases y las acciones?</summary>
-      <div className="mt-2 grid gap-5 md:grid-cols-3">
+    <details className="border-y border-ap-line py-1 text-sm">
+      <summary className="inline-flex min-h-11 cursor-pointer items-center font-semibold text-ap-ink">¿Qué significan las clases y las acciones?</summary>
+      <div className="mt-2 grid gap-5 pb-3 md:grid-cols-3">
         <div>
-          <h3 className="font-semibold">Clase ABC (por ingresos)</h3>
+          <h3 className="font-semibold text-ap-ink">Clase ABC (por ingresos)</h3>
           <dl className="mt-2 flex flex-col gap-1.5">
             {Object.entries(ABC_INFO).map(([code, info]) => (
               <div key={code}>
                 <dt className="inline font-semibold">{info.label}: </dt>
-                <dd className="inline text-foreground/85">{info.description}</dd>
+                <dd className="inline text-ap-ink">{info.description}</dd>
               </div>
             ))}
           </dl>
         </div>
         <div>
-          <h3 className="font-semibold">Clase XYZ (por regularidad)</h3>
+          <h3 className="font-semibold text-ap-ink">Clase XYZ (por regularidad)</h3>
           <dl className="mt-2 flex flex-col gap-1.5">
             {Object.entries(XYZ_INFO).map(([code, info]) => (
               <div key={code}>
                 <dt className="inline font-semibold">{info.label}: </dt>
-                <dd className="inline text-foreground/85">{info.description}</dd>
+                <dd className="inline text-ap-ink">{info.description}</dd>
               </div>
             ))}
           </dl>
-          <p className="mt-1.5 text-foreground/85">Sin clasificar: aún no tiene ventas en el periodo.</p>
+          <p className="mt-1.5 text-ap-ink">Sin clasificar: aún no tiene ventas en el periodo.</p>
         </div>
         <div>
-          <h3 className="font-semibold">Acción sugerida</h3>
+          <h3 className="font-semibold text-ap-ink">Acción sugerida</h3>
           <dl className="mt-2 flex flex-col gap-1.5">
             {ACTION_ORDER.map((code) => (
               <div key={code}>
                 <dt className="inline font-semibold">{ACTION_INFO[code].label}: </dt>
-                <dd className="inline text-foreground/85">{ACTION_INFO[code].description}</dd>
+                <dd className="inline text-ap-ink">{ACTION_INFO[code].description}</dd>
               </div>
             ))}
           </dl>
         </div>
       </div>
-      <p className="mt-4 text-foreground/85">
+      <p className="mt-1 pb-3 text-ap-ink">
         La cobertura son los días que duran tus existencias al ritmo de venta actual. El stock mínimo sugerido cubre 7 días de reposición más un stock de seguridad según qué tanto varían las ventas (mayor en los productos de clase A).
       </p>
     </details>
@@ -97,8 +97,8 @@ function columns({ branchId, busyId, canUpdate, onApply }: ApplyProps): DataColu
       sortValue: (row) => row.name,
       cell: (row) => (
         <div className="min-w-0">
-          <p className="font-semibold">{row.name}</p>
-          <p className="text-xs text-muted-foreground">{row.sku ?? 'Sin SKU'}</p>
+          <p className="font-semibold text-ap-ink">{row.name}</p>
+          <p className="ap-ref text-ap-muted">{row.sku ?? 'Sin SKU'}</p>
         </div>
       ),
     },
@@ -109,7 +109,7 @@ function columns({ branchId, busyId, canUpdate, onApply }: ApplyProps): DataColu
       cell: (row) => (
         <span title={`${ABC_INFO[row.abcClass].description}${row.xyzClass ? ` ${XYZ_INFO[row.xyzClass].description}` : ''}`}>
           <strong>{row.abcClass}</strong>
-          {row.xyzClass ? ` · ${row.xyzClass}` : <span className="text-muted-foreground"> · sin clasificar</span>}
+          {row.xyzClass ? ` · ${row.xyzClass}` : <span className="text-ap-muted"> · sin clasificar</span>}
         </span>
       ),
     },
@@ -121,7 +121,7 @@ function columns({ branchId, busyId, canUpdate, onApply }: ApplyProps): DataColu
       cell: (row) => (
         <div>
           <p>{formatCOP(row.revenue)}</p>
-          <p className="text-xs text-muted-foreground">{pluralize(row.units, 'unidad', 'unidades')}</p>
+          <p className="text-xs text-ap-muted">{pluralize(row.units, 'unidad', 'unidades')}</p>
         </div>
       ),
     },
@@ -131,7 +131,7 @@ function columns({ branchId, busyId, canUpdate, onApply }: ApplyProps): DataColu
       header: 'Cobertura',
       align: 'end',
       sortValue: (row) => row.coverageDays ?? Number.MAX_SAFE_INTEGER,
-      cell: (row) => (row.coverageDays === null ? <span className="text-muted-foreground">Sin ventas</span> : pluralize(row.coverageDays, 'día', 'días')),
+      cell: (row) => (row.coverageDays === null ? <span className="text-ap-muted">Sin ventas</span> : pluralize(row.coverageDays, 'día', 'días')),
     },
     {
       id: 'minimo',
@@ -141,7 +141,7 @@ function columns({ branchId, busyId, canUpdate, onApply }: ApplyProps): DataColu
       cell: (row) => (
         <div>
           <p>Actual: {formatNumber(row.currentMinStock)}</p>
-          <p className="text-xs text-muted-foreground">{row.suggestedMinStock === null ? 'Sugerido: sin ventas' : `Sugerido: ${formatNumber(row.suggestedMinStock)}`}</p>
+          <p className="text-xs text-ap-muted">{row.suggestedMinStock === null ? 'Sugerido: sin ventas' : `Sugerido: ${formatNumber(row.suggestedMinStock)}`}</p>
         </div>
       ),
     },
@@ -152,7 +152,7 @@ function columns({ branchId, busyId, canUpdate, onApply }: ApplyProps): DataColu
       cell: (row) => (
         <div className="min-w-0 max-w-64">
           <p className="font-semibold">{ACTION_INFO[row.action].label}</p>
-          <p className="text-xs text-muted-foreground">{ACTION_INFO[row.action].description}</p>
+          <p className="text-xs text-ap-muted">{ACTION_INFO[row.action].description}</p>
         </div>
       ),
     },
@@ -203,7 +203,7 @@ function ProductsView({ report, filters, apply }: { report: ProductReport; filte
   }
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm text-muted-foreground" role="status">
+      <p className="text-sm text-ap-muted" role="status">
         {pluralize(shown.length, 'producto', 'productos')}. Ventas de los últimos {formatNumber(report.windowDays)} días.
       </p>
       <DataTable
@@ -278,7 +278,7 @@ export default function IntelligenceProductsPage() {
           <BranchSelect value={branchId} onChange={(value) => set('sucursal', value)} />
         </form>
         {needBranch ? (
-          <p role="alert" className="rounded-lg border border-foreground/10 bg-concrete p-4 text-sm font-medium">
+          <p role="alert" className="rounded-md border border-ap-warning/40 bg-ap-warning-soft p-4 text-sm font-medium text-ap-ink">
             {known
               ? 'Elige una sucursal en el filtro «Sucursal» para aplicar el stock mínimo: cada sucursal tiene su propio mínimo.'
               : 'Para aplicar el stock mínimo necesitas poder ver las sucursales del almacén. Pídele al propietario que revise tus permisos.'}

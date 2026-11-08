@@ -91,7 +91,7 @@ export function ReviewDialog({ application, approved, open, onOpenChange, onSubm
           onChange={(event) => setNotes(event.target.value)}
         />
         {error ? (
-          <p role="alert" className="rounded-lg border border-destructive/25 bg-destructive/5 p-3 text-sm font-medium text-destructive">
+          <p role="alert" className="rounded-md border border-ap-danger/30 bg-ap-danger-soft p-3 text-sm font-medium text-ap-danger">
             {error}
           </p>
         ) : null}

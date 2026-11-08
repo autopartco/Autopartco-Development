@@ -112,7 +112,7 @@ function QuoteForm({ context, onClose }: { context: QuoteContext; onClose: () =>
         </FormAlert>
         {outcome.kind === 'copy' ? (
           <div className="flex flex-col gap-2">
-            <label htmlFor="cotizacion-resumen" className="text-sm font-semibold">
+            <label htmlFor="cotizacion-resumen" className="text-sm font-semibold text-ap-ink">
               Resumen de la solicitud
             </label>
             <textarea
@@ -121,7 +121,7 @@ function QuoteForm({ context, onClose }: { context: QuoteContext; onClose: () =>
               readOnly
               rows={12}
               value={outcome.text}
-              className="min-h-40 w-full rounded-lg border border-input bg-card p-3 font-mono text-xs leading-normal"
+              className="min-h-40 w-full rounded-md border border-input bg-ap-white p-3 font-mono text-xs leading-normal text-ap-ink"
             />
             <Button type="button" variant="outline" className="h-11 w-fit px-4" onClick={() => void copy(outcome.text)}>
               {copied === 'ok' ? <CheckIcon aria-hidden /> : <CopyIcon aria-hidden />}
@@ -160,8 +160,8 @@ function QuoteForm({ context, onClose }: { context: QuoteContext; onClose: () =>
         <SelectField id="cotizacion-erp" label="ERP que usas hoy" options={erpOptions} value={values.erp} onChange={(e) => set('erp', e.target.value as ErpValue)} />
       </div>
 
-      <fieldset className="flex flex-col gap-3 rounded-lg border border-foreground/10 p-3">
-        <legend className="px-1 text-sm font-semibold">Tamaño aproximado *</legend>
+      <fieldset className="flex flex-col gap-3 border-t border-ap-line pt-3">
+        <legend className="float-left mb-3 w-full text-sm font-semibold text-ap-ink">Tamaño aproximado *</legend>
         <div className="grid gap-4 sm:grid-cols-3">
           <TextField id={FIELD_IDS.branches} label="Sedes" inputMode="numeric" value={values.branches} error={errors.branches} onChange={(e) => set('branches', e.target.value)} />
           <TextField id={FIELD_IDS.products} label="Productos" inputMode="numeric" value={values.products} error={errors.products} onChange={(e) => set('products', e.target.value)} />
@@ -169,9 +169,9 @@ function QuoteForm({ context, onClose }: { context: QuoteContext; onClose: () =>
         </div>
       </fieldset>
 
-      <fieldset className="flex flex-col gap-1 rounded-lg border border-foreground/10 p-3">
-        <legend className="px-1 text-sm font-semibold">
-          ¿Qué necesitas? <span className="font-normal text-muted-foreground">(opcional)</span>
+      <fieldset className="flex flex-col gap-1 border-t border-ap-line pt-3">
+        <legend className="float-left mb-1 w-full text-sm font-semibold text-ap-ink">
+          ¿Qué necesitas? <span className="font-normal text-ap-muted">(opcional)</span>
         </legend>
         <div className="grid gap-x-4 sm:grid-cols-2">
           {NEED_OPTIONS.map((need) => (
@@ -195,7 +195,7 @@ function QuoteForm({ context, onClose }: { context: QuoteContext; onClose: () =>
         onChange={(e) => set('message', e.target.value)}
       />
 
-      <p className="text-xs text-muted-foreground">
+      <p className="text-xs text-ap-muted">
         Esto no se guarda en Autopartco: {SALES_EMAIL ? 'prepararemos un correo para que lo envíes tú.' : 'generaremos un resumen para que lo envíes a soporte.'}
       </p>
 

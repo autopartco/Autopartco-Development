@@ -22,7 +22,7 @@ const GEOLOCATION_ITEM = '__geolocation'
  * se pintan en un portal claro, con el foco rojo del tema base.
  */
 const TRIGGER_ON_DARK =
-  'h-11 gap-1.5 rounded-lg border-transparent bg-transparent px-2.5 text-sm font-medium text-white transition-colors hover:bg-header-hover data-popup-open:bg-header-hover lg:h-10 [&>svg:last-child]:text-asphalt-muted'
+  'h-11 gap-1.5 rounded-lg border-transparent bg-transparent px-2.5 text-sm font-medium text-white transition-colors hover:bg-sidebar-accent data-popup-open:bg-sidebar-accent lg:h-10 [&>svg:last-child]:text-ap-on-dark-muted'
 
 /** Origen sin selección de ciudad (API real): se muestra como próximamente. */
 function CitySoon({ className }: { className?: string }) {
@@ -32,14 +32,14 @@ function CitySoon({ className }: { className?: string }) {
         render={
           <Button
             variant="ghost"
-            className={cn(TRIGGER_ON_DARK, 'text-asphalt-muted hover:text-white', className)}
+            className={cn(TRIGGER_ON_DARK, 'text-ap-on-dark-muted hover:text-white', className)}
             aria-disabled="true"
             aria-describedby="ciudad-proximamente"
             onClick={(event) => event.preventDefault()}
           />
         }
       >
-        <MapPinIcon className="text-brand-on-asphalt" aria-hidden />
+        <MapPinIcon className="text-ap-red-on-dark" aria-hidden />
         <span className="hidden min-[400px]:inline">Colombia</span>
         <span className="sr-only min-[400px]:hidden">Ciudad</span>
       </TooltipTrigger>
@@ -84,7 +84,7 @@ export function CityPicker({ className }: { className?: string }) {
         aria-label={current ? `Ciudad: ${current.name}. Cambiar ciudad` : 'Elegir ciudad'}
         className={cn(TRIGGER_ON_DARK, className)}
       >
-        <MapPinIcon className="text-brand-on-asphalt" aria-hidden />
+        <MapPinIcon className="text-ap-red-on-dark" aria-hidden />
         {/*
          * Ancho mínimo reservado: el nombre llega después sin mover la cabecera.
          * Por debajo de 400px solo queda la chincheta (el nombre va en aria-label).
@@ -106,7 +106,7 @@ export function CityPicker({ className }: { className?: string }) {
         <SelectItem value={GEOLOCATION_ITEM} disabled>
           <LocateFixedIcon aria-hidden />
           Usar mi ubicación
-          <span className="ml-auto label-mono text-muted-foreground">Próximamente</span>
+          <span className="ml-auto font-mono text-xs font-medium uppercase tracking-[0.04em] text-muted-foreground">Próximamente</span>
         </SelectItem>
       </SelectContent>
     </Select>

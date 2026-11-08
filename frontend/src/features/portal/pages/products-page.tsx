@@ -18,7 +18,7 @@ import { SelectField } from '../components/form-controls'
 import { ResultCount, SearchField } from '../components/search-field'
 import { PageHeader } from '../components/page-header'
 import { QueryBoundary } from '../components/query-boundary'
-import { StatusBadge, StockBadge } from '../components/status-badge'
+import { StatusBadge, StockQuantity } from '../components/status-badge'
 import { UsageMeter } from '../components/usage-meter'
 import { usePortal } from '../context'
 import { focusMain, usePublishProduct, useStoreQuery } from '../hooks'
@@ -54,7 +54,7 @@ function Thumb({ row }: { row: ProductRow }) {
   return url ? (
     <SmartImage src={url} alt="" width={44} height={44} frameClassName="size-11 shrink-0 rounded-md" />
   ) : (
-    <div aria-hidden className="grid size-11 shrink-0 place-items-center rounded-md bg-concrete text-muted-foreground">
+    <div aria-hidden className="grid size-11 shrink-0 place-items-center rounded-md bg-ap-paper text-ap-steel">
       <PackageIcon className="size-5" />
     </div>
   )
@@ -72,10 +72,10 @@ function BulkOutcomeNotice({ outcome, onDismiss }: { outcome: BulkOutcome; onDis
   const { action, result, names } = outcome
   const done = BULK_DONE[action]
   return (
-    <div role="status" className="flex flex-col gap-2 rounded-lg border border-foreground/10 bg-card p-4 text-sm">
+    <div role="status" className="flex flex-col gap-2 rounded-md border border-ap-success/30 bg-ap-success-soft p-4 text-sm">
       <div className="flex items-start justify-between gap-3">
-        <p className="flex items-start gap-2 font-semibold">
-          <CircleCheckIcon className="mt-0.5 size-4 shrink-0 text-stock" aria-hidden />
+        <p className="flex items-start gap-2 font-semibold text-ap-ink">
+          <CircleCheckIcon className="mt-0.5 size-4 shrink-0 text-ap-success" aria-hidden />
           {result.affected} {result.affected === 1 ? done.one : done.many}
           {result.skipped.length > 0 ? ` · ${result.skipped.length} sin cambios` : ''}.
         </p>
@@ -84,10 +84,10 @@ function BulkOutcomeNotice({ outcome, onDismiss }: { outcome: BulkOutcome; onDis
         </Button>
       </div>
       {result.skipped.length > 0 ? (
-        <ul className="flex max-h-48 flex-col gap-1 overflow-y-auto pl-6 text-muted-foreground">
+        <ul className="flex max-h-48 flex-col gap-1 overflow-y-auto pl-6 text-ap-ink">
           {result.skipped.map((item) => (
             <li key={item.productId}>
-              <span className="font-medium text-foreground">{names.get(item.productId) ?? 'Producto'}</span>: {skipReason(item.code)}.
+              <span className="font-medium">{names.get(item.productId) ?? 'Producto'}</span>: {skipReason(item.code)}.
             </li>
           ))}
         </ul>
@@ -252,14 +252,17 @@ function ProductsView({ rows }: { rows: ProductRow[] }) {
           <Thumb row={row} />
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-              <Link to={`${base}/productos/${encodeURIComponent(row.id)}`} className="font-semibold underline-offset-4 hover:underline">
+              <Link to={`${base}/productos/${encodeURIComponent(row.id)}`} className="font-semibold text-ap-ink underline-offset-4 hover:underline">
                 {row.name}
               </Link>
               {row.universal ? <StatusBadge tone="info">Universal</StatusBadge> : null}
             </div>
-            <p className="text-xs font-normal text-muted-foreground">
-              {[row.manufacturerName, row.sku ? `SKU ${row.sku}` : null, row.partNumber ? `Ref. ${row.partNumber}` : null].filter(Boolean).join(' · ') || 'Sin SKU ni referencia'}
-            </p>
+            {row.sku || row.partNumber ? (
+              <p className="ap-ref font-normal text-ap-muted">{[row.sku ? `SKU ${row.sku}` : null, row.partNumber ? `REF. ${row.partNumber}` : null].filter(Boolean).join(' · ')}</p>
+            ) : (
+              <p className="text-xs font-normal text-ap-muted">Sin SKU ni referencia</p>
+            )}
+            {row.manufacturerName ? <p className="text-xs font-normal text-ap-muted">{row.manufacturerName}</p> : null}
           </div>
         </div>
       ),
@@ -272,9 +275,9 @@ function ProductsView({ rows }: { rows: ProductRow[] }) {
       sortValue: (row) => row.effectivePrice,
       cell: (row) => (
         <div className="tabular-nums">
-          <span className="font-semibold">{formatCOP(row.effectivePrice)}</span>
+          <span className="ap-price text-ap-ink">{formatCOP(row.effectivePrice)}</span>
           {row.effectivePrice < row.price ? (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-ap-muted">
               <s>{formatCOP(row.price)}</s> · {row.appliedPromotionName ?? 'Promoción'}
             </p>
           ) : null}
@@ -284,11 +287,19 @@ function ProductsView({ rows }: { rows: ProductRow[] }) {
     {
       id: 'stock',
       header: 'Existencias',
+      align: 'end',
       sortValue: (row) => row.quantity,
       cell: (row) => (
-        <div className="flex flex-col items-start gap-0.5">
-          <StockBadge quantity={row.quantity} />
-          {row.quantity > 0 && isLowStock(row) ? <span className="text-xs text-muted-foreground">Mínimo {minStockOf(row)}</span> : null}
+        <div className="flex flex-col items-end gap-0.5 @max-[40rem]:items-start">
+          {row.quantity > 0 && isLowStock(row) ? (
+            <span className="inline-flex items-center gap-2">
+              <StatusBadge tone="warning">Bajo</StatusBadge>
+              <span className="ap-num min-w-[3ch] font-semibold text-ap-ink">{row.quantity}</span>
+            </span>
+          ) : (
+            <StockQuantity quantity={row.quantity} />
+          )}
+          {row.quantity > 0 && isLowStock(row) ? <span className="text-xs text-ap-muted">Mínimo {minStockOf(row)}</span> : null}
         </div>
       ),
     },
@@ -307,7 +318,7 @@ function ProductsView({ rows }: { rows: ProductRow[] }) {
         <DropdownMenu>
           <DropdownMenuTrigger
             aria-label={`Acciones para ${row.name}`}
-            className="inline-flex size-10 items-center justify-center rounded-lg outline-none hover:bg-concrete data-popup-open:bg-concrete pointer-coarse:size-11"
+            className="inline-flex size-10 items-center justify-center rounded-md text-ap-ink hover:bg-ap-paper data-popup-open:bg-ap-paper pointer-coarse:size-11"
           >
             <MoreHorizontalIcon className="size-5" aria-hidden />
           </DropdownMenuTrigger>
@@ -344,7 +355,7 @@ function ProductsView({ rows }: { rows: ProductRow[] }) {
   return (
     <div className="flex flex-col gap-5">
       {productsUsage && productsUsage.limit !== null && productsUsage.used / productsUsage.limit >= 0.8 ? (
-        <UsageMeter capacity="PRODUCTS" used={productsUsage.used} limit={productsUsage.limit} upgradeTo={`${base}/plan`} className="max-w-md rounded-lg bg-card p-4 ring-1 ring-foreground/10" />
+        <UsageMeter capacity="PRODUCTS" used={productsUsage.used} limit={productsUsage.limit} upgradeTo={`${base}/plan`} className="max-w-md border-l-2 border-ap-warning py-1 pl-4" />
       ) : null}
 
       <form role="search" aria-label="Filtrar productos" onSubmit={(event) => event.preventDefault()} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -395,12 +406,12 @@ function ProductsView({ rows }: { rows: ProductRow[] }) {
         <div
           role="region"
           aria-label="Acciones para los productos seleccionados"
-          className="sticky top-2 z-20 flex flex-col gap-3 rounded-xl bg-card p-3 shadow-lg ring-2 ring-recommended/40 sm:flex-row sm:flex-wrap sm:items-center"
+          className="sticky top-2 z-20 flex flex-col gap-3 rounded-md border border-ap-line-strong border-l-2 border-l-ap-graphite bg-ap-white p-3 shadow-overlay sm:flex-row sm:flex-wrap sm:items-center"
         >
-          <p className="text-sm font-semibold" aria-live="polite">
+          <p className="text-sm font-semibold text-ap-ink" aria-live="polite">
             {count} {count === 1 ? 'producto seleccionado' : 'productos seleccionados'}
-            {tooMany ? <span className="block font-normal text-muted-foreground">Puedes aplicar acciones a {BULK_MAX} productos a la vez. Quita algunos de la selección.</span> : null}
-            {!tooMany && canDelete && tooManyToDelete ? <span className="block font-normal text-muted-foreground">{BULK_DELETE_LIMIT_TEXT}</span> : null}
+            {tooMany ? <span className="block font-normal text-ap-muted">Puedes aplicar acciones a {BULK_MAX} productos a la vez. Quita algunos de la selección.</span> : null}
+            {!tooMany && canDelete && tooManyToDelete ? <span className="block font-normal text-ap-muted">{BULK_DELETE_LIMIT_TEXT}</span> : null}
           </p>
           <div className="flex flex-wrap gap-2 sm:ml-auto">
             {canPublish ? (

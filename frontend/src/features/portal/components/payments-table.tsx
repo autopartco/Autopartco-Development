@@ -12,16 +12,16 @@ const COLUMNS: DataColumn<SubscriptionPayment>[] = [
     header: 'Fecha',
     rowHeader: true,
     sortValue: (row) => row.createdAt,
-    cell: (row) => formatDateTime(row.paidAt ?? row.createdAt),
+    cell: (row) => <span className="ap-ref">{formatDateTime(row.paidAt ?? row.createdAt)}</span>,
   },
   { id: 'plan', header: 'Plan', sortValue: (row) => row.planName, cell: (row) => row.planName },
-  { id: 'meses', header: 'Meses', align: 'end', sortValue: (row) => row.months, cell: (row) => row.months },
+  { id: 'meses', header: 'Meses', align: 'end', sortValue: (row) => row.months, cell: (row) => <span className="tabular-nums">{row.months}</span> },
   {
     id: 'monto',
     header: 'Monto',
     align: 'end',
     sortValue: (row) => row.amountCop,
-    cell: (row) => <span className="tabular-nums">{formatCOP(row.amountCop)}</span>,
+    cell: (row) => <span className="ap-price">{formatCOP(row.amountCop)}</span>,
   },
   {
     id: 'periodo',
@@ -36,12 +36,12 @@ const COLUMNS: DataColumn<SubscriptionPayment>[] = [
       return (
         <span className="flex flex-wrap items-center gap-1.5">
           <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
-          {row.provider === 'SIMULATED' ? <span className="text-xs text-muted-foreground">Prueba</span> : null}
+          {row.provider === 'SIMULATED' ? <span className="text-xs text-ap-muted">Prueba</span> : null}
         </span>
       )
     },
   },
-  { id: 'referencia', header: 'Referencia', cell: (row) => <span className="font-mono text-xs">{row.reference}</span> },
+  { id: 'referencia', header: 'Referencia', cell: (row) => <span className="ap-ref text-ap-ink">{row.reference}</span> },
 ]
 
 /** Historial de pagos de la suscripción (`GET …/subscription/payments`). */

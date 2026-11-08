@@ -1,5 +1,4 @@
 import { Link, NavLink } from 'react-router'
-import { ArrowLeftRightIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { usePortal } from '../context'
 import { useActiveBranches } from '../hooks'
@@ -18,7 +17,7 @@ export function InventoryTabs() {
     ...(known && branches.length >= MIN_BRANCHES_TO_TRANSFER ? [{ to: `${base}/transferencias`, label: 'Transferencias', end: false }] : []),
   ]
   return (
-    <nav aria-label="Secciones de inventario" className="-mt-2 mb-6 flex gap-1 overflow-x-auto overflow-y-hidden border-b border-border">
+    <nav aria-label="Secciones de inventario" className="-mt-2 mb-6 flex gap-1 overflow-x-auto overflow-y-hidden border-b border-ap-line">
       {tabs.map((tab) => (
         <NavLink
           key={tab.to}
@@ -27,7 +26,7 @@ export function InventoryTabs() {
           className={({ isActive }) =>
             cn(
               '-mb-px inline-flex min-h-11 items-center border-b-2 px-3 text-sm font-semibold whitespace-nowrap transition-colors',
-              isActive ? 'border-foreground text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground',
+              isActive ? 'border-ap-red text-ap-ink' : 'border-transparent text-ap-muted hover:border-ap-line-strong hover:text-ap-ink',
             )
           }
         >
@@ -47,17 +46,14 @@ export function TransfersRequirement({ className }: { className?: string }) {
   const enterprise = subscription?.plan.code === 'ENTERPRISE'
   const to = `/portal/${encodeURIComponent(storeId)}/${enterprise ? 'sucursales' : 'plan'}`
   return (
-    <div className={cn('flex flex-col items-start gap-3 rounded-lg bg-concrete p-5', className)}>
-      <div className="flex items-center gap-2 font-semibold">
-        <ArrowLeftRightIcon className="size-5" aria-hidden />
-        <p>Transferir inventario entre sucursales</p>
-      </div>
-      <p className="max-w-prose text-sm text-foreground/85">
+    <div className={cn('flex flex-col items-start gap-3 rounded-lg border border-ap-line bg-ap-paper p-5', className)}>
+      <p className="font-semibold text-ap-ink">Transferir inventario entre sucursales</p>
+      <p className="max-w-prose text-sm text-ap-ink">
         {enterprise
           ? 'Para mover existencias necesitas al menos dos sucursales activas. Agrega otra sucursal y podrás transferir todo el stock o solo los productos que elijas.'
           : 'Para mover existencias necesitas al menos dos sucursales activas, y varias sucursales hacen parte del plan Empresarial. Con él puedes transferir todo el stock o solo los productos que elijas.'}
       </p>
-      <Link to={to} className="inline-flex min-h-11 items-center text-sm font-semibold underline underline-offset-4">
+      <Link to={to} className="inline-flex min-h-11 items-center text-sm font-semibold text-ap-red underline underline-offset-4 hover:text-ap-red-hover">
         {enterprise ? 'Ir a sucursales' : 'Ver el plan Empresarial'}
       </Link>
     </div>

@@ -1,11 +1,12 @@
-import { LightbulbIcon, MoonStarIcon, ShoppingBasketIcon } from 'lucide-react'
+import { MoonStarIcon } from 'lucide-react'
 import { DataTable, type DataColumn } from '@/components/common/data-table'
 import { EmptyState } from '@/components/common/states'
-import { Skeleton } from '@/components/ui/skeleton'
 import { formatNumber } from '@/lib/format'
 import { getAnalyticsService } from '../api/analytics-service'
 import type { AssociationPair, AssociationReport, AssociationSource } from '../api/analytics-types'
+import { ChartSkeleton } from '../components/chart-section'
 import { AnalyticsBoundary, IntelligencePage } from '../components/intelligence-shell'
+import { ListSkeleton } from '../components/list-skeleton'
 import { useStoreQuery } from '../hooks'
 import { formatDateTime } from '../lib/labels'
 import { formatFraction } from '../lib/promotions'
@@ -26,8 +27,8 @@ const COLUMNS: DataColumn<AssociationPair>[] = [
     sortValue: (row) => row.antecedent.name,
     cell: (row) => (
       <div>
-        <p className="font-semibold">{row.antecedent.name}</p>
-        <p className="text-sm text-muted-foreground">con {row.consequent.name}</p>
+        <p className="font-semibold text-ap-ink">{row.antecedent.name}</p>
+        <p className="text-sm text-ap-muted">con {row.consequent.name}</p>
       </div>
     ),
   },
@@ -44,12 +45,9 @@ const COLUMNS: DataColumn<AssociationPair>[] = [
 
 function AssociationsSkeleton() {
   return (
-    <div role="status">
-      <span className="sr-only">Cargando los productos que se compran juntos…</span>
-      <div aria-hidden className="flex flex-col gap-4">
-        <Skeleton className="h-28" />
-        <Skeleton className="h-64" />
-      </div>
+    <div className="flex flex-col gap-8">
+      <ChartSkeleton kind="list" label="Cargando el combo sugerido" />
+      <ListSkeleton rows={6} label="Cargando los productos que se compran juntos" />
     </div>
   )
 }
@@ -66,31 +64,34 @@ function AssociationsView({ report }: { report: AssociationReport }) {
   }
   const combo = report.suggestedCombo
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
       {combo ? (
-        <aside className="flex flex-col gap-2 rounded-lg bg-concrete p-5" aria-label="Combo sugerido">
-          <p className="flex items-center gap-2 font-semibold">
-            <LightbulbIcon className="size-5" aria-hidden />
-            Combo sugerido
-          </p>
-          <ul className="flex flex-wrap gap-2">
+        <aside className="flex flex-col items-start gap-2 border-l-2 border-ap-graphite py-1 pl-4" aria-label="Combo sugerido">
+          <p className="ap-index">Combo sugerido</p>
+          <ul className="flex flex-wrap items-center gap-x-2 gap-y-1 text-base font-semibold text-ap-ink">
             {combo.names.map((name, index) => (
-              <li key={`${name}-${index}`} className="rounded-full bg-card px-3 py-1 text-sm font-medium ring-1 ring-foreground/10">
+              <li key={`${name}-${index}`} className="inline-flex items-center gap-2">
+                {index > 0 ? (
+                  <span aria-hidden className="font-normal text-ap-muted">
+                    +
+                  </span>
+                ) : null}
                 {name}
               </li>
             ))}
           </ul>
-          <p className="max-w-prose text-sm text-foreground/85">{combo.reason}</p>
+          <p className="max-w-prose text-sm text-ap-ink">{combo.reason}</p>
         </aside>
       ) : null}
-      <section aria-labelledby="pares-titulo" className="flex flex-col gap-3">
-        <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 id="pares-titulo" className="text-lg font-semibold tracking-tight">
-            Productos que se compran juntos
+      <section aria-labelledby="pares-titulo" className="flex flex-col gap-3 border-t border-ap-line-strong pt-4">
+        <div className="flex flex-col gap-1">
+          <h2 id="pares-titulo" className="text-base font-semibold text-ap-ink">
+            ¿Qué productos llevan juntos tus clientes?
           </h2>
-          <p className="text-sm text-muted-foreground">Actualizado {formatDateTime(report.computedAt)}. Se recalcula cada noche.</p>
+          <p className="ap-ref text-ap-muted">Actualizado {formatDateTime(report.computedAt)} · se recalcula cada noche</p>
         </div>
-        {report.source ? <p className="text-sm text-muted-foreground">{SOURCE_TEXT[report.source]}</p> : null}
+        {report.source ? <p className="text-sm text-ap-muted">{SOURCE_TEXT[report.source]}</p> : null}
+        <p className="text-sm text-ap-muted">Indica que suelen comprarse juntos, no que uno cause la compra del otro. Fíjate en la columna «Pedidos»: con pocos pedidos la relación es menos segura.</p>
         <DataTable
           caption="Productos que se compran juntos"
           columns={COLUMNS}
@@ -100,10 +101,7 @@ function AssociationsView({ report }: { report: AssociationReport }) {
           pageSize={15}
         />
       </section>
-      <p className="flex items-start gap-2 text-sm text-muted-foreground">
-        <ShoppingBasketIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
-        <span>Tus clientes ven estas sugerencias como «Se compran juntos» en la ficha del producto.</span>
-      </p>
+      <p className="text-sm text-ap-muted">Tus clientes ven estas sugerencias como «Se compran juntos» en la ficha del producto.</p>
     </div>
   )
 }

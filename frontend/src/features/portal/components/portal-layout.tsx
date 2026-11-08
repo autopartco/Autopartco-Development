@@ -16,6 +16,7 @@ import { PortalNav } from '../layout/portal-nav'
 import { PlanBadge } from '../layout/plan-badge'
 import { StoreSwitcher } from '../layout/store-switcher'
 import { useCommandPalette } from '../lib/use-command-palette'
+import { PORTAL_SECTION_GROUPS, sectionOf } from '../lib/sections'
 import { AlertsBell } from '../layout/alerts-bell'
 import { CommandPalette, CommandPaletteButton } from './command-palette'
 import { ListSkeleton } from './list-skeleton'
@@ -25,12 +26,12 @@ import { UpgradeDialog } from './upgrade-dialog'
 import { StoreInactiveNotice } from './store-inactive-notice'
 
 /**
- * Barra lateral carbón: continúa la cabecera hacia abajo. En el `Sheet` móvil lleva arriba
- * el logo y la etiqueta del portal (en escritorio ya están en la cabecera).
+ * Barra lateral grafito (§7.3): compacta (14rem) y continúa la cabecera hacia abajo. En el `Sheet`
+ * móvil lleva arriba el logo y la etiqueta del portal (en escritorio ya están en la cabecera).
  */
 function SidebarContent({ onNavigate, withBrand = false }: { onNavigate?: () => void; withBrand?: boolean }) {
   return (
-    <div className="surface-asphalt flex h-full flex-col gap-6 py-5">
+    <div className="ap-surface-dark flex h-full flex-col gap-5 py-4">
       {withBrand ? <PortalBrand className="h-11 pr-14 pl-5" /> : null}
       <div className="flex-1 overflow-y-auto">
         <PortalNav onNavigate={onNavigate} />
@@ -47,14 +48,14 @@ function MobileMenu() {
         render={
           <Button
             variant="ghost"
-            className="size-11 shrink-0 text-white hover:bg-header-hover hover:text-white aria-expanded:bg-header-hover aria-expanded:text-white lg:hidden"
+            className="size-11 shrink-0 text-ap-white hover:bg-sidebar-accent hover:text-ap-white aria-expanded:bg-sidebar-accent aria-expanded:text-ap-white lg:hidden"
             aria-label="Abrir menú del portal"
           />
         }
       >
         <MenuIcon className="size-5" aria-hidden />
       </SheetTrigger>
-      <SheetContent side="left" showCloseButton={false} className="w-[min(18rem,85vw)] gap-0 p-0 sm:max-w-72">
+      <SheetContent side="left" showCloseButton={false} className="w-[min(16rem,85vw)] gap-0 border-ap-line-on-dark p-0 sm:max-w-64">
         <SheetHeader className="sr-only">
           <SheetTitle>Menú del portal</SheetTitle>
           <SheetDescription>Secciones del portal del almacén</SheetDescription>
@@ -62,12 +63,30 @@ function MobileMenu() {
         <SidebarContent withBrand onNavigate={() => setOpen(false)} />
         <SheetClose
           aria-label="Cerrar menú"
-          render={<Button variant="ghost" className="absolute top-3 right-2 size-11 text-white hover:bg-header-hover hover:text-white" />}
+          render={<Button variant="ghost" className="absolute top-2 right-2 size-11 text-ap-white hover:bg-sidebar-accent hover:text-ap-white" />}
         >
           <XIcon aria-hidden />
         </SheetClose>
       </SheetContent>
     </Sheet>
+  )
+}
+
+/** Índice de la sección abierta (`OPERACIÓN / PEDIDOS`): orienta sin repetir el título de la página. */
+function SectionLabel() {
+  const { pathname } = useLocation()
+  const section = sectionOf(pathname)
+  const group = PORTAL_SECTION_GROUPS.find((candidate) => candidate.items.some((item) => item.to === section))
+  const item = group?.items.find((candidate) => candidate.to === section)
+  if (!group || !item) return null
+  return (
+    <>
+      <p className="ap-index hidden shrink-0 md:block">
+        <span className="sr-only">Sección: </span>
+        {group.label} / {item.label}
+      </p>
+      <span aria-hidden className="hidden h-5 w-px shrink-0 bg-ap-line md:block" />
+    </>
   )
 }
 
@@ -170,10 +189,10 @@ function PortalShell({ storeId }: { storeId: string }) {
 
   return (
     <PortalContext.Provider value={value}>
-      <div className="flex min-h-svh flex-col bg-background">
+      <div className="flex min-h-svh flex-col bg-ap-white">
         <a
           href="#contenido"
-          className="sr-only z-[60] rounded-md bg-white px-4 py-2.5 font-semibold text-foreground shadow-lg focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
+          className="sr-only z-[60] rounded-md bg-ap-white px-4 py-2.5 font-semibold text-ap-ink shadow-overlay focus:not-sr-only focus:fixed focus:top-3 focus:left-3"
         >
           Saltar al contenido
         </a>
@@ -188,16 +207,17 @@ function PortalShell({ storeId }: { storeId: string }) {
             ) : null
           }
         />
-        <div className="flex-1 lg:grid lg:grid-cols-[15rem_minmax(0,1fr)]">
-          <aside className="hidden border-t border-asphalt-line bg-asphalt lg:block">
-            <div className="sticky top-16 h-[calc(100svh-4rem)]">
+        <div className="flex-1 lg:grid lg:grid-cols-[14rem_minmax(0,1fr)]">
+          <aside className="hidden bg-ap-graphite lg:block">
+            <div className="sticky top-14 h-[calc(100svh-3.5rem)]">
               <SidebarContent />
             </div>
           </aside>
           <div className="flex min-w-0 flex-col">
-            {/* Barra de contexto clara: almacén actual y plan, bajo la cabecera carbón. */}
-            <div className="sticky top-14 z-30 flex h-14 items-center gap-3 border-b border-border bg-card px-4 sm:px-6 lg:top-16 lg:px-8">
-              <div className="flex min-w-0 flex-1 items-center">
+            {/* Barra de contexto clara (§7.3): sección abierta, almacén activo y plan, bajo la cabecera grafito. */}
+            <div className="sticky top-14 z-30 flex min-h-14 items-center gap-3 border-b border-ap-line bg-ap-white px-4 py-1.5 sm:px-6 lg:px-8">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <SectionLabel />
                 <StoreSwitcher />
               </div>
               {store?.applicationStatus === 'ACTIVE' ? <PlanBadge /> : null}
@@ -209,7 +229,7 @@ function PortalShell({ storeId }: { storeId: string }) {
               id="contenido"
               ref={mainRef}
               tabIndex={-1}
-              className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 outline-none sm:px-6 lg:px-8 lg:py-8"
+              className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 outline-none sm:px-6 lg:px-8"
             >
               {content}
             </main>

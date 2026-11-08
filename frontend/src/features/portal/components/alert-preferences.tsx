@@ -151,18 +151,18 @@ function PreferencesForm({ preferences }: { preferences: AlertPreference[] }) {
           {formError}
         </FormAlert>
       ) : null}
-      <p className="max-w-prose text-sm text-muted-foreground">
+      <p className="max-w-prose text-sm text-ap-muted">
         Elige cómo quieres enterarte de cada alerta. Los correos llegan a las personas del equipo que pueden configurar alertas.
       </p>
-      <ul className="flex flex-col gap-4">
+      <ul className="divide-y divide-ap-line rounded-lg border border-ap-line">
         {values.rows.map((row) => {
           const spec = THRESHOLDS[row.type]
           const name = fieldName(row.type)
           return (
-            <li key={row.type} className="flex flex-col gap-3 rounded-lg bg-card p-4 ring-1 ring-foreground/10">
+            <li key={row.type} className="flex flex-col gap-3 px-4 py-4">
               <div>
-                <h3 className="text-base font-semibold tracking-tight">{ALERT_TYPE_LABEL[row.type]}</h3>
-                <p className="text-sm text-muted-foreground">{ALERT_TYPE_DESCRIPTION[row.type]}</p>
+                <h3 className="text-base font-semibold text-ap-ink">{ALERT_TYPE_LABEL[row.type]}</h3>
+                <p className="text-sm text-ap-muted">{ALERT_TYPE_DESCRIPTION[row.type]}</p>
               </div>
               <div className="flex flex-wrap gap-x-6 gap-y-1">
                 <label className="flex min-h-11 cursor-pointer items-center gap-2.5 text-sm">
