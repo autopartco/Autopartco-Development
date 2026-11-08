@@ -1,7 +1,7 @@
 import { Link } from 'react-router'
 import { Container, PageIntro } from '@/components/common/page-header'
 import { EmptyState, ErrorState } from '@/components/common/states'
-import { useNearbyStores, useStoreDistances } from '@/features/location/hooks'
+import { useDistanceOrigin, useStoreDistances } from '@/features/location/hooks'
 import { pluralize } from '@/lib/format'
 import { RECOMMENDED_EXPLANATION, RecommendedMark } from '../components/product-meta'
 import { StoreRow, StoreRowSkeleton } from '../components/store-card'
@@ -11,11 +11,10 @@ import { useStores } from '../hooks'
 export default function StoresPage() {
   const stores = useStores()
   const distances = useStoreDistances()
-  const nearby = useNearbyStores().data
   const hasRecommended = stores.data?.some((store) => store.recommended) ?? false
   const hasCounts = stores.data?.some((store) => store.productCount !== undefined) ?? false
   const hasDistances = distances.size > 0
-  const reference = nearby?.origin && nearby.city ? `${nearby.origin.label}, ${nearby.city.name}` : undefined
+  const reference = useDistanceOrigin()
 
   return (
     <Container className="py-6 sm:py-8">

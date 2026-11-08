@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AddToCart } from '@/features/cart/components/add-to-cart'
-import { useNearbyStores, useStoreDistances } from '@/features/location/hooks'
+import { useDistanceOrigin, useStoreDistances } from '@/features/location/hooks'
 import { formatKm } from '@/features/location/lib/geo'
 import { formatCOP } from '@/lib/format'
 import { trackView } from '@/lib/visibility'
@@ -139,7 +139,7 @@ function ProductFacts({ product }: { product: Product }) {
 /** Precio, existencias, tienda y la acción principal (agregar al carrito), juntos. */
 function PurchasePanel({ product }: { product: Product }) {
   const distances = useStoreDistances()
-  const nearby = useNearbyStores().data
+  const origin = useDistanceOrigin()
   const distanceKm = product.store ? distances.get(product.store.id) : undefined
   return (
     <section aria-label="Precio y compra" className="flex flex-col gap-5 rounded-xl border border-ap-line-strong bg-ap-white p-5">
@@ -176,7 +176,7 @@ function PurchasePanel({ product }: { product: Product }) {
             {product.store.city ? <span>{product.store.city}</span> : null}
             {distanceKm !== undefined ? (
               <span className="tabular-nums">
-                · sede a {formatKm(distanceKm)} de {nearby?.origin?.label ?? 'tu punto de referencia'}
+                · sede a {formatKm(distanceKm)}{origin ? ` de ${origin}` : ''}
               </span>
             ) : null}
           </p>
