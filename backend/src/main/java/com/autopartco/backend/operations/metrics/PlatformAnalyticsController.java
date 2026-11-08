@@ -10,6 +10,8 @@ import com.autopartco.backend.core.analytics.Analytics;
 import com.autopartco.backend.core.analytics.CustomerSegment;
 import com.autopartco.backend.core.analytics.CustomerSegments;
 import com.autopartco.backend.core.analytics.DateRange;
+import com.autopartco.backend.core.analytics.Granularity;
+import com.autopartco.backend.core.analytics.PlatformStats;
 import com.autopartco.backend.core.analytics.PlatformCustomerReport;
 import com.autopartco.backend.core.analytics.SearchInsights;
 import com.autopartco.backend.core.analytics.SearchReport;
@@ -27,6 +29,7 @@ import lombok.AllArgsConstructor;
 public class PlatformAnalyticsController {
     private final CustomerSegments customerSegments;
     private final SearchInsights searchInsights;
+    private final PlatformStats platformStats;
 
     /** Página desde 1; tamaño por defecto 50 y como máximo 200. Segmento desconocido: 400 {@code INVALID_SEGMENT}. */
     @GetMapping("/customers")
@@ -47,5 +50,16 @@ public class PlatformAnalyticsController {
             @RequestParam(required = false) String to
     ) {
         return searchInsights.report(DateRange.resolve(from, to, Analytics.today()));
+    }
+
+    /** Tráfico, cuentas, accesos y comercio. Rango por defecto: últimos 30 días; {@code granularity} DAY|WEEK|MONTH. */
+    @GetMapping("/platform")
+    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    public PlatformStats.Report platform(
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
+            @RequestParam(required = false) String granularity
+    ) {
+        return platformStats.report(DateRange.resolve(from, to, Analytics.today()), Granularity.parse(granularity));
     }
 }

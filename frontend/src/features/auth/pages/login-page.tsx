@@ -10,6 +10,7 @@ import { SELLER_SETUP_PATH } from '@/features/seller/hooks'
 import { getAuthService } from '../api/auth-service'
 import { accountKindOf } from '../lib/account-menu-items'
 import { AuthShell, SimulatedNotice } from '../components/auth-shell'
+import { SocialLogin } from '../components/social-login'
 import { useSession } from '../hooks'
 import { compact, emailError, type FieldErrors } from '../lib/validation'
 import { safeReturnPath } from '../lib/return-path'
@@ -102,6 +103,13 @@ export default function LoginPage() {
       }
     >
       <title>Ingresar | Autopartco</title>
+      <SocialLogin
+        mode="login"
+        onSession={async (social) => {
+          setSession(social)
+          navigate(await destinationAfterLogin(social.roles, returnTo), { replace: true })
+        }}
+      />
       <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-5" aria-busy={submitting || undefined}>
         {formError ? (
           <FormAlert ref={alertRef} title={formError.title}>

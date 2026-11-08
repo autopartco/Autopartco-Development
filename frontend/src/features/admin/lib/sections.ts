@@ -1,9 +1,11 @@
 import type { ComponentType } from 'react'
 import {
   BadgePercentIcon,
+  BarChart3Icon,
   ClipboardCheckIcon,
   CreditCardIcon,
   LayoutDashboardIcon,
+  ScrollTextIcon,
   SearchIcon,
   TagsIcon,
   UsersIcon,
@@ -31,6 +33,7 @@ export const ADMIN_SECTION_GROUPS: AdminSectionGroup[] = [
     items: [
       { to: 'resumen', label: 'Resumen', icon: LayoutDashboardIcon, description: 'Estado general y pendientes.' },
       { to: 'solicitudes', label: 'Solicitudes', icon: ClipboardCheckIcon, description: 'Verifica almacenes nuevos.' },
+      { to: 'auditoria', label: 'Auditoría', icon: ScrollTextIcon, description: 'Historial de ingresos y cambios sensibles.' },
     ],
   },
   {
@@ -44,6 +47,7 @@ export const ADMIN_SECTION_GROUPS: AdminSectionGroup[] = [
   {
     label: 'Inteligencia',
     items: [
+      { to: 'estadisticas', label: 'Estadísticas', icon: BarChart3Icon, description: 'Tráfico, cuentas, accesos y comercio.' },
       { to: 'clientes', label: 'Clientes', icon: UsersIcon, description: 'Segmentos de compradores con consentimiento.' },
       { to: 'busquedas', label: 'Búsquedas', icon: SearchIcon, description: 'Demanda y búsquedas sin resultado.' },
     ],

@@ -62,6 +62,8 @@ public class WebSecurityConfig {
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/register"),
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/login"),
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/social/*"),
+                // operations.metrics: visitas del marketplace (sin datos personales, con límite por IP).
+                new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/events/pageview"),
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/refresh"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.BASE + "/auth/verify-email"),
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/unlock/request"),
