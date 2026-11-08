@@ -96,3 +96,43 @@ export interface StoreResponseDto {
   businessEmail: string
   state: string | null
 }
+
+/** `marketplace/stores/StorePublicProfile`. `logoUrl`/`bannerUrl` son rutas de la API con `?v=` o `null`. */
+export interface StorePublicProfileDto {
+  id: string
+  name: string
+  description: string | null
+  logoUrl: string | null
+  bannerUrl: string | null
+  cities: string[]
+  branchCount: number
+  memberSince: string | null
+  rating: { average: number | null; count: number }
+  publishedProducts: number
+  contact: {
+    whatsapp: string | null
+    phone: string | null
+    website: string | null
+    instagram: string | null
+    facebook: string | null
+    tiktok: string | null
+  }
+}
+
+/** `marketplace/reviews/StoreReviewResponse`. */
+export interface StoreReviewResponseDto {
+  id: string
+  rating: number
+  comment: string | null
+  authorName: string
+  createdAt: string
+}
+
+/** `shared/web/PageResponse` (páginas desde 1). */
+export interface PageResponseDto<T> {
+  items: T[]
+  page: number
+  size: number
+  total: number
+  totalPages: number
+}

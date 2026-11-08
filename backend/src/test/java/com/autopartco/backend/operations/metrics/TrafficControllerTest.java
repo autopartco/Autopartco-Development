@@ -11,6 +11,7 @@ import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
 
 import com.autopartco.backend.core.analytics.TrafficRecorder;
+import com.autopartco.backend.core.analytics.VisibilityRecorder;
 import com.autopartco.backend.core.identity.AccountLookup;
 import com.autopartco.backend.shared.error.TooManyRequestsException;
 
@@ -19,7 +20,8 @@ class TrafficControllerTest {
 
     @Test
     void limitsCallsPerIpAndMinute() {
-        TrafficController controller = new TrafficController(mock(TrafficRecorder.class), mock(AccountLookup.class), clock);
+        TrafficController controller = new TrafficController(mock(TrafficRecorder.class), mock(VisibilityRecorder.class),
+                mock(AccountLookup.class), clock);
         for (int i = 0; i < TrafficController.MAX_PER_MINUTE; i++) {
             controller.acquire("1.1.1.1");
         }

@@ -7,6 +7,7 @@ import {
   type Product,
   type ProductPage,
   type ProductQuery,
+  type StoreProfile,
   type StoreSummary,
 } from '../types'
 import { MOCK_BRANDS, MOCK_CATEGORIES, MOCK_PRODUCTS, MOCK_STORES, MOCK_VEHICLE_CATALOG, ruleMatches } from './mock-data'
@@ -228,6 +229,37 @@ export function createMockMarketplaceService(): MarketplaceService {
       await simulateNetwork()
       const counts = countBy((product) => product.store?.id)
       return MOCK_STORES.map((store) => ({ ...store, productCount: counts.get(store.id) ?? 0 }))
+    },
+
+    // Datos simulados: sin reseñas ni contacto, para no inventar datos comerciales.
+    async getStoreProfile(storeId): Promise<StoreProfile> {
+      await simulateNetwork()
+      const store = MOCK_STORES.find((item) => item.id === storeId)
+      if (!store) throw new MarketplaceError('No se encontró el almacén.', { status: 404, code: 'STORE_NOT_FOUND' })
+      const counts = countBy((product) => product.store?.id)
+      return {
+        id: store.id,
+        name: store.name,
+        logoUrl: store.logoUrl,
+        cities: store.city ? [store.city] : [],
+        branchCount: 1,
+        ratingCount: 0,
+        publishedProducts: counts.get(store.id) ?? 0,
+        contact: {},
+      }
+    },
+
+    async listStoreReviews() {
+      await simulateNetwork()
+      return { items: [], page: 1, totalPages: 0, total: 0 }
+    },
+
+    async getReviewEligibility() {
+      return []
+    },
+
+    async createStoreReview() {
+      throw new MarketplaceError('Las reseñas solo están disponibles con la API real.', { status: 409, code: 'REVIEW_NOT_ALLOWED' })
     },
   }
 }

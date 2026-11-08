@@ -14,11 +14,15 @@ import com.autopartco.backend.core.analytics.ProductAssociations;
 import com.autopartco.backend.core.analytics.ProductReport;
 import com.autopartco.backend.core.analytics.SalesForecast;
 import com.autopartco.backend.core.analytics.SalesReport;
+import com.autopartco.backend.core.analytics.VisibilityReport;
 import com.autopartco.backend.shared.web.ApiPaths;
 
 import lombok.AllArgsConstructor;
 
-/** Inteligencia comercial del almacén. Requiere {@code ANALYTICS_READ} y la capacidad {@code ADVANCED_REPORTS}. */
+/**
+ * Inteligencia comercial del almacén. Requiere {@code ANALYTICS_READ} y la capacidad {@code ADVANCED_REPORTS}, salvo
+ * {@code /visibility}, que solo exige {@code ANALYTICS_READ}.
+ */
 @RestController
 @RequestMapping(ApiPaths.STORES + "/{storeId}/analytics")
 @AllArgsConstructor
@@ -28,6 +32,7 @@ public class AnalyticsController {
     private final GetProductPerformance getProductPerformance;
     private final GetSalesForecast getSalesForecast;
     private final GetProductAssociations getProductAssociations;
+    private final GetStoreVisibility getStoreVisibility;
 
     @GetMapping("/report")
     public SalesReport report(
@@ -62,6 +67,17 @@ public class AnalyticsController {
     @GetMapping("/associations")
     public ProductAssociations.StoreReport associations(@PathVariable UUID storeId, Authentication authentication) {
         return getProductAssociations.execute(storeId, authentication.getName());
+    }
+
+    /** Visitas, compartidos y origen del tráfico (todos los planes). */
+    @GetMapping("/visibility")
+    public VisibilityReport visibility(
+            @PathVariable UUID storeId,
+            @RequestParam(required = false) String from,
+            @RequestParam(required = false) String to,
+            Authentication authentication
+    ) {
+        return getStoreVisibility.execute(storeId, authentication.getName(), from, to);
     }
 
     @GetMapping("/forecast")

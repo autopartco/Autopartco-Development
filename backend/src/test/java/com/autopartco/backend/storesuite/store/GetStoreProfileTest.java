@@ -18,6 +18,7 @@ import org.springframework.security.access.AccessDeniedException;
 
 import com.autopartco.backend.core.organization.StoreAccess;
 import com.autopartco.backend.core.organization.StorePermissionCodes;
+import com.autopartco.backend.core.organization.PublishedStoreProfile;
 import com.autopartco.backend.core.organization.StoreProfileResponse;
 import com.autopartco.backend.core.organization.StoreService;
 
@@ -36,7 +37,8 @@ class GetStoreProfileTest {
     void returnsProfileWhenThePersonCanReadTheStore() {
         UUID storeId = UUID.randomUUID();
         StoreProfileResponse profile = new StoreProfileResponse(
-                storeId, "Repuestos La 30", "900123456", "ventas@la30.co", "ACTIVE", "Repuestos de frenos", null, null
+                storeId, "Repuestos La 30", "900123456", "ventas@la30.co", "ACTIVE", "Repuestos de frenos", null, null,
+                PublishedStoreProfile.PublicContact.EMPTY
         );
         when(storeService.profile(storeId)).thenReturn(profile);
 

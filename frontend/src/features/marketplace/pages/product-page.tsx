@@ -11,13 +11,15 @@ import { AddToCart } from '@/features/cart/components/add-to-cart'
 import { useNearbyStores, useStoreDistances } from '@/features/location/hooks'
 import { formatKm } from '@/features/location/lib/geo'
 import { formatCOP } from '@/lib/format'
+import { trackView } from '@/lib/visibility'
 import { cn } from '@/lib/utils'
 import { isNotFoundError, type Product } from '../api/types'
 import { FrequentlyBought } from '../components/frequently-bought'
 import { ProductCard, ProductGrid } from '../components/product-card'
 import { AvailabilityLabel, BrandName, Price, RECOMMENDED_EXPLANATION, RecommendedMark, UniversalTag } from '../components/product-meta'
 import { useProduct, useRelatedProducts } from '../hooks'
-import { categoryPath, storeProductsPath } from '../lib/paths'
+import { ShareButton } from '../components/share-button'
+import { categoryPath, productPath, storePath, storeProductsPath } from '../lib/paths'
 import { NotFoundContent } from './not-found-page'
 
 /** Galería: imagen grande con `contain` sobre fondo papel y miniaturas seleccionables. */
@@ -161,7 +163,13 @@ function PurchasePanel({ product }: { product: Product }) {
         <div className="flex flex-col gap-1 border-t border-ap-line pt-4">
           <p className="ap-index">Vendido por</p>
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-base font-semibold text-ap-ink">
-            {product.store.name}
+            <Link
+              to={storePath(product.store.id)}
+              className="underline decoration-ap-line-strong underline-offset-4 hover:text-ap-red hover:decoration-current"
+            >
+              {product.store.name}
+              <span className="sr-only"> (ver perfil de la tienda)</span>
+            </Link>
             {product.store.recommended ? <RecommendedMark /> : null}
           </p>
           <p className="flex flex-wrap gap-x-2 text-sm text-ap-muted">
@@ -263,6 +271,10 @@ function Specifications({ product }: { product: Product }) {
 
 function ProductDetail({ product }: { product: Product }) {
   const related = useRelatedProducts(product)
+  const storeId = product.store?.id
+  useEffect(() => {
+    if (storeId) trackView('PRODUCT_VIEW', storeId, product.id)
+  }, [storeId, product.id])
   const distances = useStoreDistances()
   const crumbs: Crumb[] = [{ label: 'Inicio', to: '/' }]
   if (product.category) {
@@ -285,7 +297,12 @@ function ProductDetail({ product }: { product: Product }) {
         <div className="flex min-w-0 flex-col gap-6">
           <div className="flex flex-col gap-2">
             <p className="ap-index">Ficha técnica{product.category ? ` / ${product.category.name}` : ''}</p>
-            <h1 className="text-page-title text-ap-ink">{product.name}</h1>
+            <div className="flex items-start justify-between gap-3">
+              <h1 className="text-page-title min-w-0 text-ap-ink">{product.name}</h1>
+              {storeId ? (
+                <ShareButton path={productPath(product.id)} title={product.name} storeId={storeId} productId={product.id} />
+              ) : null}
+            </div>
             {product.partNumber ? (
               <p className="flex flex-wrap items-center gap-x-2">
                 <span className="ap-ref text-sm text-ap-ink">REF. {product.partNumber}</span>

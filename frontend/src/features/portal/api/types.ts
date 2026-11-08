@@ -32,15 +32,32 @@ export interface StoreProfile {
   businessEmail: string
   state: string
   description: string | null
+  /** URL pública versionada (`?v=`); solo carga si la tienda está publicada. */
   logoUrl: string | null
   bannerUrl: string | null
+  /** Contacto público que se muestra en el perfil de la tienda. */
+  publicProfile?: StoreContact
 }
+
+/** Contacto público (`StorePublicContactRequest`). Redes como usuario, sin @ ni URL. */
+export interface StoreContact {
+  whatsapp?: string | null
+  phone?: string | null
+  website?: string | null
+  instagram?: string | null
+  facebook?: string | null
+  tiktok?: string | null
+}
+
+export type StoreBrandAsset = 'logo' | 'banner'
 
 /** `PATCH /stores/{id}` (`StoreUpdateRequest`): solo los campos presentes cambian. El NIT no se edita en la UI (D11). */
 export interface StoreProfileUpdate {
   businessName?: string
   businessEmail?: string
   description?: string
+  /** En cada campo: ausente no cambia, cadena vacía lo borra. */
+  publicProfile?: Partial<Record<keyof StoreContact, string>>
 }
 
 /** Códigos de `StorePermissionCodes` que devuelve `GET /stores/{id}/my-permissions`. */

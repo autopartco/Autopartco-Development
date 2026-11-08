@@ -136,6 +136,13 @@ public class StoreService {
             store.setConfiguration(configuration);
         }
 
+        if (request.publicProfile() != null && request.publicProfile().hasChanges()) {
+            Map<String, Object> configuration = new HashMap<>(configurationOf(store));
+            configuration.put(PublishedStores.PUBLIC_PROFILE_KEY,
+                    mergeContact(configuration.get(PublishedStores.PUBLIC_PROFILE_KEY), request.publicProfile()));
+            store.setConfiguration(configuration);
+        }
+
         return toResponse(store);
     }
 
@@ -151,8 +158,9 @@ public class StoreService {
                 store.getBusinessEmail(),
                 store.getState().getCode(),
                 description instanceof String text ? text : null,
-                null,
-                null
+                StoreBrand.url(storeId, StoreBrand.LOGO, store.getLogoPath()),
+                StoreBrand.url(storeId, StoreBrand.BANNER, store.getBannerPath()),
+                PublishedStores.contact(configurationOf(store).get(PublishedStores.PUBLIC_PROFILE_KEY))
         );
     }
 
@@ -187,6 +195,54 @@ public class StoreService {
     public void lockForUpdate(UUID storeId) {
         storeRepository.lockById(storeId)
                 .orElseThrow(() -> new NotFoundException("STORE_NOT_FOUND", "No se encontró el almacén."));
+    }
+
+    /**
+     * Cambia la ruta del logo o del banner ({@code null} la quita) y devuelve la anterior para borrarla del
+     * almacenamiento. El llamador ya comprobó el permiso {@code STORE_UPDATE}.
+     */
+    @Transactional
+    public String replaceBrandAsset(UUID storeId, String assetType, String newPath) {
+        Store store = findStore(storeId);
+        String previous;
+        switch (assetType) {
+            case StoreBrand.LOGO -> {
+                previous = store.getLogoPath();
+                store.setLogoPath(newPath);
+            }
+            case StoreBrand.BANNER -> {
+                previous = store.getBannerPath();
+                store.setBannerPath(newPath);
+            }
+            default -> throw new NotFoundException("BRAND_ASSET_TYPE_NOT_FOUND", "Tipo de imagen no válido.");
+        }
+        return previous;
+    }
+
+    /** Campos {@code null} se conservan; vacíos se borran; el resto se guarda sin espacios. */
+    static Map<String, Object> mergeContact(Object current, StorePublicContactRequest request) {
+        Map<String, Object> merged = new HashMap<>();
+        if (current instanceof Map<?, ?> map) {
+            map.forEach((key, value) -> merged.put(String.valueOf(key), value));
+        }
+        apply(merged, "whatsapp", request.whatsapp());
+        apply(merged, "phone", request.phone());
+        apply(merged, "website", request.website());
+        apply(merged, "instagram", request.instagram());
+        apply(merged, "facebook", request.facebook());
+        apply(merged, "tiktok", request.tiktok());
+        return merged;
+    }
+
+    private static void apply(Map<String, Object> contact, String key, String value) {
+        if (value == null) {
+            return;
+        }
+        if (value.isBlank()) {
+            contact.remove(key);
+        } else {
+            contact.put(key, value.trim());
+        }
     }
 
     /** Filas antiguas pueden tener la configuración nula. */

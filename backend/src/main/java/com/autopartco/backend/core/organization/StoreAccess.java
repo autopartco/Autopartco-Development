@@ -88,6 +88,12 @@ public class StoreAccess {
         }
     }
 
+    /** {@code true} si la persona es o fue colaborador del almacén (en cualquier estado). */
+    @Transactional(readOnly = true)
+    public boolean isMember(UUID personId, UUID storeId) {
+        return collaboratorRepository.existsInStore(personId, storeId);
+    }
+
     /** Indica si la persona es OWNER activo del almacén, sin lanzar excepción. */
     @Transactional(readOnly = true)
     public boolean isOwner(String email, UUID storeId) {
