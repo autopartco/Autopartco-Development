@@ -211,10 +211,27 @@ public class StoreApplications {
                 StoreApplicationStatus.PENDING_REVIEW,
                 PageRequest.of(safePage - 1, safeSize)
         );
-        List<StoreApplicationView> items = result.getContent().stream()
+        // Cuentas y documentos de la página en lote: tres consultas por página, no por fila.
+        List<StoreApplication> applications = result.getContent();
+        java.util.Set<UUID> accountIds = new java.util.HashSet<>();
+        for (StoreApplication application : applications) {
+            accountIds.add(application.getApplicantAccountId());
+            if (application.getReviewedByAccountId() != null) {
+                accountIds.add(application.getReviewedByAccountId());
+            }
+        }
+        Map<UUID, AccountRef> accounts = accountLookup.findAllByIds(accountIds);
+        Map<UUID, List<StoreApplicationDocument>> documents = applications.isEmpty()
+                ? Map.of()
+                : documentRepository.findAllOfApplications(applications.stream().map(StoreApplication::getId).toList())
+                        .stream()
+                        .collect(java.util.stream.Collectors.groupingBy(document -> document.getApplication().getId()));
+        List<StoreApplicationView> items = applications.stream()
                 .map(application -> toView(
                         application,
-                        accountLookup.findById(application.getApplicantAccountId()).orElse(null)
+                        accounts.get(application.getApplicantAccountId()),
+                        application.getReviewedByAccountId() == null ? null : accounts.get(application.getReviewedByAccountId()),
+                        documents.getOrDefault(application.getId(), List.of())
                 ))
                 .toList();
         return PageResponse.of(items, safePage, safeSize, result.getTotalElements());
@@ -443,8 +460,17 @@ public class StoreApplications {
 
     /** {@code applicant} puede ser {@code null} (cuenta borrada): el correo del solicitante queda {@code null}. */
     private StoreApplicationView toView(StoreApplication application, AccountRef applicant, AccountRef reviewer) {
+        return toView(application, applicant, reviewer, documentRepository.findAllOfApplication(application.getId()));
+    }
+
+    private StoreApplicationView toView(
+            StoreApplication application,
+            AccountRef applicant,
+            AccountRef reviewer,
+            List<StoreApplicationDocument> applicationDocuments
+    ) {
         List<StoreApplicationView.Document> documents =
-                documentRepository.findAllOfApplication(application.getId())
+                applicationDocuments
                         .stream()
                         .map(document -> new StoreApplicationView.Document(
                                 document.getId(),
