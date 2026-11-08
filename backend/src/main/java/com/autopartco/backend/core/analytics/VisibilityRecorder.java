@@ -18,8 +18,10 @@ public class VisibilityRecorder {
     public enum Kind { PROFILE_VIEW, PRODUCT_VIEW, SHARE }
 
     /**
-     * Solo si el almacén está activo y, con producto, el producto es de ese almacén: evita inflar métricas de otro
-     * almacén con ids ajenos y errores de clave foránea con ids inventados.
+     * Solo almacenes publicados (almacén {@code ACTIVE} y, si la tiene, solicitud {@code ACTIVE}) y, con producto, un producto {@code ACTIVE} de ese
+     * almacén: evita métricas de tiendas sin publicar, ids ajenos y errores de clave foránea con ids inventados.
+     * {@code uq_sve_visitor_event} deja un evento por visitante, día, producto y tipo ({@code ON CONFLICT DO NOTHING}):
+     * repetir la llamada con el mismo id anónimo no suma.
      */
     static final String INSERT_SQL = """
             INSERT INTO store_visibility_events (day, store_id, product_id, kind, source, visitor_hash)
@@ -27,9 +29,14 @@ public class VisibilityRecorder {
             FROM store s
             JOIN states ss ON ss.id = s.state AND ss.code = 'ACTIVE'
             WHERE s.id = :storeId AND s.deleted_at IS NULL
+              AND NOT EXISTS (
+                  SELECT 1 FROM seller_applications sa
+                  WHERE sa.store_id = s.id AND sa.deleted_at IS NULL AND sa.status <> 'ACTIVE')
               AND (CAST(:productId AS uuid) IS NULL OR EXISTS (
                   SELECT 1 FROM products p
+                  JOIN states ps ON ps.id = p.state_id AND ps.code = 'ACTIVE'
                   WHERE p.id = CAST(:productId AS uuid) AND p.store_id = s.id AND p.deleted_at IS NULL))
+            ON CONFLICT DO NOTHING
             """;
 
     private final JdbcClient jdbcClient;

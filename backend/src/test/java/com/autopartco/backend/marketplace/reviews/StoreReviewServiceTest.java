@@ -25,6 +25,7 @@ import org.springframework.dao.DuplicateKeyException;
 import com.autopartco.backend.core.identity.AccountLookup;
 import com.autopartco.backend.core.identity.AccountRef;
 import com.autopartco.backend.core.organization.PublishedStores;
+import com.autopartco.backend.core.organization.StoreAccess;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.shared.web.PageResponse;
@@ -35,7 +36,8 @@ class StoreReviewServiceTest {
     private final StoreReviewQueries queries = mock(StoreReviewQueries.class);
     private final PublishedStores publishedStores = mock(PublishedStores.class);
     private final AccountLookup accountLookup = mock(AccountLookup.class);
-    private final StoreReviewService service = new StoreReviewService(queries, publishedStores, accountLookup);
+    private final StoreAccess storeAccess = mock(StoreAccess.class);
+    private final StoreReviewService service = new StoreReviewService(queries, publishedStores, accountLookup, storeAccess);
 
     private final UUID storeId = UUID.randomUUID();
     private final UUID orderId = UUID.randomUUID();

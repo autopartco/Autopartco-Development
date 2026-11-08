@@ -1,5 +1,6 @@
 package com.autopartco.backend.marketplace.reviews;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -10,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.autopartco.backend.core.identity.AccountLookup;
 import com.autopartco.backend.core.identity.AccountRef;
 import com.autopartco.backend.core.organization.PublishedStores;
+import com.autopartco.backend.core.organization.StoreAccess;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.shared.web.PageResponse;
@@ -25,16 +27,19 @@ import lombok.AllArgsConstructor;
 public class StoreReviewService {
     static final int DEFAULT_SIZE = 10;
     static final int MAX_SIZE = 50;
+    /** Más allá no hay reseñas reales; evita desbordar el desplazamiento con páginas absurdas. */
+    static final int MAX_PAGE = 10_000;
 
     private final StoreReviewQueries queries;
     private final PublishedStores publishedStores;
     private final AccountLookup accountLookup;
+    private final StoreAccess storeAccess;
 
     /** Páginas desde 1, como {@link PageResponse}. */
     @Transactional(readOnly = true)
     public PageResponse<StoreReviewResponse> list(UUID storeId, Integer page, Integer size) {
         publishedStores.requirePublished(storeId);
-        int p = page == null ? 1 : Math.max(1, page);
+        int p = page == null ? 1 : Math.min(MAX_PAGE, Math.max(1, page));
         int s = size == null ? DEFAULT_SIZE : Math.min(MAX_SIZE, Math.max(1, size));
         StoreRating rating = queries.rating(storeId);
         return PageResponse.of(queries.list(storeId, s, (p - 1) * s), p, s, rating.count());
@@ -50,6 +55,9 @@ public class StoreReviewService {
     public ReviewEligibility eligibility(UUID storeId, String email) {
         publishedStores.requirePublished(storeId);
         AccountRef account = account(email);
+        if (storeAccess.isMember(account.personId(), storeId)) {
+            return new ReviewEligibility(List.of());
+        }
         return new ReviewEligibility(queries.eligibleOrders(storeId, account.personId()));
     }
 
@@ -60,6 +68,10 @@ public class StoreReviewService {
         UUID owner = queries.orderOwner(request.orderId()).orElse(null);
         if (owner == null || !owner.equals(account.personId())) {
             throw new NotFoundException("ORDER_NOT_FOUND", "No se encontró el pedido.");
+        }
+        // Quien es o fue del equipo del almacén no puede calificarlo, aunque haya comprado en él.
+        if (storeAccess.isMember(account.personId(), storeId)) {
+            throw new ConflictException("REVIEW_NOT_ALLOWED", "El equipo de un almacén no puede calificar su propia tienda.");
         }
         if (!queries.hasDeliveredSale(request.orderId(), storeId)) {
             throw new ConflictException("REVIEW_NOT_ALLOWED",

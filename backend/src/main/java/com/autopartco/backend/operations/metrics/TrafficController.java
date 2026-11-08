@@ -36,7 +36,11 @@ import jakarta.validation.constraints.Size;
 @RequestMapping(ApiPaths.BASE + "/events")
 public class TrafficController {
     static final int MAX_PER_MINUTE = 60;
+    /** Por IP y almacén en {@code /visibility}: frena inflar las métricas de una tienda rotando el id anónimo. */
+    static final int MAX_STORE_PER_MINUTE = 20;
+    static final int MAX_STORE_PER_DAY = 300;
     private static final Duration WINDOW = Duration.ofMinutes(1);
+    private static final Duration DAY = Duration.ofDays(1);
     private static final int MAX_TRACKED = 20_000;
 
     private final TrafficRecorder trafficRecorder;
@@ -44,6 +48,8 @@ public class TrafficController {
     private final AccountLookup accountLookup;
     private final Clock clock;
     private final Map<String, Deque<Instant>> calls = new ConcurrentHashMap<>();
+    private final Map<String, Deque<Instant>> storeCalls = new ConcurrentHashMap<>();
+    private final Map<String, Deque<Instant>> storeDailyCalls = new ConcurrentHashMap<>();
 
     @Autowired
     public TrafficController(
@@ -96,6 +102,9 @@ public class TrafficController {
     @PostMapping("/visibility")
     public ResponseEntity<Void> visibility(@Valid @RequestBody VisibilityRequest request, HttpServletRequest http) {
         acquire(http.getRemoteAddr());
+        if (request.storeId() != null) {
+            acquireStore(http.getRemoteAddr(), request.storeId());
+        }
         visibilityRecorder.record(new VisibilityRecorder.Visit(request.anonymousId(), request.kind(),
                 request.storeId(), request.productId(), request.ref(), request.utmSource(), request.referrer(),
                 request.channel()));
@@ -103,23 +112,34 @@ public class TrafficController {
     }
 
     void acquire(String key) {
+        take(calls, key == null ? "?" : key, MAX_PER_MINUTE, WINDOW);
+    }
+
+    /** Límite por (IP, almacén) por minuto y por día. */
+    void acquireStore(String ip, UUID storeId) {
+        String key = (ip == null ? "?" : ip) + "|" + storeId;
+        take(storeCalls, key, MAX_STORE_PER_MINUTE, WINDOW);
+        take(storeDailyCalls, key, MAX_STORE_PER_DAY, DAY);
+    }
+
+    private void take(Map<String, Deque<Instant>> buckets, String key, int limit, Duration window) {
         Instant now = clock.instant();
-        if (calls.size() > MAX_TRACKED) {
-            calls.entrySet().removeIf(entry -> {
+        if (buckets.size() > MAX_TRACKED) {
+            buckets.entrySet().removeIf(entry -> {
                 synchronized (entry.getValue()) {
-                    return entry.getValue().isEmpty() || !entry.getValue().peekLast().isAfter(now.minus(WINDOW));
+                    return entry.getValue().isEmpty() || !entry.getValue().peekLast().isAfter(now.minus(window));
                 }
             });
         }
-        Deque<Instant> window = calls.computeIfAbsent(key == null ? "?" : key, ignored -> new ArrayDeque<>());
-        synchronized (window) {
-            while (!window.isEmpty() && !window.peekFirst().isAfter(now.minus(WINDOW))) {
-                window.pollFirst();
+        Deque<Instant> calls = buckets.computeIfAbsent(key, ignored -> new ArrayDeque<>());
+        synchronized (calls) {
+            while (!calls.isEmpty() && !calls.peekFirst().isAfter(now.minus(window))) {
+                calls.pollFirst();
             }
-            if (window.size() >= MAX_PER_MINUTE) {
+            if (calls.size() >= limit) {
                 throw new TooManyRequestsException("TRAFFIC_RATE_LIMITED", "Demasiadas solicitudes.");
             }
-            window.addLast(now);
+            calls.addLast(now);
         }
     }
 }
