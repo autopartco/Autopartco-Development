@@ -20,7 +20,7 @@ function shuffle<T>(items: T[]): T[] {
  */
 export function createMockLocationService(): LocationService {
   return {
-    capabilities: { citySelection: true, distances: true, geolocation: false },
+    capabilities: { citySelection: true, distances: true, geolocation: true },
     defaultCityId: DEFAULT_CITY_ID,
 
     async listCities(): Promise<City[]> {
