@@ -53,7 +53,7 @@ function SellerHeaderLink() {
       className="hidden h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-md px-2.5 text-sm font-semibold text-ap-white transition-colors hover:bg-sidebar-accent md:inline-flex lg:h-10"
     >
       <StoreIcon className="size-4 text-ap-red-on-dark" aria-hidden />
-      <span className="hidden whitespace-nowrap md:inline">{label}</span>
+      <span className="hidden whitespace-nowrap md:inline xl:hidden 2xl:inline">{label}</span>
     </Link>
   )
 }
@@ -122,7 +122,7 @@ export function SiteHeader() {
         <div className="flex h-14 min-w-0 items-center [grid-area:logo] xl:h-auto">
           <Logo tone="dark" />
         </div>
-        <SearchBar tone="dark" shortcut className="pb-3 [grid-area:search] xl:min-w-48 xl:max-w-2xl xl:pb-0" />
+        <SearchBar tone="dark" shortcut className="pb-3 [grid-area:search] xl:min-w-64 xl:max-w-2xl xl:pb-0" />
         {/* Enlaces desde xl, en la misma fila; por debajo van en el menú para dejar sitio a la ciudad y a la cuenta. */}
         <nav aria-label="Principal" className="hidden items-center gap-0 [grid-area:nav] xl:flex">
           {NAV.map((item) => (
