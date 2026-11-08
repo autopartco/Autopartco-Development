@@ -11,5 +11,13 @@ export function createHttpPortalService(): PortalService {
     async updateProfile(storeId, input) {
       await portalRequest(storePath(storeId), { method: 'PATCH', body: input })
     },
+    uploadBrand(storeId, asset, file) {
+      const body = new FormData()
+      body.append('file', file)
+      return portalRequest<StoreProfile>(storePath(storeId, `/brand/${asset}`), { method: 'POST', body })
+    },
+    async removeBrand(storeId, asset) {
+      await portalRequest(storePath(storeId, `/brand/${asset}`), { method: 'DELETE' })
+    },
   }
 }

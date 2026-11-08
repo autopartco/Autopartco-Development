@@ -153,13 +153,17 @@ Sin `from`/`to`: últimos 30 días hasta hoy (Bogotá); rango inválido o >366 d
 - **Contexto:** depende de T1. Contratos `TrafficSource`, `POST /events/visibility` y `GET /analytics/visibility`. Hash del visitante y dominio del referente iguales a `TrafficRecorder` (extraer helpers compartidos, no duplicar). Nunca guardar IP, user-agent ni `account_id`.
 - **Aceptación:** `./mvnw -q test -Dtest=TrafficSourceTest,VisibilityRecorderTest,VisibilityQueriesTest,TrafficControllerTest` en verde: tabla de casos de §TrafficSource (incluye `ref` sobre referente y `chatgpt.com` por `utm_source`); producto de otro almacén → no se registra; rango >366 días → 400; agregados `bySource`/`topProducts`/`daily` correctos con datos fijos.
 
-### T5 — Perfil público, enlace desde producto y compartir
+### T5 — Perfil público, enlace desde producto y compartir ✅ (2026-11-08)
+
+Notas de implementación: `ShareButton` (icono, menú WhatsApp/Facebook/X/Telegram/TikTok/Instagram + «Copiar enlace»); se montó `<Toaster>` en `RootLayout` (el marketplace no tenía y los avisos no se veían); `?ref=` se quita de la URL tras medir la vista de llegada.
 - **Modelo:** Sonnet · **Agente:** frontend
 - **Archivos:** nuevos `frontend/src/features/marketplace/pages/store-page.tsx`, `frontend/src/features/marketplace/components/share-button.tsx`, `frontend/src/lib/visibility.ts`; `frontend/src/app/router.tsx`, `lazy-pages.tsx`; `features/marketplace/lib/paths.ts` (`storePath`); `features/marketplace/api/{dto.ts,http/http-service.ts,types.ts}`; `pages/product-page.tsx` (nombre en «Vendido por» como `Link` a `storePath`, `ShareButton`, `PRODUCT_VIEW`); `pages/stores-page.tsx` (tarjeta → perfil, con logo).
 - **Contexto:** depende de T2 y T4. Contratos «API pública» y «Frontend». Seguir `docs/design/AUTOPARTCO_DESIGN_SYSTEM.md` (§17, §20.15). Perfil: banner + logo (iniciales si falta), nombre, calificación, ciudades, contacto, pestañas o secciones «Repuestos» (búsqueda con `storeId`, paginada) y «Reseñas» (paginadas; formulario si `eligibility` trae pedidos). Sin dependencias nuevas.
 - **Aceptación:** build y lint en verde; manual: desde `/tiendas` y desde un producto se llega a `/tiendas/:id`; compartir por WhatsApp copia `…?ref=wa` y muestra toast; abrir ese enlace envía `PRODUCT_VIEW` con `ref=wa` una vez y la URL queda sin `ref`; navegación interna posterior envía sin `ref`; sin scroll horizontal a 360 px; menú de compartir usable con teclado y `Escape`.
 
-### T6 — Edición del perfil y estadísticas en el portal
+### T6 — Edición del perfil y estadísticas en el portal ✅ (2026-11-08)
+
+Notas de implementación: el logo y el banner se guardan al elegir el archivo (no dependen de «Guardar cambios»), con vista previa local porque la URL pública solo carga con la tienda publicada; los teléfonos se escriben con 10 dígitos y se envían como `+57…`; la pestaña «Visibilidad» no pasa por la puerta del plan Empresarial.
 - **Modelo:** Sonnet · **Agente:** frontend
 - **Archivos:** `frontend/src/features/portal/pages/store-profile-page.tsx` (logo, banner con vista previa, contacto público, enlace «Ver mi perfil público»); nuevo `frontend/src/features/portal/pages/intelligence-visibility-page.tsx`; `router.tsx` (`inteligencia/visibilidad`, permiso `ANALYTICS_READ`); navegación del portal; API del portal.
 - **Contexto:** depende de T3, T4 y T5. Contratos «API del portal». Estadísticas: totales (visitas al perfil, visitas a publicaciones, compartidos), serie diaria, tabla por origen y top de publicaciones con selector de rango; rotular «visitantes diarios».
