@@ -7,6 +7,10 @@ interface ImportMetaEnv {
   readonly VITE_API_BASE_URL?: string
   /** Correo público de soporte (opcional); sin él no se muestra el botón "Contactar soporte". */
   readonly VITE_SUPPORT_EMAIL?: string
+  /** ID de cliente OAuth de Google (ingreso social). Sin él no se muestra el botón de Google. */
+  readonly VITE_GOOGLE_CLIENT_ID?: string
+  /** ID de la app de Meta (ingreso con Facebook). Sin él no se muestra el botón de Facebook. */
+  readonly VITE_FACEBOOK_APP_ID?: string
 }
 
 interface ImportMeta {

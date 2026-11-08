@@ -3,6 +3,7 @@ import { Outlet, ScrollRestoration, useLocation } from 'react-router'
 import { SiteFooter } from './site-footer'
 import { SiteHeader } from './site-header'
 import { PageFallback } from './page-fallback'
+import { usePageviews } from '@/lib/pageview'
 
 /** Mueve el foco al contenido al cambiar de ruta, para lectores de pantalla y teclado. */
 function useFocusMainOnNavigate() {
@@ -19,6 +20,7 @@ function useFocusMainOnNavigate() {
 
 export function RootLayout() {
   useFocusMainOnNavigate()
+  usePageviews()
   return (
     // `overflow-x-clip` es una red de seguridad contra el scroll horizontal; a diferencia
     // de `hidden`, no crea un contenedor de scroll y no rompe la cabecera fija (sticky).

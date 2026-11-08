@@ -16,6 +16,7 @@ import type { AuthService, Session } from '../types'
  */
 const PATHS = {
   login: '/auth/login',
+  social: (provider: string) => `/auth/social/${encodeURIComponent(provider)}`,
   refresh: '/auth/refresh',
   logout: '/auth/logout',
   register: '/auth/register',
@@ -142,6 +143,19 @@ export function createHttpAuthService(): AuthService {
       } catch {
         // El perfil es informativo: si falla, la sesión sigue siendo válida.
         return { user: { name: email.trim(), email: email.trim() }, roles: currentRoles(), simulated: false }
+      }
+    },
+
+    async socialLogin(provider, token, registration) {
+      keep(await apiRequest<LoginResponseDto>(PATHS.social(provider), {
+        body: { token, registration },
+        credentials: 'include',
+      }))
+      try {
+        const profile = await apiRequest<ProfileResponseDto>(PATHS.profile, { token: tokens?.access })
+        return { user: toUser(profile), roles: currentRoles(), simulated: false }
+      } catch {
+        return { user: { name: 'Cliente', email: '' }, roles: currentRoles(), simulated: false }
       }
     },
 

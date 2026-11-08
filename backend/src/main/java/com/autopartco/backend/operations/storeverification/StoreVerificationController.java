@@ -1,5 +1,8 @@
 package com.autopartco.backend.operations.storeverification;
 
+import com.autopartco.backend.operations.auditlog.AdminAudit;
+import java.util.Map;
+
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
@@ -33,6 +36,7 @@ public class StoreVerificationController {
     private final ListPendingApplications listPendingApplications;
     private final ReviewStoreApplication reviewStoreApplication;
     private final DownloadApplicationDocument downloadApplicationDocument;
+    private final AdminAudit adminAudit;
 
     @GetMapping("/pending")
     @PreAuthorize("hasAuthority('ROLE_ROOT')")
@@ -47,7 +51,12 @@ public class StoreVerificationController {
             @Valid @RequestBody StoreApplicationReviewRequest request,
             Authentication authentication
     ) {
-        return reviewStoreApplication.execute(applicationId, authentication.getName(), request);
+        StoreApplicationResponse response = reviewStoreApplication.execute(applicationId, authentication.getName(), request);
+        adminAudit.record(authentication, "STORE_APPLICATION_REVIEWED", "STORE_APPLICATION", applicationId, Map.of(
+                "storeId", String.valueOf(response.storeId()),
+                "businessName", response.businessName(),
+                "approved", request.approved()));
+        return response;
     }
 
     @GetMapping("/{applicationId}/documents/{documentId}")

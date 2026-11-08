@@ -1,5 +1,9 @@
 package com.autopartco.backend.operations.plans;
 
+import com.autopartco.backend.operations.auditlog.AdminAudit;
+import java.util.Map;
+
+import org.springframework.security.core.Authentication;
 import java.util.List;
 import java.util.UUID;
 
@@ -31,6 +35,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class PlanAdminController {
     private final PlanService planService;
+    private final AdminAudit adminAudit;
 
     @GetMapping
     @PreAuthorize("hasAuthority('ROLE_ROOT')")
@@ -41,23 +46,30 @@ public class PlanAdminController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasAuthority('ROLE_ROOT')")
-    public PlanResponse create(@Valid @RequestBody PlanRequest request) {
-        return planService.create(request);
+    public PlanResponse create(@Valid @RequestBody PlanRequest request, Authentication authentication) {
+        PlanResponse plan = planService.create(request);
+        adminAudit.record(authentication, "PLAN_CREATED", "PLAN", plan.id(), Map.of("code", plan.code(), "name", plan.name()));
+        return plan;
     }
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_ROOT')")
     public PlanResponse update(
             @PathVariable UUID id,
-            @Valid @RequestBody PlanRequest request
+            @Valid @RequestBody PlanRequest request,
+            Authentication authentication
     ) {
-        return planService.update(id, request);
+        PlanResponse plan = planService.update(id, request);
+        adminAudit.record(authentication, "PLAN_UPDATED", "PLAN", plan.id(),
+                Map.of("code", plan.code(), "monthlyPriceCop", plan.monthlyPriceCop(), "enabled", plan.enabled()));
+        return plan;
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("hasAuthority('ROLE_ROOT')")
-    public void disable(@PathVariable UUID id) {
+    public void disable(@PathVariable UUID id, Authentication authentication) {
         planService.disable(id);
+        adminAudit.record(authentication, "PLAN_DISABLED", "PLAN", id, Map.of());
     }
 }

@@ -101,6 +101,26 @@ export function createMockAuthService(): AuthService {
       return session
     },
 
+    // Google entra directo; Facebook pide completar datos la primera vez (como una cuenta nueva real).
+    async socialLogin(provider, _token, registration) {
+      await simulateLatency()
+      const email = provider === 'google' ? 'cliente.google@autopartco.test' : 'cliente.facebook@autopartco.test'
+      if (provider === 'facebook' && !registration) {
+        throw new ApiError('Completa tus datos para crear tu cuenta.', {
+          status: 409,
+          code: 'SOCIAL_REGISTRATION_REQUIRED',
+          details: { email, name: 'Camila', surname: 'Rojas' },
+        })
+      }
+      const session: Session = { user: { name: registration?.name || nameFromEmail(email), email }, roles: ['ROLE_CUSTOMER'], simulated: true }
+      try {
+        window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session.user))
+      } catch {
+        // Sin almacenamiento disponible la sesión simulada dura hasta recargar.
+      }
+      return session
+    },
+
     async logout() {
       await simulateLatency(250)
       try {
