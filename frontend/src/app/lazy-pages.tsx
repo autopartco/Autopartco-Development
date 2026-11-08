@@ -67,4 +67,6 @@ export const AdminSearchesPage = lazy(() => import('@/features/admin/pages/searc
 export const AdminOverviewPage = lazy(() => import('@/features/admin/pages/overview-page'))
 export const AdminPlansPage = lazy(() => import('@/features/admin/pages/plans-page'))
 export const AdminCatalogPage = lazy(() => import('@/features/admin/pages/catalog-page'))
+export const AdminAuditPage = lazy(() => import('@/features/admin/pages/audit-page'))
+export const AdminStatsPage = lazy(() => import('@/features/admin/pages/stats-page'))
 export const PortalApplicationPage = lazy(() => import('@/features/portal/pages/application-page'))

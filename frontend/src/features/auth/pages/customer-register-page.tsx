@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent } from 'react'
-import { Link } from 'react-router'
+import { Link, useNavigate } from 'react-router'
 import { FormAlert } from '@/components/common/form-fields'
 import { Button } from '@/components/ui/button'
 import { UnsavedChangesDialog } from '@/components/common/unsaved-changes-dialog'
@@ -12,6 +12,8 @@ import type { RegistrationResult } from '../api/types'
 import { AccountFields } from '../components/account-fields'
 import { ACCOUNT_FIELDS, focusFirstError, readAccount, readPasswordConfirm, validateAccount } from '../lib/account'
 import { AuthShell, SimulatedNotice } from '../components/auth-shell'
+import { SocialLogin } from '../components/social-login'
+import { setSession } from '../session-store'
 import { CheckEmail } from '../components/check-email'
 import type { FieldErrors } from '../lib/validation'
 
@@ -25,6 +27,7 @@ const FIELD_BY_CODE: Record<string, string> = {
 
 /** `/registro/cliente`: `POST /auth/register` con los campos de `RegisterRequest`. */
 export default function CustomerRegisterPage() {
+  const navigate = useNavigate()
   const [errors, setErrors] = useState<FieldErrors>({})
   const [formError, setFormError] = useState<string>()
   const [result, setResult] = useState<RegistrationResult>()
@@ -86,6 +89,14 @@ export default function CustomerRegisterPage() {
           </Button>
         </CheckEmail>
       ) : (
+        <>
+        <SocialLogin
+          mode="register"
+          onSession={(social) => {
+            setSession(social)
+            navigate('/', { replace: true })
+          }}
+        />
         <form noValidate onSubmit={handleSubmit} {...form.formProps} className="flex flex-col gap-6" aria-busy={submitting || undefined}>
           {formError ? <FormAlert ref={alertRef} title={formError} /> : null}
           <p className="text-sm text-muted-foreground">Todos los campos son obligatorios.</p>
@@ -104,6 +115,7 @@ export default function CustomerRegisterPage() {
           <SimulatedNotice />
           <UnsavedChangesDialog blocker={blocker} />
         </form>
+        </>
       )}
     </AuthShell>
   )

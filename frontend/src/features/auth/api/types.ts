@@ -50,11 +50,36 @@ export interface VerifyEmailResult {
   message: string
 }
 
+/** Proveedores de ingreso social (`POST /auth/social/{provider}`). */
+export type SocialProvider = 'google' | 'facebook'
+
+/** Datos que pide el alta con proveedor social (`SocialLoginRequest.Registration`). */
+export interface SocialRegistration {
+  name?: string
+  surname?: string
+  identification: string
+  /** `AAAA-MM-DD`. */
+  dateBirth: string
+  numberPhone: string
+}
+
+/** `details` de 409 `SOCIAL_REGISTRATION_REQUIRED`: datos del proveedor para prellenar. */
+export interface SocialPrefill {
+  email: string
+  name: string | null
+  surname: string | null
+}
+
 export interface AuthService {
   readonly simulated: boolean
   /** Sesión que se puede recuperar al cargar la página: la simulada de sessionStorage o la cookie de refresh (http). */
   restore(): Session | undefined | Promise<Session | undefined>
   login(input: LoginInput): Promise<Session>
+  /**
+   * Canjea el token del proveedor. 409 `SOCIAL_REGISTRATION_REQUIRED` (cuenta nueva: repetir con `registration`),
+   * 409 `SOCIAL_LINK_REQUIRED` (el correo ya tiene cuenta: ingresar con contraseña), 404 `SOCIAL_PROVIDER_DISABLED`.
+   */
+  socialLogin(provider: SocialProvider, token: string, registration?: SocialRegistration): Promise<Session>
   logout(): Promise<void>
   register(input: CustomerRegistration): Promise<RegistrationResult>
   verifyEmail(token: string): Promise<VerifyEmailResult>
