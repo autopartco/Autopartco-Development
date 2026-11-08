@@ -108,7 +108,7 @@ export function LocationPicker({ className }: { className?: string }) {
     }
   }
 
-  async function useMyLocation() {
+  async function locateMe() {
     if (locating) return
     setLocating(true)
     const outside = 'Solo mostramos almacenes en Colombia'
@@ -127,8 +127,8 @@ export function LocationPicker({ className }: { className?: string }) {
         toast.error(outside)
         return
       }
-      const dLat = 0.045
-      const dLng = 0.045 / Math.cos((point.lat * Math.PI) / 180)
+      const dLat = 0.45
+      const dLng = 0.45 / Math.cos((point.lat * Math.PI) / 180)
       setMapArea({
         label: place.label,
         precision: 'exact',
@@ -234,7 +234,7 @@ export function LocationPicker({ className }: { className?: string }) {
                 <>
                   <button
                     type="button"
-                    onClick={useMyLocation}
+                    onClick={locateMe}
                     disabled={locating}
                     aria-busy={locating}
                     className="flex min-h-11 w-full items-center gap-2 rounded-md px-2.5 text-left text-sm font-medium text-ap-ink outline-none hover:bg-ap-paper focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-60"

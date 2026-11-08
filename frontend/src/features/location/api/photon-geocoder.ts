@@ -11,6 +11,10 @@ interface PhotonProperties {
   osm_type?: string
   osm_id?: number | string
   osm_value?: string
+  osm_key?: string
+  district?: string
+  locality?: string
+  suburb?: string
   type?: string
   name?: string
   city?: string
@@ -67,6 +71,17 @@ function composeLabel(props: PhotonProperties, withCountry: boolean): string {
   return parts.join(', ')
 }
 
+/** Etiqueta corta del área: como máximo dos partes (nombre + ciudad o departamento). */
+function shortLabel(props: PhotonProperties, kind: Kind): string {
+  const name = props.name?.trim()
+  if (kind === 'country' || kind === 'state') return name ?? ''
+  const parent = (props.city ?? props.county ?? props.state)?.trim()
+  if (!name) return parent ?? ''
+  return parent && parent.toLowerCase() !== name.toLowerCase() ? `${name}, ${parent}` : name
+}
+
+const KIND_ORDER: Kind[] = ['country', 'state', 'city', 'district', 'locality']
+
 function isFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value)
 }
@@ -92,15 +107,20 @@ export function parsePhotonFeatures(json: unknown): PlaceSuggestion[] {
     const id = props.osm_type && props.osm_id !== undefined ? `${props.osm_type}:${props.osm_id}` : `${lat},${lng}`
     if (seen.has(id)) continue
     seen.add(id)
+    const kind = kindOf(props)
     const area: MapArea = {
-      label: composeLabel(props, false) || label,
+      label: shortLabel(props, kind) || label,
       precision: 'zone',
       bounds,
       center: { lat, lng },
     }
-    results.push({ id, label, kind: kindOf(props), area })
+    results.push({ id, label, kind, area })
   }
+  // Orden estable por tipo: país, departamento, ciudad, barrio, localidad.
   return results
+    .map((item, index) => ({ item, index }))
+    .sort((a, b) => KIND_ORDER.indexOf(a.item.kind) - KIND_ORDER.indexOf(b.item.kind) || a.index - b.index)
+    .map(({ item }) => item)
 }
 
 function normalize(text: string): string {
@@ -138,5 +158,11 @@ export async function reverseInColombia(point: GeoPoint): Promise<{ label: strin
   const features = ((await response.json()) as { features?: PhotonFeature[] }).features
   const props = features?.[0]?.properties
   if (!props || props.countrycode !== 'CO') return null
-  return { label: composeLabel(props, false) || 'Colombia' }
+  const isStreet = props.osm_key === 'highway' || props.type === 'street'
+  const city = props.city?.trim()
+  const first = [props.district, props.locality, props.suburb, props.city, isStreet ? undefined : props.name]
+    .map((part) => part?.trim())
+    .find(Boolean)
+  const label = first && city && city.toLowerCase() !== first.toLowerCase() ? `${first}, ${city}` : (first ?? city)
+  return { label: label || props.state?.trim() || 'Colombia' }
 }

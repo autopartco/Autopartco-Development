@@ -9,7 +9,7 @@ Entra:
 - Geolocalización del navegador, aceptada solo si cae en Colombia.
 - Con ubicación exacta: marcador del usuario + sedes más cercanas (máx. 5).
 - Sin ubicación exacta: 3–4 sedes aleatorias dentro de la zona elegida, distintas en cada carga.
-- Lista accesible equivalente bajo el mapa (nombre, zona, distancia si existe, enlace a la tienda).
+- Información de cada almacén en un popup del marcador (hover, toque o foco): nombre, zona, distancia si existe y enlace a la tienda. Sin lista bajo el mapa; la lista solo aparece si el mapa no puede mostrarse.
 
 No entra: rutas, clustering, heatmaps, cambios de esquema, otros países, ubicación en checkout, servidores propios de teselas o geocodificación.
 
@@ -127,7 +127,7 @@ export function reverseInColombia(point: GeoPoint): Promise<{ label: string } | 
 | MapLibre GL JS + OpenFreeMap | Gratis, sin clave ni cuenta; vectorial, estilo editable. | Google Maps: exige facturación; sin clave sale oscurecido y sin estilo. Leaflet + teselas raster OSM: la política de uso de tile.openstreetmap.org no admite producción y no se puede recolorear. |
 | Estilo propio en `public/map/` derivado de Positron | Paleta del sistema de diseño versionada en el repo. | Positron sin cambios (grises ajenos a la paleta). |
 | Colores del estilo: tierra `#FFFFFF`, agua `#F4F3EF`, vías `#DDE0E2` (principales `#B9C0C5`), límites `#B9C0C5` discontinuo, etiquetas solo de lugares en `#626A70`, sin POI, edificios ni relieve | "Dibujo sin color" dentro de §4.1. | Mapa con colores o satelital. |
-| Sedes: `maplibregl.Marker` con elemento HTML, chincheta grafito `#202326` con número; usuario: punto `ap-red` con halo | El rojo marca lo propio (§4.3); el estado no depende del color: lista numerada equivalente. | Capas de símbolos (peor accesibilidad y foco). |
+| Sedes: `maplibregl.Marker` con elemento HTML, `<button>` con punto grafito `#202326` (activo en `ap-red` + `aria-expanded`) y popup con la información; usuario: punto `ap-red` con halo | El rojo marca lo propio (§4.3); el estado no depende solo del color (`aria-expanded`, popup accesible por teclado). | Capas de símbolos (peor accesibilidad y foco). |
 | Photon con filtro `countrycode === 'CO'` + bbox | Autocompletado gratuito; cubre país/departamento/ciudad/barrio. | Nominatim para autocompletar (su política lo prohíbe). Lista DIVIPOLA propia (sin geometría). |
 | Geolocalización confirmada con `reverseInColombia` | El bbox de Colombia incluye zonas de países vecinos. | Solo comprobar el bbox. |
 | Aleatorio en backend (`ORDER BY random()`) | La rotación no expone todas las sedes de la zona. | Traer todas y muestrear en el cliente. |
@@ -166,7 +166,7 @@ Rama: `feature/mapa-cobertura` desde `develop` (worktree `C:\Development\Autopar
 ### Tarea 5 — `CoverageMap` en el inicio
 - Modelo: Sonnet (Opus si la integración falla tras 2 intentos). Agente: `frontend`.
 - Archivos: `features/location/components/coverage-map.tsx` (nuevo), `features/marketplace/home/home-hero.tsx` (sustituye `NearbyStoresPanel`).
-- Contexto: misma tarjeta actual (`rounded-xl border-ap-line bg-ap-white`, `ap-index` "Cobertura / {label}", título "Almacenes cerca de {label}"). Mapa 4:3 (≥240 px alto en móvil) con `MAP_STYLE_URL`, `cooperativeGestures`, `dragRotate: false`, `pitchWithRotate: false`, `NavigationControl({ showCompass: false })`, `AttributionControl({ compact: true })`, `fitBounds` a sedes + usuario con padding. Marcadores de §4; cada marcador es un `<a>` a `storeProductsPath(storeId)` con `aria-label` "{n}. {storeName}". Bajo el mapa, lista numerada coincidente (reutiliza el `<ol>` actual). Leyenda: "Tu ubicación" solo con `exact`; con `zone`: "Muestra de almacenes en {label}; cambia en cada visita". Estados: carga (skeleton del mapa), error de datos (`ErrorState` con reintentar), error de teselas/WebGL (solo lista), vacío ("Aún no hay almacenes en {label}"). `prefers-reduced-motion`: `fitBounds` sin animación. Destruir el mapa al desmontar.
+- Contexto: misma tarjeta actual (`rounded-xl border-ap-line bg-ap-white`, `ap-index` "Cobertura / {label}", título "Almacenes cerca de {label}"). Mapa 4:3 (≥240 px alto en móvil) con `MAP_STYLE_URL`, `cooperativeGestures`, `dragRotate: false`, `pitchWithRotate: false`, `NavigationControl({ showCompass: false })`, `AttributionControl({ compact: true })`, `fitBounds` a sedes + usuario con padding. Marcadores de §4 como `<button>`; popup (`maplibregl.Popup`, clase `ap-map-popup`) con tienda, zona/ciudad, distancia si existe y enlace "Ver repuestos"; se abre con hover, click/tap (fijado), foco; Esc cierra; Tab del marcador al enlace. Bajo el mapa: "{n} almacenes en el mapa". Leyenda: "Tu ubicación" solo con `exact`; con `zone`: "Muestra de almacenes en {label}; cambia en cada visita". Estados: carga (skeleton del mapa), error de datos (`ErrorState` con reintentar), error de teselas/WebGL (lista de respaldo), vacío ("Aún no hay almacenes en {label}"). `prefers-reduced-motion`: `fitBounds` sin animación. Destruir el mapa al desmontar.
 - Aceptación: en el navegador, `/` muestra el mapa monocromo con 3–4 marcadores en zona y, con geolocalización, el marcador del usuario + cercanos; lista y marcadores coinciden; atribución visible; sin errores de consola; contraste AA; correcto a 375 px y en escritorio; §17 y §20.15 cumplidos.
 
 ### Tarea 6 — Limpieza
