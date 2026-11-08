@@ -21,7 +21,7 @@ import { QueryBoundary } from '../components/query-boundary'
 import { StatusBadge, StockQuantity } from '../components/status-badge'
 import { UsageMeter } from '../components/usage-meter'
 import { usePortal } from '../context'
-import { focusMain, usePublishProduct, useStoreQuery } from '../hooks'
+import { branchParamValue, focusMain, useBranchSearchParam, usePublishProduct, useStoreQuery } from '../hooks'
 import { actionErrorMessage } from '../lib/errors'
 import { humanizeCode } from '../lib/labels'
 import { BULK_DELETE_LIMIT_TEXT, BULK_DELETE_MAX, BULK_DONE, BULK_MAX, isLowStock, minStockOf, skipReason } from '../lib/product-bulk'
@@ -112,7 +112,8 @@ function ProductsView({ rows }: { rows: ProductRow[] }) {
   const q = params.get('q') ?? ''
   const estado = params.get('estado') ?? ''
   const stock = params.get('stock') ?? ''
-  const sucursal = params.get('sucursal') ?? ''
+  // Sin `?sucursal=` sigue a la sucursal activa de la barra; «Todas» se guarda como `sucursal=todas`.
+  const sucursal = useBranchSearchParam()
   const categoria = params.get('categoria') ?? ''
   const fabricante = params.get('fabricante') ?? ''
   const imagenes = params.get('imagenes') ?? ''
@@ -369,7 +370,7 @@ function ProductsView({ rows }: { rows: ProductRow[] }) {
             placeholder="Todas"
             options={branches.map(([value, label]) => ({ value, label }))}
             value={sucursal}
-            onChange={(event) => setFilter('sucursal', event.target.value)}
+            onChange={(event) => setFilter('sucursal', branchParamValue(event.target.value))}
           />
         ) : null}
         <SelectField

@@ -38,6 +38,17 @@ public class AccountLookup {
         return accountRepository.findById(accountId).map(AccountLookup::toRef);
     }
 
+    /** Cuentas por ID en una sola consulta; los ID inexistentes no aparecen en el mapa. */
+    @Transactional(readOnly = true)
+    public java.util.Map<UUID, AccountRef> findAllByIds(java.util.Collection<UUID> accountIds) {
+        if (accountIds.isEmpty()) {
+            return java.util.Map.of();
+        }
+        return accountRepository.findAllWithPersonByIdIn(accountIds).stream()
+                .map(AccountLookup::toRef)
+                .collect(java.util.stream.Collectors.toMap(AccountRef::accountId, ref -> ref));
+    }
+
     @Transactional(readOnly = true)
     public boolean existsByEmail(String email) {
         return accountRepository.existsByEmailIgnoreCase(email);

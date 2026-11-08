@@ -35,7 +35,7 @@ function ago(iso: string, now: number): string {
  * mostrado y se indica la hora de la última actualización (§20.9, datos desactualizados).
  */
 export function LiveActivity({ initial }: { initial: SalesEvent[] }) {
-  const { storeId, can } = usePortal()
+  const { storeId, can, branchId } = usePortal()
   const [rootRef, inView] = useInView<HTMLDivElement>()
   const [events, setEvents] = useState(initial.slice(0, LIMIT))
   const [paused, setPaused] = useState(false)
@@ -52,7 +52,7 @@ export function LiveActivity({ initial }: { initial: SalesEvent[] }) {
     const timer = window.setInterval(async () => {
       if (document.hidden) return
       try {
-        const next = (await (await getSalesService()).activity(storeId)).slice(0, LIMIT)
+        const next = (await (await getSalesService()).activity(storeId, branchId)).slice(0, LIMIT)
         if (cancelled) return
         const added = next.filter((event) => !seen.current.has(event.id))
         added.forEach((event) => seen.current.add(event.id))

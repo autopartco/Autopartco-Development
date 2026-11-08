@@ -81,6 +81,7 @@ class StoreApplicationsReviewHistoryTest {
         lenient().when(accountLookup.findById(applicantId)).thenReturn(Optional.of(applicant));
         lenient().when(accountLookup.findByEmail(ROOT_EMAIL)).thenReturn(Optional.of(root));
         lenient().when(documentRepository.findAllOfApplication(any())).thenReturn(List.of());
+        lenient().when(documentRepository.findAllOfApplications(any())).thenReturn(List.of());
     }
 
     @Test
@@ -105,7 +106,7 @@ class StoreApplicationsReviewHistoryTest {
         application.setStatus(StoreApplicationStatus.CONFIGURATION_PENDING);
         application.setReviewedByAccountId(rootId);
         application.setReviewedAt(reviewedAt);
-        when(accountLookup.findById(rootId)).thenReturn(Optional.of(root));
+        when(accountLookup.findAllByIds(any())).thenReturn(java.util.Map.of(applicantId, applicant, rootId, root));
         when(applicationRepository.findHistory(any(), any(), any()))
                 .thenReturn(new PageImpl<>(List.of(application), PageRequest.of(0, 20), 1));
 
@@ -127,7 +128,7 @@ class StoreApplicationsReviewHistoryTest {
                 .reviewedByAccountId(rootId)
                 .reviewedAt(LocalDateTime.of(2026, 10, 1, 9, 0))
                 .build();
-        when(accountLookup.findById(rootId)).thenReturn(Optional.empty());
+        when(accountLookup.findAllByIds(any())).thenReturn(java.util.Map.of(applicantId, applicant));
         when(applicationRepository.findHistory(any(), any(), any()))
                 .thenReturn(new PageImpl<>(List.of(application, reviewedByDeleted), PageRequest.of(0, 20), 2));
 

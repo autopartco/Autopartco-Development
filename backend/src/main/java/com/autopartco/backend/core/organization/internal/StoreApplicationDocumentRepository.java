@@ -1,5 +1,6 @@
 package com.autopartco.backend.core.organization.internal;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,6 +18,14 @@ public interface StoreApplicationDocumentRepository
             order by document.documentType asc
             """)
     List<StoreApplicationDocument> findAllOfApplication(@Param("applicationId") UUID applicationId);
+
+    /** Documentos de varias solicitudes en una sola consulta (historial). */
+    @Query("""
+            select document from StoreApplicationDocument document
+            where document.application.id in :applicationIds
+            order by document.documentType asc
+            """)
+    List<StoreApplicationDocument> findAllOfApplications(@Param("applicationIds") Collection<UUID> applicationIds);
 
     @Query("""
             select document from StoreApplicationDocument document
