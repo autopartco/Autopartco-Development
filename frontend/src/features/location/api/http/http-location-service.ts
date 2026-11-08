@@ -1,5 +1,18 @@
 import { getMarketplaceService } from '@/features/marketplace/api/marketplace-service'
-import type { LocationService } from '../types'
+import { apiRequest } from '@/lib/api'
+import type { LocationService, MapBranch } from '../types'
+
+interface MapBranchDto {
+  storeId: string
+  storeName: string
+  branchId: string
+  branchName: string
+  area: string | null
+  city: string
+  latitude: number
+  longitude: number
+  distanceKm: number | null
+}
 
 /**
  * Implementación contra el backend real. Hoy no hay endpoints públicos de ciudades
@@ -15,7 +28,7 @@ import type { LocationService } from '../types'
  */
 export function createHttpLocationService(): LocationService {
   return {
-    capabilities: { citySelection: false, distances: false, geolocation: false },
+    capabilities: { citySelection: false, distances: false, geolocation: true },
 
     async listCities() {
       return []
@@ -25,6 +38,35 @@ export function createHttpLocationService(): LocationService {
       const marketplace = await getMarketplaceService()
       const stores = await marketplace.listStores()
       return { stores: stores.map((store) => ({ key: store.id, store })) }
+    },
+
+    async getMapBranches(area) {
+      const { bounds, precision, user } = area
+      const exact = precision === 'exact' && user !== undefined
+      const params = new URLSearchParams({
+        south: String(bounds.south),
+        west: String(bounds.west),
+        north: String(bounds.north),
+        east: String(bounds.east),
+        limit: exact ? '5' : '4',
+      })
+      if (exact) {
+        params.set('lat', String(user.lat))
+        params.set('lng', String(user.lng))
+      }
+      const rows = await apiRequest<MapBranchDto[]>(`/marketplace/branches/map?${params}`)
+      return rows.map(
+        (row): MapBranch => ({
+          key: row.branchId,
+          storeId: row.storeId,
+          storeName: row.storeName,
+          branchName: row.branchName,
+          area: row.area ?? undefined,
+          city: row.city,
+          point: { lat: row.latitude, lng: row.longitude },
+          distanceKm: row.distanceKm ?? undefined,
+        }),
+      )
     },
   }
 }

@@ -1,8 +1,9 @@
-import { useMemo, useSyncExternalStore } from 'react'
+import { useMemo, useState, useSyncExternalStore } from 'react'
 import { useAsync } from '@/lib/use-async'
 import { getLocationService } from './api/location-service'
-import type { LocationService } from './api/types'
+import type { LocationService, MapArea } from './api/types'
 import { getSelectedCityId, subscribeSelectedCity } from './city-store'
+import { DEFAULT_MAP_AREA, getMapArea, subscribeMapArea } from './location-store'
 
 function useLocation<T>(key: string, run: (service: LocationService) => Promise<T>) {
   return useAsync(key, () => getLocationService().then(run))
@@ -43,4 +44,22 @@ export function useStoreDistances(): ReadonlyMap<string, number> {
     }
     return distances
   }, [nearby])
+}
+
+/** Área de mapa elegida (o Colombia completa por defecto). */
+export function useMapArea(): MapArea {
+  return useSyncExternalStore(subscribeMapArea, getMapArea, () => DEFAULT_MAP_AREA)
+}
+
+/**
+ * Sedes para el mapa del área elegida. El nonce por montaje hace que, en zona,
+ * la muestra aleatoria cambie en cada visita.
+ */
+export function useMapBranches() {
+  const area = useMapArea()
+  const [nonce] = useState(() => crypto.randomUUID())
+  const { south, west, north, east } = area.bounds
+  const user = area.precision === 'exact' ? area.user : undefined
+  const key = `location:map:${south},${west},${north},${east}:${area.precision}:${user ? `${user.lat},${user.lng}` : '-'}:${nonce}`
+  return useLocation(key, (service) => service.getMapBranches(area))
 }
