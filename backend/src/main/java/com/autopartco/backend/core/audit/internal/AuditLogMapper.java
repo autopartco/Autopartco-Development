@@ -63,4 +63,14 @@ public class AuditLogMapper {
                 ))
                 .build();
     }
+
+    public AuditLog toEvent(UUID accountId, String action, String entityType, UUID entityId, Map<String, Object> metadata) {
+        return AuditLog.builder()
+                .accountId(accountId)
+                .action(action)
+                .entityType(entityType)
+                .entity(entityId)
+                .metadata(metadata == null ? Map.of() : metadata)
+                .build();
+    }
 }

@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -18,6 +19,8 @@ import com.autopartco.backend.core.identity.internal.AccountSessionService;
 import com.autopartco.backend.core.identity.internal.AccountUnlockService;
 import com.autopartco.backend.core.identity.internal.EmailVerificationService;
 import com.autopartco.backend.core.identity.internal.LoginService;
+import com.autopartco.backend.core.identity.internal.social.SocialLoginService;
+import com.autopartco.backend.core.identity.internal.social.SocialProvider;
 import com.autopartco.backend.core.identity.internal.PasswordRecoveryService;
 import com.autopartco.backend.core.identity.internal.RegistrationService;
 import com.autopartco.backend.core.identity.internal.SessionRefreshService;
@@ -42,6 +45,7 @@ import lombok.AllArgsConstructor;
 public class AuthController {
     private final RegistrationService registrationService;
     private final LoginService loginService;
+    private final SocialLoginService socialLoginService;
     private final EmailVerificationService emailVerificationService;
     private final AccountUnlockService accountUnlockService;
     private final AccountSessionService accountSessionService;
@@ -57,6 +61,18 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
         LoginResponse tokens = loginService.login(request, httpRequest.getRemoteAddr(), httpRequest.getHeader("User-Agent"));
+        return withRefreshCookie(tokens);
+    }
+
+    /** Ingreso con Google o Facebook ({@code provider} = {@code google} | {@code facebook}). Ver {@link SocialLoginService}. */
+    @PostMapping("/social/{provider}")
+    public ResponseEntity<LoginResponse> socialLogin(
+            @PathVariable String provider,
+            @Valid @RequestBody SocialLoginRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        LoginResponse tokens = socialLoginService.login(
+                SocialProvider.fromPath(provider), request, httpRequest.getRemoteAddr(), httpRequest.getHeader("User-Agent"));
         return withRefreshCookie(tokens);
     }
 
