@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -42,6 +43,7 @@ public class TrafficController {
     private final Clock clock;
     private final Map<String, Deque<Instant>> calls = new ConcurrentHashMap<>();
 
+    @Autowired
     public TrafficController(TrafficRecorder trafficRecorder, AccountLookup accountLookup) {
         this(trafficRecorder, accountLookup, Clock.systemUTC());
     }
