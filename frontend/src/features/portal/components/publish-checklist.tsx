@@ -8,9 +8,9 @@ import { checklistSummary, missingCount, type ChecklistItem, type ChecklistState
 const STATE_TEXT: Record<ChecklistState, string> = { ready: 'Listo', missing: 'Falta', warn: 'Aviso' }
 
 function StateIcon({ state }: { state: ChecklistState }) {
-  if (state === 'ready') return <CheckCircle2Icon className="mt-0.5 size-5 shrink-0 text-stock" aria-hidden />
-  if (state === 'warn') return <TriangleAlertIcon className="mt-0.5 size-5 shrink-0 text-stock-low" aria-hidden />
-  return <CircleDashedIcon className="mt-0.5 size-5 shrink-0 text-destructive" aria-hidden />
+  if (state === 'ready') return <CheckCircle2Icon className="mt-0.5 size-5 shrink-0 text-ap-success" aria-hidden />
+  if (state === 'warn') return <TriangleAlertIcon className="mt-0.5 size-5 shrink-0 text-ap-warning" aria-hidden />
+  return <CircleDashedIcon className="mt-0.5 size-5 shrink-0 text-ap-danger" aria-hidden />
 }
 
 function ItemList({ items, onGoTo }: { items: ChecklistItem[]; onGoTo: (step: StepId) => void }) {
@@ -20,11 +20,11 @@ function ItemList({ items, onGoTo }: { items: ChecklistItem[]; onGoTo: (step: St
         <li key={item.id} className="flex items-start gap-2.5">
           <StateIcon state={item.state} />
           <div className="flex min-w-0 flex-1 flex-col text-sm">
-            <span className={cn('font-medium', item.state === 'ready' && 'text-muted-foreground')}>
+            <span className={cn('font-medium text-ap-ink', item.state === 'ready' && 'text-ap-muted')}>
               <span className="sr-only">{STATE_TEXT[item.state]}: </span>
               {item.label}
             </span>
-            {item.detail ? <span className="text-xs text-muted-foreground">{item.detail}</span> : null}
+            {item.detail ? <span className="text-xs text-ap-muted">{item.detail}</span> : null}
           </div>
           {item.state !== 'ready' ? (
             <Button type="button" variant="link" size="sm" className="h-8 shrink-0 px-1 pointer-coarse:h-11" onClick={() => onGoTo(item.step)}>
@@ -48,9 +48,9 @@ export function PublishChecklist({ items, onGoTo, className }: { items: Checklis
   const open = wide || expanded
   const ok = missingCount(items) === 0 && !items.some((item) => item.id === 'subscription')
   return (
-    <aside aria-label="Qué falta para publicar" className={cn('rounded-xl bg-card ring-1 ring-foreground/10', className)}>
-      <div className="flex items-center gap-2 p-3">
-        <p role="status" className={cn('flex-1 text-sm font-semibold', ok ? 'text-stock' : 'text-foreground')}>
+    <aside aria-label="Qué falta para publicar" className={cn('border-l-2 border-ap-graphite bg-ap-white', className)}>
+      <div className="flex items-center gap-2 py-2 pr-1 pl-3">
+        <p role="status" className={cn('flex-1 text-sm font-semibold', ok ? 'text-ap-success' : 'text-ap-ink')}>
           {checklistSummary(items)}
         </p>
         {wide ? null : (
@@ -60,9 +60,9 @@ export function PublishChecklist({ items, onGoTo, className }: { items: Checklis
           </Button>
         )}
       </div>
-      <div id={bodyId} hidden={!open} className="border-t border-border p-3">
+      <div id={bodyId} hidden={!open} className="border-t border-ap-line py-3 pl-3">
         <ItemList items={items} onGoTo={onGoTo} />
-        <p className="mt-3 text-xs text-muted-foreground">Puedes guardar un borrador aunque falten cosas; solo publicar las exige.</p>
+        <p className="mt-3 text-xs text-ap-muted">Puedes guardar un borrador aunque falten cosas; solo publicar las exige.</p>
       </div>
     </aside>
   )
@@ -71,8 +71,8 @@ export function PublishChecklist({ items, onGoTo, className }: { items: Checklis
 /** Versión extensa para el paso de revisión (sin colapsar). */
 export function ChecklistDetail({ items, onGoTo }: { items: ChecklistItem[]; onGoTo: (step: StepId) => void }) {
   return (
-    <section aria-label="Requisitos para publicar" className="flex flex-col gap-3 rounded-xl bg-card p-4 ring-1 ring-foreground/10">
-      <p role="status" className="text-sm font-semibold">
+    <section aria-label="Requisitos para publicar" className="flex flex-col gap-3 border-l-2 border-ap-graphite py-1 pl-4">
+      <p role="status" className="text-sm font-semibold text-ap-ink">
         {checklistSummary(items)}
       </p>
       <ItemList items={items} onGoTo={onGoTo} />

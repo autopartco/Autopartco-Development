@@ -1,6 +1,7 @@
 /*
- * Estilos mínimos de Tom Select para `ManufacturerCombobox`, hechos con los tokens del tema
- * (claro y oscuro) en lugar del CSS por defecto de la librería.
+ * Estilos mínimos de Tom Select para `ManufacturerCombobox`, hechos con los tokens `--ap-*`
+ * (mismo campo que `INPUT_CLASS`: borde visible, radio de control 6px; sombra solo en el
+ * desplegable flotante) en lugar del CSS por defecto de la librería.
  */
 /* El <select> original queda oculto a la vista pero accesible (Tom Select lo marca con esta clase). */
 .ts-hidden-accessible {
@@ -31,12 +32,17 @@
   min-height: 2.75rem;
   padding: 0.25rem 0.75rem;
   border: 1px solid var(--input);
-  border-radius: 0.5rem;
-  background: var(--card);
-  color: var(--foreground);
+  border-radius: var(--ap-radius-control);
+  background: var(--ap-white);
+  color: var(--ap-ink);
   font-size: 1rem;
   cursor: text;
   transition: border-color 0.15s;
+}
+
+.ts-wrapper:not(.disabled):not(.locked) .ts-control:hover,
+.ts-wrapper.focus .ts-control {
+  border-color: var(--ap-graphite);
 }
 
 @media (min-width: 40rem) {
@@ -46,7 +52,7 @@
 }
 
 .ts-wrapper.is-invalid .ts-control {
-  border-color: var(--destructive);
+  border-color: var(--ap-danger);
 }
 
 .ts-wrapper.focus .ts-control {
@@ -74,7 +80,7 @@
 }
 
 .ts-control > input::placeholder {
-  color: var(--muted-foreground);
+  color: var(--ap-muted);
 }
 
 .ts-wrapper.input-hidden .ts-control > input {
@@ -122,11 +128,11 @@
   width: 100%;
   margin-top: 0.25rem;
   overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: 0.5rem;
-  background: var(--popover);
-  color: var(--popover-foreground);
-  box-shadow: 0 8px 24px rgb(0 0 0 / 0.16);
+  border: 1px solid var(--ap-line-strong);
+  border-radius: var(--ap-radius-control);
+  background: var(--ap-white);
+  color: var(--ap-ink);
+  box-shadow: var(--ap-shadow-overlay);
 }
 
 .ts-dropdown-content {
@@ -143,7 +149,7 @@
   align-items: center;
   min-height: 2.5rem;
   padding: 0.5rem 0.75rem;
-  border-radius: 0.375rem;
+  border-radius: var(--ap-radius-badge);
 }
 
 .ts-dropdown .option,
@@ -156,12 +162,13 @@
 }
 
 .ts-dropdown .no-results {
-  color: var(--muted-foreground);
+  color: var(--ap-muted);
 }
 
 .ts-dropdown .active {
-  background: var(--accent);
-  color: var(--accent-foreground);
+  background: var(--ap-paper);
+  color: var(--ap-ink);
+  box-shadow: inset 2px 0 0 var(--ap-graphite);
 }
 
 .ts-dropdown .selected {
@@ -170,11 +177,11 @@
 
 .ts-pending {
   margin-left: 0.5rem;
-  padding: 0.0625rem 0.5rem;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--muted);
-  color: var(--muted-foreground);
+  padding: 0.0625rem 0.375rem;
+  border: 1px solid var(--ap-line-strong);
+  border-radius: var(--ap-radius-badge);
+  background: var(--ap-paper);
+  color: var(--ap-ink);
   font-size: 0.75rem;
   font-weight: 600;
   white-space: nowrap;

@@ -46,7 +46,7 @@ export function Logo({ tone = 'light', to = '/', label = 'Autopartco, ir al inic
           dark ? 'text-white' : 'text-foreground',
         )}
       >
-        Autopart<span className={dark ? 'text-brand-on-asphalt' : 'text-brand'}>co</span>
+        Autopart<span className={dark ? 'text-ap-red-on-dark' : 'text-ap-red'}>co</span>
       </span>
     </Link>
   )

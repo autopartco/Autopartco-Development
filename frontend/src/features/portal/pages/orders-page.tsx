@@ -57,15 +57,15 @@ function OrdersView({ rows }: { rows: OrderSummary[] }) {
       rowHeader: true,
       sortValue: (row) => row.orderNumber,
       cell: (row) => (
-        <Link to={`${base}/pedidos/${encodeURIComponent(row.saleId)}`} className="font-semibold tabular-nums underline-offset-4 hover:underline">
+        <Link to={`${base}/pedidos/${encodeURIComponent(row.saleId)}`} className="ap-ref inline-flex min-h-11 items-center font-semibold text-ap-ink underline-offset-4 hover:underline @max-[40rem]:min-h-0">
           #{row.orderNumber}
         </Link>
       ),
     },
-    { id: 'fecha', header: 'Fecha', sortValue: (row) => row.createdAt, cell: (row) => formatDateTime(row.createdAt) },
+    { id: 'fecha', header: 'Fecha', sortValue: (row) => row.createdAt, cell: (row) => <time dateTime={row.createdAt} className="ap-ref text-ap-muted">{formatDateTime(row.createdAt)}</time> },
     { id: 'cliente', header: 'Cliente', sortValue: (row) => row.customerName ?? '', cell: (row) => row.customerName ?? 'Cliente sin nombre' },
-    { id: 'items', header: 'Unidades', align: 'end', sortValue: (row) => row.itemCount, cell: (row) => row.itemCount },
-    { id: 'total', header: 'Total', align: 'end', sortValue: (row) => row.total, cell: (row) => <span className="font-semibold tabular-nums">{formatCOP(row.total)}</span> },
+    { id: 'items', header: 'Unidades', align: 'end', sortValue: (row) => row.itemCount, cell: (row) => <span className="tabular-nums">{row.itemCount}</span> },
+    { id: 'total', header: 'Total', align: 'end', sortValue: (row) => row.total, cell: (row) => <span className="ap-price">{formatCOP(row.total)}</span> },
     {
       id: 'estado',
       header: 'Estado',
@@ -93,7 +93,7 @@ function OrdersView({ rows }: { rows: OrderSummary[] }) {
   return (
     <div className="flex flex-col gap-5">
       {pending > 0 ? (
-        <p role="status" className="rounded-lg border border-stock-low/30 bg-stock-low/10 p-3 text-sm">
+        <p role="status" className="rounded-lg border border-ap-warning/30 bg-ap-warning-soft p-3 text-sm text-ap-ink">
           <strong className="font-semibold">{pending === 1 ? 'Tienes 1 pedido pendiente.' : `Tienes ${pending} pedidos pendientes.`}</strong> Confírmalos o cancélalos para que el cliente sepa qué pasa.
         </p>
       ) : null}
@@ -132,6 +132,7 @@ function OrdersView({ rows }: { rows: OrderSummary[] }) {
 
 /** `/portal/:storeId/pedidos`: pedidos recibidos con filtro por estado. */
 export default function PortalOrdersPage() {
+  const { storeId, can } = usePortal()
   const orders = useStoreQuery('orders', async (id) => (await getOrderService()).list(id))
   return (
     <>
@@ -144,7 +145,13 @@ export default function PortalOrdersPage() {
               icon={<ClipboardListIcon />}
               title="Todavía no has recibido pedidos"
               description="Cuando alguien compre uno de tus productos publicados, el pedido aparecerá aquí para que lo confirmes y lo envíes."
-            />
+            >
+              {can('PRODUCT_READ') ? (
+                <Button variant="outline" className="h-11 px-4" nativeButton={false} render={<Link to={`/portal/${encodeURIComponent(storeId)}/productos`} />}>
+                  Revisar mis publicaciones
+                </Button>
+              ) : null}
+            </EmptyState>
           ) : (
             <OrdersView rows={rows} />
           )

@@ -4,16 +4,19 @@ import { cn } from '@/lib/utils'
 import { usePortal } from '../context'
 import { PORTAL_SECTION_GROUPS } from '../lib/sections'
 
-/** Enlaces del portal sobre fondo carbón. El ítem activo lleva barra roja de 2px y `aria-current="page"`. */
+/**
+ * Enlaces del portal sobre grafito (§7.3). El ítem activo lleva fondo tenue, texto blanco y una
+ * línea de acento `ap-red-on-dark` (4.6:1 sobre grafito) a la izquierda, además de `aria-current="page"`.
+ */
 export function PortalNav({ onNavigate }: { onNavigate?: () => void }) {
   const { storeId, can, permissionsReady } = usePortal()
 
   if (!permissionsReady) {
     return (
-      <div className="flex flex-col gap-2 px-3" role="status">
+      <div className="flex flex-col gap-1.5 px-3" role="status">
         <span className="sr-only">Cargando menú…</span>
         {Array.from({ length: 6 }, (_, index) => (
-          <Skeleton key={index} aria-hidden className="h-10 bg-asphalt-line" />
+          <Skeleton key={index} aria-hidden className="h-10 bg-ap-line-on-dark" />
         ))}
       </div>
     )
@@ -27,10 +30,10 @@ export function PortalNav({ onNavigate }: { onNavigate?: () => void }) {
         const headingId = `nav-${group.label}`
         return (
           <div key={group.label} className="flex flex-col gap-1">
-            <p id={headingId} className="label-mono px-3 pb-1 text-asphalt-muted">
+            <p id={headingId} className="ap-index px-3 pb-1">
               {group.label}
             </p>
-            <ul aria-labelledby={headingId} className="flex flex-col gap-0.5">
+            <ul aria-labelledby={headingId} className="flex flex-col">
               {items.map((item) => (
                 <li key={item.to}>
                   <NavLink
@@ -39,13 +42,13 @@ export function PortalNav({ onNavigate }: { onNavigate?: () => void }) {
                     onClick={onNavigate}
                     className={({ isActive }) =>
                       cn(
-                        'relative flex min-h-11 items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors hover:bg-header-hover hover:text-white lg:min-h-10',
-                        'before:absolute before:inset-y-2 before:left-0 before:w-0.5 before:rounded-full before:bg-thread-on-asphalt before:opacity-0 before:transition-opacity',
-                        isActive ? 'bg-header-hover text-white before:opacity-100' : 'text-asphalt-muted',
+                        'relative flex min-h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition-colors duration-150 hover:bg-sidebar-accent hover:text-ap-white lg:min-h-10',
+                        'before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:bg-ap-red-on-dark before:opacity-0',
+                        isActive ? 'bg-sidebar-accent text-ap-white before:opacity-100' : 'text-ap-on-dark-muted',
                       )
                     }
                   >
-                    <item.icon className="size-[1.125rem] shrink-0" aria-hidden />
+                    <item.icon className="size-4 shrink-0" aria-hidden />
                     {item.label}
                   </NavLink>
                 </li>

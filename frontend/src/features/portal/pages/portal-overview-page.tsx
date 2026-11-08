@@ -1,71 +1,100 @@
-import type { ComponentType } from 'react'
 import { Link } from 'react-router'
-import { AlertTriangleIcon, ClipboardListIcon, CreditCardIcon, PackageIcon, PlusIcon, TruckIcon, type LucideProps } from 'lucide-react'
-import { getSalesService } from '../api/sales-service'
-import { AnimatedNumber, BentoTile, RevealGroup } from '../components/bento'
-import { OrderFunnel } from '../components/order-funnel'
-import { Sparkline } from '../components/sparkline'
+import { PackageIcon, PlusIcon } from 'lucide-react'
 import { EmptyState } from '@/components/common/states'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatCOP, formatNumber, pluralize } from '@/lib/format'
+import { getAlertService } from '../api/alert-service'
+import type { StoreAlert } from '../api/alert-types'
 import { getDashboardService } from '../api/dashboard-service'
-import type { Dashboard } from '../api/types'
-import { CardsSkeleton } from '../components/list-skeleton'
+import type { Dashboard, StorePermission } from '../api/types'
+import { ListSkeleton } from '../components/list-skeleton'
 import { PageHeader } from '../components/page-header'
 import { QueryBoundary } from '../components/query-boundary'
-import { StatCard } from '../components/stat-card'
 import { StatusBadge } from '../components/status-badge'
 import { UsageMeter } from '../components/usage-meter'
 import { usePortal } from '../context'
 import { useStoreQuery } from '../hooks'
-import { formatDate, formatDays, SUBSCRIPTION_STATUS_LABEL, SUBSCRIPTION_STATUS_TONE } from '../lib/labels'
+import { alertTarget, SEVERITY_LABEL } from '../lib/alerts'
+import { formatDate, formatDateTime, formatDays, SUBSCRIPTION_STATUS_LABEL, SUBSCRIPTION_STATUS_TONE, type Tone } from '../lib/labels'
 
-interface PendingItem {
+interface TodayItem {
   key: string
-  icon: ComponentType<LucideProps>
-  text: string
+  /** Cifra que da tamaño a la tarea; sin cifra (p. ej. el plan) la columna queda vacía. */
+  count?: number
+  title: string
+  detail: string
+  tone: Tone
   to: string
   cta: string
 }
 
-/** Lo que pide acción hoy, de más a menos urgente. Solo muestra lo que el servidor reporta. */
-function PendingActions({ data }: { data: Dashboard }) {
-  const { storeId, can } = usePortal()
-  const base = `/portal/${encodeURIComponent(storeId)}`
-  const items: PendingItem[] = []
+/** Lo que pide acción hoy, de más a menos urgente. Solo lo que el servidor reporta y con cifra mayor que cero. */
+function todayItems(data: Dashboard, base: string, can: (permission: StorePermission) => boolean): TodayItem[] {
+  const items: TodayItem[] = []
   if (data.subscriptionStatus === 'EXPIRED') {
-    items.push({ key: 'plan', icon: CreditCardIcon, text: 'Tu suscripción venció: renuévala para seguir vendiendo.', to: `${base}/plan`, cta: 'Renovar' })
+    items.push({ key: 'plan', title: 'Suscripción vencida', detail: 'Renuévala para volver a crear y publicar productos.', tone: 'danger', to: `${base}/plan`, cta: 'Renovar plan' })
   } else if (data.daysRemaining !== null && data.daysRemaining !== undefined && data.daysRemaining <= 7) {
-    items.push({ key: 'plan', icon: CreditCardIcon, text: `Tu plan vence en ${formatDays(data.daysRemaining)}.`, to: `${base}/plan`, cta: 'Ver plan' })
+    items.push({ key: 'plan', title: `El plan vence en ${formatDays(data.daysRemaining)}`, detail: 'Renueva o elige un plan para no perder funciones.', tone: 'warning', to: `${base}/plan`, cta: 'Ver plan' })
   }
-  if (data.sales.pendingOrders > 0 && can('ORDER_READ')) {
-    items.push({ key: 'pending', icon: ClipboardListIcon, text: `${formatNumber(data.sales.pendingOrders)} ${pluralize(data.sales.pendingOrders, 'pedido espera', 'pedidos esperan')} tu confirmación.`, to: `${base}/pedidos?estado=PENDING`, cta: 'Atender' })
+  if (can('ORDER_READ') && data.sales.pendingOrders > 0) {
+    const count = data.sales.pendingOrders
+    items.push({ key: 'pending', count, title: pluralize(count, 'Pedido por confirmar', 'Pedidos por confirmar'), detail: 'El comprador espera tu confirmación o cancelación.', tone: 'warning', to: `${base}/pedidos?estado=PENDING`, cta: 'Confirmar pedidos' })
   }
-  if (data.sales.preparingOrders > 0 && can('ORDER_READ')) {
-    items.push({ key: 'preparing', icon: TruckIcon, text: `${formatNumber(data.sales.preparingOrders)} ${pluralize(data.sales.preparingOrders, 'pedido listo', 'pedidos listos')} para registrar el envío.`, to: `${base}/pedidos?estado=PREPARING`, cta: 'Registrar envío' })
+  if (can('ORDER_READ') && data.sales.preparingOrders > 0) {
+    const count = data.sales.preparingOrders
+    items.push({ key: 'preparing', count, title: pluralize(count, 'Pedido por despachar', 'Pedidos por despachar'), detail: 'Están en preparación: registra el envío cuando salgan.', tone: 'info', to: `${base}/pedidos?estado=PREPARING`, cta: 'Registrar envíos' })
   }
-  if (data.inventory && data.inventory.outOfStock > 0 && can('PRODUCT_READ')) {
-    items.push({ key: 'out', icon: PackageIcon, text: `${formatNumber(data.inventory.outOfStock)} ${pluralize(data.inventory.outOfStock, 'publicación agotada', 'publicaciones agotadas')}.`, to: `${base}/inventario?stock=agotado`, cta: 'Reponer' })
+  if (can('PRODUCT_READ') && data.inventory && data.inventory.outOfStock > 0) {
+    const count = data.inventory.outOfStock
+    items.push({ key: 'out', count, title: pluralize(count, 'Publicación agotada', 'Publicaciones agotadas'), detail: 'No se pueden vender hasta que repongas existencias.', tone: 'danger', to: `${base}/inventario?stock=agotado`, cta: 'Reponer' })
   }
-  if (data.inventory && data.inventory.lowStock > 0 && can('PRODUCT_READ')) {
-    items.push({ key: 'low', icon: AlertTriangleIcon, text: `${formatNumber(data.inventory.lowStock)} con stock bajo (1 a 3 unidades).`, to: `${base}/inventario?stock=bajo`, cta: 'Revisar' })
+  if (can('PRODUCT_READ') && data.inventory && data.inventory.lowStock > 0) {
+    const count = data.inventory.lowStock
+    items.push({ key: 'low', count, title: pluralize(count, 'Publicación con stock bajo', 'Publicaciones con stock bajo'), detail: 'Quedan de 1 a 3 unidades.', tone: 'warning', to: `${base}/inventario?stock=bajo`, cta: 'Revisar stock' })
   }
+  return items
+}
+
+const TONE_TEXT: Record<Tone, string> = {
+  danger: 'text-ap-danger',
+  warning: 'text-ap-warning',
+  info: 'text-ap-info',
+  success: 'text-ap-success',
+  neutral: 'text-ap-ink',
+}
+
+/** Filas accionables: cifra a la izquierda (tabular), qué pasa, y la acción que lo resuelve. */
+function TodayList({ data }: { data: Dashboard }) {
+  const { storeId, can } = usePortal()
+  const items = todayItems(data, `/portal/${encodeURIComponent(storeId)}`, can)
 
   return (
-    <section aria-labelledby="pendientes-titulo" className="flex flex-col gap-3">
-      <h2 id="pendientes-titulo" className="text-lg font-extrabold tracking-tight">
-        Para hacer hoy
-      </h2>
+    <section aria-labelledby="hoy-titulo" className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1">
+        <p className="ap-index">Inicio / Hoy</p>
+        <h2 id="hoy-titulo" className="text-block-title text-ap-ink">
+          Qué atender hoy
+        </h2>
+      </div>
       {items.length === 0 ? (
-        <p className="rounded-lg bg-card p-4 text-sm text-muted-foreground ring-1 ring-foreground/10">Todo al día: no hay pedidos ni existencias que atender.</p>
+        <p className="rounded-lg border border-ap-line px-4 py-5 text-sm text-ap-muted">
+          <strong className="font-semibold text-ap-ink">Todo al día.</strong> No hay pedidos por confirmar o despachar ni publicaciones agotadas.
+        </p>
       ) : (
-        <ul className="divide-y divide-border rounded-xl bg-card ring-1 ring-foreground/10">
+        <ul className="divide-y divide-ap-line rounded-lg border border-ap-line">
           {items.map((item) => (
-            <li key={item.key} className="flex flex-wrap items-center gap-3 p-3 sm:px-4">
-              <item.icon className="size-5 shrink-0 text-muted-foreground" aria-hidden />
-              <p className="min-w-0 flex-1 text-sm font-medium">{item.text}</p>
-              <Button variant="outline" className="h-11 px-4" nativeButton={false} render={<Link to={item.to} />}>
+            <li key={item.key} className="grid grid-cols-[3.5rem_minmax(0,1fr)] items-center gap-x-3 gap-y-3 px-3 py-3 sm:grid-cols-[4rem_minmax(0,1fr)_auto] sm:px-4">
+              <p className={`ap-price text-right text-2xl leading-none ${TONE_TEXT[item.tone]}`} aria-hidden={item.count === undefined}>
+                {item.count !== undefined ? formatNumber(item.count) : '—'}
+              </p>
+              <div className="min-w-0">
+                <p className="font-semibold text-ap-ink">
+                  {item.count !== undefined ? <span className="sr-only">{formatNumber(item.count)} </span> : null}
+                  {item.title}
+                </p>
+                <p className="text-sm text-ap-muted">{item.detail}</p>
+              </div>
+              <Button variant="outline" className="col-span-2 h-11 px-4 sm:col-span-1" nativeButton={false} render={<Link to={item.to} />}>
                 {item.cta}
               </Button>
             </li>
@@ -76,48 +105,128 @@ function PendingActions({ data }: { data: Dashboard }) {
   )
 }
 
-/** Resumen de 7 días: ventas diarias y embudo, con la misma analítica de «Ventas». */
-function SalesGlance({ base }: { base: string }) {
-  const sales = useStoreQuery('sales:7', async (id) => (await getSalesService()).sales(id, 7))
-  if (sales.status === 'error' || !sales.data || sales.data.totals.orders === 0) return null
-  const data = sales.data
+/** Alertas abiertas (misma caché que el panel de la campana): gravedad, título y a dónde ir. */
+function OpenAlerts() {
+  const { storeId, can } = usePortal()
+  const base = `/portal/${encodeURIComponent(storeId)}`
+  const alerts = useStoreQuery('alerts:list:open', async (id) => (await getAlertService()).list(id, 'open'))
+
   return (
-    <section aria-labelledby="semana-titulo" className="flex flex-col gap-3">
-      <div className="flex items-center justify-between gap-2">
-        <h2 id="semana-titulo" className="text-lg font-extrabold tracking-tight">
-          Últimos 7 días
+    <section aria-labelledby="alertas-titulo" className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h2 id="alertas-titulo" className="text-base font-semibold text-ap-ink">
+          Alertas abiertas
+          {alerts.data && alerts.data.length > 0 ? <span className="ml-2 font-normal text-ap-muted tabular-nums">{formatNumber(alerts.data.length)}</span> : null}
         </h2>
-        <Link to={`${base}/ventas`} className="text-sm font-semibold underline-offset-4 hover:underline">
-          Ver todas las ventas
+        <Link to={`${base}/alertas`} className="inline-flex min-h-11 items-center text-sm font-semibold text-ap-red underline-offset-4 hover:underline">
+          Ver todas las alertas
         </Link>
       </div>
-      <div className="grid gap-4 lg:grid-cols-2">
-        <BentoTile title="Ventas diarias" aside={formatCOP(data.totals.revenue)}>
-          <Sparkline
-            label="Ventas diarias"
-            formatValue={formatCOP}
-            points={data.daily.map((point) => ({ label: point.date, value: point.revenue }))}
-          />
-        </BentoTile>
-        <BentoTile index={1} title="Embudo de pedidos">
-          <OrderFunnel funnel={data.funnel} cancelled={data.cancelled} />
-        </BentoTile>
+      <QueryBoundary result={alerts} what="las alertas" skeleton={<ListSkeleton rows={2} label="Cargando las alertas" />}>
+        {(rows) =>
+          rows.length === 0 ? (
+            <p className="rounded-lg border border-ap-line px-4 py-5 text-sm text-ap-muted">Sin alertas abiertas. Te avisaremos aquí si una venta cae o un producto se agota.</p>
+          ) : (
+            <ul className="divide-y divide-ap-line rounded-lg border border-ap-line">
+              {rows.slice(0, 4).map((alert) => (
+                <AlertRow key={alert.id} alert={alert} to={alertTarget(alert, storeId, can)?.to ?? `${base}/alertas`} />
+              ))}
+            </ul>
+          )
+        }
+      </QueryBoundary>
+    </section>
+  )
+}
+
+function AlertRow({ alert, to }: { alert: StoreAlert; to: string }) {
+  const severity = SEVERITY_LABEL[alert.severity]
+  const unread = alert.readAt === null
+  return (
+    <li className={unread ? 'shadow-[inset_3px_0_0_var(--ap-red)]' : undefined}>
+      <Link to={to} className="flex flex-col gap-1 px-4 py-3 hover:bg-ap-paper sm:flex-row sm:items-center sm:gap-3">
+        <StatusBadge tone={severity.tone} className="shrink-0">
+          {severity.label}
+        </StatusBadge>
+        <span className={`min-w-0 flex-1 text-sm text-ap-ink ${unread ? 'font-semibold' : 'font-medium'}`}>
+          {alert.title}
+          {unread ? <span className="sr-only"> (sin leer)</span> : null}
+        </span>
+        <time dateTime={alert.createdAt} className="ap-ref shrink-0 text-ap-muted">
+          {formatDateTime(alert.createdAt)}
+        </time>
+      </Link>
+    </li>
+  )
+}
+
+/** Dos cifras del mes (no un tablero): sirven para saber si conviene revisar Ventas. */
+function MonthSales({ data }: { data: Dashboard }) {
+  const { storeId, can } = usePortal()
+  return (
+    <section aria-labelledby="mes-titulo" className="flex flex-col gap-3 border-t border-ap-line-strong pt-4">
+      <h2 id="mes-titulo" className="text-base font-semibold text-ap-ink">
+        Este mes
+      </h2>
+      <dl className="grid grid-cols-2 gap-4">
+        <div className="flex flex-col gap-0.5">
+          <dt className="text-sm text-ap-muted">Ingresos</dt>
+          <dd className="ap-price text-xl text-ap-ink">{formatCOP(data.sales.revenueThisMonth)}</dd>
+        </div>
+        <div className="flex flex-col gap-0.5">
+          <dt className="text-sm text-ap-muted">Pedidos</dt>
+          <dd className="ap-price text-xl text-ap-ink">{formatNumber(data.sales.ordersThisMonth)}</dd>
+        </div>
+      </dl>
+      <p className="text-xs text-ap-muted">Ingresos de pedidos no cancelados.</p>
+      {can('ORDER_READ') ? (
+        <Link to={`/portal/${encodeURIComponent(storeId)}/ventas`} className="inline-flex min-h-11 w-fit items-center text-sm font-semibold text-ap-red underline-offset-4 hover:underline">
+          Ver ventas y tendencias
+        </Link>
+      ) : null}
+    </section>
+  )
+}
+
+function PlanStatus({ data }: { data: Dashboard }) {
+  const { storeId } = usePortal()
+  const base = `/portal/${encodeURIComponent(storeId)}`
+  const status = data.subscriptionStatus
+  const days = data.daysRemaining
+  const until = status === 'ACTIVE' ? data.paidThrough : data.trialEndsAt
+  return (
+    <section aria-labelledby="plan-titulo" className="flex flex-col gap-4 border-t border-ap-line-strong pt-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 id="plan-titulo" className="text-base font-semibold text-ap-ink">
+          Plan {data.plan.name}
+        </h2>
+        {status ? <StatusBadge tone={SUBSCRIPTION_STATUS_TONE[status]}>{SUBSCRIPTION_STATUS_LABEL[status]}</StatusBadge> : null}
       </div>
+      <p className="-mt-2 text-sm text-ap-muted">
+        {status === 'EXPIRED'
+          ? 'Tu suscripción venció.'
+          : until
+            ? `Vigente hasta ${formatDate(until)}${days !== null && days !== undefined ? ` (${formatDays(days)})` : ''}.`
+            : 'Sin fecha de vigencia.'}
+      </p>
+      <UsageMeter capacity="PRODUCTS" used={data.usage.products} limit={data.maxProducts} upgradeTo={`${base}/plan`} />
+      <UsageMeter capacity="BRANCHES" used={data.usage.branches} limit={data.maxBranches} upgradeTo={`${base}/plan`} />
+      <UsageMeter capacity="USERS" used={data.usage.users} limit={data.maxUsers} upgradeTo={`${base}/plan`} />
+      <Link to={`${base}/plan`} className="inline-flex min-h-11 w-fit items-center text-sm font-semibold text-ap-red underline-offset-4 hover:underline">
+        Ver plan y suscripción
+      </Link>
     </section>
   )
 }
 
 function DashboardView({ data }: { data: Dashboard }) {
   const { storeId, can } = usePortal()
-  const base = `/portal/${encodeURIComponent(storeId)}`
-  const status = data.subscriptionStatus
-  const days = data.daysRemaining
   const emptyCatalog = data.usage.products === 0
 
   return (
     <div className="flex flex-col gap-6">
       {data.setupRequired ? (
-        <p role="status" className="rounded-lg border border-stock-low/30 bg-stock-low/10 p-4 text-sm">
+        <p role="status" className="rounded-lg border border-ap-warning/30 bg-ap-warning-soft p-4 text-sm text-ap-ink">
           <strong className="font-semibold">Falta terminar la configuración del almacén.</strong> Abre el enlace que te enviamos al correo para completarla.
         </p>
       ) : null}
@@ -129,7 +238,7 @@ function DashboardView({ data }: { data: Dashboard }) {
           description="Los compradores solo ven lo que publiques. Empieza con un producto: nombre, precio, existencias y los vehículos en los que sirve."
         >
           {can('PRODUCT_CREATE') ? (
-            <Button className="h-11 px-5" nativeButton={false} render={<Link to={`${base}/productos/nuevo`} />}>
+            <Button className="h-11 px-5" nativeButton={false} render={<Link to={`/portal/${encodeURIComponent(storeId)}/productos/nuevo`} />}>
               <PlusIcon aria-hidden />
               Agregar producto
             </Button>
@@ -137,88 +246,21 @@ function DashboardView({ data }: { data: Dashboard }) {
         </EmptyState>
       ) : null}
 
-      <PendingActions data={data} />
-
-      <section aria-labelledby="ventas-titulo" className="flex flex-col gap-3">
-        <h2 id="ventas-titulo" className="text-lg font-extrabold tracking-tight">
-          Ventas de este mes
-        </h2>
-        <RevealGroup className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard label="Ingresos" value={<AnimatedNumber value={data.sales.revenueThisMonth} format={formatCOP} />} hint="Pedidos no cancelados" />
-          <StatCard label="Pedidos" value={<AnimatedNumber value={data.sales.ordersThisMonth} format={formatNumber} />} hint="Recibidos este mes" to={can('ORDER_READ') ? `${base}/pedidos` : undefined} />
-          <StatCard
-            label="Por atender"
-            value={<AnimatedNumber value={data.sales.pendingOrders} format={formatNumber} />}
-            hint={data.sales.pendingOrders > 0 ? 'Confirma o cancela cada pedido' : 'No hay pedidos nuevos'}
-            tone={data.sales.pendingOrders > 0 ? 'attention' : 'default'}
-            to={can('ORDER_READ') ? `${base}/pedidos?estado=PENDING` : undefined}
-          />
-          <StatCard
-            label="En preparación"
-            value={<AnimatedNumber value={data.sales.preparingOrders} format={formatNumber} />}
-            hint="Listos para registrar el envío"
-            to={can('ORDER_READ') ? `${base}/pedidos?estado=PREPARING` : undefined}
-          />
-        </RevealGroup>
-      </section>
-
-      {can('ORDER_READ') ? <SalesGlance base={base} /> : null}
-
-      <div className="grid gap-6 lg:grid-cols-2">
-        {data.inventory ? (
-          <section aria-labelledby="inventario-titulo" className="flex flex-col gap-3">
-            <h2 id="inventario-titulo" className="text-lg font-extrabold tracking-tight">
-              Inventario
-            </h2>
-            <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-              <StatCard label="Publicaciones" value={formatNumber(data.inventory.listings)} hint="Producto por sucursal" to={can('PRODUCT_READ') ? `${base}/productos` : undefined} />
-              <StatCard
-                label="Agotados"
-                value={formatNumber(data.inventory.outOfStock)}
-                hint={data.inventory.outOfStock > 0 ? 'Reponer para vender' : 'Sin agotados'}
-                tone={data.inventory.outOfStock > 0 ? 'attention' : 'default'}
-                to={can('PRODUCT_READ') ? `${base}/inventario?stock=agotado` : undefined}
-              />
-              <StatCard
-                label="Stock bajo"
-                value={formatNumber(data.inventory.lowStock)}
-                hint="De 1 a 3 unidades"
-                tone={data.inventory.lowStock > 0 ? 'attention' : 'default'}
-                to={can('PRODUCT_READ') ? `${base}/inventario?stock=bajo` : undefined}
-              />
-            </div>
-          </section>
-        ) : null}
-
-        <Card className="gap-4 p-5">
-          <CardHeader className="gap-1.5 px-0">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <CardTitle className="text-lg font-extrabold tracking-tight">Tu plan: {data.plan.name}</CardTitle>
-              {status ? <StatusBadge tone={SUBSCRIPTION_STATUS_TONE[status]}>{SUBSCRIPTION_STATUS_LABEL[status]}</StatusBadge> : null}
-            </div>
-            <CardDescription>
-              {status === 'EXPIRED'
-                ? 'Tu suscripción venció.'
-                : data.paidThrough || data.trialEndsAt
-                  ? `Vigente hasta ${formatDate(status === 'ACTIVE' ? data.paidThrough : data.trialEndsAt)}${days !== null && days !== undefined ? ` (${formatDays(days)})` : ''}.`
-                  : 'Sin fecha de vigencia.'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4 px-0">
-            <UsageMeter capacity="PRODUCTS" used={data.usage.products} limit={data.maxProducts} upgradeTo={`${base}/plan`} />
-            <UsageMeter capacity="BRANCHES" used={data.usage.branches} limit={data.maxBranches} upgradeTo={`${base}/plan`} />
-            <UsageMeter capacity="USERS" used={data.usage.users} limit={data.maxUsers} upgradeTo={`${base}/plan`} />
-            <Button variant="outline" className="h-11 w-fit px-4" nativeButton={false} render={<Link to={`${base}/plan`} />}>
-              Ver plan y suscripción
-            </Button>
-          </CardContent>
-        </Card>
+      <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="flex min-w-0 flex-col gap-8">
+          <TodayList data={data} />
+          {can('STORE_READ') ? <OpenAlerts /> : null}
+        </div>
+        <aside aria-label="Contexto del almacén" className="flex flex-col gap-6">
+          <MonthSales data={data} />
+          <PlanStatus data={data} />
+        </aside>
       </div>
     </div>
   )
 }
 
-/** `/portal/:storeId/inicio`: ventas del mes, inventario por atender y uso del plan. */
+/** `/portal/:storeId/inicio`: qué atender hoy (pedidos, existencias, alertas) y, al lado, el mes y el plan. */
 export default function PortalOverviewPage() {
   const { store, can, storeId } = usePortal()
   const dashboard = useStoreQuery('dashboard', async (id) => (await getDashboardService()).dashboard(id))
@@ -229,7 +271,7 @@ export default function PortalOverviewPage() {
       <title>{`Inicio | ${name ?? 'Portal'} | Autopartco`}</title>
       <PageHeader
         title="Inicio"
-        description={name ? `Resumen de ${name}.` : 'Resumen de tu almacén.'}
+        description={name ? `Lo que necesita tu atención en ${name}.` : 'Lo que necesita tu atención en el almacén.'}
         actions={
           can('PRODUCT_CREATE') ? (
             <Button className="h-11 px-4" nativeButton={false} render={<Link to={`/portal/${encodeURIComponent(storeId)}/productos/nuevo`} />}>
@@ -239,7 +281,7 @@ export default function PortalOverviewPage() {
           ) : null
         }
       />
-      <QueryBoundary result={dashboard} what="el resumen del almacén" skeleton={<CardsSkeleton label="Cargando el resumen" />}>
+      <QueryBoundary result={dashboard} what="el resumen del almacén" skeleton={<ListSkeleton rows={4} label="Cargando el resumen" />}>
         {(data) => <DashboardView data={data} />}
       </QueryBoundary>
     </>

@@ -40,11 +40,11 @@ export function CommandPaletteButton({ onClick }: { onClick: () => void }) {
       onClick={onClick}
       aria-label="Buscar o ir a… (Ctrl K)"
       aria-keyshortcuts="Control+K Meta+K"
-      className="h-11 shrink-0 gap-2 px-3 text-white hover:bg-header-hover hover:text-white sm:border sm:border-white/15"
+      className="h-11 shrink-0 gap-2 px-3 text-ap-white hover:bg-sidebar-accent hover:text-ap-white aria-expanded:bg-sidebar-accent sm:border sm:border-ap-line-on-dark"
     >
       <SearchIcon className="size-[1.125rem]" aria-hidden />
       <span className="hidden sm:inline">Buscar o ir a…</span>
-      <kbd aria-hidden className="hidden rounded border border-white/20 px-1.5 py-0.5 font-mono text-[0.6875rem] text-asphalt-muted md:inline">
+      <kbd aria-hidden className="hidden rounded-sm border border-ap-line-on-dark px-1.5 py-0.5 font-mono text-[0.6875rem] text-ap-on-dark-muted md:inline">
         {isMac() ? '⌘K' : 'Ctrl K'}
       </kbd>
     </Button>
@@ -170,7 +170,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
   return (
     <>
       <div className="flex items-center gap-3 border-b border-border px-4">
-        <SearchIcon className="size-5 shrink-0 text-muted-foreground" aria-hidden />
+        <SearchIcon className="size-5 shrink-0 text-ap-muted" aria-hidden />
         <input
           autoFocus
           role="combobox"
@@ -188,7 +188,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
           }}
           onKeyDown={onKeyDown}
           placeholder="Busca una sección, un producto o un pedido…"
-          className="h-14 min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-muted-foreground"
+          className="h-14 min-w-0 flex-1 bg-transparent text-base outline-none placeholder:text-ap-muted"
         />
       </div>
 
@@ -197,7 +197,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
           const group = entries[0]?.group
           return (
             <div key={group} role="group" aria-labelledby={`cmd-group-${group}`} className="pb-1">
-              <p id={`cmd-group-${group}`} className="label-mono px-2 pt-2 pb-1 text-muted-foreground">
+              <p id={`cmd-group-${group}`} className="ap-index px-2 pt-2 pb-1">
                 {group}
               </p>
               {entries.map((item) => {
@@ -210,12 +210,12 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
                     aria-selected={selected}
                     onPointerMove={() => setActive(flat.findIndex((entry) => entry.id === item.id))}
                     onClick={() => run(item)}
-                    className={cn('flex min-h-11 cursor-pointer items-center gap-3 rounded-lg px-2.5 py-2', selected && 'bg-muted')}
+                    className={cn('flex min-h-11 cursor-pointer items-center gap-3 rounded-md px-2.5 py-2', selected && 'bg-ap-paper shadow-[inset_2px_0_0_var(--ap-red)]')}
                   >
-                    <item.icon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+                    <item.icon className="size-4 shrink-0 text-ap-muted" aria-hidden />
                     <span className="min-w-0 flex-1 truncate text-sm font-medium">{item.label}</span>
-                    {item.hint ? <span className="truncate text-xs text-muted-foreground">{item.hint}</span> : null}
-                    {selected ? <CornerDownLeftIcon className="size-3.5 shrink-0 text-muted-foreground" aria-hidden /> : null}
+                    {item.hint ? <span className="truncate text-xs text-ap-muted">{item.hint}</span> : null}
+                    {selected ? <CornerDownLeftIcon className="size-3.5 shrink-0 text-ap-muted" aria-hidden /> : null}
                   </div>
                 )
               })}
@@ -223,7 +223,7 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
           )
         })}
         {flat.length === 0 ? (
-          <p className="px-3 py-8 text-center text-sm text-muted-foreground">
+          <p className="px-3 py-8 text-center text-sm text-ap-muted">
             {loading && query ? 'Cargando productos y pedidos…' : `Nada coincide con “${query}”. Prueba con otra palabra o el número de pedido.`}
           </p>
         ) : null}
@@ -232,12 +232,12 @@ function PaletteBody({ onClose }: { onClose: () => void }) {
       <p role="status" className="sr-only">
         {flat.length === 0 ? 'Sin resultados' : `${flat.length} resultados`}
       </p>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border px-4 py-2.5 text-xs text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-border px-4 py-2.5 text-xs text-ap-muted">
         <span>↑↓ para moverte</span>
         <span>Enter para abrir</span>
         <span>Esc para cerrar</span>
         {loading ? <span className="ml-auto">Cargando productos y pedidos…</span> : null}
-        {failed ? <span className="ml-auto text-stock-low">No pudimos cargar productos o pedidos; las secciones sí funcionan.</span> : null}
+        {failed ? <span className="ml-auto font-medium text-ap-warning">No pudimos cargar productos o pedidos; las secciones sí funcionan.</span> : null}
       </div>
     </>
   )

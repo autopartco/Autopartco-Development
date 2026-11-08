@@ -46,7 +46,7 @@ export function CopField({ id, label, value, onChange, onBlur, hint, error, requ
     <FieldShell id={id} label={label} hint={hint} error={error}>
       {(describedBy) => (
         <div className="relative">
-          <span aria-hidden className="pointer-events-none absolute inset-y-0 left-3 grid place-items-center text-sm text-muted-foreground">
+          <span aria-hidden className="pointer-events-none absolute inset-y-0 left-3 grid place-items-center text-sm text-ap-muted">
             $
           </span>
           <input
@@ -70,7 +70,7 @@ export function CopField({ id, label, value, onChange, onBlur, hint, error, requ
               onChange(digitsOf(raw))
             }}
           />
-          <span aria-hidden className="pointer-events-none absolute inset-y-0 right-3 grid place-items-center text-xs font-semibold text-muted-foreground">
+          <span aria-hidden className="pointer-events-none absolute inset-y-0 right-3 grid place-items-center font-mono text-xs font-medium text-ap-muted">
             COP
           </span>
         </div>

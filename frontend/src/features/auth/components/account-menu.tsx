@@ -21,7 +21,7 @@ import {
   type AccountMenuArea,
 } from '../lib/account-menu-items'
 
-const ON_DARK = 'text-white hover:bg-header-hover hover:text-white'
+const ON_DARK = 'text-white hover:bg-sidebar-accent hover:text-white'
 
 function firstName(name: string): string {
   return name.split(/\s+/)[0] ?? name
@@ -71,7 +71,7 @@ function AccountIdentity({ session }: { session: Session }) {
       <p className="truncate font-semibold text-ap-ink">{session.user.name}</p>
       <p className="truncate text-sm text-ap-muted">{session.user.email}</p>
       <p className="mt-1.5 flex flex-wrap items-center gap-1.5">
-        <span className="inline-flex h-5 items-center rounded-sm border border-ap-line bg-ap-paper px-1.5 label-mono text-ap-ink">
+        <span className="inline-flex h-5 items-center rounded-sm border border-ap-line bg-ap-paper px-1.5 font-mono text-xs font-medium uppercase tracking-[0.04em] text-ap-ink">
           <span className="sr-only">Tipo de cuenta: </span>
           {ACCOUNT_KIND_LABEL[kind]}
         </span>
@@ -107,7 +107,7 @@ export function HeaderAccount({ className, ...context }: { className?: string } 
         </Button>
         <Button
           variant="outline"
-          className="hidden h-11 border-white/40 bg-transparent px-3 text-white hover:border-white hover:bg-header-hover hover:text-white xl:inline-flex"
+          className="hidden h-11 border-white/40 bg-transparent px-3 text-white hover:border-white hover:bg-sidebar-accent hover:text-white xl:inline-flex"
           nativeButton={false}
           render={<Link to="/registro" />}
         >
@@ -122,7 +122,7 @@ export function HeaderAccount({ className, ...context }: { className?: string } 
       <DropdownMenuTrigger
         aria-label={`Cuenta de ${session.user.name}`}
         className={cn(
-          'group/account inline-flex h-11 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium transition-colors data-popup-open:bg-header-hover',
+          'group/account inline-flex h-11 items-center gap-1.5 rounded-md px-2.5 text-sm font-medium transition-colors data-popup-open:bg-sidebar-accent',
           ON_DARK,
           className,
         )}

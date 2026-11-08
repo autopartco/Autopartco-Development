@@ -29,19 +29,19 @@ export function AlertCard({ alert, actions, onNavigate, compact }: AlertCardProp
   const base = `/portal/${encodeURIComponent(storeId)}`
 
   return (
-    <article className={cn('flex flex-col gap-2.5 rounded-lg bg-card p-4 ring-1', unread ? 'ring-foreground/25' : 'ring-foreground/10')} aria-label={alert.title}>
+    <article className={cn('flex flex-col gap-2.5 px-4 py-4', unread && 'shadow-[inset_3px_0_0_var(--ap-red)]')} aria-label={alert.title}>
       <div className="flex flex-wrap items-center gap-2">
         <StatusBadge tone={severity.tone}>{severity.label}</StatusBadge>
         {unread ? <StatusBadge tone="neutral">Sin leer</StatusBadge> : null}
         {alert.resolvedAt ? <StatusBadge tone="success">Resuelta</StatusBadge> : null}
-        <time dateTime={alert.createdAt} className="ml-auto text-xs text-muted-foreground">
+        <time dateTime={alert.createdAt} className="ap-ref ml-auto text-ap-muted">
           {formatDateTime(alert.createdAt)}
         </time>
       </div>
       <div className="flex flex-col gap-1">
-        <h3 className={cn('text-base tracking-tight', unread ? 'font-bold' : 'font-semibold')}>{alert.title}</h3>
-        <p className="text-sm text-foreground/85">{alert.message}</p>
-        {detail ? <p className="text-sm text-muted-foreground">{detail}</p> : null}
+        <h3 className={cn('text-base text-ap-ink', unread ? 'font-bold' : 'font-semibold')}>{alert.title}</h3>
+        <p className="text-sm text-ap-ink">{alert.message}</p>
+        {detail ? <p className="text-sm text-ap-muted">{detail}</p> : null}
       </div>
       {products.length > 0 ? (
         <ul className="flex list-disc flex-col gap-0.5 pl-5 text-sm">
@@ -54,7 +54,7 @@ export function AlertCard({ alert, actions, onNavigate, compact }: AlertCardProp
               ) : (
                 product.name
               )}
-              {product.stock !== undefined ? <span className="text-muted-foreground"> · {product.stock} en stock</span> : null}
+              {product.stock !== undefined ? <span className="text-ap-muted tabular-nums"> · {product.stock} en stock</span> : null}
             </li>
           ))}
         </ul>
@@ -66,13 +66,13 @@ export function AlertCard({ alert, actions, onNavigate, compact }: AlertCardProp
           </Button>
         ) : null}
         {unread ? (
-          <Button variant="ghost" className="h-11 px-3" disabled={busy} onClick={() => void actions.markRead(alert)}>
+          <Button variant="ghost" className="h-11 px-3" disabled={busy} aria-busy={busy || undefined} onClick={() => void actions.markRead(alert)}>
             <EyeIcon aria-hidden />
             Marcar como leída
           </Button>
         ) : null}
         {!alert.resolvedAt ? (
-          <Button variant="ghost" className="h-11 px-3" disabled={busy} onClick={() => void actions.resolve(alert)}>
+          <Button variant="ghost" className="h-11 px-3" disabled={busy} aria-busy={busy || undefined} onClick={() => void actions.resolve(alert)}>
             <CheckCheckIcon aria-hidden />
             Resolver
           </Button>

@@ -37,8 +37,8 @@ export function CreateListingsEditor({ id, listings, branches, onChange, onBlur,
 
   return (
     <fieldset id={id} tabIndex={-1} className="flex flex-col gap-3 outline-none" aria-describedby={error ? `${id}-error` : `${id}-ayuda`} onBlur={onBlur}>
-      <legend className="mb-1 text-sm font-semibold">Sucursales y existencias</legend>
-      <p id={`${id}-ayuda`} className="text-sm text-muted-foreground">
+      <legend className="mb-1 text-sm font-semibold text-ap-ink">Sucursales y existencias</legend>
+      <p id={`${id}-ayuda`} className="text-sm text-ap-muted">
         {branches.length > 1
           ? 'Agrega cada sucursal donde tienes el producto. Si dejas el precio vacío se usa el precio general.'
           : 'Unidades disponibles hoy. Con 0 puedes publicar, pero aparecerá como agotado.'}
@@ -48,7 +48,7 @@ export function CreateListingsEditor({ id, listings, branches, onChange, onBlur,
           const options = branches.filter((branch) => branch.value === listing.branchId || !used.has(branch.value))
           const label = listings.length > 1 ? ` de la fila ${index + 1}` : ''
           return (
-            <li key={listing.key} className="grid items-start gap-3 rounded-lg bg-card p-3 ring-1 ring-foreground/10 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,0.8fr)_minmax(0,1fr)_auto]">
+            <li key={listing.key} className="grid items-start gap-3 rounded-lg border border-ap-line p-3 sm:grid-cols-[minmax(0,1.4fr)_minmax(0,0.8fr)_minmax(0,1fr)_auto]">
               {branches.length > 1 ? (
                 <SelectField
                   id={`${id}-${index}-sucursal`}
@@ -61,8 +61,8 @@ export function CreateListingsEditor({ id, listings, branches, onChange, onBlur,
                   disabled={disabled}
                 />
               ) : (
-                <p className="text-sm text-muted-foreground sm:pt-8">
-                  Sucursal: <strong className="font-semibold text-foreground">{branches[0]?.label ?? 'sin sucursal activa'}</strong>
+                <p className="text-sm text-ap-muted sm:pt-8">
+                  Sucursal: <strong className="font-semibold text-ap-ink">{branches[0]?.label ?? 'sin sucursal activa'}</strong>
                 </p>
               )}
               <TextField
@@ -98,7 +98,7 @@ export function CreateListingsEditor({ id, listings, branches, onChange, onBlur,
         })}
       </ul>
       {error ? (
-        <p id={`${id}-error`} className="text-sm font-medium text-destructive">
+        <p id={`${id}-error`} className="text-sm font-medium text-ap-danger">
           {error}
         </p>
       ) : null}
@@ -182,24 +182,24 @@ export function ListingsManager({ productId, productName, rows, branches, sugges
   }
 
   return (
-    <section aria-labelledby="sucursales-producto-titulo" className="flex flex-col gap-3 rounded-xl bg-card p-4 ring-1 ring-foreground/10">
+    <section aria-labelledby="sucursales-producto-titulo" className="flex flex-col gap-3 border-t border-ap-line-strong pt-4">
       <div className="flex flex-col gap-1">
-        <h3 id="sucursales-producto-titulo" className="text-base font-bold">
+        <h3 id="sucursales-producto-titulo" className="text-base font-semibold text-ap-ink">
           Sucursales del producto
         </h3>
-        <p className="text-sm text-muted-foreground">Agregar o quitar una sucursal se aplica al momento, sin pulsar «Guardar cambios».</p>
+        <p className="text-sm text-ap-muted">Agregar o quitar una sucursal se aplica al momento, sin pulsar «Guardar cambios».</p>
       </div>
       <ul className="flex flex-col divide-y divide-border">
         {rows.map((row) => (
           <li key={row.branchId} className="flex flex-wrap items-center gap-x-4 gap-y-1 py-2 text-sm">
-            <span className="min-w-0 flex-1 font-medium">{row.branchName}</span>
-            <span className="tabular-nums">{formatCOP(row.price)}</span>
+            <span className="min-w-0 flex-1 font-medium text-ap-ink">{row.branchName}</span>
+            <span className="ap-price">{formatCOP(row.price)}</span>
             <span className="flex items-center gap-2 tabular-nums">
               {formatNumber(row.quantity)} u.
               <StockBadge quantity={row.quantity} />
             </span>
             {canEdit && rows.length > 1 ? (
-              <Button type="button" variant="ghost" className="h-10 px-3 text-destructive pointer-coarse:h-11" onClick={() => setToRemove(row)}>
+              <Button type="button" variant="ghost" className="h-11 px-3 text-ap-danger" onClick={() => setToRemove(row)}>
                 <Trash2Icon aria-hidden />
                 Quitar
               </Button>
@@ -207,13 +207,13 @@ export function ListingsManager({ productId, productName, rows, branches, sugges
           </li>
         ))}
       </ul>
-      {canEdit && rows.length === 1 ? <p className="text-xs text-muted-foreground">Es la única sucursal del producto: para quitarlo de ella, elimina el producto.</p> : null}
+      {canEdit && rows.length === 1 ? <p className="text-xs text-ap-muted">Es la única sucursal del producto: para quitarlo de ella, elimina el producto.</p> : null}
 
       {canEdit && free.length > 0 ? (
         <div className="flex flex-col gap-3 border-t border-border pt-3" onKeyDown={onKeyDown} aria-busy={add.pending || undefined}>
-          <h4 className="text-sm font-semibold">Agregar a otra sucursal</h4>
+          <h4 className="text-sm font-semibold text-ap-ink">Agregar a otra sucursal</h4>
           {formError ? (
-            <p role="alert" className="rounded-lg border border-destructive/25 bg-destructive/5 p-3 text-sm font-medium text-destructive">
+            <p role="alert" className="rounded-md border border-ap-danger/25 bg-ap-danger-soft p-3 text-sm font-medium text-ap-danger">
               {formError}
             </p>
           ) : null}

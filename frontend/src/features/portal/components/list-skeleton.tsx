@@ -14,17 +14,3 @@ export function ListSkeleton({ rows = 5, label = 'Cargando' }: { rows?: number; 
     </div>
   )
 }
-
-/** Marcador de carga de una cuadrícula de tarjetas (dashboard, planes). */
-export function CardsSkeleton({ count = 4, label = 'Cargando' }: { count?: number; label?: string }) {
-  return (
-    <div role="status">
-      <span className="sr-only">{label}…</span>
-      <div aria-hidden className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {Array.from({ length: count }, (_, index) => (
-          <Skeleton key={index} className="h-32 w-full" />
-        ))}
-      </div>
-    </div>
-  )
-}

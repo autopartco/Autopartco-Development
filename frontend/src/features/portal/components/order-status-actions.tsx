@@ -41,7 +41,7 @@ export function OrderStatusActions({ order }: { order: OrderDetail }) {
   return (
     <div className="flex flex-col gap-3">
       {error ? (
-        <p role="alert" className="rounded-lg border border-destructive/25 bg-destructive/5 p-3 text-sm font-medium text-destructive">
+        <p role="alert" className="rounded-md border border-ap-danger/25 bg-ap-danger-soft p-3 text-sm font-medium text-ap-danger">
           {error}
         </p>
       ) : null}
@@ -49,7 +49,7 @@ export function OrderStatusActions({ order }: { order: OrderDetail }) {
         {next
           .filter((status) => status !== 'CANCELLED')
           .map((status) => (
-            <Button key={status} className="h-11 px-4" disabled={busy !== undefined} onClick={() => void change(status)}>
+            <Button key={status} className="h-11 px-4" disabled={busy !== undefined} aria-busy={busy === status || undefined} onClick={() => void change(status)}>
               {status === 'CONFIRMED' ? <CheckIcon aria-hidden /> : <PackageCheckIcon aria-hidden />}
               {busy === status ? 'Guardando…' : ORDER_ACTION_LABEL[status]}
             </Button>

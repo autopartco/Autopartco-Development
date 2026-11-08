@@ -278,21 +278,21 @@ export function ManufacturerCombobox({ id, storeId, options, value, onChange, on
             <select ref={selectRef} id={id} required={required} />
           </div>
           {checking ? (
-            <p role="status" className="text-sm text-muted-foreground">
+            <p role="status" className="text-sm text-ap-muted">
               Comprobando nombres parecidos…
             </p>
           ) : null}
           {value.newName && !similar ? (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-ap-muted">
               “{value.newName}” es un fabricante nuevo: se crea al guardar el producto y queda pendiente de revisión.
             </p>
           ) : null}
           {similar ? (
-            <div ref={similarRef} tabIndex={-1} role="group" aria-labelledby={titleId} className="flex flex-col gap-2 rounded-lg border border-border bg-muted/50 p-3 outline-none">
-              <p id={titleId} className="text-sm font-semibold">
+            <div ref={similarRef} tabIndex={-1} role="group" aria-labelledby={titleId} className="flex flex-col gap-2 rounded-md border border-ap-warning/40 bg-ap-warning-soft p-4 outline-none">
+              <p id={titleId} className="text-sm font-semibold text-ap-ink">
                 ¿Quisiste decir…?
               </p>
-              <p className="text-sm text-muted-foreground">Ya existen fabricantes con un nombre parecido a “{similar.name}”. Elige uno para no duplicarlo.</p>
+              <p className="text-sm text-ap-muted">Ya existen fabricantes con un nombre parecido a “{similar.name}”. Elige uno para no duplicarlo.</p>
               <div className="flex flex-wrap gap-2">
                 {similar.suggestions.map((suggestion) => (
                   <Button

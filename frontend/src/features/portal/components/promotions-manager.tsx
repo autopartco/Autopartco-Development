@@ -3,7 +3,7 @@ import { toast } from 'sonner'
 import { BarChart3Icon, MoreHorizontalIcon, PencilIcon, PlusIcon, TagIcon, Trash2Icon } from 'lucide-react'
 import { DataTable, type DataColumn } from '@/components/common/data-table'
 import { EmptyState } from '@/components/common/states'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { useAsync } from '@/lib/use-async'
 import type { Promotion, PromotionAudience } from '../api/promotion-types'
@@ -56,12 +56,12 @@ export function PromotionsManager({ config, startCreating = false, initialAudien
       sortValue: (row) => row.name,
       cell: (row) => (
         <div>
-          <p className="font-semibold">{row.name}</p>
-          <p className="text-xs text-muted-foreground">{TARGET_LABEL[row.targetType]}</p>
+          <p className="font-semibold text-ap-ink">{row.name}</p>
+          <p className="text-xs text-ap-muted">{TARGET_LABEL[row.targetType]}</p>
         </div>
       ),
     },
-    { id: 'descuento', header: 'Descuento', align: 'end', sortValue: (row) => row.discountValue, cell: (row) => <span className="tabular-nums">{discountText(row)}</span> },
+    { id: 'descuento', header: 'Descuento', align: 'end', sortValue: (row) => row.discountValue, cell: (row) => <span className="ap-price">{discountText(row)}</span> },
     {
       id: 'audiencia',
       header: 'Audiencia',
@@ -73,7 +73,7 @@ export function PromotionsManager({ config, startCreating = false, initialAudien
       header: 'Vigencia',
       sortValue: (row) => row.startsAt,
       cell: (row) => (
-        <span className="text-sm">
+        <span className="ap-ref whitespace-nowrap">
           {formatDate(row.startsAt)} al {formatDate(row.endsAt)}
         </span>
       ),
@@ -96,7 +96,7 @@ export function PromotionsManager({ config, startCreating = false, initialAudien
         <DropdownMenu>
           <DropdownMenuTrigger
             aria-label={`Acciones para ${row.name}`}
-            className="inline-flex size-10 items-center justify-center rounded-lg outline-none hover:bg-concrete data-popup-open:bg-concrete pointer-coarse:size-11"
+            className={buttonVariants({ variant: 'ghost', size: 'icon' })}
           >
             <MoreHorizontalIcon className="size-5" aria-hidden />
           </DropdownMenuTrigger>

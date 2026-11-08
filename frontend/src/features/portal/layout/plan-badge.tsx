@@ -7,7 +7,7 @@ import { StatusBadge } from '../components/status-badge'
 /** Insignia del plan en la barra superior: nombre y días restantes; lleva a "Plan y suscripción". */
 export function PlanBadge() {
   const { subscription, storeId } = usePortal()
-  if (!subscription) return <Skeleton aria-hidden className="h-6 w-28 rounded-full" />
+  if (!subscription) return <Skeleton aria-hidden className="h-5 w-28" />
 
   const days = subscription.daysRemaining
   let text: string
@@ -28,7 +28,7 @@ export function PlanBadge() {
     <Link
       to={`/portal/${encodeURIComponent(storeId)}/plan`}
       aria-label={`${text}. Ver plan y suscripción`}
-      className="inline-flex min-h-11 items-center rounded-full lg:min-h-10"
+      className="inline-flex min-h-11 items-center rounded-sm lg:min-h-10"
     >
       <StatusBadge tone={SUBSCRIPTION_STATUS_TONE[subscription.status]}>{text}</StatusBadge>
     </Link>

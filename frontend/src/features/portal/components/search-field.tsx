@@ -15,7 +15,7 @@ export function SearchField({ label = 'Buscar', value, onChange, placeholder, cl
   const id = useId()
   return (
     <div className={cn('flex min-w-0 flex-col gap-1.5', className)}>
-      <label htmlFor={id} className="text-sm font-semibold">
+      <label htmlFor={id} className="text-sm font-semibold text-ap-ink">
         {label}
       </label>
       <input
@@ -35,7 +35,7 @@ export function SearchField({ label = 'Buscar', value, onChange, placeholder, cl
 export function ResultCount({ shown, total, singular, plural }: { shown: number; total: number; singular: string; plural: string }) {
   const noun = total === 1 ? singular : plural
   return (
-    <p role="status" className="text-sm text-muted-foreground">
+    <p role="status" className="text-sm text-ap-muted tabular-nums">
       {shown === total ? `${total} ${noun}` : `${shown} de ${total} ${plural}`}
     </p>
   )
