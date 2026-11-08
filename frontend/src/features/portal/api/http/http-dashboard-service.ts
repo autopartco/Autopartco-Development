@@ -5,6 +5,7 @@ import { portalRequest, storePath } from './portal-http'
 /** `storesuite/dashboard/DashboardController`. */
 export function createHttpDashboardService(): DashboardService {
   return {
-    dashboard: (storeId) => portalRequest<Dashboard>(storePath(storeId, '/dashboard')),
+    dashboard: (storeId, branchId) =>
+      portalRequest<Dashboard>(storePath(storeId, branchId ? `/dashboard?branchId=${encodeURIComponent(branchId)}` : '/dashboard')),
   }
 }

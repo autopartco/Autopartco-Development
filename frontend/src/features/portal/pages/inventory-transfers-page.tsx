@@ -45,10 +45,11 @@ function parseQuantity(text: string, max: number): number | undefined {
 }
 
 function NewTransfer({ branches }: { branches: { id: string; name: string }[] }) {
-  const { storeId, invalidateStore } = usePortal()
+  const { storeId, invalidateStore, branchId: activeBranchId } = usePortal()
   const [params] = useSearchParams()
   const products = useStoreQuery('products', async (id) => (await getProductService()).list(id))
-  const preselected = params.get('origen') ?? ''
+  // Origen: el del enlace (`?origen=`) o, si no hay, la sucursal activa de la barra de contexto.
+  const preselected = params.get('origen') ?? activeBranchId ?? ''
   const [from, setFrom] = useState(branches.some((branch) => branch.id === preselected) ? preselected : '')
   const [to, setTo] = useState('')
   const [mode, setMode] = useState<UiMode>('ALL')
@@ -336,7 +337,9 @@ function TransferDetail({ transferId }: { transferId: string }) {
 }
 
 function History({ branches }: { branches: { id: string; name: string }[] }) {
-  const [branchId, setBranchId] = useState('')
+  const { branchId: activeBranchId } = usePortal()
+  // Arranca con la sucursal activa de la barra de contexto; el selector del historial puede cambiarla.
+  const [branchId, setBranchId] = useState(() => (activeBranchId && branches.some((branch) => branch.id === activeBranchId) ? activeBranchId : ''))
   const [page, setPage] = useState(1)
   const [openId, setOpenId] = useState<string>()
   const result = useStoreQuery(`transfers:${branchId}:${page}`, async (id) =>

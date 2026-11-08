@@ -38,11 +38,12 @@ public class StoreOrderController {
     public List<SaleSummaryResponse> list(
             @PathVariable UUID storeId,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) UUID branchId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             Authentication authentication
     ) {
-        return listStoreOrders.execute(storeId, authentication.getName(), status, page, size);
+        return listStoreOrders.execute(storeId, authentication.getName(), status, branchId, page, size);
     }
 
     @GetMapping("/{saleId}")

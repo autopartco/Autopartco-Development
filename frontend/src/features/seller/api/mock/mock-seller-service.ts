@@ -40,6 +40,7 @@ export function createMockSellerApplicationService(): SellerApplicationService {
         businessName: 'Repuestos El Paisa',
         status: done ? 'ACTIVE' : 'CONFIGURATION_PENDING',
         createdAt: '2026-10-10T09:00:00',
+        reviewedAt: '2026-10-11T15:20:00',
       },
     ]
   }

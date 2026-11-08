@@ -2,7 +2,7 @@ import { Link } from 'react-router'
 import { PackageIcon, PlusIcon } from 'lucide-react'
 import { EmptyState } from '@/components/common/states'
 import { Button } from '@/components/ui/button'
-import { formatCOP, formatNumber, pluralize } from '@/lib/format'
+import { formatCOP, formatNumber } from '@/lib/format'
 import { getAlertService } from '../api/alert-service'
 import type { StoreAlert } from '../api/alert-types'
 import { getDashboardService } from '../api/dashboard-service'
@@ -38,19 +38,19 @@ function todayItems(data: Dashboard, base: string, can: (permission: StorePermis
   }
   if (can('ORDER_READ') && data.sales.pendingOrders > 0) {
     const count = data.sales.pendingOrders
-    items.push({ key: 'pending', count, title: pluralize(count, 'Pedido por confirmar', 'Pedidos por confirmar'), detail: 'El comprador espera tu confirmación o cancelación.', tone: 'warning', to: `${base}/pedidos?estado=PENDING`, cta: 'Confirmar pedidos' })
+    items.push({ key: 'pending', count, title: count === 1 ? 'Pedido por confirmar' : 'Pedidos por confirmar', detail: 'El comprador espera tu confirmación o cancelación.', tone: 'warning', to: `${base}/pedidos?estado=PENDING`, cta: 'Confirmar pedidos' })
   }
   if (can('ORDER_READ') && data.sales.preparingOrders > 0) {
     const count = data.sales.preparingOrders
-    items.push({ key: 'preparing', count, title: pluralize(count, 'Pedido por despachar', 'Pedidos por despachar'), detail: 'Están en preparación: registra el envío cuando salgan.', tone: 'info', to: `${base}/pedidos?estado=PREPARING`, cta: 'Registrar envíos' })
+    items.push({ key: 'preparing', count, title: count === 1 ? 'Pedido por despachar' : 'Pedidos por despachar', detail: 'Están en preparación: registra el envío cuando salgan.', tone: 'info', to: `${base}/pedidos?estado=PREPARING`, cta: 'Registrar envíos' })
   }
   if (can('PRODUCT_READ') && data.inventory && data.inventory.outOfStock > 0) {
     const count = data.inventory.outOfStock
-    items.push({ key: 'out', count, title: pluralize(count, 'Publicación agotada', 'Publicaciones agotadas'), detail: 'No se pueden vender hasta que repongas existencias.', tone: 'danger', to: `${base}/inventario?stock=agotado`, cta: 'Reponer' })
+    items.push({ key: 'out', count, title: count === 1 ? 'Publicación agotada' : 'Publicaciones agotadas', detail: 'No se pueden vender hasta que repongas existencias.', tone: 'danger', to: `${base}/inventario?stock=agotado`, cta: 'Reponer' })
   }
   if (can('PRODUCT_READ') && data.inventory && data.inventory.lowStock > 0) {
     const count = data.inventory.lowStock
-    items.push({ key: 'low', count, title: pluralize(count, 'Publicación con stock bajo', 'Publicaciones con stock bajo'), detail: 'Quedan de 1 a 3 unidades.', tone: 'warning', to: `${base}/inventario?stock=bajo`, cta: 'Revisar stock' })
+    items.push({ key: 'low', count, title: count === 1 ? 'Publicación con stock bajo' : 'Publicaciones con stock bajo', detail: 'Quedan de 1 a 3 unidades.', tone: 'warning', to: `${base}/inventario?stock=bajo`, cta: 'Revisar stock' })
   }
   return items
 }
@@ -75,6 +75,7 @@ function TodayList({ data }: { data: Dashboard }) {
         <h2 id="hoy-titulo" className="text-block-title text-ap-ink">
           Qué atender hoy
         </h2>
+        <BranchScope />
       </div>
       {items.length === 0 ? (
         <p className="rounded-lg border border-ap-line px-4 py-5 text-sm text-ap-muted">
@@ -84,7 +85,7 @@ function TodayList({ data }: { data: Dashboard }) {
         <ul className="divide-y divide-ap-line rounded-lg border border-ap-line">
           {items.map((item) => (
             <li key={item.key} className="grid grid-cols-[3.5rem_minmax(0,1fr)] items-center gap-x-3 gap-y-3 px-3 py-3 sm:grid-cols-[4rem_minmax(0,1fr)_auto] sm:px-4">
-              <p className={`ap-price text-right text-2xl leading-none ${TONE_TEXT[item.tone]}`} aria-hidden={item.count === undefined}>
+              <p className={`ap-price text-right text-2xl leading-none ${TONE_TEXT[item.tone]}`} aria-hidden>
                 {item.count !== undefined ? formatNumber(item.count) : '—'}
               </p>
               <div className="min-w-0">
@@ -165,9 +166,12 @@ function MonthSales({ data }: { data: Dashboard }) {
   const { storeId, can } = usePortal()
   return (
     <section aria-labelledby="mes-titulo" className="flex flex-col gap-3 border-t border-ap-line-strong pt-4">
-      <h2 id="mes-titulo" className="text-base font-semibold text-ap-ink">
-        Este mes
-      </h2>
+      <div className="flex flex-col gap-1">
+        <h2 id="mes-titulo" className="text-base font-semibold text-ap-ink">
+          Este mes
+        </h2>
+        <BranchScope />
+      </div>
       <dl className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-0.5">
           <dt className="text-sm text-ap-muted">Ingresos</dt>
@@ -188,8 +192,23 @@ function MonthSales({ data }: { data: Dashboard }) {
   )
 }
 
+/**
+ * A qué sucursal corresponden las cifras de ventas e inventario. Solo se muestra con varias sucursales activas
+ * (con una, todo es del almacén). Mono, como el resto del contexto (§7.3).
+ */
+function BranchScope() {
+  const { activeBranches, branchName } = usePortal()
+  if (activeBranches.length < 2) return null
+  return (
+    <p className="ap-ref text-ap-muted">
+      <span className="sr-only">Cifras de: </span>
+      {branchName ? (/^sucursal\b/i.test(branchName) ? branchName : `Sucursal ${branchName}`) : 'Todas las sucursales'}
+    </p>
+  )
+}
+
 function PlanStatus({ data }: { data: Dashboard }) {
-  const { storeId } = usePortal()
+  const { storeId, activeBranches } = usePortal()
   const base = `/portal/${encodeURIComponent(storeId)}`
   const status = data.subscriptionStatus
   const days = data.daysRemaining
@@ -200,7 +219,7 @@ function PlanStatus({ data }: { data: Dashboard }) {
         <h2 id="plan-titulo" className="text-base font-semibold text-ap-ink">
           Plan {data.plan.name}
         </h2>
-        {status ? <StatusBadge tone={SUBSCRIPTION_STATUS_TONE[status]}>{SUBSCRIPTION_STATUS_LABEL[status]}</StatusBadge> : null}
+        {status && SUBSCRIPTION_STATUS_LABEL[status].toLowerCase() !== data.plan.name.toLowerCase() ? <StatusBadge tone={SUBSCRIPTION_STATUS_TONE[status]}>{SUBSCRIPTION_STATUS_LABEL[status]}</StatusBadge> : null}
       </div>
       <p className="-mt-2 text-sm text-ap-muted">
         {status === 'EXPIRED'
@@ -209,6 +228,7 @@ function PlanStatus({ data }: { data: Dashboard }) {
             ? `Vigente hasta ${formatDate(until)}${days !== null && days !== undefined ? ` (${formatDays(days)})` : ''}.`
             : 'Sin fecha de vigencia.'}
       </p>
+      {activeBranches.length > 1 ? <p className="-mt-2 text-xs text-ap-muted">El plan y los cupos son de todo el almacén, sin importar la sucursal elegida.</p> : null}
       <UsageMeter capacity="PRODUCTS" used={data.usage.products} limit={data.maxProducts} upgradeTo={`${base}/plan`} />
       <UsageMeter capacity="BRANCHES" used={data.usage.branches} limit={data.maxBranches} upgradeTo={`${base}/plan`} />
       <UsageMeter capacity="USERS" used={data.usage.users} limit={data.maxUsers} upgradeTo={`${base}/plan`} />
@@ -262,9 +282,8 @@ function DashboardView({ data }: { data: Dashboard }) {
 
 /** `/portal/:storeId/inicio`: qué atender hoy (pedidos, existencias, alertas) y, al lado, el mes y el plan. */
 export default function PortalOverviewPage() {
-  const { store, can, storeId } = usePortal()
-  const dashboard = useStoreQuery('dashboard', async (id) => (await getDashboardService()).dashboard(id))
-  const name = dashboard.data?.storeName ?? store?.businessName
+  const { store, can, storeId, branchReady } = usePortal()
+  const name = store?.businessName
 
   return (
     <>
@@ -281,9 +300,19 @@ export default function PortalOverviewPage() {
           ) : null
         }
       />
-      <QueryBoundary result={dashboard} what="el resumen del almacén" skeleton={<ListSkeleton rows={4} label="Cargando el resumen" />}>
-        {(data) => <DashboardView data={data} />}
-      </QueryBoundary>
+      {/* Se espera a conocer la sucursal activa para no pedir (y mostrar) primero las cifras de todo el almacén. */}
+      {branchReady ? <DashboardQuery /> : <ListSkeleton rows={4} label="Cargando el resumen" />}
     </>
+  )
+}
+
+/** Resumen de la sucursal activa (o de todo el almacén); la clave incluye la sucursal para no mezclar cifras. */
+function DashboardQuery() {
+  const { branchId } = usePortal()
+  const dashboard = useStoreQuery(`dashboard:${branchId ?? 'all'}`, async (id) => (await getDashboardService()).dashboard(id, branchId))
+  return (
+    <QueryBoundary result={dashboard} what="el resumen del almacén" skeleton={<ListSkeleton rows={4} label="Cargando el resumen" />}>
+      {(data) => <DashboardView data={data} />}
+    </QueryBoundary>
   )
 }

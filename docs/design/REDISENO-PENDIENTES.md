@@ -16,16 +16,21 @@ Norma: `docs/design/AUTOPARTCO_DESIGN_SYSTEM.md`.
 ## Pendiente
 
 1. ~~Borrar `aurora-header.tsx` y `admin.css`~~ (hecho).
-2. **QA visual** en escritorio y móvil con datos reales (no se hizo: build y lint en verde).
-   - Carrito y pedidos en móvil; foco y teclado; contraste de bordes de campos sobre papel.
+2. ~~QA visual~~ de portal y administración en escritorio (1366 px) y móvil (375 px), con datos simulados (v1.6.5). Queda revisarlo con datos reales:
+   - Foco y teclado; contraste de bordes de campos sobre papel.
    - Celdas del mapa de calor de ventas (20–24 px) en táctil.
    - Avisos de "pago de prueba" en modo `SIMULATED` (Wompi sandbox es producción: valorar quitarlos).
-3. **Publicar** como `v1.6.4`: PR a `develop`, `git tag v1.6.4 origin/develop` y `git push origin v1.6.4`.
+3. ~~Publicar `v1.6.4`~~ (hecho).
+
+## v1.6.5
+
+- Sucursal activa en el portal (`?branchId=` en dashboard y pedidos); revisor y fecha de revisión de solicitudes (`seller_applications.reviewed_at`) e historial admin por estado.
 
 ## Limitaciones de datos
 
-- El portal no tiene "sucursal activa" ni dato de "solicitudes" en el resumen.
-- El resumen de admin no muestra incidencias (requeriría `platformStats`); la cola solo recibe solicitudes pendientes y `StoreApplication` no trae quién revisó ni cuándo.
+- El resumen de admin no muestra incidencias (requeriría `platformStats`).
+- Solicitudes revisadas antes de v1.6.5: sin fecha de revisión ("Fecha no registrada").
+- Historial admin: consultas N+1 (solicitante, revisor y documentos por fila); cargar en lote si crece.
 
 ## Notas
 

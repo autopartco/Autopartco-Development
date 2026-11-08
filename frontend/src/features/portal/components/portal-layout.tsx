@@ -15,6 +15,10 @@ import { PortalBrand, PortalHeader } from '../layout/portal-header'
 import { PortalNav } from '../layout/portal-nav'
 import { PlanBadge } from '../layout/plan-badge'
 import { StoreSwitcher } from '../layout/store-switcher'
+import { BranchSwitcher } from '../layout/branch-switcher'
+import { getBranchService } from '../api/branch-service'
+import { readActiveBranch, writeActiveBranch } from '../lib/active-branch'
+import { useSession } from '@/features/auth/hooks'
 import { useCommandPalette } from '../lib/use-command-palette'
 import { PORTAL_SECTION_GROUPS, sectionOf } from '../lib/sections'
 import { AlertsBell } from '../layout/alerts-bell'
@@ -150,6 +154,35 @@ function PortalShell({ storeId }: { storeId: string }) {
     return true
   }, [])
 
+  // Sucursal activa: misma caché que la pantalla de sucursales. Sin `BRANCH_READ` se usa otra clave para no
+  // dejar una lista vacía en la caché compartida.
+  const branchReadable = permissionSet.has('BRANCH_READ')
+  const branchesQuery = useAsync(branchReadable ? `portal:${storeId}:branches` : `portal:${storeId}:branches-unavailable`, async () =>
+    branchReadable ? (await getBranchService()).list(storeId) : [],
+  )
+  const branchesSettled = branchesQuery.status !== 'loading' && !branchesQuery.isStale
+  const activeBranches = useMemo(
+    () => (branchReadable && branchesQuery.status === 'success' ? (branchesQuery.data ?? []).filter((branch) => branch.state === 'ACTIVE') : []),
+    [branchReadable, branchesQuery.status, branchesQuery.data],
+  )
+  const userKey = useSession()?.user.email.toLowerCase()
+  const [chosenBranch, setChosenBranch] = useState<{ value: string | undefined } | undefined>()
+  const preferredBranch = chosenBranch ? chosenBranch.value : readActiveBranch(userKey, storeId)
+  // Con una sola sucursal (o si la elegida ya no existe o está inactiva) se trabaja con todas.
+  const activeBranch = activeBranches.length > 1 ? activeBranches.find((branch) => branch.id === preferredBranch) : undefined
+  const branchReady = permissions.status !== 'loading' && (!branchReadable || branchesSettled)
+  useEffect(() => {
+    // La sucursal recordada ya no existe: se olvida para volver a «Todas» la próxima vez.
+    if (branchReady && branchesQuery.status === 'success' && preferredBranch && !activeBranch) writeActiveBranch(userKey, storeId, undefined)
+  }, [branchReady, branchesQuery.status, preferredBranch, activeBranch, userKey, storeId])
+  const setBranchId = useCallback(
+    (next: string | undefined) => {
+      setChosenBranch({ value: next })
+      writeActiveBranch(userKey, storeId, next)
+    },
+    [userKey, storeId, setChosenBranch],
+  )
+
   const value: PortalContextValue = {
     storeId,
     stores: stores.data ?? [],
@@ -162,6 +195,11 @@ function PortalShell({ storeId }: { storeId: string }) {
     applySubscription,
     promptUpgrade,
     invalidateStore,
+    activeBranches,
+    branchId: activeBranch?.id,
+    branchName: activeBranch?.name,
+    setBranchId,
+    branchReady,
   }
 
   // Sin acceso: permisos rechazados por el servidor, o la tienda no figura entre las de la persona.
@@ -219,6 +257,7 @@ function PortalShell({ storeId }: { storeId: string }) {
               <div className="flex min-w-0 flex-1 items-center gap-3">
                 <SectionLabel />
                 <StoreSwitcher />
+                {accessError === undefined && !inactive ? <BranchSwitcher /> : null}
               </div>
               {store?.applicationStatus === 'ACTIVE' ? <PlanBadge /> : null}
             </div>

@@ -13,7 +13,8 @@ import com.autopartco.backend.core.organization.StoreApplicationView;
 
 /**
  * Solicitud de almacén para su solicitante. Mismo JSON que {@code operations.storeverification}
- * {@code StoreApplicationResponse}: los productos no se importan entre sí y organization no puede resolver planes.
+ * {@code StoreApplicationResponse} salvo {@code reviewer} (no se expone la cuenta root): los productos no se importan
+ * entre sí y organization no puede resolver planes.
  */
 public record StoreApplicationResponse(
         UUID applicationId,
@@ -28,7 +29,8 @@ public record StoreApplicationResponse(
         PlanResponse selectedPlan,
         List<Document> documents,
         String reviewNotes,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        LocalDateTime reviewedAt
 ) {
     public record Document(
             UUID id,
@@ -61,7 +63,9 @@ public record StoreApplicationResponse(
                         ))
                         .toList(),
                 view.reviewNotes(),
-                view.createdAt()
+                view.createdAt(),
+                // Sin datos del revisor: el solicitante no debe ver la cuenta root.
+                view.reviewedAt()
         );
     }
 }

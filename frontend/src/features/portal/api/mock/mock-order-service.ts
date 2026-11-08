@@ -53,6 +53,7 @@ export function createMockOrderService(): OrderService {
       requirePermission(store, 'ORDER_READ')
       return store.orders
         .filter((sale) => !query.status || sale.status === query.status)
+        .filter((sale) => !query.branchId || sale.branchId === query.branchId)
         .toSorted((a, b) => b.createdAt.localeCompare(a.createdAt))
         .map(summary)
     },

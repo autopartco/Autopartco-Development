@@ -2,6 +2,8 @@ import { invalidateAsync, useAsync } from '@/lib/use-async'
 import { getAdminApplicationService } from './api/admin-service'
 import { getAdminOpsService } from './api/admin-ops-service'
 import { getAdminPromotionService } from './api/admin-promotion-service'
+import type { Page } from '@/features/portal/api/types'
+import type { StoreApplicationStatus } from '@/features/seller/api/types'
 import type { StoreApplication } from './api/types'
 
 /** Prefijo de caché del servicio de administración. */
@@ -10,6 +12,13 @@ export const ADMIN_CACHE_PREFIX = 'admin:'
 export function usePendingApplications() {
   return useAsync<StoreApplication[]>(`${ADMIN_CACHE_PREFIX}applications:pending`, async () =>
     (await getAdminApplicationService()).pending(),
+  )
+}
+
+/** Listado paginado de solicitudes (`status` vacío = todas). Misma familia de caché que la cola pendiente. */
+export function useApplicationsList(status: StoreApplicationStatus | undefined, page: number, size: number) {
+  return useAsync<Page<StoreApplication>>(`${ADMIN_CACHE_PREFIX}applications:list:${status ?? 'ALL'}:${page}:${size}`, async () =>
+    (await getAdminApplicationService()).listApplications({ status, page, size }),
   )
 }
 

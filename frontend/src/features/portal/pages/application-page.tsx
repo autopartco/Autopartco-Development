@@ -83,7 +83,14 @@ function ApplicationCard({ application }: { application: MyStoreApplication }) {
         <h2 className="text-block-title text-ap-ink">{application.businessName}</h2>
         <StatusBadge tone={status.tone}>{status.label}</StatusBadge>
       </div>
-      <p className="text-sm text-ap-muted">Enviada el <time dateTime={application.createdAt} className="ap-ref text-ap-ink">{formatDate(application.createdAt)}</time></p>
+      <p className="text-sm text-ap-muted">
+        Enviada el <time dateTime={application.createdAt} className="ap-ref text-ap-ink">{formatDate(application.createdAt)}</time>
+        {application.reviewedAt ? (
+          <>
+            {' · '}Revisada el <time dateTime={application.reviewedAt} className="ap-ref text-ap-ink">{formatDate(application.reviewedAt)}</time>
+          </>
+        ) : null}
+      </p>
       <p className="max-w-prose text-sm text-ap-ink">{status.next}</p>
       {application.reviewNotes ? (
         <div className="border-l-2 border-ap-line-strong py-1 pl-3 text-sm">

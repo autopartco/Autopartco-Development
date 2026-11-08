@@ -8,8 +8,8 @@ export function PortalBrand({ className }: { className?: string }) {
   return (
     <div className={cn('flex min-w-0 items-center gap-2.5 sm:gap-3', className)}>
       <Logo tone="dark" to="/portal" label="Autopartco, portal de almacenes" />
-      <span aria-hidden className="h-5 w-px shrink-0 bg-ap-line-on-dark" />
-      <span className="ap-index truncate">
+      <span aria-hidden className="hidden h-5 w-px shrink-0 bg-ap-line-on-dark min-[400px]:block" />
+      <span className="ap-index hidden truncate min-[400px]:inline">
         <span className="sm:hidden">Portal</span>
         <span className="hidden sm:inline">Portal de almacenes</span>
       </span>

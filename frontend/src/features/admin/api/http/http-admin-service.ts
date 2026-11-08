@@ -2,6 +2,7 @@ import { API_BASE_URL, ApiError } from '@/lib/api'
 import { getAccessToken } from '@/features/auth/api/http/http-auth-service'
 import { setSession } from '@/features/auth/session-store'
 import { portalRequest } from '@/features/portal/api/http/portal-http'
+import type { Page } from '@/features/portal/api/types'
 import type { AdminApplicationService, StoreApplication } from '../types'
 
 const BASE = '/admin/store-applications'
@@ -11,6 +12,11 @@ export function createHttpAdminApplicationService(): AdminApplicationService {
   return {
     simulated: false,
     pending: () => portalRequest<StoreApplication[]>(`${BASE}/pending`),
+    listApplications({ status, page, size }) {
+      const params = new URLSearchParams({ page: String(page), size: String(size) })
+      if (status) params.set('status', status)
+      return portalRequest<Page<StoreApplication>>(`${BASE}?${params}`)
+    },
     review: (applicationId, input) =>
       portalRequest<StoreApplication>(`${BASE}/${encodeURIComponent(applicationId)}/review`, { method: 'PATCH', body: input }),
     async downloadDocument(applicationId, document) {

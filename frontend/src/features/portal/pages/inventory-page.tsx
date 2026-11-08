@@ -21,7 +21,7 @@ import { StockAdjustDialog, type AdjustTarget } from '../components/stock-adjust
 import { StockQuantity } from '../components/status-badge'
 import { SEGMENT_GROUP_CLASS, segmentClass } from '../components/segmented'
 import { usePortal } from '../context'
-import { useActiveBranches, useStoreQuery } from '../hooks'
+import { branchParamValue, useActiveBranches, useBranchSearchParam, useStoreQuery } from '../hooks'
 import { inventoryErrorMessage, saveFile } from '../lib/inventory'
 import { isLowStock } from '../lib/product-bulk'
 
@@ -190,7 +190,8 @@ function InventoryView({ rows }: { rows: ProductRow[] }) {
 
   const q = params.get('q') ?? ''
   const stock = params.get('stock') ?? ''
-  const sucursal = params.get('sucursal') ?? ''
+  // Parte de la sucursal activa de la barra de contexto; el selector de abajo puede cambiarla.
+  const sucursal = useBranchSearchParam()
   // `?stock=bajo` (enlaces anteriores, paleta de comandos) abre la vista de stock bajo.
   const lowView = params.get('vista') === 'bajo' || stock === 'bajo'
 
@@ -279,7 +280,7 @@ function InventoryView({ rows }: { rows: ProductRow[] }) {
     },
   ]
 
-  const filtering = Boolean(q || stock || sucursal)
+  const filtering = Boolean(q || stock || params.has('sucursal'))
 
   return (
     <div className="flex flex-col gap-5">
@@ -303,7 +304,7 @@ function InventoryView({ rows }: { rows: ProductRow[] }) {
         className={lowView ? 'grid gap-3 sm:grid-cols-2' : 'grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,2fr)_repeat(2,minmax(0,1fr))]'}
       >
         <SearchField value={q} onChange={(value) => setFilter('q', value)} placeholder="Nombre, SKU o referencia" />
-        <SelectField id="inv-sucursal" label="Sucursal" placeholder="Todas" options={branches.map(([value, label]) => ({ value, label }))} value={sucursal} onChange={(event) => setFilter('sucursal', event.target.value)} />
+        <SelectField id="inv-sucursal" label="Sucursal" placeholder="Todas" options={branches.map(([value, label]) => ({ value, label }))} value={sucursal} onChange={(event) => setFilter('sucursal', branchParamValue(event.target.value))} />
         {lowView ? null : (
           <SelectField id="inv-stock" label="Existencias" placeholder="Todas" options={STOCK_OPTIONS} value={stock} onChange={(event) => setFilter('stock', event.target.value)} />
         )}
@@ -336,7 +337,7 @@ function InventoryView({ rows }: { rows: ProductRow[] }) {
 /** `/portal/:storeId/inventario`: existencias por sucursal, ajustes con motivo, stock bajo y CSV. */
 export default function PortalInventoryPage() {
   const { storeId, can } = usePortal()
-  const [params] = useSearchParams()
+  const exportBranch = useBranchSearchParam()
   const [importing, setImporting] = useState(false)
   const { branches, known } = useActiveBranches()
   const products = useStoreQuery('products', async (id) => (await getProductService()).list(id))
@@ -347,7 +348,7 @@ export default function PortalInventoryPage() {
   })
 
   async function exportCsv() {
-    const result = await exporter.run(params.get('sucursal') || undefined)
+    const result = await exporter.run(exportBranch || undefined)
     if (result.status === 'ok') toast.success('Descargamos el inventario en un archivo CSV.')
     else if (result.status === 'error') toast.error(inventoryErrorMessage(result.error, 'No pudimos descargar el inventario. Inténtalo de nuevo.'))
   }

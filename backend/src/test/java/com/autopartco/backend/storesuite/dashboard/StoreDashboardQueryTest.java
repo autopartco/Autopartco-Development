@@ -1,10 +1,13 @@
 package com.autopartco.backend.storesuite.dashboard;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -28,7 +31,9 @@ import com.autopartco.backend.core.billing.Subscriptions;
 import com.autopartco.backend.core.inventory.StockService;
 import com.autopartco.backend.core.order.SaleQueries;
 import com.autopartco.backend.core.order.SalesSummary;
+import com.autopartco.backend.core.organization.BranchService;
 import com.autopartco.backend.core.organization.StoreAccess;
+import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.core.organization.StoreApplicationSummary;
 import com.autopartco.backend.core.organization.StoreApplications;
 import com.autopartco.backend.core.organization.StorePermissionCodes;
@@ -52,6 +57,9 @@ class StoreDashboardQueryTest {
 
     @Mock
     private StockService stockService;
+
+    @Mock
+    private BranchService branchService;
 
     @InjectMocks
     private StoreDashboardQuery storeDashboardQuery;
@@ -91,5 +99,51 @@ class StoreDashboardQueryTest {
         assertEquals(new DashboardResponse.Inventory(120, 4, 9), response.inventory());
         assertEquals(40, response.usage().products());
         assertEquals(100, response.maxProducts());
+        assertNull(response.branchId());
+        verifyNoInteractions(branchService);
+    }
+
+    @Test
+    void branchOfAnotherStoreIsNotFound() {
+        UUID storeId = UUID.randomUUID();
+        UUID foreignBranch = UUID.randomUUID();
+        doThrow(new NotFoundException("BRANCH_NOT_FOUND", "No se encontró la sucursal."))
+                .when(branchService).requireInStore(storeId, foreignBranch);
+
+        NotFoundException exception = assertThrows(
+                NotFoundException.class,
+                () -> storeDashboardQuery.execute(storeId, "user@example.com", foreignBranch)
+        );
+
+        assertEquals("BRANCH_NOT_FOUND", exception.getCode());
+        verifyNoInteractions(saleQueries, stockService, entitlements, subscriptions);
+    }
+
+    @Test
+    void validBranchFiltersSalesAndStockButKeepsStoreLevelPlanAndUsage() {
+        UUID storeId = UUID.randomUUID();
+        UUID branchId = UUID.randomUUID();
+        PlanResponse plan = new PlanResponse(UUID.randomUUID(), "TRY", "Prueba", null, 0, "COP", List.of(), false,
+                true, 3, 100, 2, List.of());
+        when(entitlements.requireAccess(storeId)).thenReturn(new SubscriptionAccess(
+                storeId, plan, null, false, null, null, null));
+        when(entitlements.usage(storeId)).thenReturn(new PlanEntitlements.Usage(2, 40, 1));
+        when(storeApplications.summaryOf(storeId)).thenReturn(new StoreApplicationSummary("Repuestos", "ACTIVE", false));
+        SalesSummary branchSales = new SalesSummary(3, new BigDecimal("150000.00"), 1, 0);
+        when(saleQueries.monthlySummary(storeId, branchId)).thenReturn(branchSales);
+        when(subscriptions.view(eq(storeId), any())).thenReturn(new SubscriptionView(
+                storeId, SubscriptionStatus.ACTIVE, plan, null, null, null, null, null, 10L));
+        when(stockService.summaryForStore(storeId, branchId)).thenReturn(new StockService.StockSummary(30, 1, 2));
+
+        DashboardResponse response = storeDashboardQuery.execute(storeId, "user@example.com", branchId);
+
+        verify(branchService).requireInStore(storeId, branchId);
+        verify(saleQueries, never()).monthlySummary(storeId);
+        verify(stockService, never()).summaryForStore(storeId);
+        assertEquals(branchId, response.branchId());
+        assertEquals(branchSales, response.sales());
+        assertEquals(new DashboardResponse.Inventory(30, 1, 2), response.inventory());
+        assertEquals(2, response.usage().branches());
+        assertEquals(3, response.maxBranches());
     }
 }

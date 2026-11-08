@@ -26,7 +26,9 @@ public record DashboardResponse(
         SalesSummary sales,
         SubscriptionStatus subscriptionStatus,
         Long daysRemaining,
-        Inventory inventory
+        Inventory inventory,
+        /* Sucursal a la que se filtraron ventas e inventario; null = todo el almacén. */
+        UUID branchId
 ) {
     /** Conteos de listados: total, agotados (stock ≤ 0) y con poco stock (0 &lt; stock ≤ 3). */
     public record Inventory(

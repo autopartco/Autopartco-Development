@@ -14,7 +14,7 @@ import { Delta } from '../components/bento'
 import { ChartEmpty, ChartSection, ChartSkeleton } from '../components/chart-section'
 import { SelectField } from '../components/form-controls'
 import { AnalyticsBoundary, BranchSelect, IntelligencePage } from '../components/intelligence-shell'
-import { useStoreQuery } from '../hooks'
+import { branchParamValue, useBranchSearchParam, useStoreQuery } from '../hooks'
 import { CHART_BG } from '../lib/chart-palette'
 import {
   GRANULARITY_OPTIONS,
@@ -320,7 +320,7 @@ export default function IntelligenceReportsPage() {
   const preset: RangePreset = isRangePreset(params.get('rango')) ? (params.get('rango') as RangePreset) : '30'
   const customFrom = params.get('desde') ?? ''
   const customTo = params.get('hasta') ?? ''
-  const branchId = params.get('sucursal') ?? ''
+  const branchId = useBranchSearchParam()
 
   const range = resolveRange(preset, { from: customFrom || undefined, to: customTo || undefined })
   const days = rangeLength(range.from, range.to)
@@ -412,7 +412,7 @@ export default function IntelligenceReportsPage() {
           options={GRANULARITY_OPTIONS}
           containerClassName="w-full sm:w-40"
         />
-        <BranchSelect value={branchId} onChange={(value) => set('sucursal', value)} />
+        <BranchSelect value={branchId} onChange={(value) => set('sucursal', branchParamValue(value))} />
       </form>
       {rangeError ? (
         <p id="rep-rango-error" role="alert" className="rounded-md border border-ap-danger/30 bg-ap-danger-soft p-4 text-sm font-medium text-ap-danger">
