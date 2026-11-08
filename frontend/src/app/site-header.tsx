@@ -53,7 +53,7 @@ function SellerHeaderLink() {
       className="hidden h-11 min-w-11 shrink-0 items-center justify-center gap-1.5 rounded-md px-2.5 text-sm font-semibold text-ap-white transition-colors hover:bg-sidebar-accent md:inline-flex lg:h-10"
     >
       <StoreIcon className="size-4 text-ap-red-on-dark" aria-hidden />
-      <span className="hidden whitespace-nowrap md:inline xl:hidden 2xl:inline">{label}</span>
+      <span className="hidden whitespace-nowrap md:inline">{label}</span>
     </Link>
   )
 }
