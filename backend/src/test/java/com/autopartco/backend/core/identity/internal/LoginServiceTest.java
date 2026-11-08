@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.autopartco.backend.core.audit.AuditService;
 import com.autopartco.backend.core.identity.web.LoginRequest;
 import com.autopartco.backend.shared.persistence.State;
 import com.autopartco.backend.shared.error.UnauthorizedException;
@@ -41,6 +42,9 @@ class LoginServiceTest {
 
     @Mock
     private AccountSessionService accountSessionService;
+
+    @Mock
+    private AuditService auditService;
 
     @InjectMocks
     private LoginService loginService;

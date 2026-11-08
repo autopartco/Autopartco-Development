@@ -1,5 +1,8 @@
 package com.autopartco.backend.core.identity.internal;
 
+import com.autopartco.backend.core.audit.AuditService;
+import java.util.Map;
+
 import java.util.Locale;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,6 +25,7 @@ public class LoginService {
     private final AccountStatusService accountStatusService;
     private final AuthTokenService authTokenService;
     private final AccountSessionService accountSessionService;
+    private final AuditService auditService;
 
     @Transactional
     public LoginResponse login(LoginRequest request, String ipAddress, String userAgent) {
@@ -45,6 +49,7 @@ public class LoginService {
 
         if (!passwordEncoder.matches(request.password(), account.getPassword())) {
             loginAttemptService.record(account, false, ipAddress);
+            auditService.record(account.getId(), "LOGIN_FAILED", "ACCOUNT", account.getId(), ipMetadata(ipAddress));
 
             if (loginAttemptService.hasExceededFailedAttempts(account.getId())) {
                 accountStatusService.lock(
@@ -58,6 +63,7 @@ public class LoginService {
         }
 
         loginAttemptService.record(account, true, ipAddress);
+        auditService.record(account.getId(), "LOGIN_SUCCEEDED", "ACCOUNT", account.getId(), ipMetadata(ipAddress));
         AuthTokenService.TokenPair tokens = authTokenService.issue(account);
         accountSessionService.create(
                 tokens.sessionId(),
@@ -69,6 +75,10 @@ public class LoginService {
         );
 
         return tokens.response();
+    }
+
+    private static Map<String, Object> ipMetadata(String ipAddress) {
+        return ipAddress == null ? Map.of() : Map.of("ipAddress", ipAddress);
     }
 
     private UnauthorizedException invalidCredentials() {

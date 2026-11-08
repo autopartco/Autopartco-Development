@@ -1,5 +1,8 @@
 package com.autopartco.backend.core.identity.internal;
 
+import com.autopartco.backend.core.audit.AuditService;
+import java.util.Map;
+
 import java.util.Locale;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,6 +27,7 @@ public class PasswordRecoveryService {
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
     private final AccountSessionService accountSessionService;
+    private final AuditService auditService;
 
     @Transactional
     public PasswordRecoveryResponse requestRecovery(PasswordRecoveryRequest request) {
@@ -40,6 +44,7 @@ public class PasswordRecoveryService {
         token.setUsed(true);
         tokenService.save(token);
         accountSessionService.revokeAll(account.getId());
+        auditService.record(account.getId(), "PASSWORD_RESET", "ACCOUNT", account.getId(), Map.of());
 
         return new PasswordRecoveryResponse("La contraseña fue actualizada correctamente.");
     }

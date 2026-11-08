@@ -1,5 +1,9 @@
 package com.autopartco.backend.operations.promotions;
 
+import com.autopartco.backend.operations.auditlog.AdminAudit;
+import java.util.Map;
+
+import org.springframework.security.core.Authentication;
 import java.util.List;
 import java.util.UUID;
 
@@ -36,6 +40,7 @@ import lombok.AllArgsConstructor;
 public class PlatformPromotionController {
     private final PromotionService promotionService;
     private final PromotionResults promotionResults;
+    private final AdminAudit adminAudit;
 
     @GetMapping
     @PreAuthorize("hasAuthority('ROLE_ROOT')")
@@ -54,23 +59,37 @@ public class PlatformPromotionController {
 
     @PostMapping
     @PreAuthorize("hasAuthority('ROLE_ROOT')")
-    public ResponseEntity<PromotionResponse> create(@Valid @RequestBody PromotionUpsertRequest request) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(promotionService.createForPlatform(request));
+    public ResponseEntity<PromotionResponse> create(@Valid @RequestBody PromotionUpsertRequest request, Authentication authentication) {
+        PromotionResponse promotion = promotionService.createForPlatform(request);
+        adminAudit.record(authentication, "PLATFORM_PROMOTION_CREATED", "PROMOTION", promotion.id(), summary(promotion));
+        return ResponseEntity.status(HttpStatus.CREATED).body(promotion);
     }
 
     @PutMapping("/{promotionId}")
     @PreAuthorize("hasAuthority('ROLE_ROOT')")
     public PromotionResponse update(
             @PathVariable UUID promotionId,
-            @Valid @RequestBody PromotionUpsertRequest request
+            @Valid @RequestBody PromotionUpsertRequest request,
+            Authentication authentication
     ) {
-        return promotionService.updateForPlatform(promotionId, request);
+        PromotionResponse promotion = promotionService.updateForPlatform(promotionId, request);
+        adminAudit.record(authentication, "PLATFORM_PROMOTION_UPDATED", "PROMOTION", promotionId, summary(promotion));
+        return promotion;
     }
 
     @DeleteMapping("/{promotionId}")
     @PreAuthorize("hasAuthority('ROLE_ROOT')")
-    public ResponseEntity<Void> delete(@PathVariable UUID promotionId) {
+    public ResponseEntity<Void> delete(@PathVariable UUID promotionId, Authentication authentication) {
         promotionService.deleteForPlatform(promotionId);
+        adminAudit.record(authentication, "PLATFORM_PROMOTION_DELETED", "PROMOTION", promotionId, Map.of());
         return ResponseEntity.noContent().build();
+    }
+
+    private static Map<String, Object> summary(PromotionResponse promotion) {
+        return Map.of(
+                "name", promotion.name(),
+                "discountType", promotion.discountType().name(),
+                "discountValue", promotion.discountValue(),
+                "enabled", promotion.enabled());
     }
 }
