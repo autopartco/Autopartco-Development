@@ -124,6 +124,10 @@ public class ListingQueries {
 
     static final String PUBLISHED_LISTINGS_SQL = PUBLISHED_LISTINGS_WHERE_SQL + PUBLISHED_LISTINGS_ORDER_SQL;
 
+    /** Productos distintos con listado publicado en alguna sucursal del almacén (mismos filtros del catálogo). */
+    static final String PUBLISHED_PRODUCT_COUNT_SQL = "select count(distinct x.product_id) from ("
+            + PUBLISHED_LISTINGS_WHERE_SQL + " and b.store_id = ?) x";
+
     /**
      * Filtro por vehículo: el producto es universal o tiene alguna regla vigente que cubre el vehículo (misma marca y, por nivel,
      * regla «todos» ({@code null}) o el mismo id). Solo lee {@code product_vehicle_rules}.
@@ -289,6 +293,12 @@ public class ListingQueries {
                 images,
                 listings
         );
+    }
+
+    /** Productos publicados del almacén (cada producto cuenta una vez aunque esté en varias sucursales). */
+    public long publishedProductCount(UUID storeId) {
+        Long count = jdbcTemplate.queryForObject(PUBLISHED_PRODUCT_COUNT_SQL, Long.class, storeId);
+        return count == null ? 0 : count;
     }
 
     /** Listados visibles en el marketplace: producto, almacén y sucursal activos y con stock. */

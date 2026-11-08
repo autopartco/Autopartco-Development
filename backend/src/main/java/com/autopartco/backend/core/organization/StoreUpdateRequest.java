@@ -1,5 +1,6 @@
 package com.autopartco.backend.core.organization;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
@@ -20,10 +21,13 @@ public record StoreUpdateRequest(
         String businessEmail,
 
         @Size(max = 1000, message = "La descripción no puede superar 1000 caracteres.")
-        String description
+        String description,
+        @Valid
+        StorePublicContactRequest publicProfile
 ) {
     @AssertTrue(message = "Debe proporcionar al menos un dato permitido para actualizar.")
     public boolean hasChanges() {
-        return businessName != null || nit != null || businessEmail != null || description != null;
+        return businessName != null || nit != null || businessEmail != null || description != null
+                || (publicProfile != null && publicProfile.hasChanges());
     }
 }

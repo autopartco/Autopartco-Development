@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.autopartco.backend.core.analytics.TrafficRecorder;
+import com.autopartco.backend.core.analytics.VisibilityRecorder;
 import com.autopartco.backend.core.identity.AccountLookup;
 import com.autopartco.backend.core.identity.AccountRef;
 import com.autopartco.backend.shared.error.TooManyRequestsException;
@@ -39,17 +40,22 @@ public class TrafficController {
     private static final int MAX_TRACKED = 20_000;
 
     private final TrafficRecorder trafficRecorder;
+    private final VisibilityRecorder visibilityRecorder;
     private final AccountLookup accountLookup;
     private final Clock clock;
     private final Map<String, Deque<Instant>> calls = new ConcurrentHashMap<>();
 
     @Autowired
-    public TrafficController(TrafficRecorder trafficRecorder, AccountLookup accountLookup) {
-        this(trafficRecorder, accountLookup, Clock.systemUTC());
+    public TrafficController(
+            TrafficRecorder trafficRecorder, VisibilityRecorder visibilityRecorder, AccountLookup accountLookup) {
+        this(trafficRecorder, visibilityRecorder, accountLookup, Clock.systemUTC());
     }
 
-    TrafficController(TrafficRecorder trafficRecorder, AccountLookup accountLookup, Clock clock) {
+    TrafficController(
+            TrafficRecorder trafficRecorder, VisibilityRecorder visibilityRecorder, AccountLookup accountLookup,
+            Clock clock) {
         this.trafficRecorder = trafficRecorder;
+        this.visibilityRecorder = visibilityRecorder;
         this.accountLookup = accountLookup;
         this.clock = clock;
     }
@@ -68,6 +74,31 @@ public class TrafficController {
                 ? null
                 : accountLookup.findByEmail(authentication.getName()).map(AccountRef::accountId).orElse(null);
         trafficRecorder.record(request.anonymousId(), request.path(), request.referrer(), http.getHeader("User-Agent"), accountId);
+        return ResponseEntity.noContent().build();
+    }
+
+    public record VisibilityRequest(
+            @Size(max = 100) String anonymousId,
+            @Size(max = 20) String kind,
+            UUID storeId,
+            UUID productId,
+            @Size(max = 10) String ref,
+            @Size(max = 100) String utmSource,
+            @Size(max = 500) String referrer,
+            @Size(max = 10) String channel
+    ) {
+    }
+
+    /**
+     * Visita al perfil o a una publicación, o un compartido, para las métricas del almacén. Siempre 204 (lo inválido
+     * se ignora); comparte el límite por IP con {@code /pageview}. Nunca guarda la cuenta.
+     */
+    @PostMapping("/visibility")
+    public ResponseEntity<Void> visibility(@Valid @RequestBody VisibilityRequest request, HttpServletRequest http) {
+        acquire(http.getRemoteAddr());
+        visibilityRecorder.record(new VisibilityRecorder.Visit(request.anonymousId(), request.kind(),
+                request.storeId(), request.productId(), request.ref(), request.utmSource(), request.referrer(),
+                request.channel()));
         return ResponseEntity.noContent().build();
     }
 

@@ -25,6 +25,18 @@ public class PublishedStoreAssets {
 
     @Transactional(readOnly = true)
     public Optional<String> brandAssetPath(UUID storeId, String assetType) {
+        Store store = requirePublished(storeId);
+        String path = switch (assetType) {
+            case "logo" -> store.getLogoPath();
+            case "banner" -> store.getBannerPath();
+            default -> null;
+        };
+        return Optional.ofNullable(path);
+    }
+
+    /** Almacén publicado (solicitud y almacén {@code ACTIVE}); si no, {@code STORE_NOT_FOUND}. */
+    @Transactional(readOnly = true)
+    public Store requirePublished(UUID storeId) {
         StoreApplication application = applicationRepository.findByStoreId(storeId)
                 .orElseThrow(() -> new NotFoundException("STORE_NOT_FOUND", "No se encontró el almacén."));
         if (application.getStatus() != StoreApplicationStatus.ACTIVE) {
@@ -34,11 +46,6 @@ public class PublishedStoreAssets {
         if (!StateCodes.ACTIVE.equals(store.getState().getCode())) {
             throw new NotFoundException("STORE_NOT_FOUND", "No se encontró el almacén publicado.");
         }
-        String path = switch (assetType) {
-            case "logo" -> store.getLogoPath();
-            case "banner" -> store.getBannerPath();
-            default -> null;
-        };
-        return Optional.ofNullable(path);
+        return store;
     }
 }

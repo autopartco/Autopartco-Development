@@ -64,6 +64,7 @@ public class WebSecurityConfig {
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/social/*"),
                 // operations.metrics: visitas del marketplace (sin datos personales, con límite por IP).
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/events/pageview"),
+                new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/events/visibility"),
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/refresh"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.BASE + "/auth/verify-email"),
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/unlock/request"),
@@ -81,7 +82,9 @@ public class WebSecurityConfig {
                 new PublicRoute(HttpMethod.GET, ApiPaths.BASE + "/plans"),
                 // marketplace: navegación de compradores.
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/stores"),
+                new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/stores/*"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/stores/*/brand/*"),
+                new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/stores/*/reviews"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/products"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/products/*"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/products/*/frequently-bought"),

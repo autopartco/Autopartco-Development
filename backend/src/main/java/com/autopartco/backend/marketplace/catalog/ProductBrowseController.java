@@ -61,6 +61,7 @@ public class ProductBrowseController {
             @RequestParam(required = false) UUID versionId,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) UUID categoryId,
+            @RequestParam(required = false) UUID storeId,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size,
             @RequestHeader(name = SESSION_HEADER, required = false) String sessionId,
@@ -69,9 +70,10 @@ public class ProductBrowseController {
         BuyerContext buyer = buyerContexts.forBrowsing(authentication);
         List<ProductResponse> listings = listingQueries.published(new VehicleFilter(makeId, modelId, versionId), buyer);
         String text = SearchText.normalize(q);
-        if (text != null || categoryId != null) {
+        if (text != null || categoryId != null || storeId != null) {
             listings = listings.stream()
                     .filter(listing -> categoryId == null || categoryId.equals(listing.categoryId()))
+                    .filter(listing -> storeId == null || storeId.equals(listing.storeId()))
                     .filter(listing -> text == null || matches(listing, text))
                     .toList();
         }
