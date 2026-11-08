@@ -175,7 +175,7 @@ export default function AdminApplicationsPage() {
   }
 
   return (
-    <main>
+    <div>
       <AuroraHeader
         label="Verificación de almacenes"
         title="Solicitudes de almacenes"
@@ -187,6 +187,6 @@ export default function AdminApplicationsPage() {
       </AuroraHeader>
       <div className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">{body}</div>
       <ApplicationSheet application={selected} onClose={() => setSelectedId(undefined)} />
-    </main>
+    </div>
   )
 }

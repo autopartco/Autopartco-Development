@@ -168,7 +168,7 @@ export default function AdminSearchesPage() {
   }
 
   return (
-    <main>
+    <div>
       <title>Búsquedas | Administración | Autopartco</title>
       <AuroraHeader
         label="Inteligencia comercial"
@@ -218,6 +218,6 @@ export default function AdminSearchesPage() {
           </QueryBoundary>
         )}
       </div>
-    </main>
+    </div>
   )
 }
