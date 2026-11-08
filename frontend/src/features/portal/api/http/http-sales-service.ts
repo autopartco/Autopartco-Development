@@ -7,10 +7,15 @@ const PAGE_SIZE = 100
 const MAX_PAGES = 5
 
 /** Pedidos más recientes primero, hasta cubrir `since` (o `MAX_PAGES` páginas). */
-async function recentOrders(storeId: string, since: Date): Promise<OrderSummary[]> {
+function ordersPath(storeId: string, page: number, branchId?: string): string {
+  const branch = branchId ? `&branchId=${encodeURIComponent(branchId)}` : ''
+  return storePath(storeId, `/orders?page=${page}&size=${PAGE_SIZE}${branch}`)
+}
+
+async function recentOrders(storeId: string, since: Date, branchId?: string): Promise<OrderSummary[]> {
   const all: OrderSummary[] = []
   for (let page = 0; page < MAX_PAGES; page += 1) {
-    const rows = await portalRequest<OrderSummary[]>(storePath(storeId, `/orders?page=${page}&size=${PAGE_SIZE}`))
+    const rows = await portalRequest<OrderSummary[]>(ordersPath(storeId, page, branchId))
     all.push(...rows)
     if (rows.length < PAGE_SIZE || rows.some((row) => new Date(row.createdAt) < since)) break
   }
@@ -32,16 +37,16 @@ async function productsOrEmpty(storeId: string): Promise<ProductRow[]> {
  */
 export function createHttpSalesService(): SalesService {
   return {
-    async sales(storeId, days) {
+    async sales(storeId, days, branchId) {
       const since = new Date(Date.now() - days * 2 * 86_400_000)
-      return buildSalesAnalytics(await recentOrders(storeId, since), days)
+      return buildSalesAnalytics(await recentOrders(storeId, since, branchId), days)
     },
-    async activity(storeId) {
+    async activity(storeId, branchId) {
       const [orders, products] = await Promise.all([
-        portalRequest<OrderSummary[]>(storePath(storeId, `/orders?page=0&size=${PAGE_SIZE}`)),
+        portalRequest<OrderSummary[]>(ordersPath(storeId, 0, branchId)),
         productsOrEmpty(storeId),
       ])
-      return buildActivity(orders, products)
+      return buildActivity(orders, branchId ? products.filter((product) => product.branchId === branchId) : products)
     },
   }
 }

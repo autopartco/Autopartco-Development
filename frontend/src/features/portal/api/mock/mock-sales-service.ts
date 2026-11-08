@@ -85,18 +85,25 @@ let simulatedArrivals = 0
  */
 export function createMockSalesService(): SalesService {
   return {
-    async sales(storeId, days) {
+    async sales(storeId, days, branchId) {
       await simulateNetwork(600)
       const store = getStore(storeId)
       requirePermission(store, 'ORDER_READ')
-      return buildSalesAnalytics([...realOrders(store), ...syntheticOrders(store)], days)
+      const orders = [...realOrders(store), ...syntheticOrders(store)]
+      return buildSalesAnalytics(branchId ? orders.filter((order) => order.branchId === branchId) : orders, days)
     },
 
-    async activity(storeId) {
+    async activity(storeId, branchId) {
       await simulateNetwork(250)
       const store = getStore(storeId)
       requirePermission(store, 'ORDER_READ')
-      const events = buildActivity([...realOrders(store), ...syntheticOrders(store)], store.products)
+      const orders = [...realOrders(store), ...syntheticOrders(store)]
+      const events = branchId
+        ? buildActivity(
+            orders.filter((order) => order.branchId === branchId),
+            store.products.filter((product) => product.branchId === branchId),
+          )
+        : buildActivity(orders, store.products)
       // Cada consulta añade un evento nuevo simulado para ver entrar actividad en vivo.
       simulatedArrivals += 1
       const number = 30000 + simulatedArrivals

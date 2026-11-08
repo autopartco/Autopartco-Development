@@ -10,8 +10,9 @@ import type { SalesAnalytics, SalesEvent, SalesRange } from './types'
  * - `GET /stores/{id}/activity?limit=20` -> `SalesEvent[]` (pedidos, pagos y alertas de stock bajo).
  */
 export interface SalesService {
-  sales(storeId: string, days: SalesRange): Promise<SalesAnalytics>
-  activity(storeId: string): Promise<SalesEvent[]>
+  /** `branchId` opcional: solo los pedidos (y el stock) de esa sucursal. */
+  sales(storeId: string, days: SalesRange, branchId?: string): Promise<SalesAnalytics>
+  activity(storeId: string, branchId?: string): Promise<SalesEvent[]>
 }
 
 let servicePromise: Promise<SalesService> | undefined

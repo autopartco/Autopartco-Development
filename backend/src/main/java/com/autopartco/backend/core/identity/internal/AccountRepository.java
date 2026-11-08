@@ -1,5 +1,7 @@
 package com.autopartco.backend.core.identity.internal;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 import java.util.Optional;
 
@@ -18,4 +20,8 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT account FROM Account account WHERE lower(account.email) = lower(:email)")
     Optional<Account> lockByEmail(@Param("email") String email);
+
+    /** Cuentas con su persona en una sola consulta (listados). */
+    @Query("SELECT account FROM Account account JOIN FETCH account.person WHERE account.id IN :ids")
+    List<Account> findAllWithPersonByIdIn(@Param("ids") Collection<UUID> ids);
 }

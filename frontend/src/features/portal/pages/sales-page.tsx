@@ -16,6 +16,7 @@ import { PageHeader } from '../components/page-header'
 import { QueryBoundary, QueryError } from '../components/query-boundary'
 import { SEGMENT_GROUP_CLASS, segmentClass } from '../components/segmented'
 import { Sparkline } from '../components/sparkline'
+import { usePortal } from '../context'
 import { useStoreQuery } from '../hooks'
 import { formatDateTime } from '../lib/labels'
 
@@ -211,8 +212,7 @@ function SalesView({ data, activity, onWiden }: { data: SalesAnalytics; activity
 export default function PortalSalesPage() {
   const [params, setParams] = useSearchParams()
   const days = parseRange(params.get('dias'))
-  const sales = useStoreQuery(`sales:${days}`, async (id) => (await getSalesService()).sales(id, days))
-  const activity = useStoreQuery('activity', async (id) => (await getSalesService()).activity(id))
+  const { branchReady, branchName } = usePortal()
   const setRange = (range: SalesRange) =>
     setParams(
       (current) => {
@@ -228,12 +228,23 @@ export default function PortalSalesPage() {
       <title>Ventas | Autopartco</title>
       <PageHeader
         title="Ventas"
-        description="Cómo van tus pedidos: ingresos, horas de más movimiento y en qué paso se quedan."
+        description={`Cómo van tus pedidos${branchName ? ` en ${branchName}` : ''}: ingresos, horas de más movimiento y en qué paso se quedan.`}
         actions={<RangeSelector value={days} onChange={setRange} />}
       />
-      <QueryBoundary result={sales} what="las ventas" keepPrevious skeleton={<SalesSkeleton />}>
-        {(data) => <SalesView data={data} activity={activity} onWiden={() => setRange(90)} />}
-      </QueryBoundary>
+      {/* Espera a conocer la sucursal activa para no mostrar antes las ventas de todo el almacén. */}
+      {branchReady ? <SalesQuery days={days} onWiden={() => setRange(90)} /> : <SalesSkeleton />}
     </>
+  )
+}
+
+function SalesQuery({ days, onWiden }: { days: SalesRange; onWiden: () => void }) {
+  const { branchId } = usePortal()
+  const scope = branchId ?? 'all'
+  const sales = useStoreQuery(`sales:${scope}:${days}`, async (id) => (await getSalesService()).sales(id, days, branchId))
+  const activity = useStoreQuery(`activity:${scope}`, async (id) => (await getSalesService()).activity(id, branchId))
+  return (
+    <QueryBoundary result={sales} what="las ventas" keepPrevious skeleton={<SalesSkeleton />}>
+      {(data) => <SalesView data={data} activity={activity} onWiden={onWiden} />}
+    </QueryBoundary>
   )
 }
