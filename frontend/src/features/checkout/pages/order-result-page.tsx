@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router'
-import { m, useReducedMotion } from 'motion/react'
-import { FlaskConicalIcon, PackageSearchIcon, ReceiptTextIcon, RotateCwIcon } from 'lucide-react'
+import { CircleCheckIcon, FlaskConicalIcon, PackageSearchIcon, ReceiptTextIcon, RotateCwIcon } from 'lucide-react'
 import { Container } from '@/components/common/page-header'
 import { EmptyState, ErrorState } from '@/components/common/states'
 import { Button } from '@/components/ui/button'
@@ -27,8 +26,6 @@ import {
   type OrderPaymentKind,
 } from '../lib/order-payment'
 import { loadOrderResult, type OrderResultSummary } from '../lib/order-result-store'
-
-const EASE = [0.22, 1, 0.36, 1] as const
 
 /** Polling del estado (§6): cada 3 s al principio, luego más espaciado, durante 60 s como máximo. */
 const POLL_TIMEOUT_MS = 60_000
@@ -224,7 +221,7 @@ function copyOf(kind: OrderPaymentKind, payment: OrderPaymentDto, orderNumber: n
   }
 }
 
-const BUTTON = 'h-11 w-full px-5 sm:w-auto'
+const BUTTON = 'w-full sm:w-auto'
 
 function PaymentStatusView({ orderId, transactionId }: { orderId: string; transactionId?: string }) {
   const navigate = useNavigate()
@@ -258,7 +255,7 @@ function PaymentStatusView({ orderId, transactionId }: { orderId: string; transa
       <Container className="py-6 sm:py-8">
         <title>Pedido no encontrado | Autopartco</title>
         <EmptyState icon={<PackageSearchIcon />} title="No encontramos este pedido" description="Puede que el enlace esté incompleto o que el pedido no sea de tu cuenta.">
-          <Button className="h-11 px-5" nativeButton={false} render={<Link to="/mis-pedidos" />}>
+          <Button nativeButton={false} render={<Link to="/mis-pedidos" />}>
             Ver mis pedidos
           </Button>
         </EmptyState>
@@ -376,12 +373,12 @@ function PaymentStatusView({ orderId, transactionId }: { orderId: string; transa
     <ResultShell indicator={INDICATOR[resolvedKind]} announce={copy.announce} title={copy.title} description={copy.description} busy={checking}>
       <PaymentSummary payment={payment} orderNumber={pending?.orderNumber} />
       {phase === 'error' && state.error ? (
-        <p role="alert" className="text-sm text-destructive">
+        <p role="alert" className="text-sm font-medium text-ap-danger">
           No pudimos actualizar el estado. Lo que ves es lo último que confirmó el servidor.
         </p>
       ) : null}
       {transactionId && resolvedKind !== 'approved' ? <TransactionNote id={transactionId} /> : null}
-      {actions ? <div className="flex w-full flex-col-reverse gap-2 sm:flex-row sm:justify-center">{actions}</div> : null}
+      {actions ? <div className="flex w-full flex-col-reverse gap-2 border-t border-ap-line pt-5 sm:flex-row">{actions}</div> : null}
     </ResultShell>
   )
 }
@@ -402,17 +399,23 @@ function ResultShell({
   children?: ReactNode
 }) {
   return (
-    <Container className="max-w-lg py-8 sm:py-12">
+    <Container className="max-w-2xl py-8 sm:py-12">
       <title>{`${title} | Autopartco`}</title>
-      <section aria-labelledby="pago-titulo" aria-busy={busy || undefined} className="flex flex-col items-center gap-6 rounded-xl bg-card p-5 text-center ring-1 ring-foreground/10 sm:p-8">
-        <PaymentStatusIndicator state={indicator} label={announce} />
-        <header className="flex flex-col gap-2">
-          <p className="label-mono text-muted-foreground">Pago del pedido</p>
-          <h1 id="pago-titulo" className="text-[1.75rem] leading-[1.05] font-extrabold tracking-[-0.035em] text-balance sm:text-[2.25rem]">
-            {title}
-          </h1>
-          <p className="text-muted-foreground">{description}</p>
-        </header>
+      <section
+        aria-labelledby="pago-titulo"
+        aria-busy={busy || undefined}
+        className="flex flex-col items-start gap-6 rounded-xl border border-ap-line bg-ap-white p-5 sm:p-8"
+      >
+        <div className="flex w-full flex-col items-start gap-5 sm:flex-row sm:items-center sm:gap-6">
+          <PaymentStatusIndicator state={indicator} label={announce} className="shrink-0" />
+          <header className="flex min-w-0 flex-col gap-2">
+            <p className="ap-index">Pago del pedido</p>
+            <h1 id="pago-titulo" className="text-page-title text-ap-ink">
+              {title}
+            </h1>
+            <p className="text-ap-muted">{description}</p>
+          </header>
+        </div>
         {children}
       </section>
     </Container>
@@ -427,11 +430,11 @@ function PaymentSummary({ payment, orderNumber }: { payment: OrderPaymentDto; or
     { label: 'Total', value: formatCOP(payment.amountInCents / 100), strong: true },
   ]
   return (
-    <dl className="grid w-full grid-cols-[auto_1fr] gap-x-4 gap-y-2 rounded-lg bg-concrete p-4 text-left text-sm">
+    <dl className="flex w-full flex-col divide-y divide-ap-line border-y border-ap-line text-sm">
       {rows.map((row) => (
-        <div key={row.label} className="contents">
-          <dt className="text-muted-foreground">{row.label}</dt>
-          <dd className={row.strong ? 'text-right text-base font-extrabold tabular-nums' : 'min-w-0 text-right break-all tabular-nums'}>{row.value}</dd>
+        <div key={row.label} className="flex items-baseline justify-between gap-4 py-2.5">
+          <dt className="shrink-0 text-ap-muted">{row.label}</dt>
+          <dd className={row.strong ? 'ap-price ap-num text-lg text-ap-ink' : 'ap-num min-w-0 break-all text-ap-ink'}>{row.value}</dd>
         </div>
       ))}
     </dl>
@@ -440,10 +443,10 @@ function PaymentSummary({ payment, orderNumber }: { payment: OrderPaymentDto; or
 
 function TransactionNote({ id }: { id: string }) {
   return (
-    <p className="mt-4 flex items-start gap-2 text-left text-xs text-muted-foreground">
+    <p className="mt-4 flex items-start gap-2 text-left text-xs text-ap-muted">
       <ReceiptTextIcon className="mt-px size-4 shrink-0" aria-hidden />
       <span>
-        Transacción de Wompi: <span className="font-mono break-all text-foreground">{id}</span>. Compártela con soporte si necesitas ayuda.
+        Transacción de Wompi: <span className="font-mono break-all text-ap-ink">{id}</span>. Compártela con soporte si necesitas ayuda.
       </span>
     </p>
   )
@@ -451,84 +454,48 @@ function TransactionNote({ id }: { id: string }) {
 
 // ------------------------------------------------------------------ recibo (SIMULATED)
 
-/** Palomita que se dibuja y una puntada del hilo rojo que cose el borde inferior. */
-function ApprovedMark() {
-  const reduced = useReducedMotion()
-  return (
-    <svg viewBox="0 0 64 64" className="size-16 shrink-0" fill="none" aria-hidden>
-      <m.circle
-        cx="32"
-        cy="32"
-        r="28"
-        stroke="var(--color-thread-on-asphalt)"
-        strokeWidth="3"
-        initial={reduced ? false : { pathLength: 0, opacity: 0 }}
-        animate={{ pathLength: 1, opacity: 1 }}
-        transition={{ duration: 0.7, ease: EASE }}
-      />
-      <m.path
-        d="M20 33.5 28.5 42 44.5 24"
-        stroke="#fff"
-        strokeWidth="4.5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        initial={reduced ? false : { pathLength: 0 }}
-        animate={{ pathLength: 1 }}
-        transition={{ duration: 0.45, delay: 0.55, ease: EASE }}
-      />
-    </svg>
-  )
-}
-
 /** Recibo de un pedido SIMULATED recién creado (desarrollo local). */
 function ReceiptView({ summary, full }: { summary: OrderResultSummary; full?: BuyerOrderDto }) {
-  const reduced = useReducedMotion()
   const simulatedPayment = summary.payment.method.startsWith('SIMULATED')
 
   return (
     <Container className="py-6 sm:py-8">
       <title>{`Pedido #${summary.orderNumber} | Autopartco`}</title>
 
-      <m.section
+      <section
         aria-labelledby="pedido-titulo"
-        className="surface-asphalt relative overflow-hidden rounded-2xl px-6 py-8 sm:px-10 sm:py-10"
-        initial={reduced ? false : { opacity: 0, y: 14 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, ease: EASE }}
+        className="flex flex-col gap-4 rounded-xl border border-ap-success/30 bg-ap-success-soft p-5 sm:flex-row sm:items-start sm:gap-5 sm:p-6"
       >
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-8">
-          <ApprovedMark />
-          <div className="flex min-w-0 flex-col gap-2">
-            <p className="label-mono text-asphalt-muted">Pedido confirmado</p>
-            <h1 id="pedido-titulo" className="text-page-title">
-              ¡Pago aprobado!
-            </h1>
-            <p className="text-lg text-asphalt-muted">
-              Tu número de pedido es <strong className="font-mono font-bold text-white">#{summary.orderNumber}</strong>. Las tiendas ya recibieron tu compra.
-            </p>
-          </div>
+        <CircleCheckIcon className="size-8 shrink-0 text-ap-success" aria-hidden />
+        <div className="flex min-w-0 flex-col gap-2">
+          <p className="ap-index">Pedido confirmado</p>
+          <h1 id="pedido-titulo" className="text-page-title text-ap-ink">
+            ¡Pago aprobado!
+          </h1>
+          <p className="text-ap-ink">
+            Tu número de pedido es <strong className="font-mono font-semibold">#{summary.orderNumber}</strong>. Las tiendas ya recibieron tu compra.
+          </p>
         </div>
-        <div className="stitch-line absolute inset-x-0 bottom-0" aria-hidden />
-      </m.section>
+      </section>
 
-      <div className="mt-8 grid items-start gap-8 lg:grid-cols-[1fr_22rem]">
+      <div className="mt-8 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
         <div className="flex flex-col gap-4">
-          <h2 className="text-block-title">Lo que compraste</h2>
+          <h2 className="text-block-title text-ap-ink">Lo que compraste</h2>
           <OrderSalesList sales={summary.sales} />
         </div>
 
-        <aside className="flex flex-col gap-4" aria-label="Detalle del pago y la entrega">
-          <section className="flex flex-col gap-3 rounded-2xl bg-card p-5 shadow-[0_0_0_1px_rgb(0_0_0/0.07),0_18px_40px_-28px_rgb(23_27_32/0.35)]">
-            <h2 className="text-block-title">Pago</h2>
-            <p className="text-3xl font-extrabold tracking-tight tabular-nums">{formatCOP(summary.total)}</p>
-            <dl className="flex flex-col gap-2 text-sm">
+        <aside className="flex flex-col gap-5 rounded-xl border border-ap-line bg-ap-white p-5" aria-label="Detalle del pago y la entrega">
+          <section className="flex flex-col gap-3">
+            <h2 className="text-block-title text-ap-ink">Pago</h2>
+            <p className="ap-price text-2xl text-ap-ink">{formatCOP(summary.total)}</p>
+            <dl className="flex flex-col divide-y divide-ap-line border-y border-ap-line text-sm">
               <Row label="Estado" value={`${statusLabel(summary.payment.status)} · pedido ${statusLabel(summary.status).toLowerCase()}`} />
               <Row label="Método" value={summary.payment.methodName} />
-              <Row label="Fecha" value={formatOrderDate(summary.payment.paidAt ?? summary.createdAt)} />
-              <Row label="Referencia" value={<span className="label-mono break-all normal-case">{summary.payment.reference}</span>} />
+              <Row label="Fecha" value={<span className="tabular-nums">{formatOrderDate(summary.payment.paidAt ?? summary.createdAt)}</span>} />
+              <Row label="Referencia" value={<span className="ap-ref break-all">{summary.payment.reference}</span>} />
             </dl>
             {simulatedPayment ? (
-              <p className="flex items-start gap-2 rounded-lg bg-concrete px-3 py-2.5 text-xs text-muted-foreground">
+              <p className="flex items-start gap-2 rounded-md border border-ap-info/25 bg-ap-info-soft px-3 py-2.5 text-xs text-ap-ink">
                 <FlaskConicalIcon className="mt-0.5 size-3.5 shrink-0" aria-hidden />
                 <span>Pago de demostración: no se realizó ningún cobro real.</span>
               </p>
@@ -536,9 +503,9 @@ function ReceiptView({ summary, full }: { summary: OrderResultSummary; full?: Bu
           </section>
 
           {full ? (
-            <section className="flex flex-col gap-2 rounded-2xl bg-card p-5 shadow-[0_0_0_1px_rgb(0_0_0/0.07),0_18px_40px_-28px_rgb(23_27_32/0.35)]">
-              <h2 className="text-block-title">Entrega en</h2>
-              <address className="text-sm not-italic text-foreground/85">
+            <section className="flex flex-col gap-2 border-t border-ap-line pt-5">
+              <h2 className="text-block-title text-ap-ink">Entrega en</h2>
+              <address className="text-sm not-italic text-ap-ink">
                 {full.deliveryAddress.addressLine}
                 {full.deliveryAddress.addressComplement ? `, ${full.deliveryAddress.addressComplement}` : ''}
                 <br />
@@ -547,17 +514,19 @@ function ReceiptView({ summary, full }: { summary: OrderResultSummary; full?: Bu
               </address>
             </section>
           ) : (
-            <p className="text-xs text-muted-foreground">Por tu privacidad, la dirección de entrega no se guarda en este dispositivo y solo se muestra justo después de pagar.</p>
+            <p className="border-t border-ap-line pt-5 text-xs text-ap-muted">
+              Por tu privacidad, la dirección de entrega no se guarda en este dispositivo y solo se muestra justo después de pagar.
+            </p>
           )}
 
-          <div className="flex flex-wrap gap-2">
-            <Button className="h-11 px-5" nativeButton={false} render={<Link to="/mis-pedidos" />}>
+          <div className="flex flex-col gap-2 border-t border-ap-line pt-5">
+            <Button nativeButton={false} render={<Link to="/mis-pedidos" />}>
               Ver mis pedidos
             </Button>
-            <Button variant="outline" className="h-11 px-5" nativeButton={false} render={<Link to="/buscar" />}>
+            <Button variant="outline" nativeButton={false} render={<Link to="/buscar" />}>
               Seguir comprando
             </Button>
-            <Button variant="outline" className="h-11 px-5" nativeButton={false} render={<Link to="/" />}>
+            <Button variant="ghost" nativeButton={false} render={<Link to="/" />}>
               Ir al inicio
             </Button>
           </div>
@@ -569,9 +538,9 @@ function ReceiptView({ summary, full }: { summary: OrderResultSummary; full?: Bu
 
 function Row({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="flex flex-col gap-0.5 sm:flex-row sm:justify-between sm:gap-3">
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className="min-w-0 sm:text-right">{value}</dd>
+    <div className="flex flex-col gap-0.5 py-2.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
+      <dt className="shrink-0 text-ap-muted">{label}</dt>
+      <dd className="min-w-0 text-ap-ink sm:text-right">{value}</dd>
     </div>
   )
 }

@@ -1,33 +1,30 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
+import { ChevronRightIcon } from 'lucide-react'
 import { Container } from '@/components/common/page-header'
-import { ErrorState } from '@/components/common/states'
+import { EmptyState, ErrorState } from '@/components/common/states'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useNearbyStores, useStoreDistances } from '@/features/location/hooks'
 import { pluralize } from '@/lib/format'
-import { cn } from '@/lib/utils'
-import { CategoryIcon } from '../components/category-icon'
 import { ProductCard, ProductGrid, ProductGridSkeleton } from '../components/product-card'
 import { useCategories, useProductSearch } from '../hooks'
 import { categoryPath } from '../lib/paths'
 import { emptyQuery } from '../lib/product-query'
 import { HowItWorksSection } from './how-it-works'
-import { PassportSection } from './part-passport'
 import { ComparisonSection } from './price-comparison'
 
 /**
- * Secciones bajo el pliegue de la página de inicio. Se descargan aparte (lazy)
- * y las más largas usan `content-visibility` para no pintar lo que no se ve.
+ * Bloques de la portada bajo el buscador, con ritmos distintos: índice denso de
+ * categorías, vitrina de repuestos publicados, tabla comparativa y pasos.
  */
 
 const FEATURED_COUNT = 8
 const FEATURED_QUERY = emptyQuery({ pageSize: FEATURED_COUNT })
-const OFFSCREEN = '[content-visibility:auto] [contain-intrinsic-size:auto_56rem]'
 
 interface SectionHeadingProps {
   id: string
-  /** Etiqueta mono con un dato real de la sección (no decoración). */
-  label?: ReactNode
+  /** Índice `ap-index` con contexto real de la sección. */
+  label: string
   title: string
   intro?: ReactNode
   link?: { to: string; label: string }
@@ -35,18 +32,18 @@ interface SectionHeadingProps {
 
 function SectionHeading({ id, label, title, intro, link }: SectionHeadingProps) {
   return (
-    <div className="mb-10 flex flex-col gap-4 md:mb-12 md:flex-row md:items-end md:justify-between md:gap-10">
-      <div className="flex max-w-2xl flex-col gap-4">
-        {label ? <p className="label-mono text-muted-foreground tabular-nums">{label}</p> : null}
-        <h2 id={id} className="text-section">
+    <div className="mb-6 flex flex-col gap-3 sm:mb-8 md:flex-row md:items-end md:justify-between md:gap-10">
+      <div className="flex max-w-2xl flex-col gap-2">
+        <p className="ap-index">{label}</p>
+        <h2 id={id} className="text-section text-ap-ink">
           {title}
         </h2>
-        {intro ? <p className="text-base text-muted-foreground sm:text-lg">{intro}</p> : null}
+        {intro ? <p className="text-ap-muted">{intro}</p> : null}
       </div>
       {link ? (
         <Link
           to={link.to}
-          className="inline-flex min-h-11 shrink-0 items-center font-medium text-brand underline-offset-4 hover:underline"
+          className="inline-flex min-h-11 shrink-0 items-center text-sm font-semibold text-ap-red underline-offset-4 hover:underline"
         >
           {link.label}
         </Link>
@@ -55,27 +52,83 @@ function SectionHeading({ id, label, title, intro, link }: SectionHeadingProps) 
   )
 }
 
+/** Índice de categorías: filas con divisor en columnas, nombre y número de repuestos. */
+function CategoriesSection() {
+  const categories = useCategories()
+  const total = categories.data?.length
+  return (
+    <section aria-labelledby="categorias-titulo" className="py-14 sm:py-20">
+      <Container>
+        <SectionHeading
+          id="categorias-titulo"
+          label={total !== undefined ? `Categorías / ${pluralize(total, 'sistema', 'sistemas')}` : 'Categorías'}
+          title="Busca por sistema del carro"
+          link={{ to: '/categorias', label: 'Ver todas las categorías' }}
+        />
+        {categories.status === 'error' ? (
+          <ErrorState title="No pudimos cargar las categorías" onRetry={categories.retry} />
+        ) : !categories.data ? (
+          <ul className="grid gap-x-8 sm:grid-cols-2 lg:grid-cols-4" aria-hidden>
+            {Array.from({ length: 8 }, (_, index) => (
+              <li key={index} className="border-t border-ap-line py-4">
+                <Skeleton className="h-5 w-2/3" />
+              </li>
+            ))}
+          </ul>
+        ) : categories.data.length === 0 ? (
+          <EmptyState
+            title="Aún no hay categorías publicadas"
+            description="Mientras tanto, busca tu repuesto por nombre o referencia en el buscador de arriba."
+          />
+        ) : (
+          <ul className="grid gap-x-8 border-b border-ap-line sm:grid-cols-2 lg:grid-cols-4">
+            {categories.data.map((category) => (
+              <li key={category.id} className="border-t border-ap-line">
+                <Link
+                  to={categoryPath(category.slug)}
+                  className="group flex min-h-14 items-center justify-between gap-3 py-3 transition-colors hover:text-ap-red"
+                >
+                  <span className="min-w-0">
+                    <span className="block font-semibold text-ap-ink group-hover:text-ap-red">{category.name}</span>
+                    {category.productCount !== undefined ? (
+                      <span className="text-sm text-ap-muted tabular-nums">
+                        {pluralize(category.productCount, 'repuesto', 'repuestos')}
+                      </span>
+                    ) : null}
+                  </span>
+                  <ChevronRightIcon className="size-4 shrink-0 text-ap-steel group-hover:text-ap-red" aria-hidden />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Container>
+    </section>
+  )
+}
+
+/** Repuestos publicados: prueba de catálogo real, en vitrina compacta con foto. */
 function FeaturedSection() {
   const result = useProductSearch(FEATURED_QUERY)
   const distances = useStoreDistances()
   const place = useNearbyStores().data?.origin?.label
   const items = result.data?.items.slice(0, FEATURED_COUNT)
   return (
-    <section aria-labelledby="destacados-titulo" className={cn('border-y border-border bg-card py-20 sm:py-28', OFFSCREEN)}>
+    <section aria-labelledby="destacados-titulo" className="border-t border-ap-line py-14 sm:py-20">
       <Container>
         <SectionHeading
           id="destacados-titulo"
-          label={result.data ? `${pluralize(result.data.total, 'repuesto publicado', 'repuestos publicados')}` : 'Catálogo'}
-          title="Repuestos destacados"
+          label={result.data ? `Catálogo / ${pluralize(result.data.total, 'repuesto publicado', 'repuestos publicados')}` : 'Catálogo'}
+          title="Repuestos publicados por los almacenes"
           intro={
             distances.size > 0 && place
-              ? `Cada pieza indica a cuántos kilómetros de ${place} está la sede más cercana de la tienda.`
-              : 'Piezas publicadas hoy por los almacenes de Autopartco.'
+              ? `Cada pieza indica a qué distancia de ${place} está la sede más cercana de la tienda.`
+              : undefined
           }
-          link={{ to: '/buscar', label: 'Ver todos los repuestos' }}
+          link={{ to: '/buscar', label: 'Ver todo el catálogo' }}
         />
         {result.status === 'error' ? (
-          <ErrorState title="No pudimos cargar los repuestos destacados" onRetry={result.retry} />
+          <ErrorState title="No pudimos cargar los repuestos" onRetry={result.retry} />
         ) : items ? (
           items.length > 0 ? (
             <ProductGrid className="lg:grid-cols-4">
@@ -88,7 +141,14 @@ function FeaturedSection() {
               ))}
             </ProductGrid>
           ) : (
-            <p className="text-muted-foreground">Aún no hay repuestos publicados. Vuelve pronto.</p>
+            <EmptyState
+              title="Aún no hay repuestos publicados"
+              description="Los almacenes están cargando su inventario. Mira las tiendas registradas mientras tanto."
+            >
+              <Link to="/tiendas" className="inline-flex min-h-11 items-center text-sm font-semibold text-ap-red underline-offset-4 hover:underline">
+                Ver tiendas
+              </Link>
+            </EmptyState>
           )
         ) : (
           <ProductGridSkeleton count={FEATURED_COUNT} className="lg:grid-cols-4" />
@@ -98,62 +158,14 @@ function FeaturedSection() {
   )
 }
 
-function CategoriesSection() {
-  const categories = useCategories()
-  return (
-    <section aria-labelledby="categorias-titulo" className={cn('border-y border-border bg-card py-20 sm:py-28', OFFSCREEN)}>
-      <Container>
-        <SectionHeading
-          id="categorias-titulo"
-          label={categories.data ? pluralize(categories.data.length, 'categoría', 'categorías') : 'Categorías'}
-          title="Busca por sistema del carro"
-          link={{ to: '/categorias', label: 'Ver todas las categorías' }}
-        />
-        {categories.status === 'error' ? (
-          <ErrorState title="No pudimos cargar las categorías" onRetry={categories.retry} />
-        ) : (
-          <ul className="grid grid-cols-1 gap-2 min-[420px]:grid-cols-2 lg:grid-cols-4">
-            {categories.data
-              ? categories.data.map((category) => (
-                  <li key={category.id}>
-                    <Link
-                      to={categoryPath(category.slug)}
-                      className="group flex h-full min-h-16 items-center gap-3 rounded-xl bg-paper p-3 shadow-[0_0_0_1px_rgb(0_0_0/0.05)] transition-shadow hover:shadow-[0_0_0_1px_rgb(200_30_44/0.45)] sm:p-4"
-                    >
-                      <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-concrete text-brand transition-colors group-hover:bg-brand group-hover:text-primary-foreground">
-                        <CategoryIcon slug={category.slug} className="size-5" />
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block leading-tight font-semibold">{category.name}</span>
-                        {category.productCount !== undefined ? (
-                          <span className="text-sm text-muted-foreground tabular-nums">
-                            {pluralize(category.productCount, 'repuesto', 'repuestos')}
-                          </span>
-                        ) : null}
-                      </span>
-                    </Link>
-                  </li>
-                ))
-              : Array.from({ length: 8 }, (_, index) => (
-                  <li key={index} aria-hidden>
-                    <Skeleton className="h-[4.5rem] rounded-xl" />
-                  </li>
-                ))}
-          </ul>
-        )}
-      </Container>
-    </section>
-  )
-}
-
-export default function HomeSections() {
+export function HomeSections() {
   return (
     <>
-      {/* Orden del recorrido: la ficha de una pieza, la vitrina, la comparación, los sistemas y cómo funciona. */}
-      <PassportSection />
-      <FeaturedSection />
-      <ComparisonSection />
       <CategoriesSection />
+      <FeaturedSection />
+      <div className="border-t border-ap-line">
+        <ComparisonSection />
+      </div>
       <HowItWorksSection />
     </>
   )

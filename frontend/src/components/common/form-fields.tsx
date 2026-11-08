@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
  */
 
 export const INPUT_CLASS =
-  'h-11 w-full min-w-0 rounded-lg border border-input bg-card px-3 text-base text-foreground placeholder:text-muted-foreground transition-colors aria-[invalid=true]:border-destructive sm:text-sm'
+  'h-11 w-full min-w-0 rounded-md border border-input bg-ap-white px-3 text-base text-ap-ink placeholder:text-ap-muted transition-colors hover:border-ap-graphite focus-visible:border-ap-graphite disabled:cursor-not-allowed disabled:bg-ap-paper disabled:opacity-60 aria-[invalid=true]:border-ap-danger sm:text-sm'
 
 interface FieldShellProps {
   id: string
@@ -26,19 +26,19 @@ export function FieldShell({ id, label, hint, error, optional, className, childr
   const describedBy = [errorId, hintId].filter(Boolean).join(' ') || undefined
   return (
     <div className={cn('flex min-w-0 flex-col gap-1.5', className)}>
-      <label htmlFor={id} className="text-sm font-semibold">
+      <label htmlFor={id} className="text-sm font-semibold text-ap-ink">
         {label}
-        {optional ? <span className="ml-1 font-normal text-muted-foreground">(opcional)</span> : null}
+        {optional ? <span className="ml-1 font-normal text-ap-muted">(opcional)</span> : null}
       </label>
       {children(describedBy)}
       {error ? (
-        <p id={errorId} className="flex items-start gap-1.5 text-sm font-medium text-destructive">
+        <p id={errorId} className="flex items-start gap-1.5 text-sm font-medium text-ap-danger">
           <CircleAlertIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
           {error}
         </p>
       ) : null}
       {hint ? (
-        <p id={hintId} className="text-xs text-muted-foreground">
+        <p id={hintId} className="text-xs text-ap-muted">
           {hint}
         </p>
       ) : null}
@@ -98,7 +98,7 @@ export function PasswordField({ id, label, hint, error, containerClassName, clas
             aria-pressed={visible}
             aria-controls={id}
             aria-label="Mostrar contraseña"
-            className="absolute top-0 right-0 grid size-11 place-items-center rounded-lg text-muted-foreground hover:text-foreground focus-visible:-outline-offset-2!"
+            className="absolute top-0 right-0 grid size-11 place-items-center rounded-md text-ap-muted hover:text-ap-ink focus-visible:-outline-offset-2!"
           >
             {visible ? <EyeOffIcon className="size-5" aria-hidden /> : <EyeIcon className="size-5" aria-hidden />}
           </button>
@@ -112,20 +112,24 @@ export function PasswordField({ id, label, hint, error, containerClassName, clas
  * Mensaje de error o éxito de todo el formulario. Recibe el foco al aparecer
  * (`tabIndex={-1}`) para que lectores de pantalla y teclado lo encuentren.
  */
-export const FormAlert = forwardRef<HTMLDivElement, { tone?: 'error' | 'info'; title: string; children?: ReactNode }>(
+const FORM_ALERT_TONE = {
+  error: { box: 'border-ap-danger/30 bg-ap-danger-soft', title: 'text-ap-danger' },
+  success: { box: 'border-ap-success/30 bg-ap-success-soft', title: 'text-ap-success' },
+  info: { box: 'border-ap-line bg-ap-paper', title: 'text-ap-ink' },
+} as const
+
+export const FormAlert = forwardRef<HTMLDivElement, { tone?: 'error' | 'info' | 'success'; title: string; children?: ReactNode }>(
   function FormAlert({ tone = 'error', title, children }, ref) {
+    const styles = FORM_ALERT_TONE[tone]
     return (
       <div
         ref={ref}
         tabIndex={-1}
         role={tone === 'error' ? 'alert' : 'status'}
-        className={cn(
-          'flex flex-col gap-1 rounded-lg p-4 text-sm outline-none',
-          tone === 'error' ? 'border border-destructive/25 bg-destructive/5' : 'bg-concrete',
-        )}
+        className={cn('flex flex-col gap-1 rounded-xl border p-4 text-sm outline-none', styles.box)}
       >
-        <p className={cn('font-semibold', tone === 'error' && 'text-destructive')}>{title}</p>
-        {children ? <div className="text-foreground/85">{children}</div> : null}
+        <p className={cn('font-semibold', styles.title)}>{title}</p>
+        {children ? <div className="text-ap-ink">{children}</div> : null}
       </div>
     )
   },

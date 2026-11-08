@@ -1,14 +1,16 @@
 import { Link } from 'react-router'
+import { ChevronRightIcon } from 'lucide-react'
 import { Container, PageIntro } from '@/components/common/page-header'
-import { SmartImage } from '@/components/common/smart-image'
 import { EmptyState, ErrorState } from '@/components/common/states'
 import { Skeleton } from '@/components/ui/skeleton'
 import { pluralize } from '@/lib/format'
-import { PLACEHOLDER_IMAGES } from '@/lib/images'
-import { CategoryIcon } from '../components/category-icon'
 import { useCategories } from '../hooks'
 import { categoryPath } from '../lib/paths'
 
+/**
+ * Índice de categorías: una fila por sistema del carro con descripción y número de
+ * repuestos alineado a la derecha. Sin fotos genéricas repetidas (§9).
+ */
 export default function CategoriesPage() {
   const categories = useCategories()
   return (
@@ -16,7 +18,7 @@ export default function CategoriesPage() {
       <title>Categorías de repuestos | Autopartco</title>
       <PageIntro
         crumbs={[{ label: 'Inicio', to: '/' }, { label: 'Categorías' }]}
-        label={categories.data ? pluralize(categories.data.length, 'sistema del carro', 'sistemas del carro') : 'Sistemas del carro'}
+        label={categories.data ? `Catálogo / ${pluralize(categories.data.length, 'categoría', 'categorías')}` : 'Catálogo / Categorías'}
         title="Categorías de repuestos"
         description={<p>Elige el sistema que vas a reparar para ver los repuestos que publican los almacenes.</p>}
       />
@@ -24,53 +26,40 @@ export default function CategoriesPage() {
       {categories.status === 'error' ? (
         <ErrorState title="No pudimos cargar las categorías" onRetry={categories.retry} />
       ) : !categories.data ? (
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-hidden>
+        <ul className="grid border-t border-ap-graphite md:grid-cols-2 md:gap-x-10" aria-hidden>
           {Array.from({ length: 8 }, (_, index) => (
-            <li key={index} className="flex flex-col gap-3">
-              <Skeleton className="aspect-[16/10] rounded-lg" />
-              <Skeleton className="h-5 w-2/3" />
-              <Skeleton className="h-4 w-full" />
+            <li key={index} className="flex flex-col gap-2 border-b border-ap-line py-4">
+              <Skeleton className="h-5 w-1/3" />
+              <Skeleton className="h-4 w-3/4" />
             </li>
           ))}
         </ul>
       ) : categories.data.length === 0 ? (
-        <EmptyState title="Aún no hay categorías" description="Cuando las tiendas publiquen repuestos, las verás aquí." />
+        <EmptyState
+          title="Aún no hay categorías"
+          description="Cuando las tiendas publiquen repuestos, las verás aquí. Mientras tanto, busca por nombre o referencia."
+        >
+          <Link to="/buscar" className="inline-flex min-h-11 items-center text-sm font-semibold text-ap-red underline-offset-4 hover:underline">
+            Ver el catálogo
+          </Link>
+        </EmptyState>
       ) : (
-        <ul className="grid gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
+        <ul className="grid border-t border-ap-graphite md:grid-cols-2 md:gap-x-10">
           {categories.data.map((category) => (
-            <li key={category.id}>
-              <article className="group relative flex flex-col gap-3">
-                <div className="relative">
-                  <SmartImage
-                    src={PLACEHOLDER_IMAGES.category}
-                    alt=""
-                    width={400}
-                    height={250}
-                    frameClassName="aspect-[16/10] rounded-lg outline outline-1 -outline-offset-1 outline-black/10"
-                    className="transition-transform duration-300 ease-out-snap group-hover:scale-[1.03]"
-                  />
-                  <span className="absolute bottom-3 left-3 grid size-10 place-items-center rounded-md bg-background text-brand shadow-sm">
-                    <CategoryIcon slug={category.slug} className="size-5" />
-                  </span>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <h2 className="text-xl leading-tight font-extrabold tracking-tight">
-                    <Link
-                      to={categoryPath(category.slug)}
-                      data-stretched-link
-                      className="after:absolute after:inset-0 after:rounded-lg group-hover:text-brand focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-[var(--focus)]"
-                    >
-                      {category.name}
-                    </Link>
-                  </h2>
-                  {category.description ? <p className="text-sm text-muted-foreground">{category.description}</p> : null}
-                  {category.productCount !== undefined ? (
-                    <p className="label-mono text-muted-foreground tabular-nums">
-                      {pluralize(category.productCount, 'repuesto', 'repuestos')}
-                    </p>
-                  ) : null}
-                </div>
-              </article>
+            <li key={category.id} className="border-b border-ap-line">
+              <Link
+                to={categoryPath(category.slug)}
+                className="group grid min-h-16 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-4 py-4 transition-colors hover:bg-ap-paper sm:px-2"
+              >
+                <span className="flex min-w-0 flex-col gap-0.5">
+                  <span className="font-semibold text-ap-ink group-hover:text-ap-red">{category.name}</span>
+                  {category.description ? <span className="text-sm text-ap-muted">{category.description}</span> : null}
+                </span>
+                <span className="text-right text-sm text-ap-ink tabular-nums">
+                  {category.productCount !== undefined ? pluralize(category.productCount, 'repuesto', 'repuestos') : null}
+                </span>
+                <ChevronRightIcon className="size-4 text-ap-steel group-hover:text-ap-red" aria-hidden />
+              </Link>
             </li>
           ))}
         </ul>

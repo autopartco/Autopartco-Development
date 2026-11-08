@@ -37,16 +37,19 @@ export function Breadcrumbs({ items, className }: { items: Crumb[]; className?: 
 }
 
 /**
- * Contenedor de página: un único ancho máximo (80rem) y un gutter compartido
- * por cabecera, páginas y pie (16px en móvil, 24px desde sm, 32px desde lg).
+ * Contenedor de página (§6.4): ancho de contenido público (`max-w-content`, 1200px) y un
+ * gutter compartido por cabecera, páginas y pie (16px en móvil, 24px desde sm, 32px desde lg).
  */
 export function Container({ className, children }: { className?: string; children: ReactNode }) {
-  return <div className={cn('mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8', className)}>{children}</div>
+  return <div className={cn('mx-auto w-full max-w-content px-4 sm:px-6 lg:px-8', className)}>{children}</div>
 }
 
 interface PageIntroProps {
   crumbs: Crumb[]
-  /** Etiqueta mono sobre el título: contexto real de la página (no decoración). */
+  /**
+   * Índice de sección sobre el título (`ap-index`, p. ej. `CATÁLOGO / 02`): contexto real
+   * de la página, no decoración.
+   */
   label?: ReactNode
   title: ReactNode
   description?: ReactNode
@@ -54,14 +57,17 @@ interface PageIntroProps {
   className?: string
 }
 
-/** Encabezado de las páginas internas: migas, etiqueta mono, título display y entrada. */
+/**
+ * Encabezado de las páginas internas (§5.2): migas, índice opcional, título de 28–32px y
+ * entrada breve. Deja espacio a los datos y acciones que siguen.
+ */
 export function PageIntro({ crumbs, label, title, description, children, className }: PageIntroProps) {
   return (
-    <div className={cn('mb-8 flex flex-col gap-3 sm:mb-10', className)}>
-      <Breadcrumbs items={crumbs} className="mb-3 sm:mb-5" />
-      {label ? <p className="label-mono text-muted-foreground">{label}</p> : null}
-      <h1 className="max-w-4xl text-page-title">{title}</h1>
-      {description ? <div className="max-w-2xl text-base text-muted-foreground sm:text-lg">{description}</div> : null}
+    <div className={cn('mb-6 flex flex-col gap-2 sm:mb-8', className)}>
+      <Breadcrumbs items={crumbs} className="mb-2 sm:mb-3" />
+      {label ? <p className="ap-index">{label}</p> : null}
+      <h1 className="max-w-4xl text-page-title text-ap-ink">{title}</h1>
+      {description ? <div className="max-w-2xl text-base text-ap-muted">{description}</div> : null}
       {children}
     </div>
   )

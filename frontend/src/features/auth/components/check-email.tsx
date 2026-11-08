@@ -25,25 +25,23 @@ export function CheckEmail({ email, sent, expiresAt, children }: CheckEmailProps
   const expiry = formatExpiry(expiresAt)
   return (
     <div className="flex flex-col items-start gap-4" role="status">
-      <span className="grid size-12 place-items-center rounded-full bg-concrete text-brand">
-        <MailCheckIcon className="size-6" aria-hidden />
-      </span>
-      <h2 ref={headingRef} tabIndex={-1} className="text-block-title outline-none">
+      <h2 ref={headingRef} tabIndex={-1} className="flex items-start gap-2 text-block-title text-ap-ink outline-none">
+        <MailCheckIcon className={sent ? 'mt-0.5 size-5 shrink-0 text-ap-success' : 'mt-0.5 size-5 shrink-0 text-ap-muted'} aria-hidden />
         {sent ? 'Revisa tu correo para verificar tu cuenta' : 'Tu cuenta quedó creada'}
       </h2>
       {sent ? (
-        <p className="text-muted-foreground">
-          Te enviamos un enlace a <strong className="font-semibold text-foreground">{email}</strong>. Ábrelo para
+        <p className="text-ap-muted">
+          Te enviamos un enlace a <strong className="font-semibold text-ap-ink">{email}</strong>. Ábrelo para
           activar tu cuenta; hasta entonces no podrás ingresar.
           {expiry ? ` El enlace vence el ${expiry}.` : ''}
         </p>
       ) : (
-        <p className="text-muted-foreground">
-          No pudimos confirmar el envío del correo de verificación a <strong className="font-semibold text-foreground">{email}</strong>.
+        <p className="text-ap-muted">
+          No pudimos confirmar el envío del correo de verificación a <strong className="font-semibold text-ap-ink">{email}</strong>.
           Revisa tu bandeja en unos minutos; si no llega, intenta ingresar más tarde.
         </p>
       )}
-      <p className="text-sm text-muted-foreground">¿No lo ves? Busca en correo no deseado o promociones.</p>
+      <p className="text-sm text-ap-muted">¿No lo ves? Busca en correo no deseado o promociones.</p>
       {children}
     </div>
   )

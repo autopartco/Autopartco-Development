@@ -20,8 +20,8 @@ export interface FiltersPanelProps {
 function FilterSection({ title, children }: { title: string; children: ReactNode }) {
   const id = useId()
   return (
-    <section aria-labelledby={id} className="flex flex-col gap-3 border-b border-border py-5 first:pt-0 last:border-b-0">
-      <h3 id={id} className="label-mono text-muted-foreground">
+    <section aria-labelledby={id} className="flex flex-col gap-3 border-b border-ap-line py-5 first:pt-0 last:border-b-0">
+      <h3 id={id} className="text-sm font-semibold text-ap-ink">
         {title}
       </h3>
       {children}
@@ -45,7 +45,7 @@ function CheckRow({
   if (description) {
     return (
       <div className="flex flex-col">
-        <label className="flex min-h-9 cursor-pointer items-center gap-3 rounded-md px-1 text-sm hover:bg-concrete pointer-coarse:min-h-11">
+        <label className="flex min-h-9 cursor-pointer items-center gap-3 rounded-md px-1 text-sm hover:bg-ap-paper pointer-coarse:min-h-11">
           <Checkbox
             checked={checked}
             onCheckedChange={(value) => onCheckedChange(value === true)}
@@ -53,14 +53,14 @@ function CheckRow({
           />
           <span className="flex-1">{children}</span>
         </label>
-        <p id={`${id}-description`} className="pb-1 pl-8 text-xs text-muted-foreground">
+        <p id={`${id}-description`} className="pb-1 pl-8 text-xs text-ap-muted">
           {description}
         </p>
       </div>
     )
   }
   return (
-    <label className="flex min-h-9 cursor-pointer items-center gap-3 rounded-md px-1 text-sm hover:bg-concrete pointer-coarse:min-h-11">
+    <label className="flex min-h-9 cursor-pointer items-center gap-3 rounded-md px-1 text-sm hover:bg-ap-paper pointer-coarse:min-h-11">
       <Checkbox checked={checked} onCheckedChange={(value) => onCheckedChange(value === true)} />
       <span className="flex-1">{children}</span>
     </label>
@@ -95,7 +95,7 @@ function PriceFilter({ query, options, onChange }: Pick<FiltersPanelProps, 'quer
     >
       <div className="grid grid-cols-2 gap-2">
         <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${id}-min`} className="text-xs text-muted-foreground">
+          <label htmlFor={`${id}-min`} className="text-xs text-ap-muted">
             Desde (COP)
           </label>
           <Input
@@ -108,7 +108,7 @@ function PriceFilter({ query, options, onChange }: Pick<FiltersPanelProps, 'quer
           />
         </div>
         <div className="flex flex-col gap-1.5">
-          <label htmlFor={`${id}-max`} className="text-xs text-muted-foreground">
+          <label htmlFor={`${id}-max`} className="text-xs text-ap-muted">
             Hasta (COP)
           </label>
           <Input
@@ -122,7 +122,7 @@ function PriceFilter({ query, options, onChange }: Pick<FiltersPanelProps, 'quer
         </div>
       </div>
       {range ? (
-        <p id={`${id}-hint`} className="text-xs text-muted-foreground tabular-nums">
+        <p id={`${id}-hint`} className="text-xs text-ap-muted tabular-nums">
           Precios entre {formatCOP(range.min)} y {formatCOP(range.max)}
         </p>
       ) : null}
@@ -139,7 +139,7 @@ export function FiltersPanel({ query, options, capabilities, onChange, fixedCate
 
   if (supports.size === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
+      <p className="text-sm text-ap-muted">
         Los filtros estarán disponibles cuando el catálogo permita buscar por categoría, marca o vehículo.
       </p>
     )
@@ -167,7 +167,7 @@ export function FiltersPanel({ query, options, capabilities, onChange, fixedCate
             {[{ slug: '', name: 'Todas las categorías' }, ...options.categories].map((category) => (
               <label
                 key={category.slug || 'all'}
-                className="flex min-h-9 cursor-pointer items-center gap-3 rounded-md px-1 text-sm hover:bg-concrete pointer-coarse:min-h-11"
+                className="flex min-h-9 cursor-pointer items-center gap-3 rounded-md px-1 text-sm hover:bg-ap-paper pointer-coarse:min-h-11"
               >
                 <RadioGroupItem value={category.slug} />
                 <span>{category.name}</span>

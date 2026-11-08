@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNod
 import { Link } from 'react-router'
 import { ClipboardCheckIcon, StoreIcon } from 'lucide-react'
 import { FieldShell, FormAlert, INPUT_CLASS, TextField } from '@/components/common/form-fields'
+import { LoadingState } from '@/components/common/states'
 import { Button } from '@/components/ui/button'
 import { useSessionState } from '@/features/auth/hooks'
 import { accountKindOf } from '@/features/auth/lib/account-menu-items'
@@ -42,7 +43,7 @@ const LEGAL_TYPES: { value: LegalType; label: string; hint: string }[] = [
   { value: 'LEGAL_ENTITY', label: 'Empresa (persona jurídica)', hint: 'El almacén es una sociedad con NIT propio.' },
 ]
 const LOGIN_FOR_SELLER = `/ingresar?next=${encodeURIComponent('/vender/registro')}`
-const LINK_CLASS = 'font-medium text-brand underline-offset-4 hover:underline'
+const LINK_CLASS = 'inline-flex min-h-11 items-center font-medium text-ap-red underline-offset-4 hover:text-ap-red-hover hover:underline'
 
 const CRUMBS = [
   { label: 'Inicio', to: '/' },
@@ -118,11 +119,11 @@ function splitServerErrors(fieldErrors: Readonly<Record<string, string>>) {
 
 function Section({ title, description, children }: { title: string; description?: ReactNode; children: ReactNode }) {
   return (
-    <fieldset className="flex min-w-0 flex-col gap-5 border-t border-border pt-6 first:border-t-0 first:pt-0">
+    <fieldset className="flex min-w-0 flex-col gap-5 border-t border-ap-line pt-6 first:border-t-0 first:pt-0">
       <legend className="float-left mb-1 w-full">
-        <span className="block text-block-title">{title}</span>
+        <span className="block text-block-title text-ap-ink">{title}</span>
       </legend>
-      {description ? <div className="clear-both -mt-3 text-sm text-muted-foreground">{description}</div> : null}
+      {description ? <div className="clear-both -mt-3 text-sm text-ap-muted">{description}</div> : null}
       <div className="clear-both">{children}</div>
     </fieldset>
   )
@@ -131,14 +132,14 @@ function Section({ title, description, children }: { title: string; description?
 /** Recuadro con el nombre del almacén, el estado devuelto por el servidor y qué sigue. */
 function StatusPanel({ businessName, status, children }: { businessName: string; status: StoreApplicationStatus; children: ReactNode }) {
   return (
-    <div className="flex w-full flex-col gap-3 rounded-xl bg-concrete p-4 text-sm">
-      <p className="flex items-center gap-2 font-semibold">
-        <ClipboardCheckIcon className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+    <div className="flex w-full flex-col gap-3 rounded-r-md border-l-2 border-ap-graphite bg-ap-paper p-4 text-sm">
+      <p className="flex items-center gap-2 font-semibold text-ap-ink">
+        <ClipboardCheckIcon className="size-4 shrink-0 text-ap-muted" aria-hidden />
         <span>
           {businessName}: {STATUS_LABEL[status].toLowerCase()}
         </span>
       </p>
-      <div className="text-muted-foreground">{children}</div>
+      <div className="text-ap-muted">{children}</div>
     </div>
   )
 }
@@ -147,12 +148,7 @@ function Loading({ message }: { message: string }) {
   return (
     <AuthShell width="wide" crumbs={CRUMBS} label="Para almacenes" title="Registra tu almacén">
       <title>Registrar almacén | Autopartco</title>
-      <div role="status" aria-live="polite" className="flex flex-col gap-3">
-        <span className="sr-only">{message}</span>
-        <div className="h-5 w-2/3 animate-pulse rounded-md bg-muted" aria-hidden />
-        <div className="h-11 w-full animate-pulse rounded-md bg-muted" aria-hidden />
-        <div className="h-11 w-full animate-pulse rounded-md bg-muted" aria-hidden />
-      </div>
+      <LoadingState label={message} rows={3} />
     </AuthShell>
   )
 }
@@ -345,7 +341,7 @@ function ApplicationForm({ mode, notice }: { mode: FormMode; notice?: ReactNode 
         </FormAlert>
       ) : null}
       {notice}
-      <p className="-mb-2 text-sm text-muted-foreground">Todos los campos son obligatorios.</p>
+      <p className="-mb-2 text-sm text-ap-muted">Todos los campos son obligatorios.</p>
 
       <Section title="Tu almacén">
         <div className="grid gap-5 sm:grid-cols-2">
@@ -392,9 +388,7 @@ function ApplicationForm({ mode, notice }: { mode: FormMode; notice?: ReactNode 
             {LEGAL_TYPES.map((option) => (
               <label
                 key={option.value}
-                className={cn(
-                  'flex min-h-11 cursor-pointer items-start gap-3 rounded-xl p-4 shadow-[0_0_0_1px_rgb(0_0_0/0.1)] transition-shadow has-[:checked]:shadow-[0_0_0_2px_var(--color-foreground)]',
-                )}
+                className="flex min-h-11 cursor-pointer items-start gap-3 rounded-md border border-ap-line-strong bg-ap-white p-4 transition-colors hover:bg-ap-paper has-[:checked]:border-ap-red has-[:checked]:bg-ap-red-tint has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-(--focus)"
               >
                 <input
                   id={`tipo-${option.value}`}
@@ -406,17 +400,17 @@ function ApplicationForm({ mode, notice }: { mode: FormMode; notice?: ReactNode 
                     setLegalType(option.value)
                     setDocumentErrors({})
                   }}
-                  className="mt-1 size-4 shrink-0 accent-[var(--color-foreground)]"
+                  className="mt-1 size-4 shrink-0 accent-[var(--ap-red)]"
                 />
                 <span className="flex flex-col gap-0.5">
-                  <span className="font-semibold">{option.label}</span>
-                  <span className="text-sm text-muted-foreground">{option.hint}</span>
+                  <span className="font-semibold text-ap-ink">{option.label}</span>
+                  <span className="text-sm text-ap-muted">{option.hint}</span>
                 </span>
               </label>
             ))}
           </div>
           {legalTypeError ? (
-            <p id="tipo-error" className="text-sm font-medium text-destructive">
+            <p id="tipo-error" className="text-sm font-medium text-ap-danger">
               {legalTypeError}
             </p>
           ) : null}
@@ -442,7 +436,7 @@ function ApplicationForm({ mode, notice }: { mode: FormMode; notice?: ReactNode 
                     aria-describedby={describedBy}
                     className={cn(
                       INPUT_CLASS,
-                      'h-auto min-h-11 cursor-pointer py-1.5 file:mr-3 file:h-8 file:cursor-pointer file:rounded-md file:border-0 file:bg-concrete file:px-3 file:text-sm file:font-semibold file:text-foreground',
+                      'h-auto min-h-11 cursor-pointer py-1.5 file:mr-3 file:h-8 file:cursor-pointer file:rounded-md file:border-0 file:bg-ap-paper file:px-3 file:text-sm file:font-semibold file:text-ap-ink',
                     )}
                   />
                 )}
@@ -460,17 +454,17 @@ function ApplicationForm({ mode, notice }: { mode: FormMode; notice?: ReactNode 
 
       <Section title="Plan">
         {/* TODO(flujo): planes y pago (Wompi) después de la aprobación; aquí no se envía `planId`. */}
-        <p className="rounded-lg bg-concrete p-4 text-sm">
+        <p className="rounded-md bg-ap-paper p-4 text-sm text-ap-ink">
           Elegirás tu plan después de la aprobación. Mientras tanto, tu almacén queda con la prueba gratuita.
         </p>
       </Section>
 
-      <div className="flex flex-col gap-4 border-t border-border pt-6">
-        <Button type="submit" className="h-11 w-full px-6 text-base sm:w-fit" disabled={submitting}>
+      <div className="flex flex-col gap-4 border-t border-ap-line pt-6">
+        <Button type="submit" className="w-full sm:w-fit" disabled={submitting}>
           {submitting ? 'Enviando solicitud…' : 'Enviar solicitud'}
         </Button>
         {withAccount ? (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-ap-muted">
             ¿Solo buscas repuestos?{' '}
             <Link to="/registro/cliente" className={LINK_CLASS}>
               Crea una cuenta de cliente
@@ -500,7 +494,7 @@ function PublicApplication() {
               plan después de la aprobación; mientras tanto quedas con la prueba gratuita.
             </StatusPanel>
           </div>
-          <Button variant="outline" className="h-11 px-5" nativeButton={false} render={<Link to="/" />}>
+          <Button variant="outline" nativeButton={false} render={<Link to="/" />}>
             Ir al inicio
           </Button>
         </CheckEmail>
@@ -585,10 +579,10 @@ function CustomerApplication({ email }: { email: string }) {
           <StatusPanel businessName={created.businessName} status={created.result.status}>
             {nextStep(created.result.status, email)}
           </StatusPanel>
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-ap-muted">
             La solicitud quedó asociada a tu cuenta; no necesitas verificar otro correo.
           </p>
-          <Button variant="outline" className="h-11 px-5" nativeButton={false} render={<Link to="/" />}>
+          <Button variant="outline" nativeButton={false} render={<Link to="/" />}>
             Ir al inicio
           </Button>
           <SimulatedNotice />
@@ -607,7 +601,7 @@ function CustomerApplication({ email }: { email: string }) {
           <FormAlert title="No pudimos consultar tus solicitudes de almacén.">
             Revisa tu conexión e inténtalo de nuevo.
           </FormAlert>
-          <Button className="h-11 px-5" onClick={() => void load()}>
+          <Button onClick={() => void load()}>
             Reintentar
           </Button>
         </div>
@@ -634,11 +628,11 @@ function CustomerApplication({ email }: { email: string }) {
           </StatusPanel>
           <div className="flex flex-wrap gap-2">
             {open.status === 'ACTIVE' ? (
-              <Button className="h-11 px-5" nativeButton={false} render={<Link to="/portal" />}>
+              <Button nativeButton={false} render={<Link to="/portal" />}>
                 Ir al portal del almacén
               </Button>
             ) : null}
-            <Button variant="outline" className="h-11 px-5" nativeButton={false} render={<Link to="/" />}>
+            <Button variant="outline" nativeButton={false} render={<Link to="/" />}>
               Ir al inicio
             </Button>
           </div>
@@ -656,7 +650,7 @@ function CustomerApplication({ email }: { email: string }) {
       title="Registra tu almacén"
       description={
         <p>
-          Solicitarás el almacén con tu cuenta <strong className="font-semibold text-foreground">{email}</strong>. Envía los
+          Solicitarás el almacén con tu cuenta <strong className="font-semibold text-ap-ink">{email}</strong>. Envía los
           datos del almacén y los documentos; revisamos cada solicitud antes de publicarlo.
         </p>
       }
@@ -698,8 +692,8 @@ function NotEligible({ kind }: { kind: 'store' | 'other' }) {
     >
       <title>Registrar almacén | Autopartco</title>
       <div className="flex flex-col items-start gap-5">
-        <div className="flex items-start gap-3 rounded-xl bg-concrete p-4 text-sm">
-          <StoreIcon className="mt-0.5 size-4 shrink-0 text-muted-foreground" aria-hidden />
+        <div className="flex items-start gap-3 rounded-r-md border-l-2 border-ap-graphite bg-ap-paper p-4 text-sm text-ap-ink">
+          <StoreIcon className="mt-0.5 size-4 shrink-0 text-ap-muted" aria-hidden />
           <p>
             {kind === 'store'
               ? 'Administra tu almacén, sus productos, pedidos y plan desde el portal. Para registrar otro almacén, escríbenos.'
@@ -708,11 +702,11 @@ function NotEligible({ kind }: { kind: 'store' | 'other' }) {
         </div>
         <div className="flex flex-wrap gap-2">
           {kind === 'store' ? (
-            <Button className="h-11 px-5" nativeButton={false} render={<Link to="/portal" />}>
+            <Button nativeButton={false} render={<Link to="/portal" />}>
               Ir al portal del almacén
             </Button>
           ) : null}
-          <Button variant="outline" className="h-11 px-5" nativeButton={false} render={<Link to="/" />}>
+          <Button variant="outline" nativeButton={false} render={<Link to="/" />}>
             Ir al inicio
           </Button>
         </div>

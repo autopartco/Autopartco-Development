@@ -68,10 +68,10 @@ export function SearchBar({ className, tone = 'light', autoFocus, shortcut }: Se
     <form role="search" onSubmit={handleSubmit} className={cn('w-full min-w-0', className)}>
       <div
         className={cn(
-          'group flex h-11 w-full min-w-0 items-center overflow-hidden rounded-full border transition-[background-color,border-color,box-shadow] duration-200 ease-out-snap xl:h-10',
+          'group flex h-11 w-full min-w-0 items-center overflow-hidden rounded-md border transition-[background-color,border-color] duration-150 xl:h-10',
           dark
-            ? 'border-white/15 bg-white/10 hover:bg-white/15 focus-within:border-transparent focus-within:bg-white focus-within:shadow-md focus-within:ring-2 focus-within:ring-brand-on-asphalt focus-within:hover:bg-white'
-            : 'border-border bg-muted focus-within:border-brand focus-within:bg-card focus-within:shadow-sm focus-within:ring-2 focus-within:ring-brand/30',
+            ? 'border-white/15 bg-white/10 hover:bg-white/15 focus-within:border-transparent focus-within:bg-white focus-within:ring-2 focus-within:ring-ap-red-on-dark focus-within:hover:bg-white'
+            : 'border-input bg-ap-white focus-within:border-ap-graphite focus-within:ring-2 focus-within:ring-ap-red',
         )}
       >
         <label htmlFor={id} className="sr-only">
@@ -111,7 +111,7 @@ export function SearchBar({ className, tone = 'light', autoFocus, shortcut }: Se
               inputRef.current?.focus()
             }}
             className={cn(
-              'grid size-11 shrink-0 place-items-center rounded-full transition-colors [--focus:var(--color-brand)] focus-visible:-outline-offset-2! xl:size-10',
+              'grid size-11 shrink-0 place-items-center rounded-md transition-colors [--focus:var(--color-brand)] focus-visible:-outline-offset-2! xl:size-10',
               dark
                 ? 'text-asphalt-muted hover:text-white group-focus-within:text-muted-foreground group-focus-within:hover:text-foreground'
                 : 'text-muted-foreground hover:text-foreground',
@@ -129,15 +129,15 @@ export function SearchBar({ className, tone = 'light', autoFocus, shortcut }: Se
         ) : null}
         <PhotoSearchButton
           className={cn(
-            'rounded-full xl:size-10',
+            'rounded-md xl:size-10',
             dark &&
-              'text-asphalt-muted hover:bg-white/10 hover:text-white group-focus-within:text-muted-foreground group-focus-within:hover:bg-concrete group-focus-within:hover:text-foreground',
+              'text-asphalt-muted hover:bg-white/10 hover:text-white group-focus-within:text-muted-foreground group-focus-within:hover:bg-ap-paper group-focus-within:hover:text-foreground',
           )}
         />
         <button
           type="submit"
           aria-label="Buscar"
-          className="grid h-full w-12 shrink-0 place-items-center bg-primary text-primary-foreground transition-colors [--focus:var(--color-brand-deep)] hover:bg-brand-bright focus-visible:-outline-offset-2!"
+          className="grid h-full w-12 shrink-0 place-items-center bg-primary text-primary-foreground transition-colors [--focus:var(--color-brand-deep)] hover:bg-ap-red-hover focus-visible:-outline-offset-2!"
         >
           <SearchIcon className="size-[18px]" aria-hidden />
         </button>

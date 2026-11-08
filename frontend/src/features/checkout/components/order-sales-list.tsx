@@ -4,54 +4,57 @@ import { formatCOP } from '@/lib/format'
 import type { BuyerSaleDto } from '../api/types'
 import { statusLabel } from '../lib/labels'
 
-/** Una tarjeta por venta (tienda + sucursal) con sus ítems. La reutilizará "Mis pedidos" (F5). */
+/**
+ * Una sección por venta (tienda + sucursal) con sus ítems en filas y los importes alineados a la
+ * derecha. El estado va en texto (no solo color). La reutiliza "Mis pedidos".
+ */
 export function OrderSalesList({ sales }: { sales: BuyerSaleDto[] }) {
   return (
-    <ul className="flex flex-col gap-4">
+    <ul className="flex flex-col gap-8">
       {sales.map((sale) => (
         <li key={sale.saleId}>
-          <section
-            aria-label={`${sale.storeName}, ${sale.branchName}`}
-            className="flex flex-col gap-4 rounded-2xl bg-card p-5 shadow-[0_0_0_1px_rgb(0_0_0/0.07),0_18px_40px_-28px_rgb(23_27_32/0.35)]"
-          >
-            <header className="flex flex-wrap items-start justify-between gap-2">
+          <section aria-label={`${sale.storeName}, ${sale.branchName}`} className="flex flex-col">
+            <header className="flex flex-wrap items-start justify-between gap-2 border-b border-ap-graphite pb-2">
               <div className="flex min-w-0 items-start gap-2.5">
-                <StoreIcon className="mt-0.5 size-5 shrink-0 text-muted-foreground" aria-hidden />
+                <StoreIcon className="mt-0.5 size-5 shrink-0 text-ap-muted" aria-hidden />
                 <div className="min-w-0">
-                  <h3 className="font-semibold">{sale.storeName}</h3>
-                  <p className="text-sm text-muted-foreground">{sale.branchName}</p>
+                  <h3 className="font-semibold text-ap-ink">{sale.storeName}</h3>
+                  <p className="text-sm text-ap-muted">Sucursal {sale.branchName}</p>
                 </div>
               </div>
-              <Badge variant="secondary">{statusLabel(sale.status)}</Badge>
+              <Badge variant="neutral">
+                <span className="sr-only">Estado: </span>
+                {statusLabel(sale.status)}
+              </Badge>
             </header>
 
-            <ul className="flex flex-col divide-y divide-border">
+            <ul className="flex flex-col divide-y divide-ap-line">
               {sale.items.map((item) => (
-                <li key={item.productId} className="flex justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                <li key={item.productId} className="flex justify-between gap-3 py-3">
                   <div className="min-w-0">
-                    <p className="text-sm font-medium">{item.name}</p>
-                    <p className="text-sm text-muted-foreground">
+                    {item.partNumber ? <p className="ap-ref text-xs text-ap-muted">REF. {item.partNumber}</p> : null}
+                    <p className="text-sm font-medium text-ap-ink">{item.name}</p>
+                    <p className="font-mono text-xs text-ap-muted tabular-nums">
                       {item.quantity} × {formatCOP(item.unitPrice)}
-                      {item.partNumber ? <span className="label-mono ml-2">Ref. {item.partNumber}</span> : null}
                     </p>
                   </div>
-                  <p className="shrink-0 text-sm font-semibold tabular-nums">{formatCOP(item.lineTotal)}</p>
+                  <p className="ap-price ap-num shrink-0 text-sm text-ap-ink">{formatCOP(item.lineTotal)}</p>
                 </li>
               ))}
             </ul>
 
-            <dl className="flex flex-col gap-1 border-t border-border pt-3 text-sm">
+            <dl className="flex flex-col gap-1 border-t border-ap-line pt-3 text-sm">
               <div className="flex justify-between gap-3">
-                <dt className="text-muted-foreground">Subtotal</dt>
-                <dd className="tabular-nums">{formatCOP(sale.subtotal)}</dd>
+                <dt className="text-ap-muted">Subtotal</dt>
+                <dd className="ap-num text-ap-ink">{formatCOP(sale.subtotal)}</dd>
               </div>
               <div className="flex justify-between gap-3">
-                <dt className="text-muted-foreground">Envío</dt>
-                <dd className="tabular-nums">{sale.shippingCost > 0 ? formatCOP(sale.shippingCost) : 'Sin costo'}</dd>
+                <dt className="text-ap-muted">Envío</dt>
+                <dd className="ap-num text-ap-ink">{sale.shippingCost > 0 ? formatCOP(sale.shippingCost) : 'Sin costo'}</dd>
               </div>
-              <div className="flex justify-between gap-3 font-semibold">
+              <div className="flex justify-between gap-3 font-semibold text-ap-ink">
                 <dt>Total de esta tienda</dt>
-                <dd className="tabular-nums">{formatCOP(sale.total)}</dd>
+                <dd className="ap-price ap-num">{formatCOP(sale.total)}</dd>
               </div>
             </dl>
           </section>

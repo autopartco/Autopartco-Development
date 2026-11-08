@@ -84,7 +84,7 @@ export function DataTable<T>({ caption, columns, rows, getRowId, defaultSort, cl
       tabIndex={0}
       role="region"
       aria-labelledby={captionId}
-      className={cn('@container overflow-x-auto rounded-xl bg-card ring-1 ring-foreground/10 focus-visible:outline-offset-0', className)}
+      className={cn('@container overflow-x-auto rounded-xl border border-ap-line bg-ap-white focus-visible:outline-offset-0', className)}
     >
       <Table className="@max-[40rem]:block">
         <caption id={captionId} className="sr-only">
@@ -96,7 +96,7 @@ export function DataTable<T>({ caption, columns, rows, getRowId, defaultSort, cl
               const active = sort?.columnId === column.id
               const ariaSort = active ? (sort?.direction === 'asc' ? 'ascending' : 'descending') : column.sortValue ? 'none' : undefined
               return (
-                <TableHead key={column.id} aria-sort={ariaSort} className={cn(column.align === 'end' && 'text-right', column.className)}>
+                <TableHead key={column.id} aria-sort={ariaSort} numeric={column.align === 'end'} className={column.className}>
                   {column.actions ? (
                     <span className="sr-only">{column.header}</span>
                   ) : column.sortValue ? (
@@ -104,7 +104,7 @@ export function DataTable<T>({ caption, columns, rows, getRowId, defaultSort, cl
                       type="button"
                       onClick={() => toggle(column.id)}
                       className={cn(
-                        '-mx-2 inline-flex h-9 items-center gap-1.5 rounded-md px-2 font-semibold hover:bg-card hover:text-foreground pointer-coarse:h-11',
+                        '-mx-2 inline-flex h-9 items-center gap-1.5 rounded-md px-2 font-semibold hover:bg-ap-white hover:text-ap-ink pointer-coarse:h-11',
                         column.align === 'end' && 'flex-row-reverse',
                       )}
                     >
@@ -137,16 +137,19 @@ export function DataTable<T>({ caption, columns, rows, getRowId, defaultSort, cl
                     }
                   : undefined
               }
-              className={cn(onRowClick && 'cursor-pointer', 'hover:bg-concrete/50@max-[40rem]:mb-0 @max-[40rem]:block @max-[40rem]:overflow-hidden @max-[40rem]:rounded-lg @max-[40rem]:border @max-[40rem]:border-border @max-[40rem]:hover:bg-transparent')}
+              className={cn(
+                onRowClick && 'cursor-pointer',
+                'hover:bg-ap-paper/60 @max-[40rem]:mb-0 @max-[40rem]:block @max-[40rem]:overflow-hidden @max-[40rem]:rounded-xl @max-[40rem]:border @max-[40rem]:border-ap-line @max-[40rem]:hover:bg-transparent',
+              )}
             >
               {columns.map((column) => {
                 const content = column.cell(row)
                 const common = cn(
-                  column.align === 'end' && 'text-right @max-[40rem]:text-left',
+                  column.align === 'end' && 'text-right tabular-nums @max-[40rem]:text-left',
                   // Tarjeta: etiqueta a la izquierda, valor a la derecha.
                   '@max-[40rem]:grid @max-[40rem]:grid-cols-[minmax(6rem,35%)_1fr] @max-[40rem]:items-center @max-[40rem]:gap-3 @max-[40rem]:border-b-0 @max-[40rem]:px-3 @max-[40rem]:py-2',
-                  !column.actions && "@max-[40rem]:before:text-xs @max-[40rem]:before:font-semibold @max-[40rem]:before:text-muted-foreground @max-[40rem]:before:content-[attr(data-label)]",
-                  column.actions && '@max-[40rem]:grid-cols-1 @max-[40rem]:border-t @max-[40rem]:border-border @max-[40rem]:bg-concrete/60',
+                  !column.actions && "@max-[40rem]:before:text-xs @max-[40rem]:before:font-semibold @max-[40rem]:before:text-ap-muted @max-[40rem]:before:content-[attr(data-label)]",
+                  column.actions && '@max-[40rem]:grid-cols-1 @max-[40rem]:border-t @max-[40rem]:border-ap-line @max-[40rem]:bg-ap-paper',
                   column.className,
                 )
                 return column.rowHeader ? (
@@ -155,9 +158,9 @@ export function DataTable<T>({ caption, columns, rows, getRowId, defaultSort, cl
                     scope="row"
                     data-label={column.header}
                     className={cn(
-                      'h-auto border-b border-border bg-transparent text-sm font-semibold whitespace-normal text-foreground',
+                      'h-auto border-b border-ap-line bg-transparent text-sm font-semibold whitespace-normal text-ap-ink',
                       common,
-                      '@max-[40rem]:bg-concrete @max-[40rem]:before:hidden',
+                      '@max-[40rem]:bg-ap-paper @max-[40rem]:before:hidden',
                     )}
                   >
                     {content}
@@ -178,7 +181,7 @@ export function DataTable<T>({ caption, columns, rows, getRowId, defaultSort, cl
     </div>
     {pageSize && pages > 1 ? (
       <nav aria-label={`Paginación: ${caption}`} className="flex flex-wrap items-center justify-between gap-3 text-sm">
-        <p role="status" className="text-muted-foreground">
+        <p role="status" className="text-ap-muted tabular-nums">
           Mostrando {current * pageSize + 1} a {Math.min((current + 1) * pageSize, sorted.length)} de {sorted.length}
         </p>
         <div className="flex items-center gap-2">
@@ -186,19 +189,19 @@ export function DataTable<T>({ caption, columns, rows, getRowId, defaultSort, cl
             type="button"
             onClick={() => setPage(current - 1)}
             disabled={current === 0}
-            className="inline-flex h-11 items-center gap-1 rounded-lg border border-input bg-card px-3 font-medium hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
+            className="inline-flex h-11 items-center gap-1 rounded-md border border-input bg-ap-white px-3 font-semibold text-ap-graphite transition-colors hover:border-ap-graphite hover:bg-ap-paper disabled:pointer-events-none disabled:opacity-50"
           >
             <ChevronLeftIcon className="size-4" aria-hidden />
             Anterior
           </button>
-          <span className="px-1 text-muted-foreground tabular-nums">
+          <span className="px-1 text-ap-muted tabular-nums">
             Página {current + 1} de {pages}
           </span>
           <button
             type="button"
             onClick={() => setPage(current + 1)}
             disabled={current >= pages - 1}
-            className="inline-flex h-11 items-center gap-1 rounded-lg border border-input bg-card px-3 font-medium hover:bg-muted disabled:pointer-events-none disabled:opacity-50"
+            className="inline-flex h-11 items-center gap-1 rounded-md border border-input bg-ap-white px-3 font-semibold text-ap-graphite transition-colors hover:border-ap-graphite hover:bg-ap-paper disabled:pointer-events-none disabled:opacity-50"
           >
             Siguiente
             <ChevronRightIcon className="size-4" aria-hidden />

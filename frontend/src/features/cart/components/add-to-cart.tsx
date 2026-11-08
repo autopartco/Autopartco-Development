@@ -23,7 +23,7 @@ export function AddToCart({ product }: { product: Product }) {
 
   if (!product.branchId || product.availability?.status === 'out_of_stock' || max < 1) {
     return (
-      <p className="rounded-lg bg-concrete p-4 text-sm">
+      <p className="rounded-md border border-ap-line bg-ap-paper px-4 py-3 text-sm text-ap-ink">
         {product.availability?.status === 'out_of_stock'
           ? 'Este repuesto está agotado por ahora. Vuelve pronto o mira otras tiendas que lo tengan.'
           : 'Este listado todavía no se puede comprar en línea. Consulta con la tienda.'}
@@ -54,25 +54,25 @@ export function AddToCart({ product }: { product: Product }) {
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-3">
         <QuantityStepper label={product.name} value={quantity} max={max} onChange={setQuantity} />
-        <Button type="button" className="h-11 flex-1 px-5 text-base" onClick={handleAdd}>
+        <Button type="button" className="flex-1 px-5" onClick={handleAdd}>
           <ShoppingCartIcon aria-hidden />
           Agregar al carrito
         </Button>
       </div>
       <div aria-live="polite">
         {added !== undefined ? (
-          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-concrete px-3 py-2.5 text-sm">
+          <p className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-md border border-ap-success/25 bg-ap-success-soft px-3 py-1 text-sm text-ap-ink">
             <span className="flex items-center gap-1.5 font-semibold">
-              <CheckIcon className="size-4 text-stock" aria-hidden />
+              <CheckIcon className="size-4 text-ap-success" aria-hidden />
               Agregado: {added === 1 ? '1 unidad' : `${added} unidades`} en tu carrito
             </span>
-            <Link to="/carrito" className="inline-flex min-h-11 items-center font-semibold text-brand underline-offset-4 hover:underline">
+            <Link to="/carrito" className="inline-flex min-h-11 items-center font-semibold text-ap-red underline-offset-4 hover:text-ap-red-hover hover:underline">
               Ver carrito
             </Link>
           </p>
         ) : null}
       </div>
-      <p className="text-xs text-muted-foreground">El precio y las existencias se confirman al pagar.</p>
+      <p className="text-xs text-ap-muted">El precio y las existencias se confirman al pagar.</p>
     </div>
   )
 }

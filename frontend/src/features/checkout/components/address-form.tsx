@@ -85,8 +85,8 @@ export function AddressForm({ makeDefault, onCreated, onCancel }: AddressFormPro
   }
 
   return (
-    <form noValidate onSubmit={handleSubmit} aria-busy={submitting || undefined} className="flex flex-col gap-4 rounded-lg border border-border bg-concrete/50 p-4">
-      <h3 className="text-base font-semibold">Agregar dirección</h3>
+    <form noValidate onSubmit={handleSubmit} aria-busy={submitting || undefined} className="flex flex-col gap-4 rounded-md border border-ap-line bg-ap-paper p-4">
+      <h3 className="text-base font-semibold text-ap-ink">Agregar dirección</h3>
       {formError ? <FormAlert title={formError} /> : null}
       <div className="grid gap-4 sm:grid-cols-2">
         <TextField id={fieldId('label')} name="label" label="Nombre de la dirección" placeholder="Casa, taller…" maxLength={100} required error={errors.label} containerClassName="sm:col-span-2" />
@@ -107,10 +107,10 @@ export function AddressForm({ makeDefault, onCreated, onCancel }: AddressFormPro
         <TextField id={fieldId('postalCode')} name="postalCode" label="Código postal" inputMode="numeric" autoComplete="postal-code" maxLength={20} optional error={errors.postalCode} />
       </div>
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" className="h-11 px-5" disabled={submitting}>
+        <Button type="submit" disabled={submitting}>
           {submitting ? 'Guardando…' : 'Guardar dirección'}
         </Button>
-        <Button type="button" variant="outline" className="h-11 px-5" onClick={onCancel} disabled={submitting}>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>
           Cancelar
         </Button>
       </div>

@@ -41,12 +41,12 @@ export function SellerCtaPanel({ className }: { className?: string }) {
   const sentOn = cta.state === 'review' && cta.application ? formatDate(cta.application.createdAt) : undefined
 
   return (
-    <section aria-labelledby="cta-almacen" className={cn('surface-asphalt flex flex-col items-start gap-3 rounded-2xl p-6', className)}>
-      <p className="label-mono text-asphalt-muted">Para almacenes en Colombia</p>
-      <h3 id="cta-almacen" className="text-xl font-bold tracking-tight">
+    <section aria-labelledby="cta-almacen" className={cn('surface-asphalt flex flex-col items-start gap-3 rounded-xl border-t-2 border-ap-red-on-dark p-6', className)}>
+      <p className="ap-index">Para almacenes en Colombia</p>
+      <h3 id="cta-almacen" className="text-block-title">
         {copy.title}
       </h3>
-      <p className="max-w-sm text-sm text-asphalt-muted">
+      <p className="max-w-sm text-sm text-ap-on-dark-muted">
         {copy.body}
         {sentOn ? ` Enviada el ${sentOn}.` : ''}
       </p>
@@ -54,7 +54,7 @@ export function SellerCtaPanel({ className }: { className?: string }) {
         <ul className="flex max-w-sm flex-col gap-1.5 text-sm">
           {BENEFITS.map((benefit) => (
             <li key={benefit} className="flex items-start gap-2">
-              <CheckIcon className="mt-0.5 size-4 shrink-0 text-brand-on-asphalt" aria-hidden />
+              <CheckIcon className="mt-0.5 size-4 shrink-0 text-ap-red-on-dark" aria-hidden />
               {benefit}
             </li>
           ))}
@@ -63,7 +63,7 @@ export function SellerCtaPanel({ className }: { className?: string }) {
       <div className="mt-1 flex flex-wrap items-center gap-x-5 gap-y-1">
         <Link
           to={cta.state === 'loading' ? '/vender/registro' : cta.to}
-          className="inline-flex min-h-11 items-center rounded-lg bg-white px-4 py-2 font-semibold text-asphalt transition-colors hover:bg-white/90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+          className="inline-flex min-h-11 items-center rounded-md bg-ap-white px-4 py-2 text-sm font-semibold text-ap-graphite transition-colors hover:bg-ap-paper focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
         >
           {cta.state === 'loading' ? 'Registra tu almacén' : cta.label}
         </Link>

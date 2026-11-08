@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router'
-import { ShoppingCartIcon } from 'lucide-react'
+import { CheckIcon, Loader2Icon, ShoppingCartIcon, TriangleAlertIcon } from 'lucide-react'
 import { Container, PageIntro } from '@/components/common/page-header'
 import { EmptyState, ErrorState } from '@/components/common/states'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useSession } from '@/features/auth/hooks'
@@ -81,18 +82,45 @@ function useCheckoutOptions() {
   return { ...state, reload }
 }
 
-function Step({ number, title, last, children }: { number: string; title: string; last?: boolean; children: ReactNode }) {
+/** Estado visible de un paso: siempre con texto, nunca solo con color (§4.4). */
+type StepState = 'loading' | 'pending' | 'complete' | 'error'
+
+const STEP_STATE: Record<StepState, { label: string; variant: 'neutral' | 'success' | 'danger' }> = {
+  loading: { label: 'Cargando', variant: 'neutral' },
+  pending: { label: 'Pendiente', variant: 'neutral' },
+  complete: { label: 'Listo', variant: 'success' },
+  error: { label: 'Revisar', variant: 'danger' },
+}
+
+/** Paso del pago: sección abierta con número, título y estado; sin tarjeta ni hilo decorativo. */
+function Step({ number, title, state, children }: { number: string; title: string; state: StepState; children: ReactNode }) {
+  const status = STEP_STATE[state]
   return (
-    <li className="relative lg:pl-14">
-      <div className="absolute top-0 left-0 hidden size-8 place-items-center rounded-full bg-asphalt text-xs font-bold text-white lg:grid" aria-hidden>
-        {number}
-      </div>
-      {last ? null : <div className="thread-v absolute top-10 -bottom-6 left-[13px] hidden lg:block" aria-hidden />}
-      <section aria-labelledby={`paso-${number}`} className="rounded-2xl bg-card p-5 shadow-[0_0_0_1px_rgb(0_0_0/0.07),0_18px_40px_-28px_rgb(23_27_32/0.35)] sm:p-6">
-        <h2 id={`paso-${number}`} className="text-block-title mb-4">
-          {title}
-        </h2>
-        {children}
+    <li>
+      <section aria-labelledby={`paso-${number}`} className="border-t border-ap-graphite pt-4">
+        <div className="mb-4 flex flex-wrap items-center gap-x-3 gap-y-2">
+          <span
+            aria-hidden
+            className={cn(
+              'grid size-8 shrink-0 place-items-center rounded-md border font-mono text-xs font-semibold tabular-nums',
+              state === 'complete'
+                ? 'border-ap-success/40 bg-ap-success-soft text-ap-success'
+                : state === 'error'
+                  ? 'border-ap-danger bg-ap-danger-soft text-ap-danger'
+                  : 'border-ap-line-strong bg-ap-white text-ap-ink',
+            )}
+          >
+            {state === 'complete' ? <CheckIcon className="size-4" /> : number}
+          </span>
+          <h2 id={`paso-${number}`} className="text-block-title text-ap-ink">
+            <span className="sr-only">Paso {Number(number)}: </span>
+            {title}
+          </h2>
+          <Badge variant={status.variant} className="ml-auto">
+            {status.label}
+          </Badge>
+        </div>
+        <div className="sm:pl-11">{children}</div>
       </section>
     </li>
   )
@@ -101,10 +129,18 @@ function Step({ number, title, last, children }: { number: string; title: string
 function CheckoutSkeleton() {
   return (
     <Container className="py-6 sm:py-8">
-      <Skeleton className="mb-6 h-12 w-72" />
-      <div className="grid gap-6 lg:grid-cols-[1fr_24rem]">
-        <Skeleton className="h-96 rounded-2xl" />
-        <Skeleton className="h-96 rounded-2xl" />
+      <span className="sr-only" role="status">
+        Cargando el pago
+      </span>
+      <div aria-hidden>
+        <Skeleton className="mb-6 h-12 w-72" />
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_24rem]">
+          <div className="flex flex-col gap-6">
+            <Skeleton className="h-48" />
+            <Skeleton className="h-48" />
+          </div>
+          <Skeleton className="h-96 rounded-xl" />
+        </div>
       </div>
     </Container>
   )
@@ -238,8 +274,9 @@ function CheckoutView() {
 
   if (placed) {
     return (
-      <Container className="py-16" >
-        <p role="status" className="text-center text-muted-foreground">
+      <Container className="py-16">
+        <p role="status" className="mx-auto flex max-w-md items-center justify-center gap-2 text-center text-ap-ink">
+          <Loader2Icon className="size-5 shrink-0 animate-spin text-ap-muted" aria-hidden />
           {placed === 'redirect' ? 'Te estamos llevando a Wompi para completar el pago…' : 'Abriendo el estado de tu pedido…'}
         </p>
       </Container>
@@ -252,7 +289,7 @@ function CheckoutView() {
         <title>Pagar | Autopartco</title>
         <PageIntro crumbs={CRUMBS} label="Pagar" title="Tu carrito está vacío" />
         <EmptyState icon={<ShoppingCartIcon />} title="No hay repuestos para pagar" description="Busca el repuesto que necesitas y agrégalo al carrito para continuar.">
-          <Button className="h-11 px-5" nativeButton={false} render={<Link to="/buscar" />}>
+          <Button nativeButton={false} render={<Link to="/buscar" />}>
             Buscar repuestos
           </Button>
         </EmptyState>
@@ -268,20 +305,30 @@ function CheckoutView() {
         ? 'Los pagos no están disponibles en este momento. Inténtalo de nuevo en unos minutos.'
         : undefined
   const canPay = Boolean(addressId) && Boolean(method) && !busyNow
+  const addressState: StepState =
+    addressNotice ? 'error' : addresses.status === 'loading' ? 'loading' : addressId ? 'complete' : 'pending'
+  const paymentState: StepState =
+    options.status === 'error' || problem?.kind === 'method' || problem?.kind === 'rejected'
+      ? 'error'
+      : options.status === 'loading'
+        ? 'loading'
+        : method
+          ? 'complete'
+          : 'pending'
 
   return (
     <Container className="py-6 pb-32 sm:py-8 lg:pb-12">
       <title>Pagar | Autopartco</title>
       <PageIntro crumbs={CRUMBS} label="Pagar" title="Confirma tu pedido" description="Elige a dónde llevamos tu pedido y cómo pagas. Revisa el resumen antes de confirmar." />
 
-      <div className="grid items-start gap-6 lg:grid-cols-[1fr_24rem] lg:gap-8">
-        <div className="flex flex-col gap-6">
+      <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_24rem]">
+        <div className="flex flex-col gap-8">
           {problem ? (
             <div
               ref={problemRef}
               tabIndex={-1}
               role={problem.kind === 'unavailable' ? undefined : 'alert'}
-              className={cn('rounded-lg outline-none', problem.kind !== 'unavailable' && 'border border-destructive/25 bg-destructive/5 p-4')}
+              className={cn('rounded-xl outline-none', problem.kind !== 'unavailable' && 'border border-ap-danger/30 bg-ap-danger-soft p-4 sm:p-5')}
             >
               <ProblemView problem={problem} onAdjust={adjustQuantities} onRemove={removeUnavailable} onRetry={pay} onTryAnotherMethod={() => {
                 setProblem(undefined)
@@ -290,8 +337,8 @@ function CheckoutView() {
             </div>
           ) : null}
 
-          <ol className="flex flex-col gap-6">
-            <Step number="01" title="Dirección de entrega">
+          <ol className="flex flex-col gap-8">
+            <Step number="01" title="Dirección de entrega" state={addressState}>
               <AddressSelector
                 status={addresses.status}
                 addresses={addresses.data}
@@ -310,7 +357,7 @@ function CheckoutView() {
                 onRetry={addresses.reload}
               />
             </Step>
-            <Step number="02" title="Pago" last>
+            <Step number="02" title="Pago" state={paymentState}>
               <PaymentMethodPicker
                 status={options.status}
                 options={options.data}
@@ -331,10 +378,16 @@ function CheckoutView() {
       </div>
 
       {/* Barra de pago fija en móvil: el botón del resumen queda lejos al final de la página. */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-card/95 px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_-16px_rgb(23_27_32/0.4)] backdrop-blur lg:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-ap-line-strong bg-ap-white px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden">
         <div className="mx-auto flex max-w-lg flex-col gap-1.5">
           <PayButton total={total} canPay={canPay} busy={busyNow} onPay={pay} />
-          {blockedReason ? <p className="text-center text-xs text-muted-foreground">{blockedReason}</p> : <p className="text-center text-xs text-muted-foreground">Total informativo {formatCOP(total)} · lo confirma Autopartco al pagar</p>}
+          {blockedReason ? (
+            <p className="text-center text-xs text-ap-muted">{blockedReason}</p>
+          ) : (
+            <p className="text-center text-xs text-ap-muted">
+              Total informativo <span className="tabular-nums">{formatCOP(total)}</span> · lo confirma Autopartco al pagar
+            </p>
+          )}
         </div>
       </div>
     </Container>
@@ -356,7 +409,7 @@ function ProblemView({ problem, onAdjust, onRemove, onRetry, onTryAnotherMethod 
     case 'stock':
       return (
         <ProblemText title="Algunos repuestos tienen menos unidades de las que pediste" body="No se cobró nada. Ajusta las cantidades a lo disponible y vuelve a pagar.">
-          <Button type="button" className="h-11 px-4" onClick={onAdjust}>
+          <Button type="button" onClick={onAdjust}>
             Ajustar cantidades
           </Button>
         </ProblemText>
@@ -364,7 +417,7 @@ function ProblemView({ problem, onAdjust, onRemove, onRetry, onTryAnotherMethod 
     case 'gone':
       return (
         <ProblemText title="Algunos repuestos ya no están disponibles" body="No se cobró nada. Quítalos del carrito para continuar con el resto.">
-          <Button type="button" className="h-11 px-4" onClick={onRemove}>
+          <Button type="button" onClick={onRemove}>
             Quitar del carrito
           </Button>
         </ProblemText>
@@ -374,7 +427,7 @@ function ProblemView({ problem, onAdjust, onRemove, onRetry, onTryAnotherMethod 
     case 'duplicate':
       return (
         <ProblemText title="Este pedido ya se está procesando" body="Revisa tus pedidos antes de volver a pagar. Si no aparece, recarga la página e inténtalo de nuevo.">
-          <Button variant="outline" className="h-11 px-4" nativeButton={false} render={<Link to="/mis-pedidos" />}>
+          <Button variant="outline" nativeButton={false} render={<Link to="/mis-pedidos" />}>
             Ver mis pedidos
           </Button>
         </ProblemText>
@@ -393,8 +446,11 @@ function ProblemView({ problem, onAdjust, onRemove, onRetry, onTryAnotherMethod 
 function ProblemText({ title, body, children }: { title: string; body: string; children?: ReactNode }) {
   return (
     <div className="flex flex-col gap-3">
-      <p className="font-semibold text-destructive">{title}</p>
-      <p className="max-w-prose text-sm text-foreground/85">{body}</p>
+      <p className="flex items-start gap-2 font-semibold text-ap-danger">
+        <TriangleAlertIcon className="mt-0.5 size-5 shrink-0" aria-hidden />
+        {title}
+      </p>
+      <p className="max-w-prose text-sm text-ap-ink">{body}</p>
       {children ? <div className="flex flex-wrap gap-2">{children}</div> : null}
     </div>
   )
