@@ -3,6 +3,7 @@ package com.autopartco.backend.marketplace.home;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.CacheControl;
@@ -15,7 +16,10 @@ import org.springframework.web.bind.annotation.RestController;
 import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.location.ColombiaBounds;
 import com.autopartco.backend.shared.web.ApiPaths;
+import com.autopartco.backend.shared.web.AreaCookie;
+import com.autopartco.backend.shared.web.RateLimiters;
 import com.autopartco.backend.shared.web.SlidingWindowRateLimiter;
+import com.autopartco.backend.shared.web.VisitorCookie;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -36,15 +40,19 @@ public class HomeController {
     private final HomeService homeService;
     private final SlidingWindowRateLimiter limiter;
 
+    /** Límite en Redis si está configurado ({@link RateLimiters}); si no, en memoria. */
     @Autowired
+    HomeController(HomeService homeService, RateLimiters rateLimiters) {
+        this.homeService = homeService;
+        this.limiter = rateLimiters.create("home", "HOME_RATE_LIMITED", HOMES_PER_MINUTE, Duration.ofMinutes(1));
+    }
+
     HomeController(HomeService homeService) {
         this(homeService, Clock.systemUTC());
     }
 
     HomeController(HomeService homeService, Clock clock) {
-        this.homeService = homeService;
-        this.limiter = new SlidingWindowRateLimiter("HOME_RATE_LIMITED", HOMES_PER_MINUTE, Duration.ofMinutes(1),
-                20_000, clock);
+        this(homeService, RateLimiters.inMemory(clock));
     }
 
     /**
@@ -60,6 +68,17 @@ public class HomeController {
             @RequestHeader(name = SESSION_HEADER, required = false) String sessionId
     ) {
         limiter.acquire(http.getRemoteAddr());
+        if (lat == null && lng == null) {
+            // Área por defecto de la cookie ap_area (lo inválido se ignora). Su ciudad solo si no llegó cityCode.
+            Optional<AreaCookie.Area> area = AreaCookie.read(http);
+            if (area.isPresent()) {
+                lat = area.get().lat();
+                lng = area.get().lng();
+                if ((cityCode == null || cityCode.isBlank()) && area.get().cityCode() != null) {
+                    cityCode = area.get().cityCode();
+                }
+            }
+        }
         if ((lat == null) != (lng == null)) {
             throw new BadRequestException("HOME_POINT_INCOMPLETE", "Envía lat y lng juntos o ninguno.");
         }
@@ -69,10 +88,8 @@ public class HomeController {
         if (cityCode != null && !cityCode.isBlank() && !cityCode.strip().matches("\\d{5}")) {
             throw new BadRequestException("HOME_CITY_INVALID", "La ciudad debe tener formato DIVIPOLA (5 dígitos).");
         }
-        // Tope de frecuencia de anuncios: sesión anónima del navegador o, sin ella, la IP (solo en memoria).
-        String visitorKey = sessionId != null && !sessionId.isBlank() && sessionId.length() <= 100
-                ? "s:" + sessionId.strip()
-                : "ip:" + http.getRemoteAddr();
+        // Tope de frecuencia de anuncios: sesión anónima del navegador, cookie ap_aid o, sin ellas, la IP.
+        String visitorKey = VisitorCookie.visitorKey(http, sessionId);
         HomeResponse body = homeService.home(HomeArea.of(lat, lng, cityCode), visitorKey);
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(body);
     }

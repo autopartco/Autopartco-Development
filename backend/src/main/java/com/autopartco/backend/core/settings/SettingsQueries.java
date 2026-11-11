@@ -2,6 +2,7 @@ package com.autopartco.backend.core.settings;
 
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -9,23 +10,33 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 import com.autopartco.backend.core.identity.AccountConfigurations;
 import com.autopartco.backend.core.organization.StoreConfigurations;
 import com.autopartco.backend.core.settings.internal.SettingsSchemas;
-import com.autopartco.backend.shared.cache.TtlCache;
+import com.autopartco.backend.shared.cache.AppCaches;
+import com.autopartco.backend.shared.cache.ResilientCacheManager;
+import com.autopartco.backend.shared.cache.TypedCache;
 
 /**
  * Lectura de configuraciones para otros módulos (perfil público, WhatsApp, 2FA del personal). Los ajustes de almacén
- * se cachean 30 s por instancia y se invalidan al confirmar un PATCH.
+ * van en la caché {@code settings:store} (5 min; compartida en Redis si está configurado) y la entrada del almacén se
+ * invalida al confirmar un PATCH (en Redis, para todas las instancias).
  */
 @Service
 public class SettingsQueries {
-    private static final long STORE_TTL_SECONDS = 30;
-
     private final AccountConfigurations accountConfigurations;
     private final StoreConfigurations storeConfigurations;
-    private final TtlCache<UUID, StoreSettings> storeCache = new TtlCache<>(STORE_TTL_SECONDS);
+    private final TypedCache<StoreSettings> storeCache;
 
-    public SettingsQueries(AccountConfigurations accountConfigurations, StoreConfigurations storeConfigurations) {
+    @Autowired
+    public SettingsQueries(AccountConfigurations accountConfigurations, StoreConfigurations storeConfigurations,
+            ResilientCacheManager caches) {
         this.accountConfigurations = accountConfigurations;
         this.storeConfigurations = storeConfigurations;
+        this.storeCache = (caches == null ? ResilientCacheManager.local() : caches)
+                .typed(AppCaches.SETTINGS_STORE, StoreSettings.class);
+    }
+
+    /** Con caché local propia (pruebas). */
+    public SettingsQueries(AccountConfigurations accountConfigurations, StoreConfigurations storeConfigurations) {
+        this(accountConfigurations, storeConfigurations, null);
     }
 
     public AccountSettings accountSettings(UUID accountId) {
@@ -34,7 +45,7 @@ public class SettingsQueries {
 
     /** Ajustes del almacén (cacheados). {@code STORE_NOT_FOUND} si no existe. */
     public StoreSettings storeSettings(UUID storeId) {
-        return storeCache.get(storeId,
+        return storeCache.get(storeId.toString(),
                 () -> SettingsSchemas.toStore(SettingsSchemas.STORE.effective(storeConfigurations.read(storeId))));
     }
 
@@ -43,17 +54,17 @@ public class SettingsQueries {
         return storeSettings(storeId).security().requireStaffTwoFactor();
     }
 
-    /** Vacía la caché al confirmar la transacción en curso (o ya, si no hay). */
-    void invalidateStores() {
+    /** Descarta la entrada del almacén al confirmar la transacción en curso (o ya, si no hay). */
+    void invalidateStore(UUID storeId) {
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCompletion(int status) {
-                    storeCache.clear();
+                    storeCache.evict(storeId.toString());
                 }
             });
         } else {
-            storeCache.clear();
+            storeCache.evict(storeId.toString());
         }
     }
 }

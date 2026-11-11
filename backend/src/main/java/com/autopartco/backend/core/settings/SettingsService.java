@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,6 +19,7 @@ import com.autopartco.backend.core.identity.AccountConfigurations;
 import com.autopartco.backend.core.organization.StoreConfigurations;
 import com.autopartco.backend.core.settings.internal.SettingsSchemas;
 import com.autopartco.backend.shared.error.BadRequestException;
+import com.autopartco.backend.shared.events.StoreProfileChanged;
 
 import lombok.AllArgsConstructor;
 
@@ -36,6 +38,8 @@ public class SettingsService {
     private final ListingQueries listingQueries;
     private final SettingsQueries settingsQueries;
     private final AuditService auditService;
+    /** {@link StoreProfileChanged} al guardar: vacía las cachés públicas del almacén tras el commit. */
+    private final ApplicationEventPublisher events;
 
     @Transactional(readOnly = true)
     public AccountSettings accountSettings(UUID accountId) {
@@ -95,7 +99,8 @@ public class SettingsService {
         }
 
         storeConfigurations.putSections(storeId, after);
-        settingsQueries.invalidateStores();
+        settingsQueries.invalidateStore(storeId);
+        events.publishEvent(new StoreProfileChanged(storeId));
         List<String> changed = changedKeys(before, after, "");
         if (!changed.isEmpty()) {
             Map<String, Object> metadata = new LinkedHashMap<>();

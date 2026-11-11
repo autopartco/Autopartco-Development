@@ -31,7 +31,8 @@ class UploadStoreBrandTest {
     private final StoreAccess storeAccess = mock(StoreAccess.class);
     private final StoreService storeService = mock(StoreService.class);
     private final StoreFiles storeFiles = mock(StoreFiles.class);
-    private final UploadStoreBrand useCase = new UploadStoreBrand(storeAccess, storeService, storeFiles);
+    private final UploadStoreBrand useCase = new UploadStoreBrand(storeAccess, storeService, storeFiles,
+            mock(org.springframework.context.ApplicationEventPublisher.class));
     private final UUID storeId = UUID.randomUUID();
 
     private static MockMultipartFile image(int bytes) {

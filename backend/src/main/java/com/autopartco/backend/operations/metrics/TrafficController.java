@@ -27,7 +27,10 @@ import com.autopartco.backend.core.identity.AccountRef;
 import com.autopartco.backend.shared.error.TooManyRequestsException;
 import com.autopartco.backend.shared.web.ApiPaths;
 
+import com.autopartco.backend.shared.web.VisitorCookie;
+
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 
@@ -78,12 +81,14 @@ public class TrafficController {
     }
 
     @PostMapping("/pageview")
-    public ResponseEntity<Void> pageview(@Valid @RequestBody PageviewRequest request, HttpServletRequest http, Authentication authentication) {
+    public ResponseEntity<Void> pageview(@Valid @RequestBody PageviewRequest request, HttpServletRequest http,
+            HttpServletResponse response, Authentication authentication) {
         acquire(http.getRemoteAddr());
         UUID accountId = authentication == null || !authentication.isAuthenticated() || authentication.getName() == null
                 ? null
                 : accountLookup.findByEmail(authentication.getName()).map(AccountRef::accountId).orElse(null);
-        trafficRecorder.record(request.anonymousId(), request.path(), request.referrer(), http.getHeader("User-Agent"), accountId);
+        trafficRecorder.record(anonymousId(request.anonymousId(), http, response), request.path(), request.referrer(),
+                http.getHeader("User-Agent"), accountId);
         return ResponseEntity.noContent().build();
     }
 
@@ -107,12 +112,14 @@ public class TrafficController {
      * se ignora); comparte el límite por IP con {@code /pageview}. Nunca guarda la cuenta.
      */
     @PostMapping("/visibility")
-    public ResponseEntity<Void> visibility(@Valid @RequestBody VisibilityRequest request, HttpServletRequest http) {
+    public ResponseEntity<Void> visibility(@Valid @RequestBody VisibilityRequest request, HttpServletRequest http,
+            HttpServletResponse response) {
         acquire(http.getRemoteAddr());
         if (request.storeId() != null) {
             acquireStore(http.getRemoteAddr(), request.storeId());
         }
-        visibilityRecorder.record(new VisibilityRecorder.Visit(request.anonymousId(), request.kind(),
+        visibilityRecorder.record(new VisibilityRecorder.Visit(anonymousId(request.anonymousId(), http, response),
+                request.kind(),
                 request.storeId(), request.productId(), request.ref(), request.utmSource(), request.referrer(),
                 request.channel(), request.branchId(), request.serviceId()));
         return ResponseEntity.noContent().build();
@@ -136,8 +143,9 @@ public class TrafficController {
      */
     @PostMapping("/ads")
     public ResponseEntity<Void> ads(@RequestBody AdEventRequest request, HttpServletRequest http,
-            Authentication authentication) {
+            HttpServletResponse response, Authentication authentication) {
         acquire(http.getRemoteAddr());
+        String anonymousId = anonymousId(request.anonymousId(), http, response);
         List<String> tokens = new ArrayList<>();
         if (request.token() != null) {
             tokens.add(request.token());
@@ -151,9 +159,18 @@ public class TrafficController {
                     || authentication.getName() == null
                     ? null
                     : accountLookup.findByEmail(authentication.getName()).map(AccountRef::accountId).orElse(null);
-            adEvents.record(tokens, request.kind(), request.anonymousId(), accountId);
+            adEvents.record(tokens, request.kind(), anonymousId, accountId);
         }
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Visitante anónimo: el {@code anonymousId} del cuerpo tiene prioridad (compatibilidad con clientes que aún lo
+     * envían); si no llega, la cookie {@code ap_aid}, que se emite aquí cuando falta.
+     */
+    static String anonymousId(String fromBody, HttpServletRequest http, HttpServletResponse response) {
+        UUID cookie = VisitorCookie.ensure(http, response);
+        return fromBody != null && !fromBody.isBlank() ? fromBody : cookie.toString();
     }
 
     void acquire(String key) {

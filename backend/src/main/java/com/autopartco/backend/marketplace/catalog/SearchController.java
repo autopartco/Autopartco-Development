@@ -5,7 +5,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
+import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.CacheControl;
@@ -30,7 +30,10 @@ import com.autopartco.backend.core.search.Suggestions;
 import com.autopartco.backend.marketplace.benefits.BuyerContexts;
 import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.web.ApiPaths;
+import com.autopartco.backend.shared.web.AreaCookie;
+import com.autopartco.backend.shared.web.RateLimiters;
 import com.autopartco.backend.shared.web.SlidingWindowRateLimiter;
+import com.autopartco.backend.shared.web.VisitorCookie;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -54,7 +57,23 @@ public class SearchController {
     private final SlidingWindowRateLimiter searchLimiter;
     private final SlidingWindowRateLimiter suggestLimiter;
 
+    /** Límites en Redis si está configurado ({@link RateLimiters}); si no, en memoria. */
     @Autowired
+    public SearchController(SearchService searchService, Suggestions suggestions, SearchLog searchLog,
+            BuyerContexts buyerContexts, PromotionExposureRecorder exposureRecorder, BranchService branchService,
+            RateLimiters rateLimiters) {
+        this.searchService = searchService;
+        this.suggestions = suggestions;
+        this.searchLog = searchLog;
+        this.buyerContexts = buyerContexts;
+        this.exposureRecorder = exposureRecorder;
+        this.branchService = branchService;
+        this.searchLimiter = rateLimiters.create("search", "SEARCH_RATE_LIMITED", SEARCHES_PER_MINUTE,
+                Duration.ofMinutes(1));
+        this.suggestLimiter = rateLimiters.create("suggest", "SEARCH_RATE_LIMITED", SUGGESTIONS_PER_MINUTE,
+                Duration.ofMinutes(1));
+    }
+
     public SearchController(SearchService searchService, Suggestions suggestions, SearchLog searchLog,
             BuyerContexts buyerContexts, PromotionExposureRecorder exposureRecorder, BranchService branchService) {
         this(searchService, suggestions, searchLog, buyerContexts, exposureRecorder, branchService,
@@ -64,16 +83,8 @@ public class SearchController {
     SearchController(SearchService searchService, Suggestions suggestions, SearchLog searchLog,
             BuyerContexts buyerContexts, PromotionExposureRecorder exposureRecorder, BranchService branchService,
             Clock clock) {
-        this.searchService = searchService;
-        this.suggestions = suggestions;
-        this.searchLog = searchLog;
-        this.buyerContexts = buyerContexts;
-        this.exposureRecorder = exposureRecorder;
-        this.branchService = branchService;
-        this.searchLimiter = new SlidingWindowRateLimiter("SEARCH_RATE_LIMITED", SEARCHES_PER_MINUTE,
-                Duration.ofMinutes(1), 20_000, clock);
-        this.suggestLimiter = new SlidingWindowRateLimiter("SEARCH_RATE_LIMITED", SUGGESTIONS_PER_MINUTE,
-                Duration.ofMinutes(1), 20_000, clock);
+        this(searchService, suggestions, searchLog, buyerContexts, exposureRecorder, branchService,
+                RateLimiters.inMemory(clock));
     }
 
     /**
@@ -82,9 +93,14 @@ public class SearchController {
      * (lat/lng en Colombia), {@code LOCATION_REQUIRED} ({@code sort=nearest} o radio sin ubicación),
      * {@code SEARCH_PRICE_RANGE_INVALID}, {@code SEARCH_SORT_INVALID}, {@code VEHICLE_FILTER_INVALID} y
      * {@code BRANCH_NOT_IN_STORE}. Registra la búsqueda ({@code SearchLog}) y las exposiciones de promociones.
+     * <p>
+     * Sin lat/lng y con {@code sort=nearest} o radio, usa el área de la cookie {@code ap_area} si es válida (si no,
+     * {@code LOCATION_REQUIRED} como antes). Caché HTTP: {@code private, no-cache} con ETag
+     * ({@code MarketplaceHttpCacheFilter}); con anuncios patrocinados, {@code no-store} (llevan tokens de impresión
+     * que no deben reutilizarse).
      */
     @GetMapping(SEARCH)
-    public SearchResponse search(
+    public ResponseEntity<SearchResponse> search(
             HttpServletRequest http,
             @RequestParam(required = false) String q,
             @RequestParam(required = false) UUID categoryId,
@@ -118,19 +134,25 @@ public class SearchController {
         if (branchId != null && storeId != null && !branchService.isInStore(storeId, branchId)) {
             throw new BadRequestException("BRANCH_NOT_IN_STORE", "La sucursal no pertenece al almacén indicado.");
         }
+        SearchSort requestedSort = SearchSort.fromParameter(sort);
+        if (lat == null && lng == null && (requestedSort == SearchSort.NEAREST || radiusKm != null)) {
+            Optional<AreaCookie.Area> area = AreaCookie.read(http);
+            if (area.isPresent()) {
+                lat = area.get().lat();
+                lng = area.get().lng();
+            }
+        }
         SearchQuery query = SearchQuery.builder()
                 .q(q).categoryId(categoryId).manufacturerIds(manufacturerIds)
                 .makeId(makeId).modelId(modelId).versionId(versionId).year(year)
                 .priceMin(priceMin).priceMax(priceMax).inStock(inStock).onSale(onSale)
                 .storeId(storeId).branchId(branchId).cityCode(cityCode).departmentCode(departmentCode)
                 .lat(lat).lng(lng).radiusKm(radiusKm).minRating(minRating).universal(universal)
-                .sort(SearchSort.fromParameter(sort)).page(page).size(size).facets(facets).interpret(interpret)
+                .sort(requestedSort).page(page).size(size).facets(facets).interpret(interpret)
                 .build();
         BuyerContext buyer = buyerContexts.forBrowsing(authentication);
-        // Tope de frecuencia de anuncios: sesión anónima del navegador o, sin ella, la IP (solo en memoria).
-        String visitorKey = sessionId != null && !sessionId.isBlank() && sessionId.length() <= 100
-                ? "s:" + sessionId.strip()
-                : "ip:" + http.getRemoteAddr();
+        // Tope de frecuencia de anuncios: sesión anónima del navegador, cookie ap_aid o, sin ellas, la IP.
+        String visitorKey = VisitorCookie.visitorKey(http, sessionId);
         SearchResult result = searchService.search(query, buyer, visitorKey);
         SearchInterpretation interpreted = result.interpreted();
         CatalogTracking.recordSearch(searchLog, new MarketplaceSearch(q,
@@ -144,12 +166,16 @@ public class SearchController {
                 CatalogTracking.isAuthenticated(authentication)));
         CatalogTracking.recordExposures(exposureRecorder, buyer,
                 result.items().stream().map(SearchResult.Hit::listing).toList());
-        return SearchResponse.of(result);
+        SearchResponse body = SearchResponse.of(result);
+        return body.sponsored().isEmpty()
+                ? ResponseEntity.ok(body)
+                : ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(body);
     }
 
     /**
      * Autocompletado: hasta 8 términos y 4 productos con precio general. Menos de 2 caracteres útiles: listas vacías.
-     * Cacheable como pública 5 minutos (no depende de la sesión).
+     * Caché del servidor de 5 minutos ({@code search:suggest}); la cabecera HTTP la pone
+     * {@code MarketplaceHttpCacheFilter} (pública 30 s con ETag; no depende de la sesión).
      */
     @GetMapping(SUGGEST)
     public ResponseEntity<Suggestions.Result> suggest(
@@ -159,8 +185,6 @@ public class SearchController {
             @RequestParam(required = false) BigDecimal lng
     ) {
         suggestLimiter.acquire(http.getRemoteAddr());
-        return ResponseEntity.ok()
-                .cacheControl(CacheControl.maxAge(300, TimeUnit.SECONDS).cachePublic())
-                .body(suggestions.suggest(q, lat, lng));
+        return ResponseEntity.ok(suggestions.suggest(q, lat, lng));
     }
 }

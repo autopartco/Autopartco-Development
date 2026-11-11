@@ -15,7 +15,9 @@ import com.autopartco.backend.core.order.BuyerOrderResponse;
 import com.autopartco.backend.core.payments.PaymentProvider;
 import com.autopartco.backend.core.payments.PaymentSettings;
 import com.autopartco.backend.shared.web.ApiPaths;
+import com.autopartco.backend.shared.web.VisitorCookie;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 
@@ -45,8 +47,27 @@ public class MarketplaceOrderController {
     @PostMapping(ORDERS)
     public ResponseEntity<?> place(
             @Valid @RequestBody PlaceOrderRequest request,
-            Authentication authentication
+            Authentication authentication,
+            HttpServletRequest http
     ) {
+        return place(withVisitorCookie(request, http), authentication);
+    }
+
+    /**
+     * {@code anonymousId} del cuerpo (prioridad, compatibilidad) o, si no llega, el de la cookie {@code ap_aid}
+     * (lo emite {@code /events/*}); sin ninguno, el pedido no se atribuye a anuncios.
+     */
+    static PlaceOrderRequest withVisitorCookie(PlaceOrderRequest request, HttpServletRequest http) {
+        if (request.anonymousId() != null) {
+            return request;
+        }
+        return VisitorCookie.read(http)
+                .map(id -> new PlaceOrderRequest(request.clientRequestId(), request.addressId(),
+                        request.paymentMethod(), request.simulatedOutcome(), request.items(), id))
+                .orElse(request);
+    }
+
+    public ResponseEntity<?> place(PlaceOrderRequest request, Authentication authentication) {
         if (paymentSettings.checkoutProvider() == PaymentProvider.WOMPI) {
             WompiCheckoutResult result = startMarketplaceCheckout.execute(authentication.getName(), request);
             WompiCheckoutResponse body = result.response();

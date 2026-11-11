@@ -4,12 +4,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
+import com.autopartco.backend.shared.events.CatalogOptionsChanged;
 import com.autopartco.backend.core.catalog.internal.Category;
 import com.autopartco.backend.core.catalog.internal.Manufacturer;
 import com.autopartco.backend.core.catalog.internal.CategoryRepository;
@@ -22,6 +24,8 @@ import lombok.AllArgsConstructor;
 public class MasterDataService {
     private final CategoryRepository categoryRepository;
     private final ManufacturerRepository manufacturerRepository;
+    /** {@link CatalogOptionsChanged} en cada escritura: vacía {@code catalog:options} tras el commit. */
+    private final ApplicationEventPublisher events;
 
     @Transactional(readOnly = true)
     public List<CategoryResponse> categories() {
@@ -34,6 +38,7 @@ public class MasterDataService {
         if (categoryRepository.codeExists(code)) {
             throw new ConflictException("CATEGORY_ALREADY_EXISTS", "Ya existe una categoría con ese código.");
         }
+        events.publishEvent(new CatalogOptionsChanged());
         return toResponse(categoryRepository.save(Category.builder().code(code).build()));
     }
 
@@ -45,12 +50,14 @@ public class MasterDataService {
             throw new ConflictException("CATEGORY_ALREADY_EXISTS", "Ya existe una categoría con ese código.");
         }
         category.setCode(code);
+        events.publishEvent(new CatalogOptionsChanged());
         return toResponse(category);
     }
 
     @Transactional
     public void deactivateCategory(UUID id) {
         categoryRepository.delete(findCategory(id));
+        events.publishEvent(new CatalogOptionsChanged());
     }
 
     @Transactional(readOnly = true)
@@ -67,6 +74,7 @@ public class MasterDataService {
         if (manufacturerRepository.nameExists(name)) {
             throw new ConflictException("MANUFACTURER_ALREADY_EXISTS", "Ya existe un fabricante con ese nombre.");
         }
+        events.publishEvent(new CatalogOptionsChanged());
         return toResponse(manufacturerRepository.save(Manufacturer.builder().name(name).build()));
     }
 
@@ -87,12 +95,14 @@ public class MasterDataService {
             }
             manufacturer.setApproved(true);
         }
+        events.publishEvent(new CatalogOptionsChanged());
         return toResponse(manufacturer);
     }
 
     @Transactional
     public void deactivateManufacturer(UUID id) {
         manufacturerRepository.delete(findManufacturer(id));
+        events.publishEvent(new CatalogOptionsChanged());
     }
 
     private Category findCategory(UUID id) {

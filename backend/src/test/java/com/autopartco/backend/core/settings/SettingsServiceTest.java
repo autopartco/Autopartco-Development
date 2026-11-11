@@ -49,7 +49,8 @@ class SettingsServiceTest {
         AccountConfigurations accountConfigurations = new AccountConfigurations(accountRepository);
         StoreConfigurations storeConfigurations = new StoreConfigurations(storeRepository);
         SettingsQueries queries = new SettingsQueries(accountConfigurations, storeConfigurations);
-        service = new SettingsService(accountConfigurations, storeConfigurations, listingQueries, queries, auditService);
+        service = new SettingsService(accountConfigurations, storeConfigurations, listingQueries, queries, auditService,
+                mock(org.springframework.context.ApplicationEventPublisher.class));
 
         account = new Account();
         account.setId(accountId);

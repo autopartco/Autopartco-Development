@@ -19,7 +19,9 @@ import com.autopartco.backend.core.search.SearchService;
 import com.autopartco.backend.marketplace.catalog.SearchResponse;
 import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.web.ApiPaths;
+import com.autopartco.backend.shared.web.RateLimiters;
 import com.autopartco.backend.shared.web.SlidingWindowRateLimiter;
+import com.autopartco.backend.shared.web.VisitorCookie;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -43,15 +45,19 @@ public class MarketplaceAdsController {
     private final SearchService searchService;
     private final SlidingWindowRateLimiter limiter;
 
+    /** Límite en Redis si está configurado ({@link RateLimiters}); si no, en memoria. */
     @Autowired
+    MarketplaceAdsController(SearchService searchService, RateLimiters rateLimiters) {
+        this.searchService = searchService;
+        this.limiter = rateLimiters.create("ads", "ADS_RATE_LIMITED", ADS_PER_MINUTE, Duration.ofMinutes(1));
+    }
+
     MarketplaceAdsController(SearchService searchService) {
         this(searchService, Clock.systemUTC());
     }
 
     MarketplaceAdsController(SearchService searchService, Clock clock) {
-        this.searchService = searchService;
-        this.limiter = new SlidingWindowRateLimiter("ADS_RATE_LIMITED", ADS_PER_MINUTE, Duration.ofMinutes(1), 20_000,
-                clock);
+        this(searchService, RateLimiters.inMemory(clock));
     }
 
     /** Errores 400: {@code ADS_PLACEMENT_INVALID} (solo CATEGORY_TOP y PRODUCT_RELATED) y {@code ADS_TARGET_REQUIRED}. */
@@ -74,9 +80,7 @@ public class MarketplaceAdsController {
         if (PRODUCT_RELATED.equals(requested) && productId == null) {
             throw new BadRequestException("ADS_TARGET_REQUIRED", "PRODUCT_RELATED requiere productId.");
         }
-        String visitorKey = sessionId != null && !sessionId.isBlank() && sessionId.length() <= 100
-                ? "s:" + sessionId.strip()
-                : "ip:" + http.getRemoteAddr();
+        String visitorKey = VisitorCookie.visitorKey(http, sessionId);
         List<SearchResult.Sponsored> ads;
         try {
             ads = CATEGORY_TOP.equals(requested)

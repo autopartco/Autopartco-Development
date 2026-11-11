@@ -2,6 +2,7 @@ package com.autopartco.backend.storesuite.store;
 
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -13,6 +14,7 @@ import com.autopartco.backend.core.organization.StoreProfileResponse;
 import com.autopartco.backend.core.organization.StoreService;
 import com.autopartco.backend.shared.error.PayloadTooLargeException;
 import com.autopartco.backend.shared.error.NotFoundException;
+import com.autopartco.backend.shared.events.StoreProfileChanged;
 
 import lombok.AllArgsConstructor;
 
@@ -29,6 +31,8 @@ public class UploadStoreBrand {
     private final StoreAccess storeAccess;
     private final StoreService storeService;
     private final StoreFiles storeFiles;
+    /** {@link StoreProfileChanged}: el perfil público cacheado expone la ruta del logo y del banner. */
+    private final ApplicationEventPublisher events;
 
     public StoreProfileResponse upload(UUID storeId, String email, String assetType, MultipartFile file) {
         requireType(assetType);
@@ -48,6 +52,7 @@ public class UploadStoreBrand {
             throw failure;
         }
         deleteQuietly(previous);
+        events.publishEvent(new StoreProfileChanged(storeId));
         return storeService.profile(storeId);
     }
 
@@ -55,6 +60,7 @@ public class UploadStoreBrand {
         requireType(assetType);
         storeAccess.requirePermission(email, storeId, StorePermissionCodes.STORE_UPDATE);
         deleteQuietly(storeService.replaceBrandAsset(storeId, assetType, null));
+        events.publishEvent(new StoreProfileChanged(storeId));
     }
 
     private static void requireType(String assetType) {

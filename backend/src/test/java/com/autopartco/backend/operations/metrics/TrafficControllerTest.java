@@ -29,4 +29,26 @@ class TrafficControllerTest {
         assertThrows(TooManyRequestsException.class, () -> controller.acquire("1.1.1.1"));
         assertDoesNotThrow(() -> controller.acquire("2.2.2.2"));
     }
+
+    @Test
+    void anonymousIdPrefersBodyAndIssuesVisitorCookieWhenMissing() {
+        org.springframework.mock.web.MockHttpServletRequest request =
+                new org.springframework.mock.web.MockHttpServletRequest();
+        org.springframework.mock.web.MockHttpServletResponse response =
+                new org.springframework.mock.web.MockHttpServletResponse();
+        String fromCookie = TrafficController.anonymousId(null, request, response);
+        org.assertj.core.api.Assertions.assertThat(response.getHeader("Set-Cookie"))
+                .startsWith("ap_aid=" + fromCookie).contains("HttpOnly");
+
+        org.springframework.mock.web.MockHttpServletRequest again =
+                new org.springframework.mock.web.MockHttpServletRequest();
+        again.setCookies(new jakarta.servlet.http.Cookie("ap_aid", fromCookie));
+        org.springframework.mock.web.MockHttpServletResponse second =
+                new org.springframework.mock.web.MockHttpServletResponse();
+        org.assertj.core.api.Assertions.assertThat(TrafficController.anonymousId("body-id", again, second))
+                .isEqualTo("body-id");
+        org.assertj.core.api.Assertions.assertThat(TrafficController.anonymousId(null, again, second))
+                .isEqualTo(fromCookie);
+        org.assertj.core.api.Assertions.assertThat(second.getHeader("Set-Cookie")).isNull();
+    }
 }

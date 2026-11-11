@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -25,12 +26,10 @@ import com.autopartco.backend.core.settings.StoreSettings;
 import com.autopartco.backend.marketplace.reviews.StoreReviewService;
 import com.autopartco.backend.shared.web.ApiPaths;
 
-import lombok.AllArgsConstructor;
 
 /** Almacenes publicados y sus recursos de marca, para compradores (público). */
 @RestController
 @RequestMapping(ApiPaths.BASE + "/marketplace/stores")
-@AllArgsConstructor
 public class StoreBrowseController {
     private final StoreService storeService;
     private final StoreFiles storeFiles;
@@ -40,15 +39,43 @@ public class StoreBrowseController {
     private final SettingsQueries settingsQueries;
     private final StoreServices storeServices;
     private final PublicBranches publicBranches;
+    private final StorePublicCache cache;
+
+    @Autowired
+    public StoreBrowseController(StoreService storeService, StoreFiles storeFiles, PublishedStores publishedStores,
+            StoreReviewService storeReviewService, ListingQueries listingQueries, SettingsQueries settingsQueries,
+            StoreServices storeServices, PublicBranches publicBranches, StorePublicCache cache) {
+        this.storeService = storeService;
+        this.storeFiles = storeFiles;
+        this.publishedStores = publishedStores;
+        this.storeReviewService = storeReviewService;
+        this.listingQueries = listingQueries;
+        this.settingsQueries = settingsQueries;
+        this.storeServices = storeServices;
+        this.publicBranches = publicBranches;
+        this.cache = cache;
+    }
+
+    /** Sin caché (pruebas). */
+    StoreBrowseController(StoreService storeService, StoreFiles storeFiles, PublishedStores publishedStores,
+            StoreReviewService storeReviewService, ListingQueries listingQueries, SettingsQueries settingsQueries,
+            StoreServices storeServices, PublicBranches publicBranches) {
+        this(storeService, storeFiles, publishedStores, storeReviewService, listingQueries, settingsQueries,
+                storeServices, publicBranches, StorePublicCache.NONE);
+    }
 
     @GetMapping
     public List<PublicStoreSummary> published() {
         return storeService.published().stream().map(PublicStoreSummary::of).toList();
     }
 
-    /** Perfil público: 404 {@code STORE_NOT_FOUND} si el almacén no está publicado. */
+    /** Perfil público (caché {@code store:profile}): 404 {@code STORE_NOT_FOUND} si el almacén no está publicado. */
     @GetMapping("/{storeId}")
     public StorePublicProfile profile(@PathVariable UUID storeId) {
+        return cache.profile(storeId, () -> loadProfile(storeId));
+    }
+
+    private StorePublicProfile loadProfile(UUID storeId) {
         PublishedStoreProfile store = publishedStores.profile(storeId);
         StoreSettings settings = settingsQueries.storeSettings(storeId);
         return StorePublicProfile.of(store, storeReviewService.rating(storeId),
@@ -62,6 +89,10 @@ public class StoreBrowseController {
      */
     @GetMapping("/{storeId}/branches")
     public List<PublicBranch> branches(@PathVariable UUID storeId) {
+        return cache.branches(storeId, () -> loadBranches(storeId));
+    }
+
+    private List<PublicBranch> loadBranches(UUID storeId) {
         List<PublicBranch> branches = publicBranches.list(storeId);
         if (!settingsQueries.storeSettings(storeId).contact().whatsappEnabled()) {
             return branches.stream().map(branch -> branch.withWhatsapp(null)).toList();

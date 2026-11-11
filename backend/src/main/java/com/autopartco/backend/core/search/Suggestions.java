@@ -4,12 +4,16 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.autopartco.backend.core.catalog.ProductResponse;
 import com.autopartco.backend.core.pricing.BuyerContext;
+import com.autopartco.backend.shared.cache.AppCaches;
+import com.autopartco.backend.shared.cache.ResilientCacheManager;
+import com.autopartco.backend.shared.cache.TypedCache;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -94,14 +98,24 @@ public class Suggestions {
 
     private final JdbcClient jdbcClient;
     private final SearchService searchService;
+    private final TypedCache<Result> cache;
 
-    public Suggestions(JdbcClient jdbcClient, SearchService searchService) {
+    @Autowired
+    public Suggestions(JdbcClient jdbcClient, SearchService searchService, ResilientCacheManager caches) {
         this.jdbcClient = jdbcClient;
         this.searchService = searchService;
+        this.cache = caches == null ? null : caches.typed(AppCaches.SEARCH_SUGGEST, Result.class);
     }
 
-    /** Menos de {@value #MIN_QUERY_LENGTH} caracteres útiles: respuesta vacía. */
-    @Transactional(readOnly = true)
+    /** Sin caché (pruebas). */
+    public Suggestions(JdbcClient jdbcClient, SearchService searchService) {
+        this(jdbcClient, searchService, null);
+    }
+
+    /**
+     * Menos de {@value #MIN_QUERY_LENGTH} caracteres útiles: respuesta vacía. Se cachea 5 min ({@code search:suggest})
+     * por texto normalizado y punto; {@link #reload()} vacía la caché.
+     */
     public Result suggest(String q, BigDecimal lat, BigDecimal lng) {
         String normalized = QueryParser.normalizeName(q);
         if (normalized == null || normalized.length() < MIN_QUERY_LENGTH) {
@@ -110,6 +124,16 @@ public class Suggestions {
         if (normalized.length() > QueryParser.MAX_LENGTH) {
             normalized = normalized.substring(0, QueryParser.MAX_LENGTH).strip();
         }
+        if (cache == null) {
+            return load(q, normalized, lat, lng);
+        }
+        String term = normalized;
+        String key = term + '|' + (lat == null ? "" : lat.stripTrailingZeros().toPlainString()) + '|'
+                + (lng == null ? "" : lng.stripTrailingZeros().toPlainString());
+        return cache.get(key, () -> load(q, term, lat, lng));
+    }
+
+    private Result load(String q, String normalized, BigDecimal lat, BigDecimal lng) {
         // normalizeName deja solo [a-z0-9 ]: no hay comodines de LIKE que escapar.
         List<Suggestion> suggestions = jdbcClient.sql(SUGGEST_SQL)
                 .params(Map.of("prefix", normalized + "%", "q", normalized, "limit", MAX_SUGGESTIONS))
@@ -135,6 +159,9 @@ public class Suggestions {
         jdbcClient.sql(CLEAR_SQL).update();
         int loaded = jdbcClient.sql(RELOAD_SQL).update();
         log.info("Sugerencias de búsqueda recargadas: {} términos.", loaded);
+        if (cache != null) {
+            cache.clear();
+        }
         return loaded;
     }
 }

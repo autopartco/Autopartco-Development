@@ -84,16 +84,24 @@ public class SearchService {
     private final QueryParser parser;
     private final ListingQueries listingQueries;
     private final AdServer adServer;
+    private final SearchResultCache resultCache;
     private final AtomicBoolean ready = new AtomicBoolean();
     private final AtomicLong lastReadyCheck = new AtomicLong(Long.MIN_VALUE);
 
     @Autowired
     public SearchService(JdbcClient jdbcClient, QueryParser parser, ListingQueries listingQueries,
-            AdServer adServer) {
+            AdServer adServer, SearchResultCache resultCache) {
         this.jdbcClient = jdbcClient;
         this.parser = parser;
         this.listingQueries = listingQueries;
         this.adServer = adServer;
+        this.resultCache = resultCache == null ? SearchResultCache.NONE : resultCache;
+    }
+
+    /** Sin caché de resultados (pruebas). */
+    public SearchService(JdbcClient jdbcClient, QueryParser parser, ListingQueries listingQueries,
+            AdServer adServer) {
+        this(jdbcClient, parser, listingQueries, adServer, SearchResultCache.NONE);
     }
 
     /** Sin anuncios (pruebas). */
@@ -161,6 +169,22 @@ public class SearchService {
         SearchCriteria criteria = SearchCriteria.of(query, parsed);
         int page = query.pageOrDefault();
         int size = query.sizeOrDefault();
+        // Solo /search pasa por la caché (el catálogo compatible pide páginas de hasta 10 000 y ya tiene la suya).
+        SearchResultCache.Organic organic = withAds
+                ? resultCache.get(query.q(), criteria, query, effectiveBuyer,
+                        () -> organic(query, parsed, criteria, page, size, effectiveBuyer))
+                : organic(query, parsed, criteria, page, size, effectiveBuyer);
+        // Los anuncios nunca se cachean. El texto difuso no cambia los filtros que usa la segmentación.
+        List<SearchResult.Sponsored> sponsored = withAds
+                ? sponsored(criteria, parsed, organic.items(), effectiveBuyer, visitorKey)
+                : List.of();
+        return new SearchResult(organic.items(), page, size, organic.total(), organic.fuzzy(), organic.interpreted(),
+                organic.facets(), sponsored);
+    }
+
+    private SearchResultCache.Organic organic(SearchQuery query, ParsedQuery parsed, SearchCriteria exact, int page,
+            int size, BuyerContext buyer) {
+        SearchCriteria criteria = exact;
         Page found = fetch(criteria, page, size);
         boolean fuzzy = false;
         if (found.total() == 0 && parsed.hasText() && parsed.fuzzyText() != null) {
@@ -173,13 +197,15 @@ public class SearchService {
                 fuzzy = true;
             }
         }
-        List<SearchResult.Hit> items = hydrate(found.rows(), effectiveBuyer);
+        List<SearchResult.Hit> items = hydrate(found.rows(), buyer);
         SearchResult.Facets facets = query.facetsOrDefault() ? facets(criteria) : null;
         SearchInterpretation interpreted = query.interpretOrDefault() ? parsed.interpretation() : null;
-        List<SearchResult.Sponsored> sponsored = withAds
-                ? sponsored(criteria, parsed, items, effectiveBuyer, visitorKey)
-                : List.of();
-        return new SearchResult(items, page, size, found.total(), fuzzy, interpreted, facets, sponsored);
+        return new SearchResultCache.Organic(items, found.total(), fuzzy, interpreted, facets);
+    }
+
+    /** Sube {@code catalogVersion} de {@code search:results} (tras escribir en {@code search_listings}). */
+    void catalogChanged() {
+        resultCache.catalogChanged();
     }
 
     /**

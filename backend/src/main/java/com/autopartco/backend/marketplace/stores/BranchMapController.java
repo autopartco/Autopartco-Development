@@ -17,6 +17,7 @@ import com.autopartco.backend.core.organization.MapBranchView;
 import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.location.ColombiaBounds;
 import com.autopartco.backend.shared.web.ApiPaths;
+import com.autopartco.backend.shared.web.RateLimiters;
 import com.autopartco.backend.shared.web.SlidingWindowRateLimiter;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -35,14 +36,19 @@ public class BranchMapController {
     private final BranchMapQueries branchMapQueries;
     private final SlidingWindowRateLimiter rateLimiter;
 
+    /** Límite en Redis si está configurado ({@link RateLimiters}); si no, en memoria. */
     @Autowired
+    public BranchMapController(BranchMapQueries branchMapQueries, RateLimiters rateLimiters) {
+        this.branchMapQueries = branchMapQueries;
+        this.rateLimiter = rateLimiters.create("map", "MAP_RATE_LIMITED", 60, Duration.ofMinutes(1));
+    }
+
     public BranchMapController(BranchMapQueries branchMapQueries) {
         this(branchMapQueries, Clock.systemUTC());
     }
 
     BranchMapController(BranchMapQueries branchMapQueries, Clock clock) {
-        this.branchMapQueries = branchMapQueries;
-        this.rateLimiter = new SlidingWindowRateLimiter("MAP_RATE_LIMITED", 60, Duration.ofMinutes(1), 20_000, clock);
+        this(branchMapQueries, RateLimiters.inMemory(clock));
     }
 
     // Los límites son opcionales a nivel de Spring para responder 400 con código propio (el handler genérico daría 500).

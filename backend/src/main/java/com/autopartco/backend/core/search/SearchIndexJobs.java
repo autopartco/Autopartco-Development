@@ -35,7 +35,9 @@ import lombok.extern.slf4j.Slf4j;
  *   ({@code autopartco.search.bootstrap-reindex=false} lo desactiva).</li>
  *   <li>A pedido del admin ({@link #requestFullReindex()}).</li>
  * </ul>
- * Un fallo se registra (sin datos personales) y no se reintenta: la reconstrucción nocturna lo corrige.
+ * Un fallo se registra (sin datos personales) y no se reintenta: la reconstrucción nocturna lo corrige. Cada escritura
+ * en el índice sube {@code catalogVersion} de {@code search:results} ({@link SearchResultCache}); la recarga de
+ * sugerencias vacía {@code search:suggest}.
  */
 @Slf4j
 @Component
@@ -143,6 +145,9 @@ public class SearchIndexJobs {
             indexer.reindexProducts(productIds);
         } catch (RuntimeException failure) {
             log.warn("Falló la actualización del índice de búsqueda: {}", failure.getClass().getSimpleName());
+        } finally {
+            // Aunque falle a medias, lo escrito invalida search:results (cambios agrupados por DEBOUNCE_MS).
+            searchService.catalogChanged();
         }
     }
 
@@ -194,6 +199,8 @@ public class SearchIndexJobs {
             searchService.markReady();
         } catch (RuntimeException failure) {
             log.warn("Falló la reconstrucción del índice de búsqueda: {}", failure.getClass().getSimpleName());
+        } finally {
+            searchService.catalogChanged();
         }
     }
 

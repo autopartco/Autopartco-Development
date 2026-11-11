@@ -117,6 +117,45 @@ class SearchControllerTest {
     }
 
     @Test
+    void nearestWithoutPointUsesAreaCookieAndIgnoresInvalidOne() throws Exception {
+        mvc.perform(get(URL).param("sort", "nearest")
+                        .cookie(new jakarta.servlet.http.Cookie("ap_area", "4.60%2C-74.10%2C")))
+                .andExpect(status().isOk());
+        ArgumentCaptor<SearchQuery> query = ArgumentCaptor.forClass(SearchQuery.class);
+        verify(searchService).search(query.capture(), any(), any());
+        assertThat(query.getValue().lat()).isEqualByComparingTo("4.60");
+        assertThat(query.getValue().lng()).isEqualByComparingTo("-74.10");
+
+        mvc.perform(get(URL).param("sort", "nearest")
+                        .cookie(new jakarta.servlet.http.Cookie("ap_area", "40.71%2C-74.00%2C")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("LOCATION_REQUIRED"));
+    }
+
+    @Test
+    void cookieIsNotUsedWithoutNearestOrRadius() throws Exception {
+        mvc.perform(get(URL).param("q", "bujia")
+                        .cookie(new jakarta.servlet.http.Cookie("ap_area", "4.60%2C-74.10%2C")))
+                .andExpect(status().isOk())
+                .andExpect(header().doesNotExist("Cache-Control"));
+        ArgumentCaptor<SearchQuery> query = ArgumentCaptor.forClass(SearchQuery.class);
+        verify(searchService).search(query.capture(), any(), any());
+        assertThat(query.getValue().lat()).isNull();
+    }
+
+    @Test
+    void responseWithSponsoredIsNoStore() throws Exception {
+        SearchResult organic = result();
+        SearchResult.Sponsored ad = new SearchResult.Sponsored(organic.items().getFirst(), "tok");
+        org.mockito.Mockito.doReturn(new SearchResult(organic.items(), 0, 24, 312, false, null, null, List.of(ad)))
+                .when(searchService).search(any(), any(), any());
+        mvc.perform(get(URL).param("q", "pastillas"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(jsonPath("$.sponsored[0].adImpressionToken").value("tok"));
+    }
+
+    @Test
     void invalidParametersAre400WithTheirCode() throws Exception {
         mvc.perform(get(URL + "?sort=nearest")).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.code").value("LOCATION_REQUIRED"));
@@ -145,13 +184,13 @@ class SearchControllerTest {
     }
 
     @Test
-    void suggestIsPubliclyCacheableForFiveMinutes() throws Exception {
+    void suggestLeavesHttpCachingToTheFilter() throws Exception {
         when(suggestions.suggest(eq("pas"), isNull(), isNull())).thenReturn(new Suggestions.Result(
                 List.of(new Suggestions.Suggestion("pastillas de freno", "QUERY")), List.of()));
 
         mvc.perform(get(URL + "/suggest?q=pas"))
                 .andExpect(status().isOk())
-                .andExpect(header().string("Cache-Control", "max-age=300, public"))
+                .andExpect(header().doesNotExist("Cache-Control"))
                 .andExpect(jsonPath("$.suggestions[0].term").value("pastillas de freno"))
                 .andExpect(jsonPath("$.suggestions[0].kind").value("QUERY"))
                 .andExpect(jsonPath("$.products").isEmpty());
