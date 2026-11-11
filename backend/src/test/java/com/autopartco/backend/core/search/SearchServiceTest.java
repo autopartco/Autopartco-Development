@@ -202,6 +202,50 @@ class SearchServiceTest {
     }
 
     @Test
+    void withoutAllWordsRetriesWithAnyWordBeforeTrigramsAndStaysNotFuzzy() {
+        UUID product = UUID.randomUUID();
+        UUID branch = UUID.randomUUID();
+        jdbc.rows(sql -> sql.contains(":anyTsq") && sql.contains("limit :limit"),
+                call -> List.of(row(product, branch, null, 5)));
+        when(listingQueries.publishedListingsByKeys(anyList(), any())).thenReturn(List.of(listing(product, branch)));
+
+        SearchResult result = service.search(SearchQuery.builder().q("bomba de freno para suzuki").facets(false)
+                .build(), null);
+
+        assertThat(result.fuzzy()).isFalse();
+        assertThat(result.total()).isEqualTo(5);
+        List<SearchFakeJdbc.Call> pages = jdbc.callsMatching(sql -> sql.contains("limit :limit"));
+        assertThat(pages).hasSize(2);
+        assertThat(pages.get(0).params()).containsEntry("tsq", "bomba & de & freno & para");
+        assertThat(pages.get(1).params()).doesNotContainKey("tsq")
+                .containsEntry("anyTsq", "bomba | freno").containsEntry("any0", "bomba").containsEntry("any1", "freno")
+                .containsEntry("hintMakeId", QueryParserTest.SUZUKI.id());
+        assertThat(pages.get(1).sql()).contains("sl.document @@ to_tsquery('public.spanish_unaccent'::regconfig, "
+                + ":anyTsq)").contains(":any1) then 1 else 0 end)");
+        assertThat(jdbc.callsMatching(sql -> sql.contains("<%"))).isEmpty();
+    }
+
+    @Test
+    void whenAnyWordAlsoFindsNothingTheTrigramsRunAfterIt() {
+        service.search(SearchQuery.builder().q("bomba de freno").facets(false).build(), null);
+
+        List<SearchFakeJdbc.Call> pages = jdbc.callsMatching(sql -> sql.contains("limit :limit"));
+        assertThat(pages).hasSize(3);
+        assertThat(pages.get(0).params()).containsKey("tsq");
+        assertThat(pages.get(1).params()).containsKey("anyTsq");
+        assertThat(pages.get(2).sql()).contains(":fuzzy <% sl.search_text");
+    }
+
+    @Test
+    void singleContentWordSkipsTheAnyWordRetry() {
+        service.search(SearchQuery.builder().q("pastilas").facets(false).build(), null);
+
+        assertThat(jdbc.callsMatching(sql -> sql.contains(":anyTsq"))).isEmpty();
+        assertThat(jdbc.callsMatching(sql -> sql.contains("<% sl.search_text") && sql.contains("limit :limit")))
+                .hasSize(1);
+    }
+
+    @Test
     void withResultsThereIsNoFuzzyRetry() {
         UUID product = UUID.randomUUID();
         UUID branch = UUID.randomUUID();
@@ -299,22 +343,67 @@ class SearchServiceTest {
     }
 
     @Test
-    void interpretedFiltersApplyUnlessTheClientSetsThemOrDisablesInterpretation() {
+    void interpretedMakeIsAnAlternativeNotAMandatoryFilter() {
+        SearchResult result = service.search(SearchQuery.builder().q("bomba de freno para suzuki").facets(false)
+                .build(), null);
+        SearchFakeJdbc.Call page = lastExactPage();
+
+        assertThat(page.sql())
+                .doesNotContain("(sl.universal or sl.vehicle_make_ids @> array[cast(:makeId as uuid)])")
+                .contains("(sl.universal or sl.vehicle_make_ids @> array[cast(:hintMakeId as uuid)] "
+                        + "or sl.document @@ to_tsquery('public.spanish_unaccent'::regconfig, :vehicleTsq))")
+                .contains("(case when sl.vehicle_make_ids @> array[cast(:hintMakeId as uuid)] "
+                        + "or sl.document @@ to_tsquery('public.spanish_unaccent'::regconfig, :vehicleTsq) "
+                        + "then 2.0 else 1.0 end)")
+                .contains("text_rank * hint_boost");
+        assertThat(page.params()).doesNotContainKey("makeId")
+                .containsEntry("hintMakeId", QueryParserTest.SUZUKI.id())
+                .containsEntry("vehicleTsq", "suzuki")
+                .containsEntry("tsq", "bomba & de & freno & para");
+        assertThat(result.interpreted().makeId()).isEqualTo(QueryParserTest.SUZUKI.id());
+    }
+
+    @Test
+    void interpretedYearCityAndModelOnlyBoost() {
         service.search(SearchQuery.builder().q("pastillas spark 2015 bogota").facets(false).build(), null);
         SearchFakeJdbc.Call interpreted = lastExactPage();
         assertThat(interpreted.params())
-                .containsEntry("modelId", QueryParserTest.SPARK.id())
-                .containsEntry("makeId", QueryParserTest.CHEVROLET.id())
-                .containsEntry("year", 2015)
-                .containsEntry("cityCode", "11001")
+                .doesNotContainKeys("makeId", "modelId", "year", "cityCode")
+                .containsEntry("hintModelId", QueryParserTest.SPARK.id())
+                .containsEntry("hintMakeId", QueryParserTest.CHEVROLET.id())
+                .containsEntry("hintYear", 2015)
+                .containsEntry("hintCityCode", "11001")
+                .containsEntry("modelTsq", "spark")
+                .containsEntry("vehicleTsq", "chevrolet | spark")
                 .containsEntry("tsq", "pastillas:*");
+        assertThat(interpreted.sql()).doesNotContain("sl.city_code = :cityCode").doesNotContain(":year)")
+                .contains("when sl.city_code = :hintCityCode then 1.2")
+                .contains("coalesce(sl.year_to, :hintYear) >= :hintYear then 1.2")
+                .contains("when sl.vehicle_model_ids @> array[cast(:hintModelId as uuid)]");
+    }
 
+    @Test
+    void explicitParametersStillFilter() {
+        UUID make = QueryParserTest.SUZUKI.id();
+        service.search(SearchQuery.builder().q("bomba de freno para suzuki").makeId(make).year(2018)
+                .cityCode("05001").facets(false).build(), null);
+        SearchFakeJdbc.Call page = lastExactPage();
+
+        assertThat(page.sql()).contains("(sl.universal or sl.vehicle_make_ids @> array[cast(:makeId as uuid)])")
+                .contains("sl.city_code = :cityCode").contains("(sl.year_to is null or sl.year_to >= :year)")
+                .doesNotContain(":hintMakeId").doesNotContain(":vehicleTsq");
+        assertThat(page.params()).containsEntry("makeId", make).containsEntry("year", 2018)
+                .containsEntry("cityCode", "05001").doesNotContainKeys("hintYear", "hintCityCode");
+    }
+
+    @Test
+    void interpretedValuesThatTheClientOverridesAreIgnored() {
         UUID otherMake = UUID.randomUUID();
         service.search(SearchQuery.builder().q("pastillas spark").makeId(otherMake).year(2010).facets(false)
                 .build(), null);
         SearchFakeJdbc.Call explicit = lastExactPage();
         assertThat(explicit.params()).containsEntry("makeId", otherMake).containsEntry("year", 2010)
-                .doesNotContainKey("modelId");
+                .doesNotContainKeys("modelId", "hintModelId", "hintMakeId");
 
         SearchResult plain = service.search(SearchQuery.builder().q("pastillas spark 2015").interpret(false)
                 .facets(false).build(), null);
@@ -397,7 +486,8 @@ class SearchServiceTest {
 
     /** Última consulta de página exacta (sin el reintento por trigramas). */
     private SearchFakeJdbc.Call lastExactPage() {
-        return jdbc.callsMatching(sql -> sql.contains("limit :limit") && !sql.contains("<%")).getLast();
+        return jdbc.callsMatching(sql -> sql.contains("limit :limit") && !sql.contains("<%") && !sql.contains(":anyTsq"))
+                .getLast();
     }
 
     private void assertCode(SearchQuery query, String code) {

@@ -21,7 +21,15 @@ import java.util.Set;
  *   <li>Cercanía: caja de coordenadas sobre {@code ix_sl_geo} y luego Haversine, como {@code BranchMapQueries}.</li>
  *   <li>Un resultado por producto: {@code distinct on (product_id)} con el listado de menor precio dentro de los
  *   filtros (con {@code sort=nearest}, el más cercano).</li>
- *   <li>Relevancia: {@code ts_rank_cd × (1 + 0,3·stock) × (1 + 0,1·calificación/5) × 1/(1 + km/25)}.</li>
+ *   <li>Relevancia: {@code ts_rank_cd × pistas × (1 + 0,3·stock) × (1 + 0,1·calificación/5) × 1/(1 + km/25)}.</li>
+ *   <li>Lo interpretado de {@code q} ({@link SearchCriteria.Hints}) no filtra. La marca interpretada solo exige
+ *   {@code (sl.universal or sl.vehicle_make_ids @> [marca] or sl.document @@ (marca | modelo))}, porque la mayoría
+ *   del catálogo no tiene compatibilidades cargadas. Pistas en {@link #hintBoost}: compatible con la marca o la
+ *   menciona ×{@value #VEHICLE_BOOST}; con el modelo ×{@value #MODEL_BOOST}; año cubierto por
+ *   {@code year_from/year_to} ×{@value #YEAR_BOOST}; misma ciudad ×{@value #CITY_BOOST}. Los parámetros explícitos
+ *   siguen filtrando.</li>
+ *   <li>Cualquier palabra ({@code anyTerms}): {@code document @@ (g1 | g2 | …)}; rango = palabras cubiertas +
+ *   {@code ts_rank_cd / (1 + ts_rank_cd)}.</li>
  * </ul>
  */
 final class SearchSql {
@@ -29,6 +37,10 @@ final class SearchSql {
     static final String FUZZY_THRESHOLD_SQL = "select set_config('pg_trgm.word_similarity_threshold', '0.3', true)";
     static final double KM_PER_DEGREE = 111.0;
     static final int MAX_FACET_VALUES = 20;
+    static final String VEHICLE_BOOST = "2.0";
+    static final String MODEL_BOOST = "1.5";
+    static final String YEAR_BOOST = "1.2";
+    static final String CITY_BOOST = "1.2";
 
     /** Facetas cuyo propio filtro se omite al contarlas. */
     enum Facet { CATEGORY, MANUFACTURER, CITY, PRICE, STOCK, SALE }
@@ -59,7 +71,8 @@ final class SearchSql {
                     select sl.listing_key, sl.product_id, sl.branch_id, sl.name, sl.price, sl.stock, sl.store_rating,
                            sl.published_at,
                            %s as distance_km,
-                           %s as text_rank
+                           %s as text_rank,
+                           %s as hint_boost
                     from search_listings sl
                     where %s
                 ), best as (
@@ -68,7 +81,7 @@ final class SearchSql {
                     order by product_id, %s
                 ), scored as (
                     select best.*,
-                           text_rank * (1 + 0.3 * (case when stock > 0 then 1 else 0 end))
+                           text_rank * hint_boost * (1 + 0.3 * (case when stock > 0 then 1 else 0 end))
                                * (1 + 0.1 * coalesce(store_rating, 0) / 5)%s as score
                     from best
                 )
@@ -76,8 +89,8 @@ final class SearchSql {
                 from scored
                 order by %s
                 limit :limit offset :offset
-                """.formatted(distance, textRank(criteria), String.join("\n      and ", where), representative,
-                decay, orderBy(criteria.sort()));
+                """.formatted(distance, textRank(criteria, params), hintBoost(criteria.hints(), params),
+                String.join("\n      and ", where), representative, decay, orderBy(criteria.sort()));
         params.put("limit", limit);
         params.put("offset", offset);
         return new Statement(sql, params);
@@ -154,9 +167,56 @@ final class SearchSql {
         return String.join(" and ", flags);
     }
 
-    private static String textRank(SearchCriteria criteria) {
+    /** Factor de las pistas interpretadas (no filtran). Sin pistas, {@code 1.0}. */
+    static String hintBoost(SearchCriteria.Hints hints, Map<String, Object> params) {
+        List<String> factors = new ArrayList<>();
+        if (hints.makeId() != null) {
+            // Compatible por datos con la marca, o la menciona en el texto: ×2 frente a universales y demás.
+            String mention = hints.vehicleTsQuery() == null ? ""
+                    : " or sl.document @@ to_tsquery(" + CONFIG + ", :vehicleTsq)";
+            factors.add("(case when sl.vehicle_make_ids @> array[cast(:hintMakeId as uuid)]" + mention
+                    + " then " + VEHICLE_BOOST + " else 1.0 end)");
+            params.put("hintMakeId", hints.makeId());
+            if (hints.vehicleTsQuery() != null) {
+                params.put("vehicleTsq", hints.vehicleTsQuery());
+            }
+        }
+        if (hints.modelId() != null) {
+            String mention = hints.modelTsQuery() == null ? ""
+                    : " or sl.document @@ to_tsquery(" + CONFIG + ", :modelTsq)";
+            factors.add("(case when sl.vehicle_model_ids @> array[cast(:hintModelId as uuid)]" + mention
+                    + " then " + MODEL_BOOST + " else 1.0 end)");
+            params.put("hintModelId", hints.modelId());
+            if (hints.modelTsQuery() != null) {
+                params.put("modelTsq", hints.modelTsQuery());
+            }
+        }
+        if (hints.year() != null) {
+            factors.add("(case when (sl.year_from is not null or sl.year_to is not null)"
+                    + " and coalesce(sl.year_from, :hintYear) <= :hintYear"
+                    + " and coalesce(sl.year_to, :hintYear) >= :hintYear then " + YEAR_BOOST + " else 1.0 end)");
+            params.put("hintYear", hints.year());
+        }
+        if (hints.cityCode() != null) {
+            factors.add("(case when sl.city_code = :hintCityCode then " + CITY_BOOST + " else 1.0 end)");
+            params.put("hintCityCode", hints.cityCode());
+        }
+        return factors.isEmpty() ? "1.0" : String.join("\n                               * ", factors);
+    }
+
+    private static String textRank(SearchCriteria criteria, Map<String, Object> params) {
         if (criteria.fuzzyText() != null) {
             return "word_similarity(:fuzzy, sl.search_text)";
+        }
+        if (!criteria.anyTerms().isEmpty()) {
+            // Palabras cubiertas (entero) + ts_rank_cd llevado a [0, 1): manda la cobertura, el rango desempata.
+            List<String> covered = new ArrayList<>();
+            for (int i = 0; i < criteria.anyTerms().size(); i++) {
+                covered.add("(case when sl.document @@ to_tsquery(" + CONFIG + ", :any" + i + ") then 1 else 0 end)");
+                params.put("any" + i, criteria.anyTerms().get(i));
+            }
+            String rank = "ts_rank_cd(sl.document, to_tsquery(" + CONFIG + ", :anyTsq))";
+            return "(" + String.join(" + ", covered) + " + " + rank + " / (1 + " + rank + "))";
         }
         if (criteria.tsQuery() != null) {
             return "ts_rank_cd(sl.document, to_tsquery(" + CONFIG + ", :tsq))";
@@ -191,6 +251,10 @@ final class SearchSql {
                 where.add("sl.document @@ to_tsquery(" + CONFIG + ", :tsq)");
                 params.put("tsq", c.tsQuery());
             }
+            if (!c.anyTerms().isEmpty()) {
+                where.add("sl.document @@ to_tsquery(" + CONFIG + ", :anyTsq)");
+                params.put("anyTsq", String.join(" | ", c.anyTerms()));
+            }
             if (c.reference() != null) {
                 // Referencia, SKU o número de parte: coincidencia en el peso A (pesos {D, C, B, A}).
                 where.add("sl.document @@ plainto_tsquery(" + CONFIG + ", :reference)");
@@ -213,6 +277,18 @@ final class SearchSql {
                 where.add("(sl.universal or sl.vehicle_make_ids @> array[cast(:makeId as uuid)])");
             }
             params.put("makeId", c.makeId());
+        }
+        SearchCriteria.Hints hints = c.hints();
+        if (hints.makeId() != null) {
+            // Marca interpretada (no explícita): alternativa, no filtro. Compatible con la marca, universal o la
+            // menciona en su texto ({@code marca | modelo}).
+            String mention = hints.vehicleTsQuery() == null ? ""
+                    : " or sl.document @@ to_tsquery(" + CONFIG + ", :vehicleTsq)";
+            where.add("(sl.universal or sl.vehicle_make_ids @> array[cast(:hintMakeId as uuid)]" + mention + ")");
+            params.put("hintMakeId", hints.makeId());
+            if (hints.vehicleTsQuery() != null) {
+                params.put("vehicleTsq", hints.vehicleTsQuery());
+            }
         }
         if (c.year() != null) {
             where.add("(sl.year_from is null or sl.year_from <= :year)");
