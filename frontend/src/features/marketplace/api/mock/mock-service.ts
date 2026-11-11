@@ -10,6 +10,7 @@ import {
   type StoreProfile,
   type StoreSummary,
 } from '../types'
+import { mockReviewPage, mockReviewSummary } from './mock-reviews'
 import { MOCK_BRANDS, MOCK_CATEGORIES, MOCK_PRODUCTS, MOCK_STORES, MOCK_VEHICLE_CATALOG, ruleMatches } from './mock-data'
 
 /**
@@ -327,9 +328,18 @@ export function createMockMarketplaceService(): MarketplaceService {
       return []
     },
 
-    async listStoreReviews() {
+    async getReviewSummary(target) {
       await simulateNetwork()
-      return { items: [], page: 1, totalPages: 0, total: 0 }
+      return mockReviewSummary(target.type, target.id)
+    },
+
+    async listReviews(target, query) {
+      await simulateNetwork()
+      return mockReviewPage(target.type, target.id, query)
+    },
+
+    async getProductReviewEligibility() {
+      return { eligibleOrderIds: [] }
     },
 
     async getReviewEligibility() {

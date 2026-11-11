@@ -46,6 +46,7 @@ const CLEARED_FILTERS: Partial<SearchState> = {
   near: false,
   radiusKm: undefined,
   minRating: undefined,
+  minProductRating: undefined,
   universal: false,
 }
 

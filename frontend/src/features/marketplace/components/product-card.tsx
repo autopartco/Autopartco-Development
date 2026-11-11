@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils'
 import type { Product } from '../api/types'
 import { productPath } from '../lib/paths'
 import { AvailabilityLabel, BrandName, FitmentLine, Price, StoreLine } from './product-meta'
+import { RatingTag } from './reviews/rating-tag'
 
 interface ProductItemProps {
   product: Product
@@ -63,6 +64,7 @@ export const ProductRow = memo(function ProductRow({ product, eager = false, dis
       <div className="col-span-2 mt-4 flex items-end justify-between gap-3 border-t border-ap-line pt-3 sm:col-span-1 sm:mt-0 sm:flex-col sm:items-end sm:justify-start sm:border-t-0 sm:border-l sm:pt-0 sm:pl-5">
         <div className="flex min-w-0 flex-col gap-1 sm:items-end sm:text-right">
           <Price product={product} className="sm:justify-end" />
+          <RatingTag rating={product.rating} reviewCount={product.reviewCount} />
           {product.discountAmount ? (
             <span className="text-xs font-medium text-ap-red tabular-nums">Ahorra {formatCOP(product.discountAmount)}</span>
           ) : null}
@@ -159,6 +161,7 @@ export const ProductCard = memo(function ProductCard({ product, eager = false, d
         <div className="mt-auto flex flex-col gap-1 pt-2">
           <div className="flex flex-wrap items-center gap-2">
             <Price product={product} />
+            <RatingTag rating={product.rating} reviewCount={product.reviewCount} />
             {product.discountAmount ? <Badge variant="default">Ahorra {formatCOP(product.discountAmount)}</Badge> : null}
           </div>
           {product.availability ? <AvailabilityLabel availability={product.availability} className="text-xs" /> : null}

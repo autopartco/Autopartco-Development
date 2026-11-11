@@ -4,13 +4,14 @@ import { CheckIcon, CopyIcon, InfoIcon } from 'lucide-react'
 import { Breadcrumbs, Container, type Crumb } from '@/components/common/page-header'
 import { SmartImage } from '@/components/common/smart-image'
 import { ErrorState } from '@/components/common/states'
-import { Button } from '@/components/ui/button'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useSession } from '@/features/auth/hooks'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AddToCart } from '@/features/cart/components/add-to-cart'
 import { useDistanceOrigin, useStoreDistances } from '@/features/location/hooks'
 import { formatKm } from '@/features/location/lib/geo'
-import { formatCOP } from '@/lib/format'
+import { formatCOP, pluralize } from '@/lib/format'
 import { trackView } from '@/lib/visibility'
 import { cn } from '@/lib/utils'
 import { isNotFoundError, type Product } from '../api/types'
@@ -18,7 +19,11 @@ import { FrequentlyBought } from '../components/frequently-bought'
 import { ProductCard, ProductGrid } from '../components/product-card'
 import { AvailabilityLabel, BrandName, Price, RECOMMENDED_EXPLANATION, RecommendedMark, UniversalTag } from '../components/product-meta'
 import { SponsoredListing } from '../components/ads/sponsored-listing'
-import { useAds, useProduct, useRelatedProducts } from '../hooks'
+import { ReviewHighlights } from '../components/reviews/review-highlights'
+import { ReviewsSection } from '../components/reviews/reviews-section'
+import { StarRating } from '../components/reviews/star-rating'
+import { useAds, useProduct, useProductReviewEligibility, useRelatedProducts, useReviewSummary } from '../hooks'
+import { formatRating } from '../lib/review-labels'
 import { ProductWhatsapp } from '../components/store/product-whatsapp'
 import { ShareButton } from '../components/share-button'
 import { categoryPath, productPath, storePath, storeProductsPath } from '../lib/paths'
@@ -272,6 +277,39 @@ function Specifications({ product }: { product: Product }) {
   )
 }
 
+/** Bajo el título: estrellas, promedio, enlace a las opiniones e insignias. Sin opiniones no se dibuja nada. */
+function ProductRatingLine({ productId }: { productId: string }) {
+  const summary = useReviewSummary({ type: 'product', id: productId }).data
+  if (!summary || summary.average === undefined || summary.count <= 0) return null
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ap-muted">
+        <StarRating value={summary.average} />
+        <span className="font-semibold text-ap-ink tabular-nums">{formatRating(summary.average)}</span>
+        <a href="#opiniones" className="inline-flex min-h-6 items-center underline-offset-4 hover:text-ap-red hover:underline">
+          {pluralize(summary.count, 'opinión', 'opiniones')}
+        </a>
+      </p>
+      <ReviewHighlights kind="product" highlights={summary.highlights} />
+    </div>
+  )
+}
+
+/** «Califica este producto» solo si el servidor dice que la persona con sesión compró y recibió el repuesto. */
+function RateProductAction({ productId }: { productId: string }) {
+  const session = useSession()
+  const eligibility = useProductReviewEligibility(productId, session?.user.email)
+  if ((eligibility.data?.eligibleOrderIds.length ?? 0) === 0) return null
+  return (
+    <div className="flex flex-col items-start gap-2 rounded-xl border border-ap-line-strong bg-ap-white p-4 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm text-ap-ink">Recibiste este repuesto. Tu opinión ayuda a otros compradores a elegir mejor.</p>
+      <Link to="/cuenta/calificar" className={cn(buttonVariants({ variant: 'default' }), 'shrink-0')}>
+        Califica este producto
+      </Link>
+    </div>
+  )
+}
+
 function ProductDetail({ product }: { product: Product }) {
   const related = useRelatedProducts(product)
   // Hasta 4 anuncios PRODUCT_RELATED; sin anuncios no se muestra nada.
@@ -308,6 +346,7 @@ function ProductDetail({ product }: { product: Product }) {
                 <ShareButton path={productPath(product.id)} title={product.name} storeId={storeId} productId={product.id} />
               ) : null}
             </div>
+            <ProductRatingLine productId={product.id} />
             {product.partNumber ? (
               <p className="flex flex-wrap items-center gap-x-2">
                 <span className="ap-ref text-sm text-ap-ink">REF. {product.partNumber}</span>
@@ -339,6 +378,18 @@ function ProductDetail({ product }: { product: Product }) {
 
       <div className="mt-12 sm:mt-16">
         <FrequentlyBought productId={product.id} />
+      </div>
+
+      <div className="mt-12 border-t border-ap-graphite pt-8 sm:mt-16">
+        <ReviewsSection
+          target={{ type: 'product', id: product.id }}
+          id="opiniones"
+          index="Producto / Opiniones"
+          title="Opiniones de compradores"
+          storeName={product.store?.name}
+          emptyText="Aquí aparecen las opiniones de quienes ya recibieron este repuesto, para que comprar sea más fácil y seguro."
+          action={<RateProductAction productId={product.id} />}
+        />
       </div>
 
       {ads.length + (related.data?.length ?? 0) > 0 ? (
