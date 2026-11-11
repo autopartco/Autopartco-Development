@@ -13,7 +13,7 @@ import { CartIndicator } from '@/features/cart/components/cart-indicator'
 import { HeaderAccount, MobileMenuAccount } from '@/features/auth/components/account-menu'
 
 const NAV = [
-  { to: '/buscar', label: 'Productos' },
+  { to: '/buscar', label: 'Productos', wide: true },
   { to: '/categorias', label: 'Categorías' },
   { to: '/tiendas', label: 'Tiendas' },
 ]
@@ -122,11 +122,16 @@ export function SiteHeader() {
         <div className="flex h-14 min-w-0 items-center [grid-area:logo] xl:h-auto">
           <Logo tone="dark" />
         </div>
-        <SearchBox tone="dark" shortcut className="pb-3 [grid-area:search] xl:min-w-64 xl:max-w-2xl xl:pb-0" />
+        <SearchBox tone="dark" shortcut className="pb-3 [grid-area:search] xl:min-w-48 xl:max-w-2xl xl:pb-0" />
         {/* Enlaces desde xl, en la misma fila; por debajo van en el menú para dejar sitio a la ciudad y a la cuenta. */}
-        <nav aria-label="Principal" className="hidden items-center gap-0 [grid-area:nav] xl:flex">
+        <nav aria-label="Principal" className="hidden min-w-0 items-center gap-0 [grid-area:nav] xl:flex">
           {NAV.map((item) => (
-            <NavLink key={item.to} to={item.to} className={navClass}>
+            <NavLink
+              key={item.to}
+              to={item.to}
+              // «Productos» duplica al buscador: solo se muestra donde sobra ancho para no pisarlo.
+              className={(state) => cn(navClass(state), item.wide && 'hidden min-[1400px]:inline-flex')}
+            >
               {item.label}
             </NavLink>
           ))}

@@ -54,15 +54,15 @@ function SectionHeading({ id, label, title, intro, link }: SectionHeadingProps) 
 function homeErrorCopy(error: unknown): { title: string; description?: string } {
   const code = error instanceof MarketplaceError ? error.code : undefined
   if (code === 'HOME_RATE_LIMITED' || (error instanceof MarketplaceError && error.status === 429)) {
-    return { title: 'Estás navegando muy rápido', description: 'Espera unos segundos y vuelve a intentarlo.' }
+    return { title: 'Vas muy rápido', description: 'Espera unos segundos y prueba otra vez.' }
   }
   if (code === 'HOME_POINT_OUTSIDE_COVERAGE' || code === 'HOME_POINT_INCOMPLETE' || code === 'HOME_CITY_INVALID') {
     return {
-      title: 'No tenemos datos para esa zona',
-      description: 'Elige otra ciudad en la cabecera o busca tu repuesto por nombre o referencia.',
+      title: 'Aún no llegamos a esa zona',
+      description: 'Elige otra ciudad arriba o busca tu repuesto por nombre.',
     }
   }
-  return { title: 'No pudimos cargar esta sección' }
+  return { title: 'No pudimos cargar esta sección. Intenta de nuevo' }
 }
 
 function HomeError({ home }: { home: Home }) {
@@ -90,8 +90,8 @@ function CategoriesIndex({ home }: { home: Home }) {
   if (categories.length === 0) {
     return (
       <EmptyState
-        title="Aún no hay categorías publicadas"
-        description="Mientras tanto, busca tu repuesto por nombre o referencia en el buscador de arriba."
+        title="Muy pronto verás las categorías aquí"
+        description="Mientras tanto, escribe el repuesto que necesitas en el buscador."
       />
     )
   }
@@ -135,8 +135,8 @@ function NearbyCarousel({ home }: { home: Home }) {
   if (nearby.length === 0) {
     return (
       <EmptyState
-        title="Aún no hay repuestos con ubicación cerca"
-        description="Elige tu ciudad en la cabecera o permite tu ubicación en la búsqueda para ordenar por cercanía."
+        title="Todavía no hay repuestos cerca de ti"
+        description="Elige tu ciudad arriba para ver los almacenes más cercanos."
       >
         <Link to={nearbyUrl()} className="inline-flex min-h-11 items-center text-sm font-semibold text-ap-red underline-offset-4 hover:underline">
           Buscar cerca de mí
@@ -175,7 +175,7 @@ export function QuickAccessSection({ home }: { home: Home }) {
           <SectionHeading
             id="acceso-titulo"
             label={total !== undefined ? `Categorías / ${pluralize(total, 'sistema', 'sistemas')}` : 'Categorías'}
-            title="Ve directo a lo que buscas"
+            title="Encuentra lo que necesitas, rápido"
             link={{ to: '/categorias', label: 'Ver todas las categorías' }}
           />
           <CategoriesIndex home={home} />
@@ -207,7 +207,7 @@ export function FeaturedSection({ home }: { home: Home }) {
           id="destacados-titulo"
           label="Catálogo / Destacados"
           title="Repuestos destacados"
-          intro="Los anuncios llevan la etiqueta «Patrocinado»; el resto son repuestos publicados por los almacenes."
+          intro="Repuestos de almacenes de todo el país. Los marcados como «Patrocinado» son anuncios."
           link={{ to: '/buscar', label: 'Ver todo el catálogo' }}
         />
         {home.status === 'error' ? (
@@ -216,8 +216,8 @@ export function FeaturedSection({ home }: { home: Home }) {
           <ProductGridSkeleton count={8} className="lg:grid-cols-4" />
         ) : featured.length === 0 ? (
           <EmptyState
-            title="Aún no hay repuestos destacados"
-            description="Los almacenes están cargando su inventario. Mira las tiendas registradas mientras tanto."
+            title="Pronto verás repuestos destacados"
+            description="Estamos sumando repuestos todos los días. Mientras tanto, conoce las tiendas."
           >
             <Link to="/tiendas" className="inline-flex min-h-11 items-center text-sm font-semibold text-ap-red underline-offset-4 hover:underline">
               Ver tiendas
@@ -240,24 +240,24 @@ export function FeaturedSection({ home }: { home: Home }) {
 }
 
 /* ------------------------------------------------------------------ */
-/* 5. Qué es Autopartco                                                */
+/* 5. Tu repuesto, sin dar vueltas                                                */
 /* ------------------------------------------------------------------ */
 
 const GUARANTEES = [
   {
     icon: ShieldCheckIcon,
-    title: 'Pago seguro con Wompi',
-    body: 'Los pagos en línea se procesan con Wompi y el estado de cada pago lo confirma el servidor.',
+    title: 'Paga con tranquilidad',
+    body: 'Tarjeta, PSE, Nequi o Bancolombia con Wompi.',
   },
   {
     icon: BadgeCheckIcon,
-    title: 'Almacenes verificados',
-    body: 'Revisamos los documentos de cada almacén antes de publicar su inventario.',
+    title: 'Almacenes de confianza',
+    body: 'Compras a negocios reales y verificados.',
   },
   {
     icon: MessageSquareTextIcon,
-    title: 'Reseñas de compradores',
-    body: 'Solo quien recibió un pedido puede calificar al almacén; así las reseñas vienen de compras reales.',
+    title: 'Opiniones reales',
+    body: 'Lo que dicen otros compradores que ya compraron.',
   },
 ] as const
 
@@ -298,12 +298,12 @@ export function AboutSection({ home }: { home: Home }) {
           <div className="flex flex-col gap-2">
             <p className="ap-index">Plataforma / Colombia</p>
             <h2 id="que-es-titulo" className="text-section text-ap-ink">
-              Qué es Autopartco
+              Tu repuesto, sin dar vueltas
             </h2>
           </div>
           <p className="max-w-prose text-ap-muted">
-            Autopartco reúne el inventario de almacenes de repuestos de Colombia en un solo lugar, para que compares precio,
-            existencias y distancia antes de comprar o de ir al mostrador.
+            Reunimos los almacenes de repuestos de Colombia en un solo lugar. Compara precios, mira qué hay disponible y
+            elige el más cercano.
           </p>
           <PlatformFigures home={home} />
         </div>
@@ -328,10 +328,10 @@ export function AboutSection({ home }: { home: Home }) {
 /* ------------------------------------------------------------------ */
 
 const SELLER_BENEFITS = [
-  'Tu inventario aparece ante conductores y talleres que buscan repuestos en tu ciudad.',
-  'Empiezas con una prueba gratuita y eliges tu plan después de la aprobación.',
-  'Recibe pedidos y pagos en línea, y consulta tus ventas e inventario desde un solo portal.',
-  'Destaca tus productos con campañas de publicidad y mide sus resultados.',
+  'Consigue más clientes: conductores y talleres de tu ciudad ven tus repuestos.',
+  'Empieza gratis y elige tu plan cuando estés listo.',
+  'Vende en línea: recibe pedidos y pagos, y maneja tu inventario desde un solo lugar.',
+  'Destaca tus productos con anuncios y revisa las estadísticas de tus ventas.',
 ] as const
 
 export function SellersSection({ home }: { home: Home }) {
@@ -347,7 +347,7 @@ export function SellersSection({ home }: { home: Home }) {
             </h2>
             {stats && stats.stores > 0 ? (
               <p className="text-ap-muted">
-                Ya publican {pluralize(stats.stores, 'almacén', 'almacenes')} en {pluralize(stats.cities, 'ciudad', 'ciudades')}.
+                Ya venden con nosotros {pluralize(stats.stores, 'almacén', 'almacenes')} en {pluralize(stats.cities, 'ciudad', 'ciudades')}.
               </p>
             ) : null}
           </div>
@@ -356,7 +356,7 @@ export function SellersSection({ home }: { home: Home }) {
               Registrar mi almacén
             </Button>
             <Button size="lg" variant="outline" nativeButton={false} render={<Link to="/tiendas" />}>
-              Ver almacenes que ya publican
+              Conoce los almacenes
             </Button>
           </div>
         </div>
