@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +15,7 @@ import com.autopartco.backend.core.pricing.internal.PromotionRepository;
 import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
+import com.autopartco.backend.shared.events.ListingsChanged;
 
 import lombok.AllArgsConstructor;
 
@@ -29,6 +31,11 @@ public class PromotionService {
 
     private final PromotionRepository promotionRepository;
     private final PromotionTargets promotionTargets;
+    /**
+     * Publica {@link ListingsChanged}: {@code core.search} reindexa el almacén (promoción de almacén) o todo
+     * (promoción de plataforma) tras el commit.
+     */
+    private final ApplicationEventPublisher events;
 
     @Transactional(readOnly = true)
     public List<PromotionResponse> listForStore(UUID storeId) {
@@ -50,6 +57,7 @@ public class PromotionService {
     ) {
         validateTarget(request, PromotionScope.STORE, storeId);
         validateAudience(request, PromotionScope.STORE, platformAudienceAllowed);
+        events.publishEvent(ListingsChanged.ofStore(storeId));
         return toResponse(promotionRepository.save(toPromotion(
                 request,
                 PromotionScope.STORE,
@@ -71,6 +79,7 @@ public class PromotionService {
         validateTarget(request, PromotionScope.STORE, storeId);
         validateAudience(request, PromotionScope.STORE, platformAudienceAllowed);
         applyRequest(promotion, request, storeId);
+        events.publishEvent(ListingsChanged.ofStore(storeId));
         return toResponse(promotion);
     }
 
@@ -79,6 +88,7 @@ public class PromotionService {
         Promotion promotion = promotionRepository.findStorePromotion(storeId, promotionId)
                 .orElseThrow(PromotionService::notFound);
         promotionRepository.delete(promotion);
+        events.publishEvent(ListingsChanged.ofStore(storeId));
     }
 
     /** Promoción del almacén; {@code PROMOTION_NOT_FOUND} si no existe o es de otro almacén. */
@@ -109,6 +119,7 @@ public class PromotionService {
     public PromotionResponse createForPlatform(PromotionUpsertRequest request) {
         validateTarget(request, PromotionScope.PLATFORM, null);
         validateAudience(request, PromotionScope.PLATFORM, true);
+        events.publishEvent(ListingsChanged.ofEverything());
         return toResponse(promotionRepository.save(toPromotion(
                 request,
                 PromotionScope.PLATFORM,
@@ -128,6 +139,7 @@ public class PromotionService {
                 request,
                 request.targetType() == PromotionTargetType.STORE ? request.targetId() : null
         );
+        events.publishEvent(ListingsChanged.ofEverything());
         return toResponse(promotion);
     }
 
@@ -136,6 +148,7 @@ public class PromotionService {
         Promotion promotion = promotionRepository.findPlatformPromotion(promotionId)
                 .orElseThrow(PromotionService::notFound);
         promotionRepository.delete(promotion);
+        events.publishEvent(ListingsChanged.ofEverything());
     }
 
     /**

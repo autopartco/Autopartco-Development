@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.AccessDeniedException;
@@ -29,6 +30,7 @@ import com.autopartco.backend.core.organization.internal.StoreRepository;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.shared.error.TooManyRequestsException;
+import com.autopartco.backend.shared.events.ListingsChanged;
 import com.autopartco.backend.shared.persistence.State;
 import com.autopartco.backend.shared.persistence.StateCodes;
 import com.autopartco.backend.shared.persistence.StateRepository;
@@ -57,6 +59,8 @@ public class StoreApplications {
     private final StoreFileStorage fileService;
     private final AccountLookup accountLookup;
     private final StateRepository stateRepository;
+    /** Publica {@link ListingsChanged} al activar el almacén: {@code core.search} indexa sus productos publicados. */
+    private final ApplicationEventPublisher events;
     private final Map<UUID, Instant> lastSetupLinkAt = new ConcurrentHashMap<>();
 
     /** Almacén y solicitud recién creados, con las rutas subidas para limpiarlas si el llamador falla después. */
@@ -381,6 +385,7 @@ public class StoreApplications {
             store.setConfiguration(configuration);
         }
         store.setState(activeStoreState());
+        events.publishEvent(ListingsChanged.ofStore(storeId));
     }
 
     /** Cierra la configuración: solicitud {@code ACTIVE} (y limpia cualquier token de onboarding heredado). */

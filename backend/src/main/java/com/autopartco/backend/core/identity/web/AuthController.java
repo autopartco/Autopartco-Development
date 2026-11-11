@@ -1,6 +1,7 @@
 package com.autopartco.backend.core.identity.web;
 
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.autopartco.backend.core.identity.LoginResponse;
@@ -22,8 +24,10 @@ import com.autopartco.backend.core.identity.internal.LoginService;
 import com.autopartco.backend.core.identity.internal.social.SocialLoginService;
 import com.autopartco.backend.core.identity.internal.social.SocialProvider;
 import com.autopartco.backend.core.identity.internal.PasswordRecoveryService;
+import com.autopartco.backend.core.identity.internal.ResendVerificationService;
 import com.autopartco.backend.core.identity.internal.RegistrationService;
 import com.autopartco.backend.core.identity.internal.SessionRefreshService;
+import com.autopartco.backend.core.identity.internal.TwoFactorLoginService;
 import com.autopartco.backend.shared.error.UnauthorizedException;
 import com.autopartco.backend.shared.web.ApiPaths;
 
@@ -51,6 +55,8 @@ public class AuthController {
     private final AccountSessionService accountSessionService;
     private final SessionRefreshService sessionRefreshService;
     private final PasswordRecoveryService passwordRecoveryService;
+    private final ResendVerificationService resendVerificationService;
+    private final TwoFactorLoginService twoFactorLoginService;
     private final RefreshCookie refreshCookie;
 
     @PostMapping("/register")
@@ -62,6 +68,24 @@ public class AuthController {
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
         LoginResponse tokens = loginService.login(request, httpRequest.getRemoteAddr(), httpRequest.getHeader("User-Agent"));
         return withRefreshCookie(tokens);
+    }
+
+    /** Segundo paso del login con 2FA por correo: valida el código del desafío y emite la sesión como {@code /login}. */
+    @PostMapping("/login/two-factor")
+    public ResponseEntity<LoginResponse> loginTwoFactor(
+            @Valid @RequestBody TwoFactorLoginRequest request,
+            HttpServletRequest httpRequest
+    ) {
+        LoginResponse tokens = twoFactorLoginService.verify(
+                request.challengeId(), request.code(), httpRequest.getRemoteAddr(), httpRequest.getHeader("User-Agent"));
+        return withRefreshCookie(tokens);
+    }
+
+    /** Reenvía el código 2FA: crea un desafío nuevo (nuevo {@code challengeId}) salvo que deba esperar. */
+    @PostMapping("/login/two-factor/resend")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public TwoFactorResendResponse resendTwoFactor(@Valid @RequestBody TwoFactorChallengeRequest request) {
+        return twoFactorLoginService.resend(request.challengeId());
     }
 
     /** Ingreso con Google o Facebook ({@code provider} = {@code google} | {@code facebook}). Ver {@link SocialLoginService}. */
@@ -91,6 +115,17 @@ public class AuthController {
     @GetMapping("/verify-email")
     public VerifyEmailResponse verifyEmail(@RequestParam String token) {
         return emailVerificationService.verify(token);
+    }
+
+    @PostMapping("/verify-email/code")
+    public VerifyEmailResponse verifyEmailByCode(@Valid @RequestBody VerifyEmailCodeRequest request) {
+        return emailVerificationService.verifyByCode(request);
+    }
+
+    @PostMapping("/verify-email/resend")
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public ResendVerificationResponse resendVerification(@Valid @RequestBody ResendVerificationRequest request) {
+        return resendVerificationService.resend(request);
     }
 
     @PostMapping("/unlock/request")
@@ -141,8 +176,14 @@ public class AuthController {
         return ResponseEntity.noContent().build();
     }
 
-    /** Devuelve el access token en el cuerpo y el refresh token solo en la cookie HttpOnly. */
+    /**
+     * Devuelve el access token en el cuerpo y el refresh token solo en la cookie HttpOnly. Si el login exige 2FA no
+     * hay tokens: se devuelve el desafío sin cookie.
+     */
     private ResponseEntity<LoginResponse> withRefreshCookie(LoginResponse tokens) {
+        if (tokens.twoFactorRequired()) {
+            return ResponseEntity.ok(tokens);
+        }
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, refreshCookie.issue(tokens.refreshToken()))
                 .body(new LoginResponse(tokens.accessToken(), null, tokens.tokenType(), tokens.expiresIn()));

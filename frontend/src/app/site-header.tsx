@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
 import { LocationPicker } from '@/features/location/components/location-picker'
-import { SearchBar } from '@/features/marketplace/components/search-bar'
+import { SearchBox } from '@/features/marketplace/components/search/search-box'
 import { CartIndicator } from '@/features/cart/components/cart-indicator'
 import { HeaderAccount, MobileMenuAccount } from '@/features/auth/components/account-menu'
 
@@ -122,7 +122,7 @@ export function SiteHeader() {
         <div className="flex h-14 min-w-0 items-center [grid-area:logo] xl:h-auto">
           <Logo tone="dark" />
         </div>
-        <SearchBar tone="dark" shortcut className="pb-3 [grid-area:search] xl:min-w-64 xl:max-w-2xl xl:pb-0" />
+        <SearchBox tone="dark" shortcut className="pb-3 [grid-area:search] xl:min-w-64 xl:max-w-2xl xl:pb-0" />
         {/* Enlaces desde xl, en la misma fila; por debajo van en el menú para dejar sitio a la ciudad y a la cuenta. */}
         <nav aria-label="Principal" className="hidden items-center gap-0 [grid-area:nav] xl:flex">
           {NAV.map((item) => (

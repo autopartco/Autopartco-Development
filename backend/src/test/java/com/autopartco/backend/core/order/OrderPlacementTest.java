@@ -97,6 +97,43 @@ class OrderPlacementTest {
     }
 
     @Test
+    void anonymousIdInsertsOneOrderAttributionInTheSameTransaction() {
+        RecordingJdbcClient jdbc = new RecordingJdbcClient().onScalar(returningIds());
+        UUID anonymousId = UUID.randomUUID();
+        NewOrder base = order();
+        NewOrder withAnonymous = new NewOrder(base.personId(), base.address(), base.paymentMethodCode(),
+                base.paymentReference(), base.sales(), anonymousId);
+
+        new OrderPlacement(jdbc.client()).placeApproved(withAnonymous);
+
+        List<Statement> attributions = jdbc.statements().stream()
+                .filter(statement -> statement.sql().equals(OrderPlacement.INSERT_ORDER_ATTRIBUTION_SQL))
+                .toList();
+        assertThat(attributions).hasSize(1);
+        Statement attribution = attributions.getFirst();
+        assertThat(attribution.param("orderId")).isEqualTo(ORDER_ID);
+        assertThat(attribution.param("anonymousId")).isEqualTo(anonymousId);
+        assertThat(attribution.param("windowDays")).isEqualTo(7);
+        assertThat(OrderPlacement.INSERT_ORDER_ATTRIBUTION_SQL)
+                .contains("order_attributions (order_id, anonymous_id, attribution_window_days, created_at)")
+                .contains("now()")
+                .contains("ON CONFLICT (order_id) DO NOTHING");
+        // Antes del pago: el evento OrderPaid (y la atribución de anuncios) ya ve la fila.
+        assertThat(jdbc.statements()).extracting(Statement::sql)
+                .containsSubsequence(OrderPlacement.INSERT_ORDER_ATTRIBUTION_SQL, OrderPlacement.INSERT_PAYMENT_SQL);
+    }
+
+    @Test
+    void withoutAnonymousIdNoOrderAttributionIsInserted() {
+        RecordingJdbcClient jdbc = new RecordingJdbcClient().onScalar(returningIds());
+
+        new OrderPlacement(jdbc.client()).placeApproved(order());
+
+        assertThat(jdbc.statements()).extracting(Statement::sql)
+                .doesNotContain(OrderPlacement.INSERT_ORDER_ATTRIBUTION_SQL);
+    }
+
+    @Test
     void paymentAmountIsTheSumOfSaleTotals() {
         RecordingJdbcClient jdbc = new RecordingJdbcClient().onScalar(returningIds());
 

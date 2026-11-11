@@ -199,7 +199,7 @@ class StoreManufacturersTest {
     private ProductCatalog catalog(ProductRepository productRepository, StateRepository stateRepository,
             ListingQueries listingQueries, ProductImages images, ProductVehicleRules rules) {
         return new ProductCatalog(productRepository, repository, mock(CategoryRepository.class), stateRepository,
-                mock(BranchService.class), mock(StockService.class), images, listingQueries, rules, service);
+                mock(BranchService.class), mock(StockService.class), images, listingQueries, rules, service, event -> { });
     }
 
     @Test

@@ -1,7 +1,11 @@
 package com.autopartco.backend.core.organization.internal;
 
+import java.util.Map;
+
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
+import org.hibernate.type.SqlTypes;
 
 import com.autopartco.backend.shared.location.Location;
 import com.autopartco.backend.shared.persistence.BaseEntity;
@@ -47,4 +51,13 @@ public class Branch extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "state", nullable = false)
     private State state;
+
+    /** WhatsApp propio de la sucursal en E.164 Colombia ({@code +57} y 10 dígitos) o {@code null}. */
+    @Column(length = 13)
+    private String whatsapp;
+
+    /** Horario semanal (ver {@code OpeningHours}) o {@code null} si no se publicó. */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "opening_hours", columnDefinition = "jsonb")
+    private Map<String, Object> openingHours;
 }

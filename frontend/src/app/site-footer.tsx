@@ -72,8 +72,11 @@ export function SiteFooter() {
         </div>
       </Container>
       <div className="border-t border-ap-line-on-dark">
-        <Container className="py-5 text-xs text-ap-on-dark-muted">
-          © {CURRENT_YEAR} Autopartco. Precios y existencias informados por cada tienda.
+        <Container className="flex flex-col gap-1 py-5 text-xs text-ap-on-dark-muted sm:flex-row sm:items-center sm:justify-between">
+          <p>© {CURRENT_YEAR} Autopartco. Precios y existencias informados por cada tienda.</p>
+          <Link to="/privacidad" className={LINK_CLASS}>
+            Privacidad y cookies
+          </Link>
         </Container>
       </div>
     </footer>

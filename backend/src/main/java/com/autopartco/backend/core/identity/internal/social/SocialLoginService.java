@@ -16,14 +16,14 @@ import com.autopartco.backend.core.audit.AuditService;
 import com.autopartco.backend.core.identity.LoginResponse;
 import com.autopartco.backend.core.identity.internal.Account;
 import com.autopartco.backend.core.identity.internal.AccountRepository;
-import com.autopartco.backend.core.identity.internal.AccountSessionService;
 import com.autopartco.backend.core.identity.internal.AccountStatusService;
 import com.autopartco.backend.core.identity.internal.AccountType;
 import com.autopartco.backend.core.identity.internal.AccountTypeRepository;
-import com.autopartco.backend.core.identity.internal.AuthTokenService;
 import com.autopartco.backend.core.identity.internal.LoginAttemptService;
 import com.autopartco.backend.core.identity.internal.Person;
 import com.autopartco.backend.core.identity.internal.PersonRepository;
+import com.autopartco.backend.core.identity.internal.SessionOpener;
+import com.autopartco.backend.core.identity.internal.TwoFactorLoginService;
 import com.autopartco.backend.core.identity.web.SocialLoginRequest;
 import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.ConflictException;
@@ -57,8 +57,8 @@ public class SocialLoginService {
     private final PasswordEncoder passwordEncoder;
     private final AccountStatusService accountStatusService;
     private final LoginAttemptService loginAttemptService;
-    private final AuthTokenService authTokenService;
-    private final AccountSessionService accountSessionService;
+    private final SessionOpener sessionOpener;
+    private final TwoFactorLoginService twoFactorLoginService;
     private final AuditService auditService;
 
     public SocialLoginService(
@@ -71,8 +71,8 @@ public class SocialLoginService {
             PasswordEncoder passwordEncoder,
             AccountStatusService accountStatusService,
             LoginAttemptService loginAttemptService,
-            AuthTokenService authTokenService,
-            AccountSessionService accountSessionService,
+            SessionOpener sessionOpener,
+            TwoFactorLoginService twoFactorLoginService,
             AuditService auditService
     ) {
         this.verifiers = new java.util.EnumMap<>(SocialProvider.class);
@@ -85,8 +85,8 @@ public class SocialLoginService {
         this.passwordEncoder = passwordEncoder;
         this.accountStatusService = accountStatusService;
         this.loginAttemptService = loginAttemptService;
-        this.authTokenService = authTokenService;
-        this.accountSessionService = accountSessionService;
+        this.sessionOpener = sessionOpener;
+        this.twoFactorLoginService = twoFactorLoginService;
         this.auditService = auditService;
     }
 
@@ -144,23 +144,18 @@ public class SocialLoginService {
 
     private LoginResponse openSession(Account account, SocialProvider provider, String ipAddress, String userAgent, String action) {
         ensureCanSignIn(account);
+        if (twoFactorLoginService.isEnabled(account)) {
+            // Mismo desafío que el login con contraseña: la sesión se abre en POST /auth/login/two-factor.
+            return twoFactorLoginService.startChallenge(account);
+        }
         loginAttemptService.record(account, true, ipAddress);
-        AuthTokenService.TokenPair tokens = authTokenService.issue(account);
-        accountSessionService.create(
-                tokens.sessionId(),
-                account,
-                tokens.response().refreshToken(),
-                ipAddress,
-                userAgent,
-                tokens.refreshExpiresAt()
-        );
         Map<String, Object> metadata = new LinkedHashMap<>();
         metadata.put("provider", provider.code());
         if (ipAddress != null) {
             metadata.put("ipAddress", ipAddress);
         }
         auditService.record(account.getId(), action, "ACCOUNT", account.getId(), metadata);
-        return tokens.response();
+        return sessionOpener.open(account, ipAddress, userAgent);
     }
 
     /** Mismas reglas que el login con contraseña: solo cuentas activas y no bloqueadas. */

@@ -173,6 +173,6 @@ class ProductListingsTest {
     }
 
     private ProductCatalog catalog() {
-        return new ProductCatalog(productRepository, null, null, null, branchService, stockService, null, null, null, null);
+        return new ProductCatalog(productRepository, null, null, null, branchService, stockService, null, null, null, null, event -> { });
     }
 }

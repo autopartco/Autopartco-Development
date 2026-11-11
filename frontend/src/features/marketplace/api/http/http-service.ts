@@ -1,13 +1,19 @@
 import { apiRequest } from '@/lib/api'
+import { cachedGet, type HttpResult } from '@/lib/http'
 import { getAnonymousSessionId } from '@/lib/anonymous-session'
 import { getAuthService } from '@/features/auth/api/auth-service'
 import { getAccessToken } from '@/features/auth/api/http/http-auth-service'
 import { PLACEHOLDER_IMAGES } from '@/lib/images'
 import type {
+  AdsResponseDto,
   CategoryOptionDto,
+  HomeResponseDto,
   ProductImageResponseDto,
   ProductOptionsResponseDto,
   ProductResponseDto,
+  SearchItemDto,
+  SearchResponseDto,
+  SuggestResponseDto,
   PageResponseDto,
   StorePublicProfileDto,
   StoreResponseDto,
@@ -15,6 +21,7 @@ import type {
   VehicleNameOptionDto,
   VehicleVersionOptionDto,
 } from '../dto'
+import { humanizeCode } from '../../lib/humanize-code'
 import {
   MarketplaceError,
   type Category,
@@ -24,6 +31,8 @@ import {
   type Product,
   type ProductImage,
   type ProductQuery,
+  type SearchSuggestions,
+  type SuggestionKind,
   type StoreProfile,
   type StoreReview,
   type StoreSummary,
@@ -37,6 +46,10 @@ import {
  */
 const PATHS = {
   products: '/marketplace/products',
+  search: '/marketplace/search',
+  suggest: '/marketplace/search/suggest',
+  home: '/marketplace/home',
+  ads: '/marketplace/ads',
   product: (id: string) => `/marketplace/products/${encodeURIComponent(id)}`,
   frequentlyBought: (id: string) => `/marketplace/products/${encodeURIComponent(id)}/frequently-bought`,
   options: '/marketplace/product-options',
@@ -57,12 +70,6 @@ function toReview(dto: StoreReviewResponseDto): StoreReview {
 
 /** `FrequentlyBoughtController`: `GET /marketplace/products/{id}/frequently-bought` (público, hasta 6). */
 type FrequentlyBoughtDto = Omit<FrequentlyBoughtItem, 'image'> & { image: string | null }
-
-/** "FRENOS_Y_DISCOS" -> "Frenos y discos". */
-function humanizeCode(code: string): string {
-  const words = code.replace(/[_-]+/g, ' ').trim().toLowerCase()
-  return words.charAt(0).toUpperCase() + words.slice(1)
-}
 
 function toCategory(dto: CategoryOptionDto): Category {
   // TODO(api): CategoryOption solo trae `code`. Falta nombre visible, descripción y conteo de productos publicados.
@@ -112,12 +119,24 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
     }
   }
 
-  async function send(path: string, extraHeaders: Record<string, string>, token: string | undefined): Promise<Response> {
+  /**
+   * GET con caché por ETag (`lib/http`): solo sin `Authorization`; home y anuncios nunca se guardan.
+   * `credentials: 'include'` deja viajar la cookie `ap_area` (CORS ya permite credenciales con orígenes explícitos).
+   */
+  async function send(
+    path: string,
+    extraHeaders: Record<string, string>,
+    token: string | undefined,
+    signal?: AbortSignal,
+  ): Promise<HttpResult<unknown> | Response> {
     try {
-      return await fetch(`${root}${path}`, {
+      return await cachedGet<unknown>(`${root}${path}`, {
+        signal,
+        credentials: 'include',
         headers: { Accept: 'application/json', ...extraHeaders, ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       })
     } catch (cause) {
+      if (signal?.aborted) throw cause
       throw new MarketplaceError('No hay conexión con el servidor de Autopartco.', { cause })
     }
   }
@@ -126,13 +145,22 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
     path: string,
     extraHeaders: Record<string, string> = {},
     onHeaders?: (headers: Headers) => void,
+    signal?: AbortSignal,
   ): Promise<T> {
     // Las rutas de productos son públicas, pero el precio depende de quién compra (precio para clientes frecuentes):
     // con sesión llevan el token.
-    const token = path.startsWith('/marketplace/products') ? await bearer() : undefined
-    let response = await send(path, extraHeaders, token)
+    const token = ['/marketplace/products', '/marketplace/search', '/marketplace/home', '/marketplace/ads'].some((prefix) =>
+      path.startsWith(prefix),
+    )
+      ? await bearer()
+      : undefined
+    let response = await send(path, extraHeaders, token, signal)
     // Un token vencido o revocado no debe impedir ver el catálogo: se reintenta como visitante.
-    if (response.status === 401 && token) response = await send(path, extraHeaders, undefined)
+    if (response instanceof Response && response.status === 401 && token) response = await send(path, extraHeaders, undefined, signal)
+    if (!(response instanceof Response)) {
+      onHeaders?.(response.headers)
+      return response.data as T
+    }
     if (!response.ok) {
       const body = (await response.json().catch(() => null)) as {
         message?: string
@@ -211,11 +239,21 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
     }
   }
 
+  /** Ítem de búsqueda, inicio y anuncios: producto aplanado con distancia y datos del anuncio. */
+  function toSearchItem(item: SearchItemDto, maps: Lookups): Product {
+    return {
+      ...toProduct(item, maps),
+      distanceKm: item.distanceKm ?? undefined,
+      sponsored: item.sponsored,
+      adImpressionToken: item.adImpressionToken ?? undefined,
+    }
+  }
+
   return {
     capabilities: {
       // El servidor solo filtra por vehículo (makeId/modelId/versionId); los universales aparecen siempre.
-      // TODO(api): no hay búsqueda por texto, otros filtros ni orden en el servidor. La paginación sí (page/size).
-      textSearch: false,
+      // El servidor filtra por texto (q). TODO(api): no hay otros filtros ni orden. La paginación sí (page/size).
+      textSearch: true,
       sorting: false,
       pagination: true,
       // `storeId` lo filtra el servidor (perfil de la tienda y «Ver más repuestos de esta tienda»).
@@ -244,6 +282,121 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
       const items = listings.map((dto) => toProduct(dto, maps))
       const count = total ?? items.length
       return { items, total: count, page: query.page, pageSize: query.pageSize, totalPages: Math.max(1, Math.ceil(count / query.pageSize)) }
+    },
+
+    async search(query, signal) {
+      const maps = await lookups()
+      const params = new URLSearchParams(vehicleQuery(query).slice(1))
+      const text = query.q.trim()
+      if (text) params.set('q', text)
+      if (query.category) {
+        const bySlug = [...maps.categories.values()].find((item) => item.slug === query.category)
+        params.set('categoryId', bySlug?.id ?? query.category)
+      }
+      for (const id of query.manufacturers) params.append('manufacturerId', id)
+      if (query.store) params.set('storeId', query.store)
+      if (query.year !== undefined) params.set('year', String(query.year))
+      if (query.minPrice !== undefined) params.set('priceMin', String(query.minPrice))
+      if (query.maxPrice !== undefined) params.set('priceMax', String(query.maxPrice))
+      if (query.inStock) params.set('inStock', 'true')
+      if (query.onSale) params.set('onSale', 'true')
+      if (query.cityCode) params.set('cityCode', query.cityCode)
+      if (query.lat !== undefined && query.lng !== undefined) {
+        params.set('lat', String(query.lat))
+        params.set('lng', String(query.lng))
+        if (query.radiusKm !== undefined) params.set('radiusKm', String(query.radiusKm))
+      }
+      if (query.minRating !== undefined) params.set('minRating', String(query.minRating))
+      if (query.universal) params.set('universal', 'true')
+      params.set('sort', query.sort)
+      params.set('page', String(Math.max(0, query.page - 1)))
+      params.set('size', String(query.pageSize))
+      // Las facetas se piden siempre: los conteos acompañan a cada cambio de filtro.
+      params.set('facets', 'true')
+      if (!query.interpret) params.set('interpret', 'false')
+      const dto = await get<SearchResponseDto>(`${PATHS.search}?${params}`, { 'X-Session-Id': getAnonymousSessionId() }, undefined, signal)
+      const toItem = (item: SearchItemDto) => toSearchItem(item, maps)
+      const { interpreted, facets } = dto
+      return {
+        items: dto.items.map(toItem),
+        sponsored: (dto.sponsored ?? []).map(toItem),
+        total: dto.total,
+        page: dto.page + 1,
+        pageSize: dto.size,
+        totalPages: Math.max(1, Math.ceil(dto.total / dto.size)),
+        fuzzy: dto.fuzzy,
+        interpreted: interpreted
+          ? {
+              text: interpreted.text,
+              makeId: interpreted.makeId ?? undefined,
+              makeName: interpreted.makeName ?? undefined,
+              modelId: interpreted.modelId ?? undefined,
+              modelName: interpreted.modelName ?? undefined,
+              year: interpreted.year ?? undefined,
+              cityCode: interpreted.cityCode ?? undefined,
+              cityName: interpreted.cityName ?? undefined,
+              reference: interpreted.reference ?? undefined,
+            }
+          : undefined,
+        facets: facets
+          ? {
+              categories: facets.categories,
+              manufacturers: facets.manufacturers,
+              cities: facets.cities,
+              price:
+                facets.price && facets.price.min !== null && facets.price.max !== null
+                  ? { min: facets.price.min, max: facets.price.max }
+                  : undefined,
+              inStock: facets.inStock,
+              onSale: facets.onSale,
+            }
+          : undefined,
+      }
+    },
+
+    async suggest(text, near, signal): Promise<SearchSuggestions> {
+      const params = new URLSearchParams({ q: text.trim() })
+      if (near) {
+        params.set('lat', String(near.lat))
+        params.set('lng', String(near.lng))
+      }
+      const [dto, maps] = await Promise.all([get<SuggestResponseDto>(`${PATHS.suggest}?${params}`, {}, undefined, signal), lookups()])
+      return {
+        suggestions: dto.suggestions.map((item) => ({ term: item.term, kind: item.kind as SuggestionKind })),
+        products: dto.products.map((item) => toProduct(item, maps)),
+      }
+    },
+
+    async getHome(query, signal) {
+      const params = new URLSearchParams()
+      if (query.lat !== undefined && query.lng !== undefined) {
+        params.set('lat', String(query.lat))
+        params.set('lng', String(query.lng))
+      }
+      if (query.cityCode) params.set('cityCode', query.cityCode)
+      const qs = params.toString()
+      const [dto, maps] = await Promise.all([
+        get<HomeResponseDto>(`${PATHS.home}${qs ? `?${qs}` : ''}`, { 'X-Session-Id': getAnonymousSessionId() }, undefined, signal),
+        lookups(),
+      ])
+      return {
+        stats: dto.stats,
+        popularSearches: dto.popularSearches ?? [],
+        categories: dto.categories ?? [],
+        nearby: (dto.nearby ?? []).map((item) => toSearchItem(item, maps)),
+        featured: (dto.featured ?? []).map((item) => toSearchItem(item, maps)),
+      }
+    },
+
+    async listAds(query, signal) {
+      const params = new URLSearchParams({ placement: query.placement })
+      if (query.placement === 'CATEGORY_TOP') params.set('categoryId', query.categoryId)
+      else params.set('productId', query.productId)
+      const [dto, maps] = await Promise.all([
+        get<AdsResponseDto>(`${PATHS.ads}?${params}`, { 'X-Session-Id': getAnonymousSessionId() }, undefined, signal),
+        lookups(),
+      ])
+      return (dto.items ?? []).map((item) => toSearchItem(item, maps))
     },
 
     async getProduct(id) {

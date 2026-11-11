@@ -61,12 +61,19 @@ public class WebSecurityConfig {
                 // core.identity: flujos sin sesión (logout y logout/others siguen autenticados).
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/register"),
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/login"),
+                // Segundo paso del login con 2FA por correo: el desafío (challengeId) sustituye a la sesión.
+                new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/login/two-factor"),
+                new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/login/two-factor/resend"),
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/social/*"),
                 // operations.metrics: visitas del marketplace (sin datos personales, con límite por IP).
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/events/pageview"),
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/events/visibility"),
+                // operations.metrics: eventos de anuncios con token firmado (se ignoran los inválidos; límite por IP).
+                new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/events/ads"),
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/refresh"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.BASE + "/auth/verify-email"),
+                new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/verify-email/code"),
+                new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/verify-email/resend"),
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/unlock/request"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.BASE + "/auth/unlock"),
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/password-recovery/request"),
@@ -87,11 +94,19 @@ public class WebSecurityConfig {
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/stores/*"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/stores/*/brand/*"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/stores/*/reviews"),
+                new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/stores/*/branches"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/products"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/products/*"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/products/*/frequently-bought"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/product-options"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/product-options/*"),
+                // marketplace: búsqueda v2 y autocompletado (precio general en sugerencias; con límite por IP).
+                new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/search"),
+                new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/search/suggest"),
+                // marketplace: inicio v2 (cifras, categorías, cercanía y destacados; precios generales, con límite por IP).
+                new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/home"),
+                // marketplace: anuncios de categoría y de producto relacionado (con límite por IP).
+                new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/ads"),
                 // marketplace: catálogo de vehículos en cascada.
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/vehicles/makes"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/vehicles/makes/*/models"),

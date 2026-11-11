@@ -102,6 +102,44 @@ class MarketplaceOrderControllerTest {
     }
 
     @Test
+    void requestReadsTheOptionalAnonymousIdAsUuid() throws Exception {
+        com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper()
+                .enable(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        String base = "{\"clientRequestId\":\"" + UUID.randomUUID() + "\",\"addressId\":\"" + UUID.randomUUID()
+                + "\",\"paymentMethod\":\"WOMPI\",\"items\":[{\"productId\":\"" + UUID.randomUUID()
+                + "\",\"branchId\":\"" + UUID.randomUUID() + "\",\"quantity\":1}]";
+        UUID anonymousId = UUID.randomUUID();
+
+        PlaceOrderRequest with = mapper.readValue(base + ",\"anonymousId\":\"" + anonymousId + "\"}",
+                PlaceOrderRequest.class);
+        PlaceOrderRequest without = mapper.readValue(base + "}", PlaceOrderRequest.class);
+
+        assertThat(with.anonymousId()).isEqualTo(anonymousId);
+        assertThat(with.items()).hasSize(1);
+        assertThat(without.anonymousId()).isNull();
+        assertThat(validator.validate(with)).isEmpty();
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> mapper.readValue(
+                base + ",\"anonymousId\":\"not-a-uuid\"}", PlaceOrderRequest.class))
+                .isInstanceOf(com.fasterxml.jackson.databind.exc.InvalidFormatException.class);
+    }
+
+    @Test
+    void visitorCookieTakesPriorityOverBodyAnonymousId() {
+        UUID cookie = UUID.randomUUID();
+        UUID body = UUID.randomUUID();
+        org.springframework.mock.web.MockHttpServletRequest withCookie =
+                new org.springframework.mock.web.MockHttpServletRequest();
+        withCookie.setCookies(new jakarta.servlet.http.Cookie("ap_aid", cookie.toString()));
+        PlaceOrderRequest fromBody = new PlaceOrderRequest(UUID.randomUUID(), UUID.randomUUID(), "WOMPI", null,
+                List.of(item(1)), body);
+
+        assertThat(MarketplaceOrderController.withVisitorCookie(fromBody, withCookie).anonymousId()).isEqualTo(cookie);
+        // Sin cookie, el cuerpo.
+        assertThat(MarketplaceOrderController.withVisitorCookie(fromBody,
+                new org.springframework.mock.web.MockHttpServletRequest()).anonymousId()).isEqualTo(body);
+    }
+
+    @Test
     void validRequestHasNoViolations() {
         assertThat(validator.validate(request("SIMULATED_CARD", null, List.of(item(1))))).isEmpty();
         assertThat(validator.validate(request("SIMULATED_CARD", "REJECTED", List.of(item(99))))).isEmpty();

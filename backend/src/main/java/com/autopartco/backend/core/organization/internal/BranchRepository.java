@@ -17,6 +17,15 @@ public interface BranchRepository extends JpaRepository<Branch, UUID> {
     @Query("select b from Branch b where b.store.id = :storeId order by b.name")
     List<Branch> findAllInStore(@Param("storeId") UUID storeId);
 
+    @Query("select b from Branch b where b.store.id = :storeId and b.state.code = 'ACTIVE' order by b.name")
+    List<Branch> findActiveInStore(@Param("storeId") UUID storeId);
+
+    @Query("select b.id from Branch b where b.store.id = :storeId and b.state.code = 'ACTIVE'")
+    List<UUID> findActiveIdsInStore(@Param("storeId") UUID storeId);
+
+    @Query("select b.id from Branch b where b.store.id = :storeId")
+    List<UUID> findIdsInStore(@Param("storeId") UUID storeId);
+
     @Query("select b from Branch b where b.id = :branchId and b.store.id = :storeId")
     Optional<Branch> findInStore(@Param("branchId") UUID branchId, @Param("storeId") UUID storeId);
 

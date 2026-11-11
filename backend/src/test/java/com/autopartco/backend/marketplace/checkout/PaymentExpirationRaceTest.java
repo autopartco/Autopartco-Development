@@ -329,7 +329,7 @@ class PaymentExpirationRaceTest {
         final AtomicInteger returned = new AtomicInteger();
 
         FakeStock() {
-            super(null, null, null);
+            super(null, null, null, null);
         }
 
         @Override

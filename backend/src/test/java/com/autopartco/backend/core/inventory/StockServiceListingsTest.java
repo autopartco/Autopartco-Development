@@ -49,6 +49,9 @@ class StockServiceListingsTest {
     @Mock
     private StockLedger stockLedger;
 
+    @Mock
+    private org.springframework.context.ApplicationEventPublisher events;
+
     @InjectMocks
     private StockService stockService;
 

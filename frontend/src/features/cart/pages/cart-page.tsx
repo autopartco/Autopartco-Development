@@ -55,7 +55,7 @@ export default function CartPage() {
             <section key={group.id} aria-label={`Repuestos de ${group.name}`}>
               <h2 className="flex flex-wrap items-baseline gap-x-2 border-b border-ap-graphite pb-2 text-sm font-semibold text-ap-ink">
                 {group.name}
-                {group.branch ? <span className="font-normal text-ap-muted">Sucursal {group.branch}</span> : null}
+                {group.branch ? <span className="font-normal text-ap-muted">{/^sucursal\b/i.test(group.branch) ? group.branch : `Sucursal ${group.branch}`}</span> : null}
               </h2>
               <ul className="flex flex-col divide-y divide-ap-line border-b border-ap-line">
                 {group.lines.map((line) => (

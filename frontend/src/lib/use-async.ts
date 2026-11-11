@@ -5,12 +5,25 @@ const resolved = new Map<string, unknown>()
 /** Peticiones en curso por clave, para deduplicar llamadas simultáneas. */
 const inflight = new Map<string, Promise<unknown>>()
 
+/**
+ * Claves cuyos datos llevan tokens de anuncio de un solo uso (inicio y anuncios): nunca se reutilizan
+ * entre montajes, cada pantalla que los monta los pide de nuevo.
+ */
+const VOLATILE_KEY_PREFIXES = ['home:', 'ads:']
+
+function isVolatile(key: string, data: unknown): boolean {
+  if (VOLATILE_KEY_PREFIXES.some((prefix) => key.startsWith(prefix))) return true
+  // Búsquedas con anuncios patrocinados (`sponsored` no vacío).
+  const sponsored = data && typeof data === 'object' ? (data as { sponsored?: unknown }).sponsored : undefined
+  return Array.isArray(sponsored) && sponsored.length > 0
+}
+
 function load<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
   const pending = inflight.get(key)
   if (pending) return pending as Promise<T>
   const promise = fetcher()
     .then((data) => {
-      resolved.set(key, data)
+      if (!isVolatile(key, data)) resolved.set(key, data)
       return data
     })
     .finally(() => inflight.delete(key))

@@ -81,7 +81,7 @@ function matchesFilters(product: Product, query: ProductQuery): boolean {
 }
 
 /** 400 `VEHICLE_FILTER_INVALID`: el modelo exige la marca y la versión exige el modelo. */
-function assertVehicleFilter(query: ProductQuery): void {
+function assertVehicleFilter(query: Pick<ProductQuery, 'makeId' | 'modelId' | 'versionId'>): void {
   if ((query.modelId && !query.makeId) || (query.versionId && !query.modelId)) {
     throw new MarketplaceError('El filtro de vehículo no es válido: elige primero la marca y luego el modelo.', {
       status: 400,
@@ -154,6 +154,75 @@ export function createMockMarketplaceService(): MarketplaceService {
       await simulateNetwork()
       assertVehicleFilter(query)
       return search(query)
+    },
+
+    async search(query) {
+      await simulateNetwork()
+      assertVehicleFilter(query)
+      const category = query.category ? MOCK_CATEGORIES.find((item) => item.slug === query.category || item.id === query.category) : undefined
+      const base: ProductQuery = {
+        q: query.q,
+        category: category?.slug,
+        brands: query.manufacturers,
+        store: query.store,
+        makeId: query.makeId,
+        modelId: query.modelId,
+        versionId: query.versionId,
+        minPrice: query.minPrice,
+        maxPrice: query.maxPrice,
+        inStockOnly: query.inStock,
+        recommendedOnly: false,
+        sort: query.sort === 'price_asc' || query.sort === 'price_desc' ? query.sort : 'relevance',
+        page: query.page,
+        pageSize: query.pageSize,
+      }
+      const page = search(base)
+      return {
+        items: page.items,
+        sponsored: [],
+        total: page.total,
+        page: page.page,
+        pageSize: page.pageSize,
+        totalPages: page.totalPages,
+        // Los datos simulados no calculan facetas: la pantalla usa las opciones del catálogo, sin conteos.
+        fuzzy: false,
+      }
+    },
+
+    async suggest(text) {
+      await simulateNetwork()
+      const needle = normalize(text.trim())
+      if (needle.length < 2) return { suggestions: [], products: [] }
+      return {
+        suggestions: MOCK_CATEGORIES.filter((item) => normalize(item.name).includes(needle)).map((item) => ({
+          term: item.name.toLowerCase(),
+          kind: 'CATEGORY' as const,
+        })),
+        products: MOCK_PRODUCTS.filter((item) => normalize(item.name).includes(needle)).slice(0, 3),
+      }
+    },
+
+    // Derivado de los datos simulados: sin anuncios y con relleno orgánico.
+    async getHome() {
+      await simulateNetwork()
+      const counts = countBy((product) => product.category?.id)
+      const cities = new Set(MOCK_STORES.map((store) => store.city).filter(Boolean))
+      return {
+        stats: { stores: MOCK_STORES.length, cities: cities.size, products: MOCK_PRODUCTS.length },
+        popularSearches: [],
+        categories: MOCK_CATEGORIES.map((category) => ({
+          id: category.id,
+          code: category.slug.toUpperCase(),
+          productCount: counts.get(category.id) ?? 0,
+        })),
+        nearby: [],
+        featured: MOCK_PRODUCTS.slice(0, 8),
+      }
+    },
+
+    async listAds() {
+      await simulateNetwork()
+      return []
     },
 
     async listVehicleMakes() {

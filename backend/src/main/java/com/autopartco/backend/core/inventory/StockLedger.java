@@ -9,11 +9,13 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
+import com.autopartco.backend.shared.events.ListingsChanged;
 
 import lombok.AllArgsConstructor;
 
@@ -87,6 +89,8 @@ public class StockLedger {
             """;
 
     private final JdbcClient jdbcClient;
+    /** Publica {@link ListingsChanged}: {@code core.search} reindexa los productos con stock cambiado tras el commit. */
+    private final ApplicationEventPublisher events;
 
     /** Nuevo stock absoluto de un listado vivo. {@code referenceType} y {@code referenceId} van juntos o ambos nulos. */
     public record StockChange(
@@ -229,6 +233,9 @@ public class StockLedger {
             written.add(row);
         }
         restoreCapture(previousCapture);
+        if (!written.isEmpty()) {
+            events.publishEvent(ListingsChanged.ofProducts(written.stream().map(MovementRow::productId).toList()));
+        }
         return written;
     }
 

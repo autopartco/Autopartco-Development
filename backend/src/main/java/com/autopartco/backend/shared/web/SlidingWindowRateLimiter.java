@@ -6,15 +6,20 @@ import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.autopartco.backend.shared.error.TooManyRequestsException;
 
 /**
- * Límite de llamadas por clave (p. ej. IP) con ventana deslizante, en memoria y por instancia. Pensado para
- * endpoints públicos; {@code maxTracked} acota las claves en memoria (se purgan las inactivas al superarlo).
+ * Límite de llamadas por clave (p. ej. IP) con ventana deslizante. Con un {@link RateLimitStore} (Redis) el límite vale
+ * entre instancias; si no hay o no responde, se aplica la ventana en memoria de esta instancia. Pensado para endpoints
+ * públicos; {@code maxTracked} acota las claves en memoria (se purgan las inactivas al superarlo). Se crean con
+ * {@link RateLimiters}.
  */
 public final class SlidingWindowRateLimiter {
+    private final String name;
+    private final RateLimitStore remote;
     private final String errorCode;
     private final int maxPerWindow;
     private final Duration window;
@@ -23,7 +28,19 @@ public final class SlidingWindowRateLimiter {
     private final Map<String, Deque<Instant>> calls = new ConcurrentHashMap<>();
     private Instant lastPurge;
 
+    /** Solo en memoria (pruebas y respaldo). */
     public SlidingWindowRateLimiter(String errorCode, int maxPerWindow, Duration window, int maxTracked, Clock clock) {
+        this(errorCode, errorCode, maxPerWindow, window, maxTracked, clock, null);
+    }
+
+    /**
+     * @param name   prefijo de la clave en el almacén compartido (distingue limitadores con el mismo código)
+     * @param remote almacén compartido; {@code null} = solo memoria
+     */
+    public SlidingWindowRateLimiter(String name, String errorCode, int maxPerWindow, Duration window, int maxTracked,
+            Clock clock, RateLimitStore remote) {
+        this.name = name;
+        this.remote = remote;
         this.errorCode = errorCode;
         this.maxPerWindow = maxPerWindow;
         this.window = window;
@@ -39,6 +56,15 @@ public final class SlidingWindowRateLimiter {
     public void acquire(String key) {
         Instant now = clock.instant();
         String mapKey = key == null ? "?" : key;
+        if (remote != null) {
+            Optional<Boolean> shared = remote.tryAcquire(name + ":" + mapKey, maxPerWindow, window, now);
+            if (shared.isPresent()) {
+                if (!shared.get()) {
+                    throw new TooManyRequestsException(errorCode, "Demasiadas solicitudes.");
+                }
+                return;
+            }
+        }
         if (calls.size() >= maxTracked && !calls.containsKey(mapKey)) {
             purgeIfDue(now);
             if (calls.size() >= maxTracked && !calls.containsKey(mapKey)) {
@@ -54,6 +80,28 @@ public final class SlidingWindowRateLimiter {
                 throw new TooManyRequestsException(errorCode, "Demasiadas solicitudes.");
             }
             deque.addLast(now);
+        }
+    }
+
+    /**
+     * {@code true} si {@code key} ya tiene {@code maxPerWindow} llamadas en la ventana. No registra ninguna: sirve para
+     * contar solo los fallos ({@link #acquire} al fallar) y rechazar antes de probar la credencial.
+     */
+    public boolean exhausted(String key) {
+        Instant now = clock.instant();
+        String mapKey = key == null ? "?" : key;
+        if (remote != null) {
+            Optional<Long> shared = remote.count(name + ":" + mapKey, window, now);
+            if (shared.isPresent()) {
+                return shared.get() >= maxPerWindow;
+            }
+        }
+        Deque<Instant> deque = calls.get(mapKey);
+        if (deque == null) {
+            return false;
+        }
+        synchronized (deque) {
+            return deque.stream().filter(at -> at.isAfter(now.minus(window))).count() >= maxPerWindow;
         }
     }
 

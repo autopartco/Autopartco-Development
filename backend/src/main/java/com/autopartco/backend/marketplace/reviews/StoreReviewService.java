@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -14,6 +15,7 @@ import com.autopartco.backend.core.organization.PublishedStores;
 import com.autopartco.backend.core.organization.StoreAccess;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
+import com.autopartco.backend.shared.events.ListingsChanged;
 import com.autopartco.backend.shared.web.PageResponse;
 
 import lombok.AllArgsConstructor;
@@ -34,6 +36,7 @@ public class StoreReviewService {
     private final PublishedStores publishedStores;
     private final AccountLookup accountLookup;
     private final StoreAccess storeAccess;
+    private final ApplicationEventPublisher events;
 
     /** Páginas desde 1, como {@link PageResponse}. */
     @Transactional(readOnly = true)
@@ -84,6 +87,8 @@ public class StoreReviewService {
         } catch (DuplicateKeyException duplicate) {
             throw new ConflictException("REVIEW_ALREADY_EXISTS", "Ya calificaste este almacén por este pedido.");
         }
+        // La calificación del almacén forma parte del índice de búsqueda (filtro y orden por calificación).
+        events.publishEvent(ListingsChanged.ofStore(storeId));
         String[] names = splitName(account);
         return new StoreReviewResponse(inserted.id(), request.rating(), comment, authorName(names[0], names[1]),
                 inserted.createdAt());

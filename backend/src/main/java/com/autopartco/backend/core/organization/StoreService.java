@@ -231,6 +231,9 @@ public class StoreService {
         apply(merged, "instagram", request.instagram());
         apply(merged, "facebook", request.facebook());
         apply(merged, "tiktok", request.tiktok());
+        apply(merged, "youtube", request.youtube());
+        apply(merged, "x", request.x());
+        apply(merged, "email", request.email());
         return merged;
     }
 

@@ -77,8 +77,19 @@ public class PublishedStores {
                 text(map.get("website")),
                 text(map.get("instagram")),
                 text(map.get("facebook")),
-                text(map.get("tiktok"))
+                text(map.get("tiktok")),
+                text(map.get("youtube")),
+                text(map.get("x")),
+                text(map.get("email"))
         );
+    }
+
+    /** WhatsApp público del almacén ({@code publicProfile.whatsapp}) o {@code null}; exige almacén publicado. */
+    @Transactional(readOnly = true)
+    public String publicWhatsapp(UUID storeId) {
+        Store store = publishedStoreAssets.requirePublished(storeId);
+        Map<String, Object> configuration = store.getConfiguration() == null ? Map.of() : store.getConfiguration();
+        return contact(configuration.get(PUBLIC_PROFILE_KEY)).whatsapp();
     }
 
     private static String text(Object value) {

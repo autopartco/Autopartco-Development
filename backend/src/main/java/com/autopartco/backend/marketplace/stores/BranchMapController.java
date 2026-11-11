@@ -15,7 +15,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.autopartco.backend.core.organization.BranchMapQueries;
 import com.autopartco.backend.core.organization.MapBranchView;
 import com.autopartco.backend.shared.error.BadRequestException;
+import com.autopartco.backend.shared.location.ColombiaBounds;
 import com.autopartco.backend.shared.web.ApiPaths;
+import com.autopartco.backend.shared.web.RateLimiters;
 import com.autopartco.backend.shared.web.SlidingWindowRateLimiter;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,24 +26,29 @@ import jakarta.servlet.http.HttpServletRequest;
 @RestController
 @RequestMapping(ApiPaths.MARKETPLACE + "/branches")
 public class BranchMapController {
-    static final BigDecimal MIN_LAT = new BigDecimal("-4.3");
-    static final BigDecimal MAX_LAT = new BigDecimal("13.5");
-    static final BigDecimal MIN_LNG = new BigDecimal("-82");
-    static final BigDecimal MAX_LNG = new BigDecimal("-66.8");
+    static final BigDecimal MIN_LAT = ColombiaBounds.MIN_LAT;
+    static final BigDecimal MAX_LAT = ColombiaBounds.MAX_LAT;
+    static final BigDecimal MIN_LNG = ColombiaBounds.MIN_LNG;
+    static final BigDecimal MAX_LNG = ColombiaBounds.MAX_LNG;
     static final int DEFAULT_LIMIT = 4;
     static final int MAX_LIMIT = 8;
 
     private final BranchMapQueries branchMapQueries;
     private final SlidingWindowRateLimiter rateLimiter;
 
+    /** Límite en Redis si está configurado ({@link RateLimiters}); si no, en memoria. */
     @Autowired
+    public BranchMapController(BranchMapQueries branchMapQueries, RateLimiters rateLimiters) {
+        this.branchMapQueries = branchMapQueries;
+        this.rateLimiter = rateLimiters.create("map", "MAP_RATE_LIMITED", 60, Duration.ofMinutes(1));
+    }
+
     public BranchMapController(BranchMapQueries branchMapQueries) {
         this(branchMapQueries, Clock.systemUTC());
     }
 
     BranchMapController(BranchMapQueries branchMapQueries, Clock clock) {
-        this.branchMapQueries = branchMapQueries;
-        this.rateLimiter = new SlidingWindowRateLimiter("MAP_RATE_LIMITED", 60, Duration.ofMinutes(1), 20_000, clock);
+        this(branchMapQueries, RateLimiters.inMemory(clock));
     }
 
     // Los límites son opcionales a nivel de Spring para responder 400 con código propio (el handler genérico daría 500).
@@ -58,8 +65,7 @@ public class BranchMapController {
         if ((lat == null) != (lng == null)) {
             throw new BadRequestException("MAP_POINT_INCOMPLETE", "Envía lat y lng juntos o ninguno.");
         }
-        if (lat != null && (lat.compareTo(MIN_LAT) < 0 || lat.compareTo(MAX_LAT) > 0 || lng.compareTo(MIN_LNG) < 0
-                || lng.compareTo(MAX_LNG) > 0)) {
+        if (lat != null && !ColombiaBounds.contains(lat, lng)) {
             throw new BadRequestException("MAP_POINT_OUTSIDE_COVERAGE", "La ubicación está fuera de Colombia.");
         }
         if (limit < 1 || limit > MAX_LIMIT) {

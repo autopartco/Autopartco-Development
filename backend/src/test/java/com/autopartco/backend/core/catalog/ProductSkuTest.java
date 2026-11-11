@@ -65,7 +65,7 @@ class ProductSkuTest {
     @BeforeEach
     void setUp() {
         catalog = new ProductCatalog(productRepository, manufacturerRepository, categoryRepository, stateRepository,
-                branchService, stockService, productImages, listingQueries, vehicleRules, storeManufacturers);
+                branchService, stockService, productImages, listingQueries, vehicleRules, storeManufacturers, event -> { });
         when(productImages.planGallery(any(), any(), any(), any(), any()))
                 .thenReturn(new ProductImages.GalleryPlan(List.of(), List.of(), List.of(), null));
         when(productImages.validateAll(any())).thenReturn(List.of());

@@ -22,7 +22,7 @@ export function usePageviews(): void {
         headers: { 'Content-Type': 'application/json' },
         body,
         keepalive: true,
-        credentials: 'omit',
+        credentials: 'include',
       }).catch(() => undefined)
     } catch {
       // La medición nunca debe romper la página.

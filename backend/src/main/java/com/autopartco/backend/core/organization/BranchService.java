@@ -1,9 +1,11 @@
 package com.autopartco.backend.core.organization;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -11,8 +13,10 @@ import com.autopartco.backend.core.organization.internal.Branch;
 import com.autopartco.backend.core.organization.internal.BranchRepository;
 import com.autopartco.backend.core.organization.internal.Store;
 import com.autopartco.backend.core.organization.internal.StoreRepository;
+import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
+import com.autopartco.backend.shared.events.ListingsChanged;
 import com.autopartco.backend.shared.location.Location;
 import com.autopartco.backend.shared.location.LocationRepository;
 import com.autopartco.backend.shared.persistence.State;
@@ -29,10 +33,17 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class BranchService {
 
+    private static final BigDecimal MIN_LATITUDE = new BigDecimal("-4.3");
+    private static final BigDecimal MAX_LATITUDE = new BigDecimal("13.5");
+    private static final BigDecimal MIN_LONGITUDE = new BigDecimal("-82");
+    private static final BigDecimal MAX_LONGITUDE = new BigDecimal("-66.8");
+
     private final BranchRepository branchRepository;
     private final LocationRepository locationRepository;
     private final StoreRepository storeRepository;
     private final StateRepository stateRepository;
+    /** Publica {@link ListingsChanged}: {@code core.search} reindexa la sucursal (ubicación, estado) tras el commit. */
+    private final ApplicationEventPublisher events;
 
     @Transactional(readOnly = true)
     public List<BranchResponse> list(UUID storeId) {
@@ -79,7 +90,14 @@ public class BranchService {
         if (request.location() != null) {
             branch.setLocation(locationRepository.save(toLocation(request.location())));
         }
+        if (request.whatsapp() != null) {
+            branch.setWhatsapp(clean(request.whatsapp()));
+        }
+        if (request.openingHours() != null) {
+            branch.setOpeningHours(OpeningHours.validate(request.openingHours()));
+        }
 
+        events.publishEvent(ListingsChanged.ofBranch(branchId));
         return toResponse(branch);
     }
 
@@ -88,11 +106,18 @@ public class BranchService {
         requireStore(storeId);
         Branch branch = findBranch(storeId, branchId);
         branch.setState(findState(StateCodes.INACTIVE));
+        events.publishEvent(ListingsChanged.ofBranch(branchId));
     }
 
     @Transactional(readOnly = true)
     public long countActive(UUID storeId) {
         return branchRepository.countActiveInStore(storeId);
+    }
+
+    /** {@code true} si la sucursal es del almacén (en cualquier estado). */
+    @Transactional(readOnly = true)
+    public boolean isInStore(UUID storeId, UUID branchId) {
+        return branchRepository.findInStore(branchId, storeId).isPresent();
     }
 
     /** Exige una sucursal del almacén en estado {@code ACTIVE}; si no existe o no está activa, {@code BRANCH_NOT_FOUND}. */
@@ -129,6 +154,7 @@ public class BranchService {
     }
 
     private Location toLocation(BranchLocationRequest request) {
+        requireColombianPoint(request.latitude(), request.longitude());
         return Location.builder()
                 .addressLine(request.addressLine().trim())
                 .addressComplement(clean(request.addressComplement()))
@@ -143,6 +169,20 @@ public class BranchService {
                 .provider("INTERNAL")
                 .metadata(Map.of())
                 .build();
+    }
+
+    /** Ambas coordenadas o ninguna, dentro de Colombia. */
+    static void requireColombianPoint(BigDecimal latitude, BigDecimal longitude) {
+        if (latitude == null && longitude == null) {
+            return;
+        }
+        if (latitude == null || longitude == null) {
+            throw new BadRequestException("LOCATION_INCOMPLETE", "Indica latitud y longitud, o ninguna de las dos.");
+        }
+        if (latitude.compareTo(MIN_LATITUDE) < 0 || latitude.compareTo(MAX_LATITUDE) > 0
+                || longitude.compareTo(MIN_LONGITUDE) < 0 || longitude.compareTo(MAX_LONGITUDE) > 0) {
+            throw new BadRequestException("LOCATION_OUT_OF_RANGE", "El punto debe estar dentro de Colombia.");
+        }
     }
 
     private String clean(String value) {
@@ -168,7 +208,9 @@ public class BranchService {
                 branch.getName(),
                 branch.getNumberPhone(),
                 branch.getState().getCode(),
-                locationResponse
+                locationResponse,
+                branch.getWhatsapp(),
+                branch.getOpeningHours()
         );
     }
 }

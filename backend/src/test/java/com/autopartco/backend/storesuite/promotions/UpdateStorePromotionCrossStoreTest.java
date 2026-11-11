@@ -48,7 +48,7 @@ class UpdateStorePromotionCrossStoreTest {
 
     private UpdateStorePromotion useCase() {
         return new UpdateStorePromotion(planEntitlements, new StorePromotionAccess(storeAccess, storeService),
-                new PromotionService(promotionRepository, promotionTargets));
+                new PromotionService(promotionRepository, promotionTargets, event -> { }));
     }
 
     @Test
