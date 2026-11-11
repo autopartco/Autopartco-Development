@@ -44,11 +44,18 @@ export function clearPendingOrderPayment(orderId: string): void {
   }
 }
 
-/** Solo se redirige a URLs https (la pasarela); nunca a esquemas arbitrarios. La URL no se modifica. */
+/**
+ * Solo se redirige a la pasarela (https en `wompi.co` o un subdominio) o al propio sitio; nunca a otros hosts ni
+ * esquemas. La URL no se modifica.
+ */
 export function isSafeCheckoutUrl(value: string | null | undefined): value is string {
   if (!value) return false
   try {
-    return new URL(value).protocol === 'https:'
+    const url = new URL(value)
+    if (url.origin === window.location.origin) return true
+    if (url.protocol !== 'https:') return false
+    const host = url.hostname.toLowerCase()
+    return host === 'wompi.co' || host.endsWith('.wompi.co')
   } catch {
     return false
   }
