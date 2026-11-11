@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.autopartco.backend.shared.web.ClientIp;
 import com.autopartco.backend.core.organization.BranchMapQueries;
 import com.autopartco.backend.core.organization.MapBranchView;
 import com.autopartco.backend.shared.error.BadRequestException;
@@ -58,7 +59,7 @@ public class BranchMapController {
             @RequestParam(required = false) BigDecimal east, @RequestParam(required = false) BigDecimal lat,
             @RequestParam(required = false) BigDecimal lng,
             @RequestParam(defaultValue = "" + DEFAULT_LIMIT) int limit) {
-        rateLimiter.acquire(http.getRemoteAddr());
+        rateLimiter.acquire(ClientIp.of(http));
         if (south == null || west == null || north == null || east == null) {
             throw new BadRequestException("MAP_BOUNDS_REQUIRED", "Envía south, west, north y east.");
         }

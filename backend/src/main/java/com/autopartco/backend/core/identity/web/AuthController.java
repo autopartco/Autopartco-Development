@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.autopartco.backend.shared.web.ClientIp;
 import com.autopartco.backend.core.identity.LoginResponse;
 import com.autopartco.backend.core.identity.RegisterRequest;
 import com.autopartco.backend.core.identity.RegisterResponse;
@@ -66,7 +67,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
-        LoginResponse tokens = loginService.login(request, httpRequest.getRemoteAddr(), httpRequest.getHeader("User-Agent"));
+        LoginResponse tokens = loginService.login(request, ClientIp.of(httpRequest), httpRequest.getHeader("User-Agent"));
         return withRefreshCookie(tokens);
     }
 
@@ -77,7 +78,7 @@ public class AuthController {
             HttpServletRequest httpRequest
     ) {
         LoginResponse tokens = twoFactorLoginService.verify(
-                request.challengeId(), request.code(), httpRequest.getRemoteAddr(), httpRequest.getHeader("User-Agent"));
+                request.challengeId(), request.code(), ClientIp.of(httpRequest), httpRequest.getHeader("User-Agent"));
         return withRefreshCookie(tokens);
     }
 
@@ -96,7 +97,7 @@ public class AuthController {
             HttpServletRequest httpRequest
     ) {
         LoginResponse tokens = socialLoginService.login(
-                SocialProvider.fromPath(provider), request, httpRequest.getRemoteAddr(), httpRequest.getHeader("User-Agent"));
+                SocialProvider.fromPath(provider), request, ClientIp.of(httpRequest), httpRequest.getHeader("User-Agent"));
         return withRefreshCookie(tokens);
     }
 

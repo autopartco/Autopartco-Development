@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.autopartco.backend.shared.web.ClientIp;
 import com.autopartco.backend.core.analytics.MarketplaceSearch;
 import com.autopartco.backend.core.analytics.SearchLog;
 import com.autopartco.backend.core.organization.BranchService;
@@ -130,7 +131,7 @@ public class SearchController {
             @RequestHeader(name = ProductBrowseController.SESSION_HEADER, required = false) String sessionId,
             Authentication authentication
     ) {
-        searchLimiter.acquire(http.getRemoteAddr());
+        searchLimiter.acquire(ClientIp.of(http));
         if (branchId != null && storeId != null && !branchService.isInStore(storeId, branchId)) {
             throw new BadRequestException("BRANCH_NOT_IN_STORE", "La sucursal no pertenece al almacén indicado.");
         }
@@ -184,7 +185,7 @@ public class SearchController {
             @RequestParam(required = false) BigDecimal lat,
             @RequestParam(required = false) BigDecimal lng
     ) {
-        suggestLimiter.acquire(http.getRemoteAddr());
+        suggestLimiter.acquire(ClientIp.of(http));
         return ResponseEntity.ok(suggestions.suggest(q, lat, lng));
     }
 }

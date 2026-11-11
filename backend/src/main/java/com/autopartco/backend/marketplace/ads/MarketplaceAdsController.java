@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.autopartco.backend.shared.web.ClientIp;
 import com.autopartco.backend.core.pricing.BuyerContext;
 import com.autopartco.backend.core.search.SearchResult;
 import com.autopartco.backend.core.search.SearchService;
@@ -69,7 +70,7 @@ public class MarketplaceAdsController {
             @RequestParam(required = false) UUID productId,
             @RequestHeader(name = SESSION_HEADER, required = false) String sessionId
     ) {
-        limiter.acquire(http.getRemoteAddr());
+        limiter.acquire(ClientIp.of(http));
         String requested = placement == null ? "" : placement.strip().toUpperCase(java.util.Locale.ROOT);
         if (!CATEGORY_TOP.equals(requested) && !PRODUCT_RELATED.equals(requested)) {
             throw new BadRequestException("ADS_PLACEMENT_INVALID", "La ubicación debe ser CATEGORY_TOP o PRODUCT_RELATED.");
