@@ -5,6 +5,7 @@ import {
   ClipboardCheckIcon,
   CreditCardIcon,
   LayoutDashboardIcon,
+  MegaphoneIcon,
   ScrollTextIcon,
   SearchIcon,
   TagsIcon,
@@ -41,6 +42,7 @@ export const ADMIN_SECTION_GROUPS: AdminSectionGroup[] = [
     items: [
       { to: 'planes', label: 'Planes', icon: CreditCardIcon, description: 'Precios, límites y funciones de cada plan.' },
       { to: 'promociones', label: 'Promociones', icon: BadgePercentIcon, description: 'Descuentos para todo el marketplace.' },
+      { to: 'publicidad', label: 'Publicidad', icon: MegaphoneIcon, description: 'Campañas de anuncios y tarifas por ubicación.' },
       { to: 'catalogo', label: 'Catálogo', icon: TagsIcon, description: 'Categorías y fabricantes oficiales.' },
     ],
   },

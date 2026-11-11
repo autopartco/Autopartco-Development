@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import { createBrowserRouter, Navigate, useParams } from 'react-router'
 import NotFoundPage from '@/features/marketplace/pages/not-found-page'
 import {
+  AdminAdsPage,
   AdminApplicationsPage,
   AdminAuditPage,
   AdminCatalogPage,
@@ -24,6 +25,10 @@ import {
   OrderResultPage,
   OrdersPage,
   PasswordRecoveryPage,
+  PortalAdsCampaignFormPage,
+  PortalAdsCampaignsPage,
+  PortalAdsCampaignStatsPage,
+  PortalAdsPaymentResultPage,
   PortalApplicationPage,
   PortalBranchesPage,
   PortalInventoryMovementsPage,
@@ -137,6 +142,8 @@ export const router = createBrowserRouter([
       { index: true, element: <PortalIndexPage /> },
       // Retorno de Wompi tras pagar la suscripción (`?id=&env=`): consulta el estado al servidor.
       { path: 'pago/resultado', element: <PortalPaymentResultPage /> },
+      // Retorno de Wompi tras pagar una campaña (`?id=`): sincroniza y consulta el estado al servidor.
+      { path: 'publicidad/pago', element: <PortalAdsPaymentResultPage /> },
       // Estado de la solicitud de almacén (`GET /me/store-applications`).
       { path: 'solicitud', element: <PortalApplicationPage /> },
       {
@@ -162,6 +169,10 @@ export const router = createBrowserRouter([
           { path: 'pedidos', element: <RequirePermission permission="ORDER_READ"><PortalOrdersPage /></RequirePermission> },
           { path: 'pedidos/:saleId', element: <RequirePermission permission="ORDER_READ"><PortalOrderDetailPage /></RequirePermission> },
           { path: 'promociones', element: <RequirePermission permission="PROMOTION_READ"><PortalPromotionsPage /></RequirePermission> },
+          { path: 'publicidad', element: <RequirePermission permission="STORE_READ"><PortalAdsCampaignsPage /></RequirePermission> },
+          { path: 'publicidad/nueva', element: <RequirePermission permission="STORE_UPDATE"><PortalAdsCampaignFormPage /></RequirePermission> },
+          { path: 'publicidad/:campaignId/editar', element: <RequirePermission permission="STORE_UPDATE"><PortalAdsCampaignFormPage /></RequirePermission> },
+          { path: 'publicidad/:campaignId/estadisticas', element: <RequirePermission permission="ANALYTICS_READ"><PortalAdsCampaignStatsPage /></RequirePermission> },
           // El correo de alertas enlaza aquí: /portal/{storeId}/alertas
           { path: 'alertas', element: <RequirePermission permission="STORE_READ"><PortalAlertsPage /></RequirePermission> },
           { path: 'sucursales', element: <RequirePermission permission="BRANCH_READ"><PortalBranchesPage /></RequirePermission> },
@@ -190,6 +201,7 @@ export const router = createBrowserRouter([
       { path: 'estadisticas', element: <AdminStatsPage /> },
       { path: 'planes', element: <AdminPlansPage /> },
       { path: 'promociones', element: <AdminPromotionsPage /> },
+      { path: 'publicidad', element: <AdminAdsPage /> },
       { path: 'catalogo', element: <AdminCatalogPage /> },
       { path: 'clientes', element: <AdminCustomersPage /> },
       { path: 'busquedas', element: <AdminSearchesPage /> },
