@@ -180,7 +180,7 @@ alter table search_listings add column product_rating numeric(2,1), add column p
 - **Contexto:** el SQL de «Datos» se aplica en Supabase `autopartco-dev` y no se escribe en el repo. **Requiere autorización.**
 - **Aceptación:** tablas y columnas creadas, con RLS habilitado y sin alertas nuevas en los advisors.
 
-### T2: Reseñas en el backend
+### T2: Reseñas en el backend ✅ (2026-11-11; el almacén conserva sus errores actuales 409 `REVIEW_NOT_ALLOWED` y 404 `ORDER_NOT_FOUND`; el equipo del almacén no puede calificar; resumen sin caché propia)
 - **Modelo:** Opus · **Agente:** backend
 - **Archivos:**
   - `marketplace/reviews/*`: `ProductReviewService`, `ProductReviewController`, `ReviewSummary`, `StoreAspect`, `ProductAspect` y la ampliación de `StoreReviewService`;

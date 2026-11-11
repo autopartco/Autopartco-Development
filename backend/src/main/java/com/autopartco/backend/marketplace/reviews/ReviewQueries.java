@@ -176,9 +176,9 @@ class ReviewQueries {
     }
 
     void update(ReviewKind kind, UUID reviewId, int rating, String comment) {
-        String version = kind == ReviewKind.PRODUCT ? ", version = version + 1" : "";
-        jdbcClient.sql("UPDATE " + kind.table() + " SET rating = :rating, comment = :comment, updated_at = now()"
-                        + version + " WHERE id = :id AND deleted_at IS NULL")
+        // Las dos tablas (store_reviews y product_reviews) tienen `version`.
+        jdbcClient.sql("UPDATE " + kind.table() + " SET rating = :rating, comment = :comment, updated_at = now(),"
+                        + " version = version + 1 WHERE id = :id AND deleted_at IS NULL")
                 .param("rating", rating)
                 .param("comment", comment)
                 .param("id", reviewId)
