@@ -144,7 +144,7 @@ Enlaces (los arma el frontend):
 ### Frontend
 
 - Perfil `/tiendas/:storeId` (diseño según `docs/design/AUTOPARTCO_DESIGN_SYSTEM.md` §17, §20.15): cabecera con banner a ancho completo (degradado de marca si falta), logo superpuesto, nombre, tagline, insignia verificada, calificación, «Miembro desde»; barra de acciones: **WhatsApp** (elige sucursal si hay varias), **Cómo llegar**, Compartir, redes. Pestañas: Inicio (destacados, servicios, mapa), Repuestos (selector de sucursal → `branchId`), Servicios, Sucursales (mapa + tarjetas con dirección, horario, «Abierto ahora», WhatsApp, Cómo llegar), Reseñas, Información.
-- Mapa: `leaflet` + `react-leaflet` con teselas OpenStreetMap y atribución, carga diferida (`lazy`) solo al ver el mapa; sucursales sin coordenadas aparecen solo en la lista. **Instalar dependencias requiere autorización.**
+- Mapa: `maplibre-gl` ya presente en `develop` (reutilizar `features/location`: `loadMapLibre`, `MAP_STYLE_URL`, patrón de `CoverageMap`), carga diferida solo al ver el mapa; sucursales sin coordenadas aparecen solo en la lista. Sin dependencias nuevas.
 - Producto: botón «Cotizar por WhatsApp» junto al precio con la sucursal del listado; registra `WHATSAPP_CLICK` (`fetch keepalive`) y abre `wa.me` en pestaña nueva.
 - Portal: perfil (banner obligatorio en el checklist de perfil completo, vista previa grande), sucursales (WhatsApp, horario, fijar punto en el mapa), servicios (CRUD), configuración del almacén, visibilidad con WhatsApp y por sucursal.
 - Cuenta: `/cuenta/configuracion` (seguridad, notificaciones, preferencias). Auth: pantalla `/verificar-correo` con campo de 6 dígitos, botón «Reenviar» con cuenta regresiva, y redirección allí desde login ante `EMAIL_NOT_VERIFIED`; pantalla de código 2FA.
@@ -154,7 +154,7 @@ Enlaces (los arma el frontend):
 - **Servicios en tabla propia, no como producto:** no tienen stock, fabricante ni compatibilidad; reusar `products` rompe reglas de publicación. Descartado: `store.configuration` (no permite filtrar por categoría/ciudad).
 - **WhatsApp por sucursal con respaldo al del almacén:** las sucursales atienden distinto; sin columna nueva el dato quedaría mezclado con `numberPhone`.
 - **Clic medido por evento, no por redirección del servidor:** un `GET` que redirige lo inflan prefetch y bots; el evento usa el mismo límite y hash diario existentes.
-- **Leaflet + OSM:** sin clave ni costo; Google Maps JS exige clave y facturación. Riesgo de política de uso de teselas OSM en volumen alto (ver riesgos).
+- **MapLibre (ya en `develop`) en vez de Leaflet o Google Maps:** reutiliza el estilo y la carga del mapa de cobertura; Google Maps JS exige clave y facturación. (Corregido el 2026-11-11: el plan decía Leaflet.)
 - **Configuración en jsonb con esquema en código:** las columnas ya existen; el esquema fijo evita basura y da valores por defecto.
 - **2FA por correo y no TOTP:** reutiliza `account_tokens` y el correo; TOTP queda para después.
 - **Enlace + código en el mismo correo:** el enlace sirve en el mismo dispositivo; el código, cuando se abre el correo en otro.
@@ -216,7 +216,7 @@ Notas de implementación:
 
 ### T5 — Perfil público v2, mapa y WhatsApp
 - **Modelo:** Sonnet · **Agente:** frontend (cuenta de frontend)
-- **Archivos:** `features/marketplace/pages/store-page.tsx` y nuevos componentes en `features/marketplace/components/store/` (`store-header`, `branch-map`, `branch-card`, `whatsapp-button`, `directions-menu`, `services-list`), `pages/product-page.tsx`, `api/*`, `lib/visibility.ts`; `package.json` (`leaflet`, `react-leaflet`, **autorización**).
+- **Archivos:** `features/marketplace/pages/store-page.tsx` y nuevos componentes en `features/marketplace/components/store/` (`store-header`, `branch-map`, `branch-card`, `whatsapp-button`, `directions-menu`, `services-list`), `pages/product-page.tsx`, `api/*`, `lib/visibility.ts`; reutilizar `features/location` (MapLibre), sin cambios en `package.json`.
 - **Contexto:** contratos «API pública», «Enlaces» y «Frontend». Depende de T4.
 - **Aceptación:** build y lint en verde; manual: banner y redes visibles; «Cómo llegar» abre Google/Waze con el destino; WhatsApp abre `wa.me` con producto y enlace y registra un `WHATSAPP_CLICK`; filtro por sucursal cambia productos; mapa sin scroll horizontal a 360 px y con alternativa en lista; menús operables con teclado.
 
@@ -239,7 +239,7 @@ Notas de implementación:
 
 ## Riesgos y puntos a verificar
 
-- **Teselas OSM:** su política no admite tráfico alto; si crece, cambiar a MapTiler/Stadia (misma API de Leaflet) con clave en `.env`.
+- **Teselas del mapa:** se usa la misma fuente que `MAP_STYLE_URL` del mapa de cobertura; revisar sus límites de uso si crece el tráfico.
 - **Correos HTML:** revisar entregabilidad (SPF/DKIM del remitente) y que el cliente no corte el código; probar en Gmail/Outlook.
 - **2FA y sesiones existentes:** activar 2FA no cierra sesiones abiertas; decidir si `logout/others` se ofrece al activarlo.
 - **WhatsApp inflado:** el clic no garantiza conversación; rotular «clics para cotizar».
