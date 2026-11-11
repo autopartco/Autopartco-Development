@@ -58,9 +58,28 @@ function toReview(dto: StoreReviewResponseDto): StoreReview {
 /** `FrequentlyBoughtController`: `GET /marketplace/products/{id}/frequently-bought` (público, hasta 6). */
 type FrequentlyBoughtDto = Omit<FrequentlyBoughtItem, 'image'> & { image: string | null }
 
-/** "FRENOS_Y_DISCOS" -> "Frenos y discos". */
+/** Palabras de códigos del catálogo que llevan tilde al mostrarse. */
+const ACCENTED_WORDS: Record<string, string> = {
+  carroceria: 'carrocería',
+  condicion: 'condición',
+  direccion: 'dirección',
+  electrico: 'eléctrico',
+  garantia: 'garantía',
+  iluminacion: 'iluminación',
+  refrigeracion: 'refrigeración',
+  suspension: 'suspensión',
+  transmision: 'transmisión',
+}
+
+/** "FRENOS_Y_DISCOS" -> "Frenos y discos"; "garantia_meses" -> "Garantía meses". */
 function humanizeCode(code: string): string {
-  const words = code.replace(/[_-]+/g, ' ').trim().toLowerCase()
+  const words = code
+    .replace(/[_-]+/g, ' ')
+    .trim()
+    .toLowerCase()
+    .split(' ')
+    .map((word) => ACCENTED_WORDS[word] ?? word)
+    .join(' ')
   return words.charAt(0).toUpperCase() + words.slice(1)
 }
 
@@ -214,8 +233,8 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
   return {
     capabilities: {
       // El servidor solo filtra por vehículo (makeId/modelId/versionId); los universales aparecen siempre.
-      // TODO(api): no hay búsqueda por texto, otros filtros ni orden en el servidor. La paginación sí (page/size).
-      textSearch: false,
+      // El servidor filtra por texto (q). TODO(api): no hay otros filtros ni orden. La paginación sí (page/size).
+      textSearch: true,
       sorting: false,
       pagination: true,
       // `storeId` lo filtra el servidor (perfil de la tienda y «Ver más repuestos de esta tienda»).
