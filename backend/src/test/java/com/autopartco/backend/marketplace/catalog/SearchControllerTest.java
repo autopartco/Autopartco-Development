@@ -178,7 +178,35 @@ class SearchControllerTest {
     }
 
     @Test
+    void productRatingSortFilterAndFieldsReachTheClient() throws Exception {
+        ProductResponse rated = result().items().getFirst().listing().withRating(new BigDecimal("4.7"), 128);
+        org.mockito.Mockito.doReturn(new SearchResult(
+                List.of(new SearchResult.Hit(rated, null)), 0, 24, 1, false, null, null))
+                .when(searchService).search(any(), any(), any());
+
+        mvc.perform(get(URL).param("sort", "product_rating").param("minProductRating", "4"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].rating").value(4.7))
+                .andExpect(jsonPath("$.items[0].reviewCount").value(128));
+
+        ArgumentCaptor<SearchQuery> query = ArgumentCaptor.forClass(SearchQuery.class);
+        verify(searchService).search(query.capture(), any(), any());
+        assertThat(query.getValue().sort()).isEqualTo(SearchSort.PRODUCT_RATING);
+        assertThat(query.getValue().minProductRating()).isEqualTo(4);
+    }
+
+    @Test
+    void listingWithoutReviewsSendsNullRatingAndZeroCount() throws Exception {
+        mvc.perform(get(URL))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].rating").doesNotExist())
+                .andExpect(jsonPath("$.items[0].reviewCount").value(0));
+    }
+
+    @Test
     void invalidParametersAre400WithTheirCode() throws Exception {
+        mvc.perform(get(URL + "?minProductRating=7")).andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error.code").value("SEARCH_RATING_INVALID"));
         mvc.perform(get(URL + "?sort=nearest")).andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.code").value("LOCATION_REQUIRED"));
         mvc.perform(get(URL + "?size=49")).andExpect(status().isBadRequest())

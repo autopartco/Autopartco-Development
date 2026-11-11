@@ -122,6 +122,7 @@ public class SearchController {
             @RequestParam(required = false) BigDecimal lng,
             @RequestParam(required = false) Integer radiusKm,
             @RequestParam(required = false) Integer minRating,
+            @RequestParam(required = false) Integer minProductRating,
             @RequestParam(required = false) Boolean universal,
             @RequestParam(required = false) String sort,
             @RequestParam(required = false) Integer page,
@@ -148,7 +149,8 @@ public class SearchController {
                 .makeId(makeId).modelId(modelId).versionId(versionId).year(year)
                 .priceMin(priceMin).priceMax(priceMax).inStock(inStock).onSale(onSale)
                 .storeId(storeId).branchId(branchId).cityCode(cityCode).departmentCode(departmentCode)
-                .lat(lat).lng(lng).radiusKm(radiusKm).minRating(minRating).universal(universal)
+                .lat(lat).lng(lng).radiusKm(radiusKm).minRating(minRating).minProductRating(minProductRating)
+                .universal(universal)
                 .sort(requestedSort).page(page).size(size).facets(facets).interpret(interpret)
                 .build();
         BuyerContext buyer = buyerContexts.forBrowsing(authentication);

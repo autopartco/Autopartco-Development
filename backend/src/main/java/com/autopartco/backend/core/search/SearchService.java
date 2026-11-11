@@ -75,7 +75,7 @@ public class SearchService {
             where sl.product_id = :productId
             """;
     static final String SPONSORED_LISTINGS_SQL = """
-            select distinct on (product_id) product_id, branch_id
+            select distinct on (product_id) product_id, branch_id, product_rating, product_review_count
             from search_listings
             where product_id in (:ids)
             order by product_id, price, branch_id
@@ -315,18 +315,22 @@ public class SearchService {
                 return List.of();
             }
             Map<UUID, ListingKey> keys = new HashMap<>();
+            Map<UUID, Rating> ratings = new HashMap<>();
             jdbcClient.sql(SPONSORED_LISTINGS_SQL)
                     .param("ids", picks.stream().map(AdPick::productId).toList())
                     .query((rs, rowNum) -> {
                         UUID productId = rs.getObject("product_id", UUID.class);
                         keys.put(productId, new ListingKey(productId, rs.getObject("branch_id", UUID.class)));
+                        ratings.put(productId, new Rating(rs.getBigDecimal("product_rating"),
+                                rs.getInt("product_review_count")));
                         return productId;
                     })
                     .list();
             List<ListingKey> ordered = picks.stream().map(pick -> keys.get(pick.productId()))
                     .filter(java.util.Objects::nonNull).toList();
             Map<UUID, ProductResponse> listings = new HashMap<>();
-            listingQueries.publishedListingsByKeys(ordered, buyer).forEach(listing -> listings.put(listing.id(), listing));
+            listingQueries.publishedListingsByKeys(ordered, buyer).forEach(listing -> listings.put(listing.id(),
+                    Rating.apply(listing, ratings.get(listing.id()))));
             List<SearchResult.Sponsored> result = new ArrayList<>();
             for (AdPick pick : picks) {
                 ProductResponse listing = listings.get(pick.productId());
@@ -342,8 +346,21 @@ public class SearchService {
         }
     }
 
-    /** Fila de la página: listado elegido, distancia (si hay ubicación) y total de productos de la búsqueda. */
-    record Row(UUID productId, UUID branchId, Double distanceKm, long total) {
+    /**
+     * Fila de la página: listado elegido, distancia (si hay ubicación), calificación del producto del índice y total
+     * de productos de la búsqueda.
+     */
+    record Row(UUID productId, UUID branchId, Double distanceKm, long total, Rating rating) {
+        Row(UUID productId, UUID branchId, Double distanceKm, long total) {
+            this(productId, branchId, distanceKm, total, null);
+        }
+    }
+
+    /** Calificación del producto en {@code search_listings} ({@code product_rating}, {@code product_review_count}). */
+    record Rating(BigDecimal average, int count) {
+        static ProductResponse apply(ProductResponse listing, Rating rating) {
+            return rating == null ? listing : listing.withRating(rating.average(), rating.count());
+        }
     }
 
     record Page(List<Row> rows, long total) {
@@ -357,7 +374,8 @@ public class SearchService {
                     double distance = rs.getDouble("distance_km");
                     Double km = rs.wasNull() ? null : distance;
                     return new Row(rs.getObject("product_id", UUID.class), rs.getObject("branch_id", UUID.class), km,
-                            rs.getLong("total"));
+                            rs.getLong("total"), new Rating(rs.getBigDecimal("product_rating"),
+                                    rs.getInt("product_review_count")));
                 })
                 .list();
         if (rows.isEmpty() && page > 0) {
@@ -372,16 +390,19 @@ public class SearchService {
         if (rows.isEmpty()) {
             return List.of();
         }
-        Map<ListingKey, Double> distances = new HashMap<>();
+        Map<ListingKey, Row> byKey = new HashMap<>();
         List<ListingKey> keys = new ArrayList<>();
         for (Row row : rows) {
             ListingKey key = new ListingKey(row.productId(), row.branchId());
             keys.add(key);
-            distances.put(key, row.distanceKm());
+            byKey.put(key, row);
         }
         return listingQueries.publishedListingsByKeys(keys, buyer).stream()
-                .map(listing -> new SearchResult.Hit(listing,
-                        roundKm(distances.get(new ListingKey(listing.id(), listing.branchId())))))
+                .map(listing -> {
+                    Row row = byKey.get(new ListingKey(listing.id(), listing.branchId()));
+                    return new SearchResult.Hit(Rating.apply(listing, row == null ? null : row.rating()),
+                            roundKm(row == null ? null : row.distanceKm()));
+                })
                 .toList();
     }
 
