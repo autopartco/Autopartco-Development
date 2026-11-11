@@ -4,8 +4,6 @@ import { InfoIcon, SlidersHorizontalIcon } from 'lucide-react'
 import { Container, PageIntro, type Crumb } from '@/components/common/page-header'
 import { EmptyState, ErrorState } from '@/components/common/states'
 import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   Sheet,
   SheetClose,
@@ -16,107 +14,80 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
-import { Skeleton } from '@/components/ui/skeleton'
 import { pluralize } from '@/lib/format'
-import type {
-  FilterOptions,
-  MarketplaceCapabilities,
-  ProductPage,
-  ProductQuery,
-  SortOption,
-} from '../api/types'
-import { ActiveFilters } from '../components/active-filters'
-import { FiltersPanel } from '../components/filters-panel'
+import { MarketplaceError, type FilterOptions, type SearchResult } from '../api/types'
+import { SponsoredListing } from '../components/ads/sponsored-listing'
 import { ProductList, ProductListSkeleton, ProductRow } from '../components/product-card'
 import { ResultsPagination } from '../components/results-pagination'
-import { useCapabilities, useFilterOptions, useProductQueryState, useProductSearch, useStores, useVehicleFilterLabel } from '../hooks'
+import { ActiveFilters } from '../components/search/active-filters'
+import { SearchFilters, type SearchFiltersProps } from '../components/search/filters-panel'
+import { InterpretedChips } from '../components/search/interpreted-chips'
+import { SortSelect } from '../components/search/sort-select'
+import { useNearMe } from '../components/search/use-near-me'
+import { useFilterOptions, useListingSearch, useSearchState, useStores, useVehicleFilterLabel } from '../hooks'
 import { categoryPath } from '../lib/paths'
-import { countActiveFilters, SORT_LABELS } from '../lib/product-query'
-import { useStoreDistances } from '@/features/location/hooks'
+import { countSearchFilters, dropInterpretedChip, toSearchQuery, type SearchState } from '../lib/search-query'
 import { NotFoundContent } from './not-found-page'
 
-const CLEARED_FILTERS: Partial<ProductQuery> = {
+const CLEARED_FILTERS: Partial<SearchState> = {
   category: undefined,
-  brands: [],
+  manufacturers: [],
   store: undefined,
   makeId: undefined,
   modelId: undefined,
   versionId: undefined,
+  year: undefined,
   minPrice: undefined,
   maxPrice: undefined,
-  inStockOnly: false,
-  recommendedOnly: false,
+  inStock: false,
+  onSale: false,
+  cityCode: undefined,
+  near: false,
+  radiusKm: undefined,
+  minRating: undefined,
+  universal: false,
 }
 
-const SORT_ITEMS = (Object.keys(SORT_LABELS) as SortOption[]).map((value) => ({ value, label: SORT_LABELS[value] }))
-
-function SortSelect({ value, onChange }: { value: SortOption; onChange: (value: SortOption) => void }) {
-  return (
-    <div className="flex items-center gap-2">
-      <Label htmlFor="orden-resultados" className="hidden text-sm font-normal text-ap-muted sm:block">
-        Orden
-      </Label>
-      <Select items={SORT_ITEMS} value={value} onValueChange={(next) => next && onChange(next as SortOption)}>
-        <SelectTrigger id="orden-resultados" aria-label="Ordenar por" className="h-11 min-w-40 bg-ap-white">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent align="end">
-          {SORT_ITEMS.map((item) => (
-            <SelectItem key={item.value} value={item.value}>
-              {item.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  )
-}
-
-function FiltersSkeleton() {
-  return (
-    <div className="flex flex-col gap-3" aria-hidden>
-      <Skeleton className="h-4 w-24" />
-      <Skeleton className="h-10 w-full" />
-      <Skeleton className="h-10 w-full" />
-      <Skeleton className="mt-4 h-4 w-28" />
-      {Array.from({ length: 5 }, (_, index) => (
-        <Skeleton key={index} className="h-6 w-3/4" />
-      ))}
-    </div>
-  )
-}
-
-interface FiltersSlotProps {
-  query: ProductQuery
-  capabilities: MarketplaceCapabilities | undefined
-  options: ReturnType<typeof useFilterOptions>
-  onChange: (patch: Partial<ProductQuery>) => void
-  fixedCategory: boolean
-}
-
-function FiltersSlot({ query, capabilities, options, onChange, fixedCategory }: FiltersSlotProps) {
-  if (options.status === 'error') {
-    return <ErrorState title="No pudimos cargar los filtros" description="Puedes seguir buscando por texto." onRetry={options.retry} />
+/** Mensaje de error según el código del servidor; el resto cae en el genérico. */
+function errorCopy(error: unknown): { title: string; description: string } {
+  const code = error instanceof MarketplaceError ? error.code : undefined
+  if (code === 'SEARCH_RATE_LIMITED' || (error instanceof MarketplaceError && error.status === 429)) {
+    return {
+      title: 'Estás buscando muy rápido',
+      description: 'Espera unos segundos y vuelve a intentarlo. Tus filtros se mantienen.',
+    }
   }
-  if (!options.data || !capabilities) return <FiltersSkeleton />
-  return (
-    <FiltersPanel
-      query={query}
-      options={options.data}
-      capabilities={capabilities}
-      onChange={onChange}
-      fixedCategory={fixedCategory}
-    />
-  )
+  if (code === 'LOCATION_REQUIRED') {
+    return {
+      title: 'Necesitamos tu ubicación',
+      description: 'Para ordenar por cercanía activa «Cerca de mí» en los filtros, o elige otro orden.',
+    }
+  }
+  if (code === 'VEHICLE_FILTER_INVALID') {
+    return {
+      title: 'El filtro de vehículo no es válido',
+      description: 'Elige primero la marca y luego el modelo, o quita el filtro de vehículo.',
+    }
+  }
+  if (code?.startsWith('SEARCH_')) {
+    return {
+      title: 'No pudimos interpretar la búsqueda',
+      description: 'Revisa los filtros o el texto, por ejemplo quita el precio o el radio, e inténtalo de nuevo.',
+    }
+  }
+  return {
+    title: 'No pudimos cargar los repuestos',
+    description: 'El catálogo no respondió. Revisa tu conexión e inténtalo de nuevo; tus filtros se mantienen.',
+  }
 }
 
-/** Filtros en móvil y tablet: botón "Filtrar (n)" que abre un panel lateral accesible. */
+/** Filtros en móvil y tablet: botón "Filtrar (n)" que abre una hoja inferior accesible. */
 function MobileFilters({
   activeCount,
   total,
   onClear,
-  ...slot
-}: FiltersSlotProps & { activeCount: number; total: number | undefined; onClear: () => void }) {
+  ...filters
+}: SearchFiltersProps & { activeCount: number; total: number | undefined; onClear: () => void }) {
   const [open, setOpen] = useState(false)
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -132,13 +103,13 @@ function MobileFilters({
         <span className="tabular-nums">{activeCount > 0 ? `Filtrar (${activeCount})` : 'Filtrar'}</span>
       </SheetTrigger>
       {/* Cabecera y pie fijos; solo la lista de filtros hace scroll, así las acciones siempre se ven. */}
-      <SheetContent side="right" className="gap-0 p-0 data-[side=right]:w-full">
+      <SheetContent side="bottom" className="max-h-[90svh] gap-0 rounded-t-xl p-0">
         <SheetHeader className="shrink-0 border-b border-ap-line px-5 py-4 pr-16">
           <SheetTitle className="text-block-title">Filtrar resultados</SheetTitle>
           <SheetDescription>Los resultados se actualizan al elegir cada filtro.</SheetDescription>
         </SheetHeader>
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5">
-          <FiltersSlot {...slot} />
+          <SearchFilters {...filters} />
         </div>
         <SheetFooter className="mt-0 grid shrink-0 grid-cols-2 gap-2 border-t border-ap-line px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <Button variant="outline" onClick={onClear} disabled={activeCount === 0}>
@@ -154,24 +125,24 @@ function MobileFilters({
 }
 
 function EmptyResults({
-  query,
+  state,
   options,
   activeCount,
   onClear,
 }: {
-  query: ProductQuery
+  state: SearchState
   options: FilterOptions | undefined
   activeCount: number
   onClear: () => void
 }) {
   return (
     <EmptyState
-      title={query.q ? `No encontramos repuestos para “${query.q}”` : 'Ningún repuesto coincide con estos filtros'}
+      title={state.q ? `No encontramos repuestos para “${state.q}”` : 'Ningún repuesto coincide con estos filtros'}
       description={
         <ul className="mt-1 flex list-disc flex-col gap-1 pl-5">
-          {query.q ? <li>Revisa la ortografía o usa menos palabras, por ejemplo “pastillas”.</li> : null}
+          {state.q ? <li>Revisa la ortografía o usa menos palabras, por ejemplo “pastillas”.</li> : null}
           <li>Busca por la referencia o número de parte que aparece en la pieza.</li>
-          {activeCount > 0 ? <li>Quita algunos filtros para ver más resultados.</li> : null}
+          {activeCount > 0 ? <li>Quita algunos filtros o amplía el radio para ver más resultados.</li> : null}
         </ul>
       }
     >
@@ -203,7 +174,7 @@ function EmptyResults({
   )
 }
 
-function ResultCount({ page, loading }: { page: ProductPage | undefined; loading: boolean }) {
+function ResultCount({ page, loading }: { page: SearchResult | undefined; loading: boolean }) {
   return (
     <p role="status" aria-live="polite" className="text-sm text-ap-muted tabular-nums">
       {page && !loading ? (
@@ -219,26 +190,35 @@ function ResultCount({ page, loading }: { page: ProductPage | undefined; loading
 }
 
 /**
- * Resultados de catálogo (§7.2, §15): cabecera con la consulta visible, línea de control
- * con conteo y orden, filtros laterales en escritorio (panel en móvil) y resultados en
- * filas con divisores.
+ * Resultados del motor de búsqueda v2 (§7.2, §15): cabecera con la consulta visible, línea de control
+ * con conteo y orden, filtros laterales en escritorio (hoja inferior en móvil), anuncios «Patrocinado»
+ * arriba y resultados en filas con divisores. Todo el estado vive en la URL.
  */
 export function SearchResultsView({ fixedCategory }: { fixedCategory?: string }) {
-  const [query, update] = useProductQueryState(fixedCategory)
-  const capabilities = useCapabilities()
+  const [state, update] = useSearchState(fixedCategory)
+  const nearMe = useNearMe()
   const options = useFilterOptions()
   const stores = useStores()
-  const vehicleLabel = useVehicleFilterLabel(query)
-  const result = useProductSearch(query)
-  const distances = useStoreDistances()
+  const vehicleLabel = useVehicleFilterLabel(state)
+  const result = useListingSearch(toSearchQuery(state, nearMe.origin))
 
   const isCategoryRoute = Boolean(fixedCategory)
-  const activeCount = countActiveFilters(query, { fixedCategory: isCategoryRoute })
-  const category = options.data?.categories.find((item) => item.slug === query.category)
-  const store = query.store ? stores.data?.find((item) => item.id === query.store) : undefined
+  const activeCount = countSearchFilters(state, { fixedCategory: isCategoryRoute })
+  const category = options.data?.categories.find((item) => item.slug === state.category)
+  const store = state.store ? stores.data?.find((item) => item.id === state.store) : undefined
   const clearFilters = () => update(CLEARED_FILTERS)
 
-  if (isCategoryRoute && options.data && capabilities?.filters.has('category') && !category) {
+  const page = result.data
+  const filters: SearchFiltersProps = {
+    state,
+    facets: page?.facets,
+    options: options.data,
+    nearMe,
+    onChange: update,
+    fixedCategory: isCategoryRoute,
+  }
+
+  if (isCategoryRoute && options.data && options.data.categories.length > 0 && !category) {
     return (
       <NotFoundContent
         title="Esta categoría no existe"
@@ -251,8 +231,8 @@ export function SearchResultsView({ fixedCategory }: { fixedCategory?: string })
     ? `Repuestos de ${store.name}`
     : isCategoryRoute
       ? (category?.name ?? 'Categoría')
-      : query.q
-        ? `Resultados para “${query.q}”`
+      : state.q
+        ? `Resultados para “${state.q}”`
         : 'Todos los repuestos'
 
   const crumbs: Crumb[] = [{ label: 'Inicio', to: '/' }]
@@ -264,19 +244,21 @@ export function SearchResultsView({ fixedCategory }: { fixedCategory?: string })
     ? 'Catálogo / Tienda'
     : isCategoryRoute
       ? 'Catálogo / Categoría'
-      : query.q
+      : state.q
         ? 'Catálogo / Búsqueda'
         : 'Catálogo / Todo'
 
-  const slot: FiltersSlotProps = {
-    query,
-    capabilities,
-    options,
-    onChange: update,
-    fixedCategory: isCategoryRoute,
+  async function changeSort(sort: SearchState['sort']) {
+    if (sort !== 'nearest') {
+      update({ sort })
+      return
+    }
+    // «Más cercanos» necesita la ubicación: se activa «Cerca de mí» (sin radio) y se pide con permiso.
+    update({ sort, near: true })
+    await nearMe.request()
   }
-  const page = result.data
-  const showTextSearchNotice = Boolean(query.q) && capabilities && !capabilities.textSearch
+
+  const showSponsored = Boolean(page && page.sponsored.length > 0 && page.page === 1)
 
   return (
     <Container className="py-6 sm:py-8">
@@ -289,7 +271,7 @@ export function SearchResultsView({ fixedCategory }: { fixedCategory?: string })
         className="mb-6"
       />
 
-      {query.makeId ? (
+      {state.makeId ? (
         <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-1 border-l-2 border-ap-red bg-ap-paper py-2 pr-3 pl-4">
           <p className="min-w-0 flex-1 py-1 text-sm text-ap-ink">
             <span className="text-ap-muted">Vehículo:</span> <strong className="font-semibold">{vehicleLabel ?? 'tu vehículo'}</strong>.{' '}
@@ -320,7 +302,7 @@ export function SearchResultsView({ fixedCategory }: { fixedCategory?: string })
               ) : null}
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-3 [scrollbar-width:thin]">
-              <FiltersSlot {...slot} />
+              <SearchFilters {...filters} />
             </div>
           </div>
         </aside>
@@ -333,21 +315,38 @@ export function SearchResultsView({ fixedCategory }: { fixedCategory?: string })
           <div className="flex min-h-11 flex-wrap items-center justify-between gap-3 border-b border-ap-graphite pb-2">
             <ResultCount page={page} loading={result.isStale} />
             <div className="flex items-center gap-2">
-              <MobileFilters {...slot} activeCount={activeCount} total={page?.total} onClear={clearFilters} />
-              {capabilities?.sorting ? <SortSelect value={query.sort} onChange={(sort) => update({ sort })} /> : null}
+              <MobileFilters {...filters} activeCount={activeCount} total={page?.total} onClear={clearFilters} />
+              <SortSelect value={state.sort} onChange={(sort) => void changeSort(sort)} />
             </div>
           </div>
 
-          {showTextSearchNotice ? (
-            <p className="flex items-start gap-2 border-l-2 border-ap-info bg-ap-info-soft px-4 py-3 text-sm text-ap-ink">
+          {state.sort === 'nearest' && !nearMe.origin ? (
+            <p role="status" className="flex items-start gap-2 border-l-2 border-ap-info bg-ap-info-soft px-4 py-3 text-sm text-ap-ink">
               <InfoIcon className="mt-0.5 size-4 shrink-0 text-ap-info" aria-hidden />
-              La búsqueda por texto aún no está disponible. Te mostramos todo el catálogo publicado.
+              {nearMe.locating
+                ? 'Obteniendo tu ubicación para ordenar por cercanía…'
+                : (nearMe.error ?? 'Para ordenar por cercanía necesitamos tu ubicación. Mientras tanto, ordenamos por relevancia.')}
             </p>
           ) : null}
 
+          {page?.fuzzy && !result.isStale ? (
+            <p role="status" className="flex items-start gap-2 border-l-2 border-ap-info bg-ap-info-soft px-4 py-3 text-sm text-ap-ink">
+              <InfoIcon className="mt-0.5 size-4 shrink-0 text-ap-info" aria-hidden />
+              <span>
+                No encontramos coincidencias exactas. Mostrando resultados parecidos a <strong className="font-semibold">“{state.q}”</strong>.
+              </span>
+            </p>
+          ) : null}
+
+          <InterpretedChips
+            interpreted={page?.interpreted}
+            onRemove={(chip) => page?.interpreted && update(dropInterpretedChip(state, page.interpreted, chip))}
+          />
+
           <ActiveFilters
-            query={query}
+            state={state}
             options={options.data}
+            facets={page?.facets}
             stores={stores.data}
             fixedCategory={isCategoryRoute}
             onChange={update}
@@ -355,29 +354,36 @@ export function SearchResultsView({ fixedCategory }: { fixedCategory?: string })
           />
 
           {result.status === 'error' ? (
-            <ErrorState
-              title="No pudimos cargar los repuestos"
-              description="El catálogo no respondió. Revisa tu conexión e inténtalo de nuevo; tus filtros se mantienen."
-              onRetry={result.retry}
-            />
+            <ErrorState {...errorCopy(result.error)} onRetry={result.retry} />
           ) : !page ? (
             <ProductListSkeleton count={5} />
-          ) : page.items.length === 0 && !result.isStale ? (
-            <EmptyResults query={query} options={options.data} activeCount={activeCount} onClear={clearFilters} />
+          ) : page.items.length === 0 && page.sponsored.length === 0 && !result.isStale ? (
+            <EmptyResults state={state} options={options.data} activeCount={activeCount} onClear={clearFilters} />
           ) : (
             <>
+              {showSponsored ? (
+                <section aria-label="Anuncios" className="flex flex-col">
+                  <ul className="flex flex-col divide-y divide-ap-line border-y border-ap-line bg-ap-paper/60">
+                    {page.sponsored.map((product, index) => (
+                      <li key={`${product.listingKey}:${index}`} className="px-3 sm:px-4">
+                        <SponsoredListing product={product} eager={index < 2} />
+                      </li>
+                    ))}
+                  </ul>
+                </section>
+              ) : null}
               <ProductList busy={result.isStale}>
                 {page.items.map((product, itemIndex) => (
                   <li key={product.listingKey}>
-                    <ProductRow
-                      product={product}
-                      eager={itemIndex < 3}
-                      distanceKm={product.store ? distances.get(product.store.id) : undefined}
-                    />
+                    {product.sponsored ? (
+                      <SponsoredListing product={product} eager={itemIndex < 3} />
+                    ) : (
+                      <ProductRow product={product} eager={itemIndex < 3} distanceKm={product.distanceKm} />
+                    )}
                   </li>
                 ))}
               </ProductList>
-              {capabilities?.pagination ? <ResultsPagination page={page.page} totalPages={page.totalPages} /> : null}
+              <ResultsPagination page={page.page} totalPages={page.totalPages} />
             </>
           )}
         </section>

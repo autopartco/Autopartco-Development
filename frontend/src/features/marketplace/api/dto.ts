@@ -128,6 +128,48 @@ export interface StoreReviewResponseDto {
   createdAt: string
 }
 
+/** `marketplace/catalog/SearchResponse.Item`: el producto al mismo nivel, más distancia y datos del anuncio. */
+export type SearchItemDto = ProductResponseDto & {
+  distanceKm: number | null
+  sponsored: boolean
+  adImpressionToken: string | null
+}
+
+/** `marketplace/catalog/SearchResponse` (página desde 0). */
+export interface SearchResponseDto {
+  items: SearchItemDto[]
+  page: number
+  size: number
+  total: number
+  fuzzy: boolean
+  interpreted: {
+    text: string
+    makeId: string | null
+    makeName: string | null
+    modelId: string | null
+    modelName: string | null
+    year: number | null
+    cityCode: string | null
+    cityName: string | null
+    reference: string | null
+  } | null
+  facets: {
+    categories: { id: string; name: string; count: number }[]
+    manufacturers: { id: string; name: string; count: number }[]
+    cities: { code: string; name: string; count: number }[]
+    price: { min: number | null; max: number | null } | null
+    inStock: number
+    onSale: number
+  } | null
+  sponsored: SearchItemDto[]
+}
+
+/** `core/search/Suggestions.Result` */
+export interface SuggestResponseDto {
+  suggestions: { term: string; kind: string }[]
+  products: ProductResponseDto[]
+}
+
 /** `shared/web/PageResponse` (páginas desde 1). */
 export interface PageResponseDto<T> {
   items: T[]
