@@ -145,6 +145,13 @@ export function useStoreProfile(storeId: string) {
   return useMarketplace(`store-profile:${storeId}`, (service) => service.getStoreProfile(storeId))
 }
 
+/** Sucursales públicas; un fallo no tumba el perfil: las secciones que las usan simplemente no se muestran. */
+export function useStoreBranches(storeId: string | undefined) {
+  return useMarketplace(`store-branches:${storeId ?? 'none'}`, (service) =>
+    storeId ? service.listStoreBranches(storeId) : Promise.resolve([]),
+  )
+}
+
 export function useStoreReviews(storeId: string, page: number) {
   return useMarketplace(`store-reviews:${storeId}:${page}`, (service) => service.listStoreReviews(storeId, page))
 }

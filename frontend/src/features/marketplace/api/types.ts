@@ -124,6 +124,8 @@ export interface ProductQuery {
   category?: string
   brands: string[]
   store?: string
+  /** Sucursal de `store`; el servidor deja solo el inventario publicado de esa sede. */
+  branch?: string
   /** Filtro por vehículo: el modelo exige la marca y la versión exige el modelo. */
   makeId?: string
   modelId?: string
@@ -257,6 +259,64 @@ export interface StoreContact {
   instagram?: string
   facebook?: string
   tiktok?: string
+  youtube?: string
+  x?: string
+  email?: string
+}
+
+/** Categorías de servicio del almacén (`ServiceCategory` del servidor). */
+export type ServiceCategory =
+  | 'MECHANICS'
+  | 'ELECTRICAL'
+  | 'ALIGNMENT_BALANCING'
+  | 'TIRES'
+  | 'LUBRICATION'
+  | 'BODY_PAINT'
+  | 'INSTALLATION'
+  | 'DIAGNOSTICS'
+  | 'AC'
+  | 'OTHER'
+
+/** Servicio que ofrece el almacén (instalación, alineación…). `priceFrom` en COP; sin él, «a cotizar». */
+export interface StoreService {
+  id: string
+  category: ServiceCategory
+  name: string
+  description?: string
+  priceFrom?: number
+  durationMinutes?: number
+  /** Sedes que lo prestan. */
+  branchIds: string[]
+}
+
+/** Horario semanal: días `mon..sun` con franjas `[«08:00», «18:00»]` y notas libres. */
+export interface OpeningHours {
+  mon?: [string, string][]
+  tue?: [string, string][]
+  wed?: [string, string][]
+  thu?: [string, string][]
+  fri?: [string, string][]
+  sat?: [string, string][]
+  sun?: [string, string][]
+  notes?: string
+}
+
+/** Sucursal pública (`GET /marketplace/stores/{id}/branches`). */
+export interface StoreBranch {
+  id: string
+  name: string
+  address: string
+  city?: string
+  department?: string
+  /** Sin ambas coordenadas la sede solo aparece en la lista, no en el mapa. */
+  point?: { lat: number; lng: number }
+  phone?: string
+  /** Ya resuelto por el servidor (cae al del almacén; ausente si el almacén desactivó WhatsApp). */
+  whatsapp?: string
+  openingHours?: OpeningHours
+  /** `undefined` cuando la sede no publicó horario semanal. */
+  openNow?: boolean
+  serviceIds: string[]
 }
 
 /** Perfil público del almacén (`GET /marketplace/stores/{id}`). Nunca incluye NIT ni correo. */
@@ -276,6 +336,13 @@ export interface StoreProfile {
   ratingCount: number
   publishedProducts: number
   contact: StoreContact
+  tagline?: string
+  verified: boolean
+  whatsappEnabled: boolean
+  /** Plantilla con `{producto}` y `{enlace}`. */
+  whatsappMessage?: string
+  services: StoreService[]
+  featuredProductIds: string[]
 }
 
 export interface StoreReview {
@@ -358,6 +425,8 @@ export interface MarketplaceService {
   listStores(): Promise<StoreSummary[]>
   /** 404 (`isNotFoundError`) si el almacén no está publicado. */
   getStoreProfile(storeId: string): Promise<StoreProfile>
+  /** Sucursales activas del almacén publicado; 404 (`isNotFoundError`) si no está publicado. */
+  listStoreBranches(storeId: string): Promise<StoreBranch[]>
   /** Páginas desde 1. */
   listStoreReviews(storeId: string, page: number): Promise<StoreReviewPage>
   /** Pedidos entregados del comprador con sesión que aún no tienen reseña; vacío sin sesión. */

@@ -315,7 +315,16 @@ export function createMockMarketplaceService(): MarketplaceService {
         ratingCount: 0,
         publishedProducts: counts.get(store.id) ?? 0,
         contact: {},
+        verified: false,
+        whatsappEnabled: false,
+        services: [],
+        featuredProductIds: [],
       }
+    },
+
+    async listStoreBranches() {
+      await simulateNetwork()
+      return []
     },
 
     async listStoreReviews() {
