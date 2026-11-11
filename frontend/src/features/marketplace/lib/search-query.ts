@@ -24,6 +24,7 @@ export const SEARCH_PARAMS = {
   near: 'cerca',
   radiusKm: 'radio',
   minRating: 'calificacion',
+  minProductRating: 'calificacion_producto',
   universal: 'universal',
   sort: 'orden',
   page: 'pagina',
@@ -37,7 +38,8 @@ export const SEARCH_SORT_LABELS: Record<SearchSort, string> = {
   price_desc: 'Mayor precio',
   nearest: 'Más cercanos',
   newest: 'Más recientes',
-  rating: 'Mejor calificados',
+  product_rating: 'Mejor calificados',
+  rating: 'Tiendas mejor calificadas',
   name: 'Nombre (A–Z)',
 }
 
@@ -84,6 +86,7 @@ export function parseSearchState(params: URLSearchParams, fixedCategory?: string
     near,
     radiusKm: near ? positiveInt(params.get(SEARCH_PARAMS.radiusKm), 200) : undefined,
     minRating: positiveInt(params.get(SEARCH_PARAMS.minRating), 5),
+    minProductRating: positiveInt(params.get(SEARCH_PARAMS.minProductRating), 5),
     universal: params.get(SEARCH_PARAMS.universal) === '1',
     sort: sort && SORT_VALUES.includes(sort) ? sort : 'relevance',
     page: positiveInt(params.get(SEARCH_PARAMS.page), 1001) ?? 1,
@@ -121,6 +124,7 @@ export function toSearchParams(state: SearchState, options: { omitCategory?: boo
     set(SEARCH_PARAMS.radiusKm, state.radiusKm)
   }
   set(SEARCH_PARAMS.minRating, state.minRating)
+  set(SEARCH_PARAMS.minProductRating, state.minProductRating)
   if (state.universal) set(SEARCH_PARAMS.universal, 1)
   if (state.sort !== 'relevance') set(SEARCH_PARAMS.sort, state.sort)
   if (state.page > 1) set(SEARCH_PARAMS.page, state.page)
@@ -160,6 +164,7 @@ export function countSearchFilters(state: SearchState, options: { fixedCategory?
   if (state.cityCode) count += 1
   if (state.near) count += 1
   if (state.minRating !== undefined) count += 1
+  if (state.minProductRating !== undefined) count += 1
   if (state.universal) count += 1
   return count
 }

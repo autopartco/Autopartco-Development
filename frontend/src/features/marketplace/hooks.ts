@@ -9,6 +9,8 @@ import type {
   MarketplaceService,
   Product,
   ProductQuery,
+  ReviewListQuery,
+  ReviewTarget,
   SearchQuery,
   SearchSuggestions,
 } from './api/types'
@@ -152,8 +154,25 @@ export function useStoreBranches(storeId: string | undefined) {
   )
 }
 
-export function useStoreReviews(storeId: string, page: number) {
-  return useMarketplace(`store-reviews:${storeId}:${page}`, (service) => service.listStoreReviews(storeId, page))
+/** Resumen de reseñas (promedio, distribución, categorías, insignias) de un producto o almacén. */
+export function useReviewSummary(target: ReviewTarget) {
+  return useMarketplace(`review-summary:${target.type}:${target.id}`, (service) => service.getReviewSummary(target))
+}
+
+export function useReviews(target: ReviewTarget, query: ReviewListQuery) {
+  return useMarketplace(
+    `reviews:${target.type}:${target.id}:${query.page}:${query.sort}:${query.stars ?? ''}:${query.withComment}`,
+    (service) => service.listReviews(target, query),
+  )
+}
+
+/** Si la persona con sesión puede calificar el producto; un fallo se trata como «no puede». */
+export function useProductReviewEligibility(productId: string, sessionKey: string | undefined) {
+  return useMarketplace(`product-review-eligibility:${productId}:${sessionKey ?? 'anon'}`, (service) =>
+    sessionKey
+      ? service.getProductReviewEligibility(productId).catch(() => ({ eligibleOrderIds: [] }))
+      : Promise.resolve({ eligibleOrderIds: [] }),
+  )
 }
 
 /** Pedidos con los que el comprador puede calificar; la clave incluye la sesión para no reutilizar la de otro usuario. */
