@@ -429,7 +429,8 @@ export default function PortalAdsCampaignFormPage() {
   const { storeId } = usePortal()
   const { campaignId } = useParams()
   const prices = useAsync(`portal:${storeId}:ads:prices`, () => adsApi.prices(storeId))
-  const campaign = useAsync(`portal:${storeId}:ads:campaign:${campaignId ?? 'new'}`, async () => (campaignId ? adsApi.get(storeId, campaignId) : undefined))
+  // `null` para una campaña nueva: `QueryBoundary` trata `undefined` como «cargando» y nunca mostraría el formulario.
+  const campaign = useAsync(`portal:${storeId}:ads:campaign:${campaignId ?? 'new'}`, async () => (campaignId ? adsApi.get(storeId, campaignId) : null))
   const title = campaignId ? 'Editar campaña' : 'Nueva campaña'
 
   return (
@@ -447,7 +448,7 @@ export default function PortalAdsCampaignFormPage() {
       <QueryBoundary result={prices} what="las tarifas de publicidad">
         {(priceList) => (
           <QueryBoundary result={campaign} what="la campaña">
-            {(data) => <CampaignForm key={data?.id ?? 'new'} storeId={storeId} campaign={data} prices={priceList} />}
+            {(data) => <CampaignForm key={data?.id ?? 'new'} storeId={storeId} campaign={data ?? undefined} prices={priceList} />}
           </QueryBoundary>
         )}
       </QueryBoundary>
