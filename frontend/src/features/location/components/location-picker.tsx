@@ -154,7 +154,8 @@ export function LocationPicker({ className }: { className?: string }) {
     <PopoverPrimitive.Root open={open} onOpenChange={handleOpenChange}>
       <PopoverPrimitive.Trigger
         aria-label={`Ubicación: ${area.label}. Cambiar ubicación`}
-        className={cn(TRIGGER_ON_DARK, className)}
+        title={area.label}
+        className={cn(TRIGGER_ON_DARK, 'max-w-[10.5rem] min-w-0 shrink', className)}
       >
         <MapPinIcon className="size-4 shrink-0 text-ap-red-on-dark" aria-hidden />
         <span className="hidden max-w-[7.5rem] min-w-[3.25rem] truncate text-left min-[400px]:inline">{area.label}</span>

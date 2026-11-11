@@ -3,19 +3,19 @@ import { Container } from '@/components/common/page-header'
 const STEPS = [
   {
     title: 'Busca',
-    body: 'Escribe el repuesto o la referencia. Si quieres, agrega la marca y el modelo de tu carro.',
+    body: 'Escribe el repuesto que necesitas. Si quieres, indícanos la marca y el modelo de tu carro.',
   },
   {
     title: 'Compara',
-    body: 'Mira el precio, las existencias y la distancia de cada almacén que lo publica.',
+    body: 'Mira precio, disponibilidad y distancia de cada almacén.',
   },
   {
-    title: 'Confirma compatibilidad',
-    body: 'Revisa los vehículos para los que aplica la pieza y confirma la referencia con la tienda.',
+    title: 'Elige con seguridad',
+    body: 'Revisa que la pieza sirva para tu vehículo y escríbele a la tienda si tienes dudas.',
   },
   {
-    title: 'Compra o recoge',
-    body: 'Agrega el repuesto al carrito y págalo en línea, o consulta con la tienda antes de ir al almacén.',
+    title: 'Compra fácil',
+    body: 'Agrégalo al carrito y págalo en línea.',
   },
 ] as const
 
@@ -30,9 +30,9 @@ export function HowItWorksSection() {
         <div className="flex flex-col gap-3">
           <p className="ap-index">Cómo funciona / 4 pasos</p>
           <h2 id="como-funciona-titulo" className="text-section text-ap-ink">
-            Del buscador al mostrador
+            Del buscador a tu taller
           </h2>
-          <p className="max-w-xl text-ap-muted">Sirve igual si arreglas tu carro o si atiendes un taller.</p>
+          <p className="max-w-xl text-ap-muted">Para quien arregla su carro y para quien atiende un taller.</p>
         </div>
         <ol className="grid gap-x-6 sm:grid-cols-2 lg:grid-cols-4">
           {STEPS.map((step, index) => (

@@ -7,6 +7,11 @@ import java.util.Locale;
  * Resultado de {@link QueryParser#parse}: texto restante (palabras normalizadas), su {@code tsquery} con sinónimos y
  * prefijo en la última palabra, y lo reconocido (año, marca, modelo, ciudad, referencia). {@code tsQuery} solo
  * contiene {@code [a-z0-9]}, espacios, paréntesis y los operadores {@code & | :*}: siempre viaja como parámetro.
+ * <p>
+ * Lo reconocido es una pista: no filtra (eso solo lo hacen los parámetros explícitos), ordena. {@code anyTerms} son
+ * los grupos del {@code tsquery} sin palabras vacías, para el respaldo «cualquier palabra»; {@code vehicleTsQuery}
+ * ({@code marca | modelo}) y {@code modelTsQuery} buscan el vehículo reconocido en el texto del producto. Mismo
+ * alfabeto que {@code tsQuery}.
  */
 public record ParsedQuery(
         String normalized,
@@ -16,12 +21,22 @@ public record ParsedQuery(
         SearchDictionary.Make make,
         SearchDictionary.Model model,
         Integer year,
-        SearchDictionary.City city
+        SearchDictionary.City city,
+        List<String> anyTerms,
+        String vehicleTsQuery,
+        String modelTsQuery
 ) {
-    public static final ParsedQuery EMPTY = new ParsedQuery(null, List.of(), null, null, null, null, null, null);
+    public static final ParsedQuery EMPTY = new ParsedQuery(null, List.of(), null, null, null, null, null, null,
+            List.of(), null, null);
 
     public ParsedQuery {
         words = words == null ? List.of() : List.copyOf(words);
+        anyTerms = anyTerms == null ? List.of() : List.copyOf(anyTerms);
+    }
+
+    /** {@code grupo | grupo | …} de las palabras de contenido, o {@code null} si son menos de dos. */
+    public String anyTsQuery() {
+        return anyTerms.size() < 2 ? null : String.join(" | ", anyTerms);
     }
 
     /** Texto restante (palabras separadas por un espacio) o {@code null}. */

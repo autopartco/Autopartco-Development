@@ -81,7 +81,7 @@ export function HomeHero({ home }: { home: AsyncResult<HomeData> }) {
     <section aria-labelledby="hero-title" className="border-b border-ap-line bg-ap-paper">
       <Container className="flex flex-col gap-8 py-6 sm:py-8 lg:gap-10 lg:py-10">
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b border-ap-line pb-4">
-          <p className="text-sm text-ap-muted">¿Vendes repuestos? Muestra tu inventario a quienes lo buscan cerca.</p>
+          <p className="text-sm text-ap-muted">¿Vendes repuestos? Llega a más clientes en tu ciudad.</p>
           <Button variant="outline" nativeButton={false} render={<Link to="/vender" />}>
             <StoreIcon aria-hidden />
             Registrar mi almacén
@@ -91,7 +91,7 @@ export function HomeHero({ home }: { home: AsyncResult<HomeData> }) {
         <div className="grid gap-10 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-14">
           <div className="flex min-w-0 flex-col gap-5">
             <h1 id="hero-title" className="max-w-2xl text-display text-ap-graphite">
-              Encuentra el repuesto exacto para tu carro, en almacenes cerca de ti.
+              Encuentra el repuesto exacto para tu carro, cerca de ti.
             </h1>
             <HeroStats home={home} />
             <SearchBox size="lg" vehicle={vehicle} className="max-w-2xl" />
@@ -99,7 +99,7 @@ export function HomeHero({ home }: { home: AsyncResult<HomeData> }) {
             {showVehicle ? (
               <fieldset className="max-w-2xl min-w-0">
                 <legend className="mb-2 text-sm font-semibold text-ap-ink">
-                  ¿Qué carro tienes? <span className="font-normal text-ap-muted">(opcional, filtra por compatibilidad)</span>
+                  ¿Qué carro tienes? <span className="font-normal text-ap-muted">(opcional, para mostrarte lo que le sirve)</span>
                 </legend>
                 <VehiclePicker
                   value={vehicle}
