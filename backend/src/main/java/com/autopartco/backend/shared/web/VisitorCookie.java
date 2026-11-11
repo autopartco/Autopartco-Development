@@ -77,7 +77,7 @@ public final class VisitorCookie {
         if (cookie.isPresent()) {
             return "a:" + cookie.get();
         }
-        return "ip:" + request.getRemoteAddr();
+        return "ip:" + ClientIp.of(request);
     }
 
     static boolean isLocal(HttpServletRequest request) {

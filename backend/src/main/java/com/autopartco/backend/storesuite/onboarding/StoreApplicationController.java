@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.autopartco.backend.shared.web.ClientIp;
 import com.autopartco.backend.core.organization.ApplicationDocumentType;
 import com.autopartco.backend.shared.web.ApiPaths;
 
@@ -72,7 +73,7 @@ public class StoreApplicationController {
                 businessDescription,
                 logo,
                 banner,
-                request.getRemoteAddr(),
+                ClientIp.of(request),
                 request.getHeader("User-Agent") == null ? "" : request.getHeader("User-Agent")
         );
     }

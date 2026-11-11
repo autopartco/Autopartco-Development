@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.autopartco.backend.shared.web.ClientIp;
 import com.autopartco.backend.core.advertising.AdEvents;
 import com.autopartco.backend.core.analytics.TrafficRecorder;
 import com.autopartco.backend.core.analytics.VisibilityRecorder;
@@ -83,7 +84,7 @@ public class TrafficController {
     @PostMapping("/pageview")
     public ResponseEntity<Void> pageview(@Valid @RequestBody PageviewRequest request, HttpServletRequest http,
             HttpServletResponse response, Authentication authentication) {
-        acquire(http.getRemoteAddr());
+        acquire(ClientIp.of(http));
         UUID accountId = authentication == null || !authentication.isAuthenticated() || authentication.getName() == null
                 ? null
                 : accountLookup.findByEmail(authentication.getName()).map(AccountRef::accountId).orElse(null);
@@ -114,9 +115,9 @@ public class TrafficController {
     @PostMapping("/visibility")
     public ResponseEntity<Void> visibility(@Valid @RequestBody VisibilityRequest request, HttpServletRequest http,
             HttpServletResponse response) {
-        acquire(http.getRemoteAddr());
+        acquire(ClientIp.of(http));
         if (request.storeId() != null) {
-            acquireStore(http.getRemoteAddr(), request.storeId());
+            acquireStore(ClientIp.of(http), request.storeId());
         }
         visibilityRecorder.record(new VisibilityRecorder.Visit(anonymousId(request.anonymousId(), http, response),
                 request.kind(),
@@ -148,7 +149,7 @@ public class TrafficController {
     @PostMapping("/ads")
     public ResponseEntity<Void> ads(@RequestBody AdEventRequest request, HttpServletRequest http,
             HttpServletResponse response, Authentication authentication) {
-        acquire(http.getRemoteAddr());
+        acquire(ClientIp.of(http));
         UUID accountId = authentication == null || !authentication.isAuthenticated()
                 || authentication.getName() == null
                 ? null
