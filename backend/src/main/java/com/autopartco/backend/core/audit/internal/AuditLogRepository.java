@@ -7,4 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import com.autopartco.backend.core.audit.internal.AuditLog;
 
 public interface AuditLogRepository extends JpaRepository<AuditLog, UUID> {
+    boolean existsByActionAndEntityTypeAndEntity(String action, String entityType, UUID entity);
 }

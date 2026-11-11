@@ -46,6 +46,24 @@ final class ReviewRules {
     }
 
     /**
+     * Respuesta del almacén: recortada, obligatoria, hasta 1000 caracteres y sin enlaces (la misma regla que los
+     * comentarios). 400 {@code VALIDATION_ERROR} o {@code REVIEW_LINKS_NOT_ALLOWED}.
+     */
+    static String reply(String raw) {
+        if (raw == null || raw.isBlank()) {
+            throw new BadRequestException("VALIDATION_ERROR", "Escribe la respuesta.");
+        }
+        String trimmed = raw.strip();
+        if (trimmed.length() > MAX_COMMENT) {
+            throw new BadRequestException("VALIDATION_ERROR", "La respuesta no puede superar 1000 caracteres.");
+        }
+        if (LINK.matcher(trimmed).find()) {
+            throw new BadRequestException("REVIEW_LINKS_NOT_ALLOWED", "La respuesta no puede incluir enlaces.");
+        }
+        return trimmed;
+    }
+
+    /**
      * Categorías del tipo, con códigos en mayúsculas y nota 1–5. {@code null} = ninguna. Otra categoría u otra nota:
      * 400 {@code REVIEW_ASPECT_INVALID}.
      */

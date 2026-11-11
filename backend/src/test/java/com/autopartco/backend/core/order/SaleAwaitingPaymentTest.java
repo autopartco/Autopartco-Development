@@ -47,7 +47,7 @@ class SaleAwaitingPaymentTest {
         JdbcTemplate jdbcTemplate = lockedSale("PENDING", "AWAITING_PAYMENT");
         SaleQueries saleQueries = mock(SaleQueries.class);
         NotificationService notifications = mock(NotificationService.class);
-        SaleStatusService service = new SaleStatusService(jdbcTemplate, saleQueries, notifications);
+        SaleStatusService service = new SaleStatusService(jdbcTemplate, saleQueries, notifications, e -> { });
 
         assertThatThrownBy(() -> service.updateStatus(STORE_ID, SALE_ID, new SaleStatusRequest("CONFIRMED")))
                 .isInstanceOfSatisfying(ConflictException.class, error -> {
@@ -61,7 +61,7 @@ class SaleAwaitingPaymentTest {
     @Test
     void paidOrderReturnsSaleStatus() {
         SaleStatusService service = new SaleStatusService(lockedSale("PENDING", "CONFIRMED"),
-                mock(SaleQueries.class), mock(NotificationService.class));
+                mock(SaleQueries.class), mock(NotificationService.class), e -> { });
 
         assertThat(service.lockSaleStatus(STORE_ID, SALE_ID)).isEqualTo("PENDING");
         assertThat(SaleStatusService.LOCK_SALE_SQL).contains("FOR UPDATE OF sale").contains("order_state.code");

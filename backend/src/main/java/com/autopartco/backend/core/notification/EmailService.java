@@ -111,6 +111,21 @@ public class EmailService {
         sendHtml(to, "Nuevo inicio de sesión en Autopartco", text, html);
     }
 
+    /** Invitación a calificar un pedido entregado; {@code reviewLink} lleva a {@code /cuenta/calificar?pedido=…}. */
+    public void sendReviewInvitation(String to, String givenName, long orderNumber, String reviewLink) {
+        String text = """
+                Hola %s,
+
+                Tu pedido #%d fue entregado. Cuéntanos qué tal estuvo el almacén y los repuestos que recibiste:
+                %s
+
+                Calificar toma un minuto y es opcional. Si no quieres hacerlo, puedes ignorar este correo.
+                """.formatted(givenName, orderNumber, reviewLink);
+
+        sendHtml(to, "¿Cómo te fue con tu pedido?", text,
+                EmailTemplate.reviewInvitation(givenName, orderNumber, reviewLink));
+    }
+
     private void sendHtml(String to, String subject, String text, String html) {
         try {
             MimeMessage message = mailSender.createMimeMessage();
