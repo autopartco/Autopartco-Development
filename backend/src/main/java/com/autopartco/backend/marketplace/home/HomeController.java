@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.autopartco.backend.shared.web.ClientIp;
 import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.location.ColombiaBounds;
 import com.autopartco.backend.shared.web.ApiPaths;
@@ -67,7 +68,7 @@ public class HomeController {
             @RequestParam(required = false) String cityCode,
             @RequestHeader(name = SESSION_HEADER, required = false) String sessionId
     ) {
-        limiter.acquire(http.getRemoteAddr());
+        limiter.acquire(ClientIp.of(http));
         if (lat == null && lng == null) {
             // Área por defecto de la cookie ap_area (lo inválido se ignora). Su ciudad solo si no llegó cityCode.
             Optional<AreaCookie.Area> area = AreaCookie.read(http);

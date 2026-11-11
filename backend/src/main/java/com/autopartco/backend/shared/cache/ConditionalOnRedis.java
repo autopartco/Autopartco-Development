@@ -23,10 +23,36 @@ public @interface ConditionalOnRedis {
     String URL_PROPERTY = "spring.data.redis.url";
 
     final class RedisUrlPresent implements Condition {
+        private static final java.util.concurrent.atomic.AtomicBoolean WARNED =
+                new java.util.concurrent.atomic.AtomicBoolean();
+
         @Override
         public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
             String url = context.getEnvironment().getProperty(URL_PROPERTY);
-            return url != null && !url.isBlank();
+            if (url == null || url.isBlank()) {
+                return false;
+            }
+            if (isValid(url)) {
+                return true;
+            }
+            // Una URL mal escrita no tumba la app: se usa la caché en memoria. Nunca se registra la URL (lleva clave).
+            if (WARNED.compareAndSet(false, true)) {
+                org.slf4j.LoggerFactory.getLogger(ConditionalOnRedis.class).warn(
+                        "REDIS_URL inválida: debe ser solo la URL redis://… o rediss://usuario:clave@host:puerto. "
+                                + "Se usa la caché en memoria.");
+            }
+            return false;
+        }
+
+        /** {@code redis://} o {@code rediss://} con host; sin espacios (p. ej. un comando {@code redis-cli} pegado). */
+        static boolean isValid(String url) {
+            try {
+                java.net.URI uri = new java.net.URI(url.strip());
+                String scheme = uri.getScheme() == null ? "" : uri.getScheme().toLowerCase(java.util.Locale.ROOT);
+                return (scheme.equals("redis") || scheme.equals("rediss")) && uri.getHost() != null;
+            } catch (java.net.URISyntaxException invalid) {
+                return false;
+            }
         }
     }
 }

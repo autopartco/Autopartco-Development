@@ -56,7 +56,7 @@ public class AuthRateLimitInterceptor implements HandlerInterceptor, WebMvcConfi
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         String group = group(request.getMethod(), request.getRequestURI().substring(request.getContextPath().length()));
         if (group != null) {
-            limiter.acquire(group + ":" + request.getRemoteAddr());
+            limiter.acquire(group + ":" + ClientIp.of(request));
         }
         return true;
     }
