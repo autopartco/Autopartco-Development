@@ -97,8 +97,8 @@ export function HeaderAccount({ className, ...context }: { className?: string } 
     return (
       <div className={cn('flex items-center gap-1', className)}>
         <Button
-          variant="ghost"
-          className={cn('h-11 gap-1.5 px-2.5', ON_DARK)}
+          variant="outline"
+          className="h-11 gap-1.5 border-white/40 bg-transparent px-3 text-white hover:border-white hover:bg-sidebar-accent hover:text-white"
           nativeButton={false}
           render={<Link to="/ingresar" aria-label="Ingresar" />}
         >
@@ -107,7 +107,7 @@ export function HeaderAccount({ className, ...context }: { className?: string } 
         </Button>
         <Button
           variant="outline"
-          className="hidden h-11 border-white/40 bg-transparent px-3 text-white hover:border-white hover:bg-sidebar-accent hover:text-white xl:inline-flex"
+          className="hidden h-11 border-white/40 bg-transparent px-3 text-white hover:border-white hover:bg-sidebar-accent hover:text-white 2xl:inline-flex"
           nativeButton={false}
           render={<Link to="/registro" />}
         >

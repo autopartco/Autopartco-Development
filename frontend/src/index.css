@@ -304,6 +304,19 @@
     line-height: 1.15;
 }
 
+/* Popup de sede en el mapa de cobertura: superficie del sistema, sin punta ni sombra. */
+.ap-map-popup .maplibregl-popup-content {
+    padding: 12px 14px;
+    border: 1px solid var(--ap-line);
+    border-radius: var(--radius-lg);
+    background: var(--ap-white);
+    box-shadow: none;
+    font-family: var(--font-sans);
+}
+.ap-map-popup .maplibregl-popup-tip {
+    display: none;
+}
+
 /* Título de bloque dentro de una página (ficha, filtros, estados): 20px. */
 @utility text-block-title {
     font-size: 1.25rem;
