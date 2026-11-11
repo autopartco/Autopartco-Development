@@ -10,7 +10,10 @@ import { getAnonymousSessionId } from './anonymous-session'
  * `utm_source` y `document.referrer`. En la navegación interna `document.referrer` no cambia (SPA), así que se envía
  * el propio dominio y el servidor la clasifica como `INTERNAL`.
  */
-export type VisibilityKind = 'PROFILE_VIEW' | 'PRODUCT_VIEW' | 'SHARE'
+export type VisibilityKind = 'PROFILE_VIEW' | 'PRODUCT_VIEW' | 'SHARE' | 'WHATSAPP_CLICK' | 'DIRECTIONS_CLICK'
+
+/** Clics que el servidor mide por sucursal (`branchId` obligatorio). */
+export type ClickKind = 'WHATSAPP_CLICK' | 'DIRECTIONS_CLICK'
 
 /** Códigos de `?ref=` que entiende el servidor (`TrafficSource.REF_CODES`). */
 export type ShareChannel = 'wa' | 'fb' | 'ig' | 'tt' | 'x' | 'tg' | 'link'
@@ -65,7 +68,7 @@ function send(body: Record<string, unknown>): void {
 }
 
 /** Visita al perfil o a una publicación. Llamar una vez por vista (en un efecto). */
-export function trackView(kind: Exclude<VisibilityKind, 'SHARE'>, storeId: string, productId?: string): void {
+export function trackView(kind: 'PROFILE_VIEW' | 'PRODUCT_VIEW', storeId: string, productId?: string): void {
   // Un mismo render puede ejecutar el efecto dos veces (StrictMode): la misma vista en menos de 2 s cuenta una vez.
   const key = `${kind}:${storeId}:${productId ?? ''}:${window.location.pathname}`
   const now = Date.now()
@@ -83,6 +86,14 @@ export function trackView(kind: Exclude<VisibilityKind, 'SHARE'>, storeId: strin
     referrer: landing ? document.referrer || undefined : window.location.origin,
   })
   dropRefParam()
+}
+
+/**
+ * Clic para cotizar por WhatsApp o para ir a la sucursal. `keepalive` deja salir la petición aunque el clic abra
+ * otra pestaña. Con `productId` el servidor lo atribuye a esa publicación.
+ */
+export function trackClick(kind: ClickKind, storeId: string, branchId: string, productId?: string): void {
+  send({ anonymousId: getAnonymousSessionId(), kind, storeId, branchId, productId })
 }
 
 export function trackShare(channel: ShareChannel, storeId: string, productId?: string): void {

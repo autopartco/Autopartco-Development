@@ -8,6 +8,7 @@ export const QUERY_PARAMS = {
   category: 'categoria',
   brands: 'marca',
   store: 'tienda',
+  branch: 'sucursal',
   makeId: 'vehiculo',
   modelId: 'modelo',
   versionId: 'version',
@@ -49,6 +50,7 @@ export function parseProductQuery(params: URLSearchParams, fixedCategory?: strin
     category: fixedCategory ?? text(params.get(QUERY_PARAMS.category)),
     brands: (params.get(QUERY_PARAMS.brands) ?? '').split(',').filter(Boolean),
     store: text(params.get(QUERY_PARAMS.store)),
+    branch: text(params.get(QUERY_PARAMS.branch)),
     makeId,
     modelId,
     versionId,
@@ -72,6 +74,7 @@ export function toSearchParams(query: ProductQuery, options: { omitCategory?: bo
   if (!options.omitCategory) set(QUERY_PARAMS.category, query.category)
   if (query.brands.length > 0) set(QUERY_PARAMS.brands, query.brands.join(','))
   set(QUERY_PARAMS.store, query.store)
+  set(QUERY_PARAMS.branch, query.branch)
   set(QUERY_PARAMS.makeId, query.makeId)
   set(QUERY_PARAMS.modelId, query.modelId)
   set(QUERY_PARAMS.versionId, query.versionId)

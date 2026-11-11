@@ -19,6 +19,7 @@ import { ProductCard, ProductGrid } from '../components/product-card'
 import { AvailabilityLabel, BrandName, Price, RECOMMENDED_EXPLANATION, RecommendedMark, UniversalTag } from '../components/product-meta'
 import { SponsoredListing } from '../components/ads/sponsored-listing'
 import { useAds, useProduct, useRelatedProducts } from '../hooks'
+import { ProductWhatsapp } from '../components/store/product-whatsapp'
 import { ShareButton } from '../components/share-button'
 import { categoryPath, productPath, storePath, storeProductsPath } from '../lib/paths'
 import { NotFoundContent } from './not-found-page'
@@ -158,6 +159,7 @@ function PurchasePanel({ product }: { product: Product }) {
             {product.availability.branchName ? <span className="text-ap-muted">en {product.availability.branchName}</span> : null}
           </p>
         ) : null}
+        <ProductWhatsapp product={product} />
       </div>
 
       {product.store ? (
