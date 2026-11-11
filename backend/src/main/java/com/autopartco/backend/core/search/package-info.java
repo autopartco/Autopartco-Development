@@ -5,7 +5,7 @@
  */
 @ApplicationModule(
         displayName = "Core: Search",
-        allowedDependencies = {"shared", "core.catalog", "core.pricing", "core.analytics"})
+        allowedDependencies = {"shared", "core.catalog", "core.pricing", "core.analytics", "core.advertising"})
 package com.autopartco.backend.core.search;
 
 import org.springframework.modulith.ApplicationModule;

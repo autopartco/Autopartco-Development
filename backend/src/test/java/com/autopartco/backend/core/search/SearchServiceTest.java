@@ -20,6 +20,10 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import com.autopartco.backend.core.advertising.AdContext;
+import com.autopartco.backend.core.advertising.AdPick;
+import com.autopartco.backend.core.advertising.AdPlacement;
+import com.autopartco.backend.core.advertising.AdServer;
 import com.autopartco.backend.core.catalog.ListingKey;
 import com.autopartco.backend.core.catalog.ListingQueries;
 import com.autopartco.backend.core.catalog.ProductResponse;
@@ -209,6 +213,58 @@ class SearchServiceTest {
         assertThat(result.fuzzy()).isFalse();
         assertThat(result.total()).isEqualTo(3);
         assertThat(jdbc.callsMatching(sql -> sql.contains("<%"))).isEmpty();
+    }
+
+    @Test
+    void sponsoredAddsSearchTopAdsWithoutRepeatingOrganicProducts() {
+        UUID organic = UUID.randomUUID();
+        UUID advertised = UUID.randomUUID();
+        UUID unpublished = UUID.randomUUID();
+        UUID branch = UUID.randomUUID();
+        AdServer adServer = mock(AdServer.class);
+        service = new SearchService(jdbc.client, new QueryParser(dictionary), listingQueries, adServer);
+        jdbc.rows(sql -> sql.contains("limit :limit"), call -> List.of(row(organic, branch, null, 1)));
+        jdbc.rows(sql -> sql.contains("distinct on (product_id) product_id, branch_id"),
+                call -> List.of(Map.of("product_id", advertised, "branch_id", branch),
+                        Map.of("product_id", unpublished, "branch_id", branch)));
+        when(listingQueries.publishedListingsByKeys(eq(List.of(new ListingKey(organic, branch))), any()))
+                .thenReturn(List.of(listing(organic, branch)));
+        when(listingQueries.publishedListingsByKeys(eq(List.of(new ListingKey(advertised, branch),
+                new ListingKey(unpublished, branch))), any())).thenReturn(List.of(listing(advertised, branch)));
+        when(adServer.pick(eq(AdPlacement.SEARCH_TOP), any(), eq(2))).thenReturn(List.of(
+                new AdPick(UUID.randomUUID(), advertised, AdPlacement.SEARCH_TOP, "tok-1"),
+                new AdPick(UUID.randomUUID(), unpublished, AdPlacement.SEARCH_TOP, "tok-2")));
+
+        SearchResult result = service.search(SearchQuery.builder().q("pastillas").categoryId(CATEGORY)
+                .facets(false).build(), null, "s:abc");
+
+        assertThat(result.items()).extracting(hit -> hit.listing().id()).containsExactly(organic);
+        assertThat(result.sponsored()).hasSize(1);
+        assertThat(result.sponsored().getFirst().hit().listing().id()).isEqualTo(advertised);
+        assertThat(result.sponsored().getFirst().adImpressionToken()).isEqualTo("tok-1");
+        org.mockito.ArgumentCaptor<AdContext> context = org.mockito.ArgumentCaptor.forClass(AdContext.class);
+        verify(adServer).pick(eq(AdPlacement.SEARCH_TOP), context.capture(), eq(2));
+        assertThat(context.getValue().excludedProductIds()).containsExactly(organic);
+        assertThat(context.getValue().text()).isEqualTo("pastillas");
+        assertThat(context.getValue().categoryId()).isEqualTo(CATEGORY);
+        assertThat(context.getValue().visitorKey()).isEqualTo("s:abc");
+    }
+
+    @Test
+    void withoutCampaignsOrInTheCatalogThereAreNoSponsoredResults() {
+        AdServer adServer = mock(AdServer.class);
+        service = new SearchService(jdbc.client, new QueryParser(dictionary), listingQueries, adServer);
+        when(adServer.pick(any(), any(), org.mockito.ArgumentMatchers.anyInt())).thenReturn(List.of());
+
+        assertThat(service.search(SearchQuery.builder().q("pastillas").facets(false).build(), null, "ip:1")
+                .sponsored()).isEmpty();
+        assertThat(service.catalog(SearchQuery.builder().q("pastillas").facets(false).build(), null).sponsored())
+                .isEmpty();
+        assertThat(service.search(SearchQuery.builder().q("pastillas").storeId(UUID.randomUUID()).facets(false)
+                .build(), null, "ip:1").sponsored()).isEmpty();
+        verify(adServer, org.mockito.Mockito.times(1)).pick(any(), any(), org.mockito.ArgumentMatchers.anyInt());
+        assertThat(jdbc.callsMatching(sql -> sql.contains("product_id, branch_id\n            from search_listings")))
+                .isEmpty();
     }
 
     @Test

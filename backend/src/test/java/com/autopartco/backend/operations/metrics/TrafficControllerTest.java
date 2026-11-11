@@ -10,6 +10,7 @@ import java.time.ZoneOffset;
 
 import org.junit.jupiter.api.Test;
 
+import com.autopartco.backend.core.advertising.AdEvents;
 import com.autopartco.backend.core.analytics.TrafficRecorder;
 import com.autopartco.backend.core.analytics.VisibilityRecorder;
 import com.autopartco.backend.core.identity.AccountLookup;
@@ -21,7 +22,7 @@ class TrafficControllerTest {
     @Test
     void limitsCallsPerIpAndMinute() {
         TrafficController controller = new TrafficController(mock(TrafficRecorder.class), mock(VisibilityRecorder.class),
-                mock(AccountLookup.class), clock);
+                mock(AccountLookup.class), mock(AdEvents.class), clock);
         for (int i = 0; i < TrafficController.MAX_PER_MINUTE; i++) {
             controller.acquire("1.1.1.1");
         }

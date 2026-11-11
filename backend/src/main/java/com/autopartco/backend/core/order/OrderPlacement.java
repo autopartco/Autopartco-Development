@@ -9,11 +9,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import lombok.AllArgsConstructor;
+import com.autopartco.backend.shared.events.OrderPaid;
 
 /**
  * Escritura del pedido del comprador con {@link JdbcClient} (sin entidades JPA sobre las tablas de pedido). No valida
@@ -21,7 +23,6 @@ import lombok.AllArgsConstructor;
  * estados de pago se resuelven por código dentro del propio SQL.
  */
 @Service
-@AllArgsConstructor
 public class OrderPlacement {
     static final String PROVIDER = "SIMULATED";
     static final String CURRENCY = "COP";
@@ -114,6 +115,19 @@ public class OrderPlacement {
             """;
 
     private final JdbcClient jdbcClient;
+    private final ApplicationEventPublisher events;
+
+    @Autowired
+    public OrderPlacement(JdbcClient jdbcClient, ApplicationEventPublisher events) {
+        this.jdbcClient = jdbcClient;
+        this.events = events;
+    }
+
+    /** Sin publicador de eventos: no anuncia {@link OrderPaid} (pruebas y dobles). */
+    public OrderPlacement(JdbcClient jdbcClient) {
+        this(jdbcClient, event -> {
+        });
+    }
 
     /** {@code true} si el método de pago existe, está activo y no está borrado. */
     @Transactional(readOnly = true)
@@ -181,6 +195,7 @@ public class OrderPlacement {
                 .single();
 
         insertPaymentEvent(paymentId, PAYMENT_STATUS, PAYMENT_EVENT_MESSAGE);
+        events.publishEvent(new OrderPaid(placed.orderId()));
         return placed.orderId();
     }
 

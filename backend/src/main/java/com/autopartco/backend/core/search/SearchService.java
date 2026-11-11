@@ -5,20 +5,29 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.autopartco.backend.core.advertising.AdContext;
+import com.autopartco.backend.core.advertising.AdPick;
+import com.autopartco.backend.core.advertising.AdPlacement;
+import com.autopartco.backend.core.advertising.AdServer;
 import com.autopartco.backend.core.catalog.ListingKey;
 import com.autopartco.backend.core.catalog.ListingQueries;
 import com.autopartco.backend.core.catalog.ProductResponse;
 import com.autopartco.backend.core.pricing.BuyerContext;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Motor de búsqueda del marketplace sobre {@code search_listings} ({@link SearchSql}). La consulta SQL filtra, ordena,
@@ -26,6 +35,7 @@ import com.autopartco.backend.core.pricing.BuyerContext;
  * comprador y {@link ProductResponse}), de modo que las reglas de publicación y precio no se duplican. Si la consulta
  * de texto no da resultados, se repite con trigramas y se marca {@code fuzzy}.
  */
+@Slf4j
 @Service
 public class SearchService {
     /** Tope del catálogo compatible ({@code /marketplace/products} sin paginar). */
@@ -33,30 +43,58 @@ public class SearchService {
     static final long READY_RECHECK_NANOS = 30_000_000_000L;
     static final String HAS_ENTRIES_SQL = "select exists (select 1 from search_listings)";
 
+    /** Anuncios {@code SEARCH_TOP} por página (cupo de la ubicación). */
+    static final int SPONSORED_PER_PAGE = AdPlacement.SEARCH_TOP.slots();
+    static final String SPONSORED_LISTINGS_SQL = """
+            select distinct on (product_id) product_id, branch_id
+            from search_listings
+            where product_id in (:ids)
+            order by product_id, price, branch_id
+            """;
+
     private final JdbcClient jdbcClient;
     private final QueryParser parser;
     private final ListingQueries listingQueries;
+    private final AdServer adServer;
     private final AtomicBoolean ready = new AtomicBoolean();
     private final AtomicLong lastReadyCheck = new AtomicLong(Long.MIN_VALUE);
 
-    public SearchService(JdbcClient jdbcClient, QueryParser parser, ListingQueries listingQueries) {
+    @Autowired
+    public SearchService(JdbcClient jdbcClient, QueryParser parser, ListingQueries listingQueries,
+            AdServer adServer) {
         this.jdbcClient = jdbcClient;
         this.parser = parser;
         this.listingQueries = listingQueries;
+        this.adServer = adServer;
     }
 
-    /** {@code GET /marketplace/search}: valida los límites públicos ({@link SearchQuery#MAX_SIZE}) y busca. */
+    /** Sin anuncios (pruebas). */
+    SearchService(JdbcClient jdbcClient, QueryParser parser, ListingQueries listingQueries) {
+        this(jdbcClient, parser, listingQueries, null);
+    }
+
+    /** {@code GET /marketplace/search} sin identificador de visitante (sin tope de frecuencia en los anuncios). */
     @Transactional(readOnly = true)
     public SearchResult search(SearchQuery query, BuyerContext buyer) {
+        return search(query, buyer, null);
+    }
+
+    /**
+     * {@code GET /marketplace/search}: valida los límites públicos ({@link SearchQuery#MAX_SIZE}), busca y añade hasta
+     * {@value #SPONSORED_PER_PAGE} anuncios {@code SEARCH_TOP}. {@code visitorKey} (sesión anónima o IP) solo se usa
+     * para el tope de frecuencia en memoria; nunca se guarda.
+     */
+    @Transactional(readOnly = true)
+    public SearchResult search(SearchQuery query, BuyerContext buyer, String visitorKey) {
         query.validate(SearchQuery.MAX_SIZE, SearchQuery.MAX_PAGE);
-        return run(query, buyer);
+        return run(query, buyer, true, visitorKey);
     }
 
     /** Catálogo compatible ({@code /marketplace/products}): mismas reglas con páginas de hasta {@link #MAX_CATALOG_SIZE}. */
     @Transactional(readOnly = true)
     public SearchResult catalog(SearchQuery query, BuyerContext buyer) {
         query.validate(MAX_CATALOG_SIZE, Integer.MAX_VALUE / MAX_CATALOG_SIZE);
-        return run(query, buyer);
+        return run(query, buyer, false, null);
     }
 
     /**
@@ -89,7 +127,7 @@ public class SearchService {
         ready.set(true);
     }
 
-    private SearchResult run(SearchQuery query, BuyerContext buyer) {
+    private SearchResult run(SearchQuery query, BuyerContext buyer, boolean withAds, String visitorKey) {
         BuyerContext effectiveBuyer = buyer == null ? BuyerContext.anonymous() : buyer;
         ParsedQuery parsed = parser.parse(query.q(), query.interpretOrDefault());
         SearchCriteria criteria = SearchCriteria.of(query, parsed);
@@ -110,7 +148,58 @@ public class SearchService {
         List<SearchResult.Hit> items = hydrate(found.rows(), effectiveBuyer);
         SearchResult.Facets facets = query.facetsOrDefault() ? facets(criteria) : null;
         SearchInterpretation interpreted = query.interpretOrDefault() ? parsed.interpretation() : null;
-        return new SearchResult(items, page, size, found.total(), fuzzy, interpreted, facets);
+        List<SearchResult.Sponsored> sponsored = withAds
+                ? sponsored(criteria, parsed, items, effectiveBuyer, visitorKey)
+                : List.of();
+        return new SearchResult(items, page, size, found.total(), fuzzy, interpreted, facets, sponsored);
+    }
+
+    /**
+     * Anuncios {@code SEARCH_TOP} que coinciden con el texto, la categoría o el vehículo efectivos (explícitos o
+     * interpretados) y la ciudad, sin los productos orgánicos de la página. Cada uno se muestra con su listado
+     * publicado más barato y el precio del comprador. No se piden en búsquedas acotadas a un almacén o sucursal. Un
+     * fallo nunca rompe la búsqueda: responde sin anuncios.
+     */
+    List<SearchResult.Sponsored> sponsored(SearchCriteria criteria, ParsedQuery parsed, List<SearchResult.Hit> items,
+            BuyerContext buyer, String visitorKey) {
+        if (adServer == null || criteria.storeId() != null || criteria.branchId() != null) {
+            return List.of();
+        }
+        try {
+            Set<UUID> shown = new HashSet<>();
+            items.forEach(hit -> shown.add(hit.listing().id()));
+            AdContext context = new AdContext(parsed.text(), criteria.categoryId(), criteria.makeId(),
+                    criteria.modelId(), criteria.cityCode(), shown, visitorKey);
+            List<AdPick> picks = adServer.pick(AdPlacement.SEARCH_TOP, context, SPONSORED_PER_PAGE);
+            if (picks.isEmpty()) {
+                return List.of();
+            }
+            Map<UUID, ListingKey> keys = new HashMap<>();
+            jdbcClient.sql(SPONSORED_LISTINGS_SQL)
+                    .param("ids", picks.stream().map(AdPick::productId).toList())
+                    .query((rs, rowNum) -> {
+                        UUID productId = rs.getObject("product_id", UUID.class);
+                        keys.put(productId, new ListingKey(productId, rs.getObject("branch_id", UUID.class)));
+                        return productId;
+                    })
+                    .list();
+            List<ListingKey> ordered = picks.stream().map(pick -> keys.get(pick.productId()))
+                    .filter(java.util.Objects::nonNull).toList();
+            Map<UUID, ProductResponse> listings = new HashMap<>();
+            listingQueries.publishedListingsByKeys(ordered, buyer).forEach(listing -> listings.put(listing.id(), listing));
+            List<SearchResult.Sponsored> result = new ArrayList<>();
+            for (AdPick pick : picks) {
+                ProductResponse listing = listings.get(pick.productId());
+                if (listing != null) {
+                    result.add(new SearchResult.Sponsored(new SearchResult.Hit(listing, null),
+                            pick.adImpressionToken()));
+                }
+            }
+            return result;
+        } catch (RuntimeException failure) {
+            log.warn("Sponsored results unavailable: {}", failure.getClass().getSimpleName());
+            return List.of();
+        }
     }
 
     /** Fila de la página: listado elegido, distancia (si hay ubicación) y total de productos de la búsqueda. */

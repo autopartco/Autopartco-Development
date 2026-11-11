@@ -4,7 +4,9 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.autopartco.backend.core.advertising.AdEvents;
 import com.autopartco.backend.core.analytics.TrafficRecorder;
 import com.autopartco.backend.core.analytics.VisibilityRecorder;
 import com.autopartco.backend.core.identity.AccountLookup;
@@ -46,23 +49,24 @@ public class TrafficController {
     private final TrafficRecorder trafficRecorder;
     private final VisibilityRecorder visibilityRecorder;
     private final AccountLookup accountLookup;
+    private final AdEvents adEvents;
     private final Clock clock;
     private final Map<String, Deque<Instant>> calls = new ConcurrentHashMap<>();
     private final Map<String, Deque<Instant>> storeCalls = new ConcurrentHashMap<>();
     private final Map<String, Deque<Instant>> storeDailyCalls = new ConcurrentHashMap<>();
 
     @Autowired
-    public TrafficController(
-            TrafficRecorder trafficRecorder, VisibilityRecorder visibilityRecorder, AccountLookup accountLookup) {
-        this(trafficRecorder, visibilityRecorder, accountLookup, Clock.systemUTC());
+    public TrafficController(TrafficRecorder trafficRecorder, VisibilityRecorder visibilityRecorder,
+            AccountLookup accountLookup, AdEvents adEvents) {
+        this(trafficRecorder, visibilityRecorder, accountLookup, adEvents, Clock.systemUTC());
     }
 
-    TrafficController(
-            TrafficRecorder trafficRecorder, VisibilityRecorder visibilityRecorder, AccountLookup accountLookup,
-            Clock clock) {
+    TrafficController(TrafficRecorder trafficRecorder, VisibilityRecorder visibilityRecorder,
+            AccountLookup accountLookup, AdEvents adEvents, Clock clock) {
         this.trafficRecorder = trafficRecorder;
         this.visibilityRecorder = visibilityRecorder;
         this.accountLookup = accountLookup;
+        this.adEvents = adEvents;
         this.clock = clock;
     }
 
@@ -111,6 +115,44 @@ public class TrafficController {
         visibilityRecorder.record(new VisibilityRecorder.Visit(request.anonymousId(), request.kind(),
                 request.storeId(), request.productId(), request.ref(), request.utmSource(), request.referrer(),
                 request.channel(), request.branchId(), request.serviceId()));
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Evento de anuncio. Una impresión, clic, clic de WhatsApp o «agregar al carrito» con {@code token}, o un lote de
+     * impresiones con {@code tokens} (máx. {@value AdEvents#MAX_BATCH}; se suman a {@code token} si llegan ambos).
+     * {@code kind}: {@code IMPRESSION|CLICK|WHATSAPP_CLICK|ADD_TO_CART}. Sin validación de forma a propósito: lo que no
+     * sirve se ignora (tokens de más de 400 caracteres, más de {@value AdEvents#MAX_BATCH} tokens, {@code anonymousId}
+     * de más de 100).
+     */
+    public record AdEventRequest(String token, List<String> tokens, String kind, String anonymousId) {
+    }
+
+    /**
+     * Registra eventos de anuncios. Siempre 204 (salvo 429 por el límite o un JSON ilegible): un token falso, alterado
+     * o vencido, un tipo no permitido o un visitante sin id se ignoran. Comparte el límite por IP con
+     * {@code /pageview} y {@code /visibility} (un lote cuenta como una llamada). Con sesión, el visitante es la cuenta
+     * (para atribuir pedidos); sin ella, {@code anonymousId}. Nunca guarda la IP ni la cuenta en claro.
+     */
+    @PostMapping("/ads")
+    public ResponseEntity<Void> ads(@RequestBody AdEventRequest request, HttpServletRequest http,
+            Authentication authentication) {
+        acquire(http.getRemoteAddr());
+        List<String> tokens = new ArrayList<>();
+        if (request.token() != null) {
+            tokens.add(request.token());
+        }
+        if (request.tokens() != null) {
+            request.tokens().stream().filter(java.util.Objects::nonNull).limit(AdEvents.MAX_BATCH)
+                    .forEach(tokens::add);
+        }
+        if (!tokens.isEmpty()) {
+            UUID accountId = authentication == null || !authentication.isAuthenticated()
+                    || authentication.getName() == null
+                    ? null
+                    : accountLookup.findByEmail(authentication.getName()).map(AccountRef::accountId).orElse(null);
+            adEvents.record(tokens, request.kind(), request.anonymousId(), accountId);
+        }
         return ResponseEntity.noContent().build();
     }
 

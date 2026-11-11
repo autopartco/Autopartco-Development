@@ -57,7 +57,7 @@ class SearchControllerTest {
     void setUp() {
         when(buyerContexts.forBrowsing(any())).thenReturn(BuyerContext.anonymous());
         // El servicio real valida; aquí se replica para comprobar que el error llega como 400.
-        when(searchService.search(any(), any())).thenAnswer(invocation -> {
+        when(searchService.search(any(), any(), any())).thenAnswer(invocation -> {
             invocation.<SearchQuery>getArgument(0).validate(SearchQuery.MAX_SIZE, SearchQuery.MAX_PAGE);
             return result();
         });
@@ -101,7 +101,7 @@ class SearchControllerTest {
                 .andExpect(jsonPath("$.sponsored").isEmpty());
 
         ArgumentCaptor<SearchQuery> query = ArgumentCaptor.forClass(SearchQuery.class);
-        verify(searchService).search(query.capture(), eq(BuyerContext.anonymous()));
+        verify(searchService).search(query.capture(), eq(BuyerContext.anonymous()), eq("s:sess"));
         assertThat(query.getValue().sort()).isEqualTo(SearchSort.NEAREST);
         assertThat(query.getValue().manufacturerIds()).containsExactly(PRODUCT, MODEL);
         assertThat(query.getValue().lat()).isEqualByComparingTo("4.65");
@@ -141,7 +141,7 @@ class SearchControllerTest {
         mvc.perform(get(URL + "?storeId=" + store + "&branchId=" + branch))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error.code").value("BRANCH_NOT_IN_STORE"));
-        verify(searchService, never()).search(any(), any());
+        verify(searchService, never()).search(any(), any(), any());
     }
 
     @Test

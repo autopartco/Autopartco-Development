@@ -127,7 +127,11 @@ public class SearchController {
                 .sort(SearchSort.fromParameter(sort)).page(page).size(size).facets(facets).interpret(interpret)
                 .build();
         BuyerContext buyer = buyerContexts.forBrowsing(authentication);
-        SearchResult result = searchService.search(query, buyer);
+        // Tope de frecuencia de anuncios: sesión anónima del navegador o, sin ella, la IP (solo en memoria).
+        String visitorKey = sessionId != null && !sessionId.isBlank() && sessionId.length() <= 100
+                ? "s:" + sessionId.strip()
+                : "ip:" + http.getRemoteAddr();
+        SearchResult result = searchService.search(query, buyer, visitorKey);
         SearchInterpretation interpreted = result.interpreted();
         CatalogTracking.recordSearch(searchLog, new MarketplaceSearch(q,
                 makeId != null ? makeId : interpreted == null ? null : interpreted.makeId(),

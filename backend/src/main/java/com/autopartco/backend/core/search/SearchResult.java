@@ -18,8 +18,26 @@ public record SearchResult(
         long total,
         boolean fuzzy,
         SearchInterpretation interpreted,
-        Facets facets
+        Facets facets,
+        List<Sponsored> sponsored
 ) {
+    public SearchResult {
+        sponsored = sponsored == null ? List.of() : List.copyOf(sponsored);
+    }
+
+    /** Sin anuncios (catálogo compatible y pruebas). */
+    public SearchResult(List<Hit> items, int page, int size, long total, boolean fuzzy,
+            SearchInterpretation interpreted, Facets facets) {
+        this(items, page, size, total, fuzzy, interpreted, facets, List.of());
+    }
+
+    /**
+     * Anuncio {@code SEARCH_TOP} (hasta 2 por página, sin repetir productos orgánicos de la página): listado publicado
+     * del producto anunciado y su token de impresión.
+     */
+    public record Sponsored(Hit hit, String adImpressionToken) {
+    }
+
     /** Listado con su distancia en km (1 decimal) cuando la consulta trae ubicación; si no, nula. */
     public record Hit(ProductResponse listing, BigDecimal distanceKm) {
     }

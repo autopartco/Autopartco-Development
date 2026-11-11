@@ -68,6 +68,8 @@ public class WebSecurityConfig {
                 // operations.metrics: visitas del marketplace (sin datos personales, con límite por IP).
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/events/pageview"),
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/events/visibility"),
+                // operations.metrics: eventos de anuncios con token firmado (se ignoran los inválidos; límite por IP).
+                new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/events/ads"),
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/refresh"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.BASE + "/auth/verify-email"),
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/verify-email/code"),
