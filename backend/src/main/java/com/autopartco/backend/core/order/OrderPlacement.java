@@ -109,6 +109,16 @@ public class OrderPlacement {
             RETURNING id
             """;
 
+    /** Ventana de atribución de anuncios (días) que se guarda con el id anónimo del comprador. */
+    static final int AD_ATTRIBUTION_WINDOW_DAYS = 7;
+
+    // order_id es la clave primaria: un pedido recién insertado no puede chocar, pero así nunca se duplica.
+    static final String INSERT_ORDER_ATTRIBUTION_SQL = """
+            INSERT INTO order_attributions (order_id, anonymous_id, attribution_window_days, created_at)
+            VALUES (:orderId, :anonymousId, :windowDays, now())
+            ON CONFLICT (order_id) DO NOTHING
+            """;
+
     static final String INSERT_PAYMENT_EVENT_SQL = """
             INSERT INTO payment_events (payment_id, payment_status_id, message)
             VALUES (:paymentId, (SELECT id FROM payment_statuses WHERE code = :statusCode), :message)
@@ -271,6 +281,13 @@ public class OrderPlacement {
                         .update();
             }
             amount = amount.add(sale.total());
+        }
+        if (order.anonymousId() != null) {
+            jdbcClient.sql(INSERT_ORDER_ATTRIBUTION_SQL)
+                    .param("orderId", orderId)
+                    .param("anonymousId", order.anonymousId())
+                    .param("windowDays", AD_ATTRIBUTION_WINDOW_DAYS)
+                    .update();
         }
         return new PlacedOrder(orderId, amount.setScale(2, RoundingMode.HALF_UP));
     }

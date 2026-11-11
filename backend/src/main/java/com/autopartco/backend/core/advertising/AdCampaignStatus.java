@@ -12,8 +12,11 @@ import java.util.Optional;
  *                                                           ▼  │                    │
  *                                                         PAUSED ──fecha────────────┘
  * Almacén: cancelar desde PENDING_PAYMENT, SCHEDULED, ACTIVE o PAUSED → CANCELLED (sin reembolso automático).
- * Admin: rechazar desde cualquier estado no final → REJECTED; pausar SCHEDULED o ACTIVE → PAUSED.
+ * Admin: rechazar desde cualquier estado no final → REJECTED; pausar SCHEDULED o ACTIVE → PAUSED; reanudar cualquier
+ * pausa.
  * </pre>
+ * En PAUSED, {@code paused_by} dice quién pausó ({@link AdPausedBy}); el almacén no puede reanudar una pausa ADMIN. Al
+ * salir de PAUSED vuelve a nulo.
  */
 public enum AdCampaignStatus {
     DRAFT,

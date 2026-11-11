@@ -205,6 +205,59 @@ class AdPaymentWebhookTest {
     }
 
     @Test
+    void stalePendingPaymentExpiresAndTheCampaignReturnsToDraft() {
+        payment.setCreatedAt(LocalDateTime.of(2026, 11, 10, 8, 0));
+
+        assertThat(handler.expireStale("ADS-1", LocalDateTime.of(2026, 11, 10, 9, 0))).isTrue();
+
+        assertThat(payment.getStatus()).isEqualTo(AdPayment.FAILED);
+        assertThat(campaign.getStatus()).isEqualTo(AdCampaignStatus.DRAFT);
+        assertThat(campaign.getPausedBy()).isNull();
+        // Repetir no cambia nada: el pago ya no está pendiente.
+        assertThat(handler.expireStale("ADS-1", LocalDateTime.of(2026, 11, 10, 9, 0))).isFalse();
+    }
+
+    @Test
+    void stalePaymentKeepsTheCampaignWaitingIfANewerPaymentIsPending() {
+        payment.setCreatedAt(LocalDateTime.of(2026, 11, 10, 8, 0));
+        payment(campaign, "ADS-2").setCreatedAt(LocalDateTime.of(2026, 11, 11, 9, 0));
+
+        assertThat(handler.expireStale("ADS-1", LocalDateTime.of(2026, 11, 10, 9, 0))).isTrue();
+
+        assertThat(payment.getStatus()).isEqualTo(AdPayment.FAILED);
+        assertThat(campaign.getStatus()).isEqualTo(AdCampaignStatus.PENDING_PAYMENT);
+    }
+
+    @Test
+    void recentOrResolvedPaymentsDoNotExpire() {
+        payment.setCreatedAt(LocalDateTime.of(2026, 11, 10, 10, 0));
+        assertThat(handler.expireStale("ADS-1", LocalDateTime.of(2026, 11, 10, 9, 0))).isFalse();
+        assertThat(payment.getStatus()).isEqualTo(AdPayment.PENDING);
+
+        payment.setCreatedAt(LocalDateTime.of(2026, 11, 10, 8, 0));
+        payment.setStatus(AdPayment.APPROVED);
+        assertThat(handler.expireStale("ADS-1", LocalDateTime.of(2026, 11, 10, 9, 0))).isFalse();
+        assertThat(payment.getStatus()).isEqualTo(AdPayment.APPROVED);
+
+        when(paymentRepository.lockByReference("ADS-404")).thenReturn(Optional.empty());
+        assertThat(handler.expireStale("ADS-404", LocalDateTime.of(2026, 11, 10, 9, 0))).isFalse();
+    }
+
+    @Test
+    void lateApprovalAfterExpiryStillActivatesTheCampaignOnce() {
+        payment.setCreatedAt(LocalDateTime.of(2026, 11, 10, 8, 0));
+        handler.expireStale("ADS-1", LocalDateTime.of(2026, 11, 10, 9, 0));
+        WompiTransaction approved = transaction("tx-1", "ADS-1", WompiTransaction.APPROVED, AMOUNT_CENTS);
+
+        assertThat(handler.apply(approved, WompiEventSource.RECONCILIATION)).isEqualTo(WompiEventOutcome.APPLIED);
+        assertThat(handler.apply(approved, WompiEventSource.WEBHOOK)).isEqualTo(WompiEventOutcome.IGNORED);
+
+        assertThat(payment.getStatus()).isEqualTo(AdPayment.APPROVED);
+        assertThat(campaign.getStatus()).isEqualTo(AdCampaignStatus.ACTIVE);
+        assertThat(campaign.isRequiresManualRefund()).isFalse();
+    }
+
+    @Test
     void transactionLinkedToAnotherPaymentIsRejected() {
         AdPayment other = payment(campaign(AdCampaignStatus.ACTIVE, TODAY, TODAY), "ADS-9");
         other.setProviderTransactionId("tx-1");

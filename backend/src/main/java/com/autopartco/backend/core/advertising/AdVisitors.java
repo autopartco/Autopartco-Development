@@ -4,7 +4,9 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import java.util.Locale;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -18,6 +20,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class AdVisitors {
     static final int MAX_ANONYMOUS_ID = 100;
+    private static final Pattern UUID_FORMAT =
+            Pattern.compile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
 
     private final String salt;
 
@@ -29,12 +33,19 @@ public class AdVisitors {
         return sha256(salt + "|ads|u:" + accountId);
     }
 
-    /** Nulo si el id anónimo está vacío o es demasiado largo. */
+    /**
+     * Nulo si el id anónimo está vacío o es demasiado largo. Un UUID se normaliza a minúsculas, la forma en que lo
+     * devuelve {@code order_attributions.anonymous_id}, para que los clics y el pedido den el mismo hash.
+     */
     public String ofAnonymous(String anonymousId) {
         if (anonymousId == null || anonymousId.isBlank() || anonymousId.length() > MAX_ANONYMOUS_ID) {
             return null;
         }
-        return sha256(salt + "|ads|a:" + anonymousId.strip());
+        String value = anonymousId.strip();
+        if (UUID_FORMAT.matcher(value).matches()) {
+            value = value.toLowerCase(Locale.ROOT);
+        }
+        return sha256(salt + "|ads|a:" + value);
     }
 
     static String sha256(String value) {

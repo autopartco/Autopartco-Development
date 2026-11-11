@@ -168,6 +168,21 @@ class PlaceMarketplaceOrderTest {
         assertThat(attempt.getValue().currency()).isEqualTo("COP");
         assertThat(attempt.getValue().reference()).isEqualTo(REQUEST_ID.toString());
         verify(buyerOrderQueries).receipt(PERSON_ID, ORDER_ID);
+        assertThat(order.anonymousId()).isNull();
+    }
+
+    @Test
+    void anonymousIdOfTheRequestTravelsWithTheOrder() {
+        listing(PRODUCT_1, BRANCH_1, "100000.00", "90000.00");
+        stock(PRODUCT_1, BRANCH_1, 1, "100000.00");
+        UUID anonymousId = UUID.randomUUID();
+
+        useCase.execute(EMAIL, new PlaceOrderRequest(REQUEST_ID, ADDRESS_ID, "SIMULATED_CARD", "APPROVED",
+                List.of(item(PRODUCT_1, BRANCH_1, 1)), anonymousId));
+
+        ArgumentCaptor<NewOrder> captor = ArgumentCaptor.forClass(NewOrder.class);
+        verify(orderPlacement).placeApproved(captor.capture());
+        assertThat(captor.getValue().anonymousId()).isEqualTo(anonymousId);
     }
 
     // 2

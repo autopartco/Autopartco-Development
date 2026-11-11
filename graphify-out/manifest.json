@@ -2706,9 +2706,9 @@
     "semantic_hash": ""
   },
   "frontend/src/app/site-header.tsx": {
-    "mtime": 1794384989.6751368,
-    "seen": 1794404519.6190948,
-    "ast_hash": "405fdae6b9ec94f074639e44f47528c4",
+    "mtime": 1794408743.2666433,
+    "seen": 1794409022.8326423,
+    "ast_hash": "67c81c539304ce03c2d170c87ca245bc",
     "semantic_hash": ""
   },
   "frontend/src/components/common/logo.tsx": {
@@ -2748,15 +2748,15 @@
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/api/dto.ts": {
-    "mtime": 1794154142.587621,
-    "seen": 1794155115.1765962,
-    "ast_hash": "511783ec5c20f52c350e2e1d80420531",
+    "mtime": 1794408471.0192118,
+    "seen": 1794409022.905366,
+    "ast_hash": "d354c23a548e1cf33bfea199983f3543",
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/api/http/http-service.ts": {
-    "mtime": 1794380445.6139004,
-    "seen": 1794381126.685355,
-    "ast_hash": "91dc132ce72f9b27ce0feccff24b830c",
+    "mtime": 1794408491.0922153,
+    "seen": 1794409022.9053698,
+    "ast_hash": "5874f54bef013d945025bd6a7b63ae3d",
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/api/marketplace-service.ts": {
@@ -2772,15 +2772,15 @@
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/api/mock/mock-service.ts": {
-    "mtime": 1794154193.5433118,
-    "seen": 1794155115.1814904,
-    "ast_hash": "b1ab44b64c57c897febb82f6b5e90d26",
+    "mtime": 1794408867.0194063,
+    "seen": 1794409022.906182,
+    "ast_hash": "d781855a1edebc2a1e7de91015834024",
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/api/types.ts": {
-    "mtime": 1794154129.9026499,
-    "seen": 1794155115.181496,
-    "ast_hash": "f7b792268e60345c90c5f8019929dbc1",
+    "mtime": 1794408458.6947122,
+    "seen": 1794409022.9061854,
+    "ast_hash": "6d882487ac2b7d171cd5ed018149cf98",
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/components/active-filters.tsx": {
@@ -2820,9 +2820,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/components/search-bar.tsx": {
-    "mtime": 1794145344.152858,
-    "seen": 1794145979.0791268,
-    "ast_hash": "feb71cf306f82d28367a2abe08752383",
+    "mtime": 1794408749.0410106,
+    "seen": 1794409022.9092102,
+    "ast_hash": "7164125250d47b21e794b843868ce102",
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/components/store-card.tsx": {
@@ -2838,9 +2838,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/hooks.ts": {
-    "mtime": 1794154193.8846812,
-    "seen": 1794155115.1982777,
-    "ast_hash": "b57298fc9ab881b5e71699d47093308c",
+    "mtime": 1794408601.5488067,
+    "seen": 1794409022.9127736,
+    "ast_hash": "a5df7d1bf44b31336f2f54ad47d16674",
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/lib/paths.ts": {
@@ -2874,9 +2874,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/pages/not-found-page.tsx": {
-    "mtime": 1794145344.2124245,
-    "seen": 1794145979.0797093,
-    "ast_hash": "eac6c3d977649b672ddedc1fa3aa4919",
+    "mtime": 1794408743.3908372,
+    "seen": 1794409022.9151633,
+    "ast_hash": "d4e766f27ed098fe8256a932b8acd5ca",
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/pages/product-page.tsx": {
@@ -2892,9 +2892,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/pages/search-results-view.tsx": {
-    "mtime": 1794145344.2240286,
-    "seen": 1794145979.0800164,
-    "ast_hash": "d2921a1cd868cec3d30e6c582576c15a",
+    "mtime": 1794408791.597186,
+    "seen": 1794409022.9157698,
+    "ast_hash": "1aae9925369eabfac58ae7552d51897e",
     "semantic_hash": ""
   },
   "frontend/src/features/marketplace/pages/stores-page.tsx": {
@@ -4578,15 +4578,15 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/order/NewOrder.java": {
-    "mtime": 1794145342.5181997,
-    "seen": 1794145978.91235,
-    "ast_hash": "836d5e0dc922a9191d4a033a12946ca9",
+    "mtime": 1794408364.2095623,
+    "seen": 1794409022.536149,
+    "ast_hash": "2c3455a8bd0a6d974e8a32b7d46c294f",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/order/OrderPlacement.java": {
-    "mtime": 1794406329.8907154,
-    "seen": 1794407399.4617715,
-    "ast_hash": "587a235a59a963f15ffee04cae13d028",
+    "mtime": 1794408365.9360397,
+    "seen": 1794409022.536753,
+    "ast_hash": "b1c045c06b656be956590d3fd3ea8b6d",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/order/PaymentReferenceOwner.java": {
@@ -4626,15 +4626,15 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/marketplace/checkout/PlaceMarketplaceOrder.java": {
-    "mtime": 1794145342.7744243,
-    "seen": 1794145978.9546201,
-    "ast_hash": "7d271cf63fdd5dac3eaae05d02b52cfe",
+    "mtime": 1794408384.636448,
+    "seen": 1794409022.6305041,
+    "ast_hash": "5e009543ba562975acec869b3b5f044e",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/marketplace/checkout/PlaceOrderRequest.java": {
-    "mtime": 1792066159.0115836,
-    "seen": 1794131763.3662133,
-    "ast_hash": "4e6be9e45db69c169ea297e288b6145d",
+    "mtime": 1794408375.2512772,
+    "seen": 1794409022.630509,
+    "ast_hash": "360959a78a62f0ff1f2c118a6b274b63",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/marketplace/checkout/SimulatedCheckoutPaymentGateway.java": {
@@ -4662,9 +4662,9 @@
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/core/order/OrderPlacementTest.java": {
-    "mtime": 1794145343.1829016,
-    "seen": 1794145979.054341,
-    "ast_hash": "330edac47360e55d4e7b3c72c0787c36",
+    "mtime": 1794408572.7226343,
+    "seen": 1794409022.7717872,
+    "ast_hash": "8dc0bdc306b38f5b7f2eb2af2aa9bdee",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/core/order/RecordingJdbcClient.java": {
@@ -4674,15 +4674,15 @@
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/marketplace/checkout/MarketplaceOrderControllerTest.java": {
-    "mtime": 1794145343.3002405,
-    "seen": 1794145979.0571706,
-    "ast_hash": "2b3ff9bf31a4e6fb46374161654a0709",
+    "mtime": 1794408586.7154243,
+    "seen": 1794409022.787196,
+    "ast_hash": "7bac2186407051c3c789a4ff871852d8",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/marketplace/checkout/PlaceMarketplaceOrderTest.java": {
-    "mtime": 1794145343.3263986,
-    "seen": 1794145979.0571826,
-    "ast_hash": "128a40e0b9bd2a6aefd71854c5209d31",
+    "mtime": 1794408571.6656847,
+    "seen": 1794409022.7892587,
+    "ast_hash": "5ff1ddadb0798436e1c4e5c321343126",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/marketplace/checkout/SimulatedCheckoutPaymentGatewayTest.java": {
@@ -6000,9 +6000,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/marketplace/checkout/StartMarketplaceCheckout.java": {
-    "mtime": 1794145342.7818272,
-    "seen": 1794145978.955352,
-    "ast_hash": "17dc71e727493be594f242d5c5097bce",
+    "mtime": 1794408385.670759,
+    "seen": 1794409022.6318269,
+    "ast_hash": "a7dad40292775e9bd51565c935aed09b",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/marketplace/checkout/WompiCheckoutResponse.java": {
@@ -8400,9 +8400,9 @@
     "semantic_hash": ""
   },
   "docs/architecture/2026-11-11-v2.0.0-plan.md": {
-    "mtime": 1794407187.6178117,
-    "seen": 1794407399.9639041,
-    "ast_hash": "cbf3d84e7d9c92758d7b28ea4a24938a",
+    "mtime": 1794408881.0294778,
+    "seen": 1794409023.0887403,
+    "ast_hash": "1c766c06ebb856a2783984a23059451a",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/AdCacheInvalidation.java": {
@@ -8412,9 +8412,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/AdCampaignJobs.java": {
-    "mtime": 1794405758.1595328,
-    "seen": 1794407399.3249962,
-    "ast_hash": "05b80f7c89e7b122783cab3a145b99f3",
+    "mtime": 1794408237.2564073,
+    "seen": 1794409022.416808,
+    "ast_hash": "97a2c63ee02b2f9079e8551bda54c1e1",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/AdCampaignRequest.java": {
@@ -8430,21 +8430,21 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/AdCampaignStatus.java": {
-    "mtime": 1794405302.1466174,
-    "seen": 1794407399.3250082,
-    "ast_hash": "d0fa2bb42d30791a548eff9b0437fc37",
+    "mtime": 1794408235.667617,
+    "seen": 1794409022.4176483,
+    "ast_hash": "bf4af09848b5a46148ba7d016cd96055",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/AdCampaignView.java": {
-    "mtime": 1794405421.51448,
-    "seen": 1794407399.3250117,
-    "ast_hash": "612f53f3e02852415ea4dca06f0058d7",
+    "mtime": 1794408200.0742362,
+    "seen": 1794409022.4176521,
+    "ast_hash": "73e4a1f2e95b5664835751834817bc6d",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/AdCampaigns.java": {
-    "mtime": 1794405620.9048612,
-    "seen": 1794407399.3250153,
-    "ast_hash": "d0ba1e36c113bb6b4341a1e27a36d0c0",
+    "mtime": 1794408225.329115,
+    "seen": 1794409022.4176555,
+    "ast_hash": "fb0fed5c1dc2363a43d07f447f9713c4",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/AdCandidate.java": {
@@ -8466,9 +8466,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/AdCheckout.java": {
-    "mtime": 1794405649.584955,
-    "seen": 1794407399.3250313,
-    "ast_hash": "b6cc4265c97b25fae71336e2d0d9757d",
+    "mtime": 1794408287.2993917,
+    "seen": 1794409022.418818,
+    "ast_hash": "b32dccea8de6a785f086cea8fd5ff702",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/AdCheckoutResponse.java": {
@@ -8574,9 +8574,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/AdVisitors.java": {
-    "mtime": 1794405547.42253,
-    "seen": 1794407399.325089,
-    "ast_hash": "4b7332fc5e7138ef5f379129265ff3a2",
+    "mtime": 1794408353.4634418,
+    "seen": 1794409022.4244454,
+    "ast_hash": "98ab57d45904d0a9618068712520fdbb",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/InMemoryAdCandidateCache.java": {
@@ -8592,9 +8592,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/internal/AdCampaign.java": {
-    "mtime": 1794405396.9848027,
-    "seen": 1794407399.3250973,
-    "ast_hash": "946caf366efca6e6f7cb1a51e60cff2e",
+    "mtime": 1794408197.5567188,
+    "seen": 1794409022.425016,
+    "ast_hash": "25a2f95a4451b27c11914a3fa3d63a0f",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/internal/AdCampaignRepository.java": {
@@ -8610,9 +8610,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/internal/AdPaymentRepository.java": {
-    "mtime": 1794405399.7867627,
-    "seen": 1794407399.3251066,
-    "ast_hash": "2890537654e69637c2e024499ec8c26d",
+    "mtime": 1794408304.5943322,
+    "seen": 1794409022.4256244,
+    "ast_hash": "ad07d971e1a258c0e3f599802ed1f610",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/internal/AdPlacementPrice.java": {
@@ -8628,9 +8628,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/internal/AdWompiHandler.java": {
-    "mtime": 1794405683.2972457,
-    "seen": 1794407399.3251154,
-    "ast_hash": "3a8c2d5264ae80fa13cb600e254717dd",
+    "mtime": 1794408318.1667414,
+    "seen": 1794409022.4262073,
+    "ast_hash": "b61cd8dc7f8ca66a16ba662161dacddd",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/package-info.java": {
@@ -8640,9 +8640,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/operations/ads/AdAdminController.java": {
-    "mtime": 1794405984.181849,
-    "seen": 1794407399.5758364,
-    "ast_hash": "4286e6b02af00b683dcf2cba2b5d30eb",
+    "mtime": 1794408238.439582,
+    "seen": 1794409022.6420734,
+    "ast_hash": "e7e2f77bf3f41bc433fdd799cebc9d82",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/shared/events/OrderPaid.java": {
@@ -8664,15 +8664,15 @@
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/core/advertising/AdCampaignServiceTest.java": {
-    "mtime": 1794406411.005931,
-    "seen": 1794407399.6660166,
-    "ast_hash": "e04195ed86ddcbfe09b94e2ecc5170cd",
+    "mtime": 1794408489.1817777,
+    "seen": 1794409022.7461884,
+    "ast_hash": "1457cec6df0deb1f464962e17ccbb026",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/core/advertising/AdPaymentWebhookTest.java": {
-    "mtime": 1794406251.3601575,
-    "seen": 1794407399.6660202,
-    "ast_hash": "901999077f5eb70c46dbbd44b0a6cdfa",
+    "mtime": 1794408466.1750035,
+    "seen": 1794409022.7461994,
+    "ast_hash": "2173148d0401061e95a2d1c21b36721d",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/core/advertising/AdServerTest.java": {
@@ -8691,6 +8691,108 @@
     "mtime": 1794406137.974338,
     "seen": 1794407399.6660266,
     "ast_hash": "dfb6e186b2e5459dbf42f0654f4734d4",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdPausedBy.java": {
+    "mtime": 1794408184.4001858,
+    "seen": 1794409022.420946,
+    "ast_hash": "5b986dacd9c71bdba1d7a64bde530b2d",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdPaymentReconciliation.java": {
+    "mtime": 1794408340.5706346,
+    "seen": 1794409022.420949,
+    "ast_hash": "d59871918c359d775b2f377f2231627e",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/advertising/AdOrderAttributionTest.java": {
+    "mtime": 1794408547.4234724,
+    "seen": 1794409022.7461927,
+    "ast_hash": "ed463fd2bfb6f977ab1fca275a1d1f1e",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/advertising/AdPaymentReconciliationTest.java": {
+    "mtime": 1794408524.6799507,
+    "seen": 1794409022.7461953,
+    "ast_hash": "5fd65e243bc7b57b26ef07b089e22dd3",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/location/lib/locate-me.ts": {
+    "mtime": 1794408598.443489,
+    "seen": 1794409022.9047194,
+    "ast_hash": "94e0e5f17800a46cde99502c509fd641",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/marketplace/components/ads/sponsored-listing.tsx": {
+    "mtime": 1794408814.0927558,
+    "seen": 1794409022.9066887,
+    "ast_hash": "80e38dba24b1c191193aa34754b34f80",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/marketplace/components/ads/use-ad-impression.ts": {
+    "mtime": 1794408806.8221192,
+    "seen": 1794409022.9066916,
+    "ast_hash": "b00e5882c3572c1a9d8df8c2f2683521",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/marketplace/components/search/active-filters.tsx": {
+    "mtime": 1794408696.1065304,
+    "seen": 1794409022.9092135,
+    "ast_hash": "dd091ca8177f8a3cacc71cedecc49c0a",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/marketplace/components/search/facet-list.tsx": {
+    "mtime": 1794408630.6272254,
+    "seen": 1794409022.9092157,
+    "ast_hash": "1b430be60bb7a59d0ce7fe665bce4e69",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/marketplace/components/search/filters-panel.tsx": {
+    "mtime": 1794408682.348922,
+    "seen": 1794409022.9092195,
+    "ast_hash": "c5586f55239cc7c9c68b628b376cdedd",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/marketplace/components/search/interpreted-chips.tsx": {
+    "mtime": 1794408656.2459307,
+    "seen": 1794409022.9092216,
+    "ast_hash": "fbedbeb7f30e86408fe9dce628836a8b",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/marketplace/components/search/radius-filter.tsx": {
+    "mtime": 1794408654.064059,
+    "seen": 1794409022.9092243,
+    "ast_hash": "3c7ec3b6d87d5d913d4f560364e7359d",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/marketplace/components/search/search-box.tsx": {
+    "mtime": 1794408736.0913124,
+    "seen": 1794409022.9092262,
+    "ast_hash": "1a9784787b49dbbc50cb0d05d5f38496",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/marketplace/components/search/sort-select.tsx": {
+    "mtime": 1794408655.1581979,
+    "seen": 1794409022.909228,
+    "ast_hash": "18e3338729b13a639393c23bc6a7c4d5",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/marketplace/components/search/use-near-me.ts": {
+    "mtime": 1794408652.6994867,
+    "seen": 1794409022.9092295,
+    "ast_hash": "954fc2d17af9daa50a5bb88434e93dcb",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/marketplace/lib/ad-events.ts": {
+    "mtime": 1794408562.2487798,
+    "seen": 1794409022.9127815,
+    "ast_hash": "6ff867c7cb44c2e07728e997e4ba575a",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/marketplace/lib/search-query.ts": {
+    "mtime": 1794408554.960953,
+    "seen": 1794409022.91405,
+    "ast_hash": "192cde50546762e211194f08956fa86f",
     "semantic_hash": ""
   }
 }

@@ -80,6 +80,16 @@ public class AdAdminController {
         return campaign;
     }
 
+    /** Reanuda cualquier pausa (también la del admin, que el almacén no puede levantar), según las fechas. */
+    @PostMapping("/campaigns/{id}/resume")
+    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    public AdCampaignView resume(@PathVariable UUID id, Authentication authentication) {
+        AdCampaignView campaign = campaigns.adminResume(id);
+        adminAudit.record(authentication, "AD_CAMPAIGN_RESUMED", "AD_CAMPAIGN", id,
+                Map.of("storeId", campaign.storeId(), "status", campaign.status().name()));
+        return campaign;
+    }
+
     @GetMapping("/prices")
     @PreAuthorize("hasAuthority('ROLE_ROOT')")
     public List<AdPriceView> prices() {

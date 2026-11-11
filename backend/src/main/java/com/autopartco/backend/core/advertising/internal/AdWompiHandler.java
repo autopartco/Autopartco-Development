@@ -176,14 +176,43 @@ public class AdWompiHandler implements WompiTransactionHandler {
         }
         payment.setStatus(transaction.status());
         payment.setProviderTransactionId(transaction.id());
+        returnCampaignToDraft(payment);
+        return WompiEventOutcome.APPLIED;
+    }
+
+    /**
+     * Vence un pago {@code ADS-…} que sigue {@code PENDING} y se creó antes de {@code createdBefore} (conciliación,
+     * sin transacción final en Wompi): el pago pasa a {@code FAILED} y la campaña {@code PENDING_PAYMENT} vuelve a
+     * {@code DRAFT} si no le queda otro pago pendiente (más reciente). Llamar dentro de una transacción: bloquea el
+     * pago y luego la campaña, como {@link #apply}. Devuelve {@code true} si venció el pago. Si Wompi aprueba después,
+     * {@link #apply} lo aplica igual (un pago {@code FAILED} no es {@code APPROVED}).
+     */
+    public boolean expireStale(String reference, LocalDateTime createdBefore) {
+        Optional<AdPayment> found = paymentRepository.lockByReference(reference);
+        if (found.isEmpty()) {
+            return false;
+        }
+        AdPayment payment = found.get();
+        if (!AdPayment.PENDING.equals(payment.getStatus()) || payment.getCreatedAt() == null
+                || !payment.getCreatedAt().isBefore(createdBefore)) {
+            return false;
+        }
+        payment.setStatus(AdPayment.FAILED);
+        paymentRepository.save(payment);
+        returnCampaignToDraft(payment);
+        log.info("Ad payment {} expired without a final Wompi transaction", payment.getReference());
+        return true;
+    }
+
+    /** La campaña {@code PENDING_PAYMENT} vuelve a {@code DRAFT} si no le queda otro pago pendiente. */
+    private void returnCampaignToDraft(AdPayment payment) {
         campaignRepository.lockById(payment.getCampaignId()).ifPresent(campaign -> {
             boolean otherPending = paymentRepository.findByCampaignIdAndStatus(campaign.getId(), AdPayment.PENDING)
                     .stream().anyMatch(other -> !other.getId().equals(payment.getId()));
             if (campaign.getStatus() == AdCampaignStatus.PENDING_PAYMENT && !otherPending) {
-                campaign.setStatus(AdCampaignStatus.DRAFT);
+                campaign.moveTo(AdCampaignStatus.DRAFT);
             }
         });
-        return WompiEventOutcome.APPLIED;
     }
 
     private boolean linkedElsewhere(AdPayment payment, WompiTransaction transaction) {

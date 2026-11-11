@@ -972,9 +972,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/operations/package-info.java": {
-    "mtime": 1794387244.3998334,
-    "seen": 1794404519.4579725,
-    "ast_hash": "2ae78f33ff3bc7af2311cd97589258dd",
+    "mtime": 1794405934.8068528,
+    "seen": 1794407399.5789301,
+    "ast_hash": "f98a48c19a0a8573b967e39e11f94636",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/shared/config/AppProperties.java": {
@@ -1086,9 +1086,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/shared/security/WebSecurityConfig.java": {
-    "mtime": 1794403226.8845935,
-    "seen": 1794404519.470425,
-    "ast_hash": "60dc4f38accb174c685a87d576473c94",
+    "mtime": 1794406046.8994925,
+    "seen": 1794407399.5983613,
+    "ast_hash": "7e672c4b392aceef18d507da2db04640",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/shared/storage/StorageException.java": {
@@ -1122,9 +1122,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/storesuite/package-info.java": {
-    "mtime": 1794382127.661208,
-    "seen": 1794382908.6990392,
-    "ast_hash": "766ce8c7b0d10cd8a1c0fc95d6fddce3",
+    "mtime": 1794405934.955508,
+    "seen": 1794407399.6418748,
+    "ast_hash": "e3ab6ecb38d9ab4a9cdda7142f0d14db",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/ModularityTests.java": {
@@ -3540,9 +3540,9 @@
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/shared/security/WebSecurityConfigTest.java": {
-    "mtime": 1794403231.0597231,
-    "seen": 1794404519.5982237,
-    "ast_hash": "c255e9759127249ead2c74789c901f5f",
+    "mtime": 1794406049.2184649,
+    "seen": 1794407399.7185693,
+    "ast_hash": "4c7617d7ab2e0059446b2058c08a0ba3",
     "semantic_hash": ""
   },
   "frontend/public/logo.svg": {
@@ -4584,9 +4584,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/order/OrderPlacement.java": {
-    "mtime": 1794145342.5294783,
-    "seen": 1794145978.9123578,
-    "ast_hash": "040ab82726cae710b6e73cd9fc04dbfb",
+    "mtime": 1794406329.8907154,
+    "seen": 1794407399.4617715,
+    "ast_hash": "587a235a59a963f15ffee04cae13d028",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/order/PaymentReferenceOwner.java": {
@@ -5904,9 +5904,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/order/OrderPayments.java": {
-    "mtime": 1794145342.5255258,
-    "seen": 1794145978.9123557,
-    "ast_hash": "dc3ea650ebabcc83bfed154c13fd7a26",
+    "mtime": 1794406329.859733,
+    "seen": 1794407399.4617667,
+    "ast_hash": "398cc7b7c58e8a04aecc6f95c719dcdf",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/order/PaymentMethodOption.java": {
@@ -7320,9 +7320,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/operations/metrics/TrafficController.java": {
-    "mtime": 1794383460.3489356,
-    "seen": 1794384155.9347098,
-    "ast_hash": "331472304a48bd6bbb004f19b0eb2d1a",
+    "mtime": 1794405924.9198606,
+    "seen": 1794407399.5782769,
+    "ast_hash": "34a14d217aca287fca5d1d4e59810b89",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/core/analytics/TrafficRecorderTest.java": {
@@ -7350,9 +7350,9 @@
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/operations/metrics/TrafficControllerTest.java": {
-    "mtime": 1794153461.1731024,
-    "seen": 1794153982.4972298,
-    "ast_hash": "6b9e46b5f28713444fef54fa93da5ae5",
+    "mtime": 1794405927.309578,
+    "seen": 1794407399.7154293,
+    "ast_hash": "df1f076f9fbe589caea88c909dfe34c7",
     "semantic_hash": ""
   },
   "frontend/src/features/admin/api/admin-insights-service.ts": {
@@ -8220,15 +8220,15 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/search/SearchResult.java": {
-    "mtime": 1794386810.3938084,
-    "seen": 1794404519.431447,
-    "ast_hash": "a646e997656a08c93bcfe37f91ffe989",
+    "mtime": 1794405820.1112046,
+    "seen": 1794407399.5383291,
+    "ast_hash": "ba03ef2acd4bb3016e63f3917d4c955a",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/search/SearchService.java": {
-    "mtime": 1794403380.080617,
-    "seen": 1794404519.4314492,
-    "ast_hash": "1a089fb96e467ce275febd38e3367fce",
+    "mtime": 1794405856.444196,
+    "seen": 1794407399.5383337,
+    "ast_hash": "59bb36ebf790e07a28720e0aa1408d30",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/search/SearchSort.java": {
@@ -8250,9 +8250,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/search/package-info.java": {
-    "mtime": 1794386780.7466226,
-    "seen": 1794404519.4314563,
-    "ast_hash": "51444d56d711cb6863c003f582df3960",
+    "mtime": 1794405819.204133,
+    "seen": 1794407399.5394614,
+    "ast_hash": "ec714e874d9a8e95f249fd35e03666a9",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/marketplace/catalog/CatalogTracking.java": {
@@ -8262,15 +8262,15 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/marketplace/catalog/SearchController.java": {
-    "mtime": 1794387335.5311203,
-    "seen": 1794404519.4408085,
-    "ast_hash": "53158685c39448f216a5464589d1dbe6",
+    "mtime": 1794405864.868827,
+    "seen": 1794407399.5527666,
+    "ast_hash": "9941467b57b70e4e9ab7de06efc1a6fe",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/marketplace/catalog/SearchResponse.java": {
-    "mtime": 1794387302.206391,
-    "seen": 1794404519.4408104,
-    "ast_hash": "72fff1caec4b43329a6fc8b1fb10e2dd",
+    "mtime": 1794405884.5393007,
+    "seen": 1794407399.55277,
+    "ast_hash": "015436a6da80757b2cf541712c001128",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/marketplace/stores/BranchMapController.java": {
@@ -8334,15 +8334,15 @@
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/core/search/SearchServiceTest.java": {
-    "mtime": 1794404018.6153488,
-    "seen": 1794404519.5828106,
-    "ast_hash": "5d83223facae3c30ed738cc493644f50",
+    "mtime": 1794406581.4980934,
+    "seen": 1794407399.6981988,
+    "ast_hash": "14cd642d48c98bbc99330f7b4111ca82",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/marketplace/catalog/SearchControllerTest.java": {
-    "mtime": 1794403616.7406957,
-    "seen": 1794404519.5859208,
-    "ast_hash": "c0c39dfc66a77b8b4edc338f48b17f51",
+    "mtime": 1794405874.9475005,
+    "seen": 1794407399.7011251,
+    "ast_hash": "b96e70ef15c5d7bf67ce2c77712b81bb",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/marketplace/stores/BranchMapControllerTest.java": {
@@ -8400,9 +8400,297 @@
     "semantic_hash": ""
   },
   "docs/architecture/2026-11-11-v2.0.0-plan.md": {
-    "mtime": 1794385396.1215518,
-    "seen": 1794404519.8865142,
-    "ast_hash": "7dbf9ae6acf43351067294a7798b4f3a",
+    "mtime": 1794407187.6178117,
+    "seen": 1794407399.9639041,
+    "ast_hash": "cbf3d84e7d9c92758d7b28ea4a24938a",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdCacheInvalidation.java": {
+    "mtime": 1794405573.1333277,
+    "seen": 1794407399.3249884,
+    "ast_hash": "0fdd0d028cf63864d80b31840fac78be",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdCampaignJobs.java": {
+    "mtime": 1794405758.1595328,
+    "seen": 1794407399.3249962,
+    "ast_hash": "05b80f7c89e7b122783cab3a145b99f3",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdCampaignRequest.java": {
+    "mtime": 1794405347.494375,
+    "seen": 1794407399.325001,
+    "ast_hash": "195d14c012b8f4f8f30bcd83637a5da3",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdCampaignRules.java": {
+    "mtime": 1794405360.6664088,
+    "seen": 1794407399.3250048,
+    "ast_hash": "6efc58670d7ee39c4918a1040f984275",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdCampaignStatus.java": {
+    "mtime": 1794405302.1466174,
+    "seen": 1794407399.3250082,
+    "ast_hash": "d0fa2bb42d30791a548eff9b0437fc37",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdCampaignView.java": {
+    "mtime": 1794405421.51448,
+    "seen": 1794407399.3250117,
+    "ast_hash": "612f53f3e02852415ea4dca06f0058d7",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdCampaigns.java": {
+    "mtime": 1794405620.9048612,
+    "seen": 1794407399.3250153,
+    "ast_hash": "d0ba1e36c113bb6b4341a1e27a36d0c0",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdCandidate.java": {
+    "mtime": 1794405465.9213462,
+    "seen": 1794407399.32502,
+    "ast_hash": "3ed8938546d7864468807311a1ed6e93",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdCandidateCache.java": {
+    "mtime": 1794405466.9096863,
+    "seen": 1794407399.3250244,
+    "ast_hash": "691d4f0af4e0a6c6352ee67464c9c7f5",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdCandidateSource.java": {
+    "mtime": 1794405513.2481725,
+    "seen": 1794407399.3250275,
+    "ast_hash": "f6b153237ec33ae778d464a5d1a536d9",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdCheckout.java": {
+    "mtime": 1794405649.584955,
+    "seen": 1794407399.3250313,
+    "ast_hash": "b6cc4265c97b25fae71336e2d0d9757d",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdCheckoutResponse.java": {
+    "mtime": 1794405648.6707127,
+    "seen": 1794407399.325034,
+    "ast_hash": "a7a633387ea3c71b7d45d743bb9f3b9b",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdContext.java": {
+    "mtime": 1794405511.4190812,
+    "seen": 1794407399.3250372,
+    "ast_hash": "c63ef4648cd2d63cf009abfa8e01e12f",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdEventKind.java": {
+    "mtime": 1794405303.075369,
+    "seen": 1794407399.3250403,
+    "ast_hash": "2dd7a22d4f06ecd2374fd2f4ec7bc976",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdEvents.java": {
+    "mtime": 1794405561.465323,
+    "seen": 1794407399.3250432,
+    "ast_hash": "f3862b228c541475e6e40998111042a8",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdFrequencyCap.java": {
+    "mtime": 1794405468.6296349,
+    "seen": 1794407399.325046,
+    "ast_hash": "d6925289238f3bf9caeac61754535e3d",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdOrderAttribution.java": {
+    "mtime": 1794405777.8750925,
+    "seen": 1794407399.3250492,
+    "ast_hash": "f93690421582f4945ffe52f2eecd5112",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdPick.java": {
+    "mtime": 1794405512.3578615,
+    "seen": 1794407399.325053,
+    "ast_hash": "ad68c861f80302b455b4fc12d7bc9674",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdPlacement.java": {
+    "mtime": 1794405301.0916045,
+    "seen": 1794407399.325056,
+    "ast_hash": "7dcfc2f9404675ed8076540b72ac0603",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdPriceUpdate.java": {
+    "mtime": 1794405423.5730395,
+    "seen": 1794407399.3250592,
+    "ast_hash": "09c3b9f378a6bd160cc98c796537d73c",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdPriceView.java": {
+    "mtime": 1794405422.541558,
+    "seen": 1794407399.325062,
+    "ast_hash": "ea2ccfed98b5c2d3cdde66406ba73401",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdServer.java": {
+    "mtime": 1794405537.8220706,
+    "seen": 1794407399.3250651,
+    "ast_hash": "5eb760d8d558d17a49a35a32d078533a",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdStats.java": {
+    "mtime": 1794405719.0664098,
+    "seen": 1794407399.325068,
+    "ast_hash": "3e33833907f9a4f8ef8721b5ff341278",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdStatsCalculator.java": {
+    "mtime": 1794405720.0347998,
+    "seen": 1794407399.3250713,
+    "ast_hash": "7ac5914dc2618ca4fb84fd57e96a3729",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdStatsQueries.java": {
+    "mtime": 1794405740.7097986,
+    "seen": 1794407399.325075,
+    "ast_hash": "f7761177ef56b2b0f285c7acb7a9bb7a",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdTargeting.java": {
+    "mtime": 1794405340.4955742,
+    "seen": 1794407399.3250782,
+    "ast_hash": "860b41b1330e3f839ae68a1bdde4977a",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdText.java": {
+    "mtime": 1794405310.966133,
+    "seen": 1794407399.325082,
+    "ast_hash": "b9e0f5d8dc6d84fd1b566f1e7482a5cf",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdTokenSigner.java": {
+    "mtime": 1794405493.3789558,
+    "seen": 1794407399.3250854,
+    "ast_hash": "9eab542c69b71515b1180d103a5fa3e6",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/AdVisitors.java": {
+    "mtime": 1794405547.42253,
+    "seen": 1794407399.325089,
+    "ast_hash": "4b7332fc5e7138ef5f379129265ff3a2",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/InMemoryAdCandidateCache.java": {
+    "mtime": 1794405467.7943666,
+    "seen": 1794407399.325092,
+    "ast_hash": "07a82aadc40be7f0dc500711378bbccd",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/InMemoryAdFrequencyCap.java": {
+    "mtime": 1794405469.544872,
+    "seen": 1794407399.325095,
+    "ast_hash": "3a8b387db488a0e0f70f7c6ee18c10b7",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/internal/AdCampaign.java": {
+    "mtime": 1794405396.9848027,
+    "seen": 1794407399.3250973,
+    "ast_hash": "946caf366efca6e6f7cb1a51e60cff2e",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/internal/AdCampaignRepository.java": {
+    "mtime": 1794405409.242656,
+    "seen": 1794407399.325101,
+    "ast_hash": "f6d9f6741a8ed2086785874d5d961bc5",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/internal/AdPayment.java": {
+    "mtime": 1794406798.165459,
+    "seen": 1794407399.3251038,
+    "ast_hash": "b35602426f5a46050626c188b877934f",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/internal/AdPaymentRepository.java": {
+    "mtime": 1794405399.7867627,
+    "seen": 1794407399.3251066,
+    "ast_hash": "2890537654e69637c2e024499ec8c26d",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/internal/AdPlacementPrice.java": {
+    "mtime": 1794405400.7223861,
+    "seen": 1794407399.3251097,
+    "ast_hash": "1a3e013d32a0196d692f532625e7b3ae",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/internal/AdPlacementPriceRepository.java": {
+    "mtime": 1794405401.607238,
+    "seen": 1794407399.3251126,
+    "ast_hash": "40c67604a31d6d2cbc4259317c80eaea",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/internal/AdWompiHandler.java": {
+    "mtime": 1794405683.2972457,
+    "seen": 1794407399.3251154,
+    "ast_hash": "3a8c2d5264ae80fa13cb600e254717dd",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/advertising/package-info.java": {
+    "mtime": 1794405282.0051785,
+    "seen": 1794407399.3251183,
+    "ast_hash": "049c5251bb759036474c1adc56c4aec3",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/operations/ads/AdAdminController.java": {
+    "mtime": 1794405984.181849,
+    "seen": 1794407399.5758364,
+    "ast_hash": "4286e6b02af00b683dcf2cba2b5d30eb",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/shared/events/OrderPaid.java": {
+    "mtime": 1794405281.088676,
+    "seen": 1794407399.5904617,
+    "ast_hash": "2f51530662bc4b5eec335529ac49ee32",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/storesuite/advertising/StoreAds.java": {
+    "mtime": 1794405982.3765075,
+    "seen": 1794407399.6038861,
+    "ast_hash": "06664d0db0b5fb8fcfea7f61b2eae203",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/storesuite/advertising/StoreAdsController.java": {
+    "mtime": 1794405983.3173723,
+    "seen": 1794407399.6038914,
+    "ast_hash": "f9e8f2c17ffd35fe73681e8b13758e14",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/advertising/AdCampaignServiceTest.java": {
+    "mtime": 1794406411.005931,
+    "seen": 1794407399.6660166,
+    "ast_hash": "e04195ed86ddcbfe09b94e2ecc5170cd",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/advertising/AdPaymentWebhookTest.java": {
+    "mtime": 1794406251.3601575,
+    "seen": 1794407399.6660202,
+    "ast_hash": "901999077f5eb70c46dbbd44b0a6cdfa",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/advertising/AdServerTest.java": {
+    "mtime": 1794406167.681749,
+    "seen": 1794407399.666023,
+    "ast_hash": "5de1f50cb39234fe24ee96e1cafba220",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/advertising/AdStatsTest.java": {
+    "mtime": 1794406273.5599964,
+    "seen": 1794407399.6660247,
+    "ast_hash": "654dd2ea46eb363ad177f54891a6fbc3",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/advertising/AdTokenSignerTest.java": {
+    "mtime": 1794406137.974338,
+    "seen": 1794407399.6660266,
+    "ast_hash": "dfb6e186b2e5459dbf42f0654f4734d4",
     "semantic_hash": ""
   }
 }

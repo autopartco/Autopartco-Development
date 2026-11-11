@@ -34,7 +34,8 @@ import com.autopartco.backend.shared.error.NotFoundException;
  * <p>
  * Errores: 400 {@code AD_TOO_MANY_PRODUCTS}, {@code AD_INVALID_DATES}, {@code AD_PRODUCT_NOT_PUBLISHED},
  * {@code AD_PLACEMENT_UNAVAILABLE}, {@code AD_TARGETING_INVALID}; 404 {@code AD_CAMPAIGN_NOT_FOUND}; 409
- * {@code AD_CAMPAIGN_INVALID_STATE}.
+ * {@code AD_CAMPAIGN_INVALID_STATE} y {@code AD_CAMPAIGN_PAUSED_BY_ADMIN} (el almacén intenta reanudar una pausa del
+ * admin).
  */
 @Service
 public class AdCampaigns {
@@ -163,33 +164,38 @@ public class AdCampaigns {
                 .orElseThrow(AdCampaigns::notFound));
     }
 
-    /** Pausa del almacén: {@code SCHEDULED} o {@code ACTIVE} → {@code PAUSED}. No extiende fechas. */
+    /** Pausa del almacén: {@code SCHEDULED} o {@code ACTIVE} → {@code PAUSED} ({@code paused_by = STORE}). */
     @Transactional
     public AdCampaignView pause(UUID storeId, UUID campaignId) {
         AdCampaign campaign = lockOwned(storeId, campaignId);
         requireStatus(campaign, STORE_PAUSABLE);
-        campaign.setStatus(AdCampaignStatus.PAUSED);
+        campaign.pause(AdPausedBy.STORE);
         return changed(campaign);
     }
 
     /**
-     * Reanuda una campaña {@code PAUSED} según la fecha: {@code SCHEDULED} antes del inicio, {@code ACTIVE} dentro del
-     * rango y {@code FINISHED} si ya terminó. No extiende fechas.
+     * Reanuda una campaña {@code PAUSED} por el almacén según la fecha: {@code SCHEDULED} antes del inicio,
+     * {@code ACTIVE} dentro del rango y {@code FINISHED} si ya terminó. No extiende fechas. Una pausa del admin
+     * responde 409 {@code AD_CAMPAIGN_PAUSED_BY_ADMIN}.
      */
     @Transactional
     public AdCampaignView resume(UUID storeId, UUID campaignId) {
         AdCampaign campaign = lockOwned(storeId, campaignId);
         requireStatus(campaign, EnumSet.of(AdCampaignStatus.PAUSED));
-        campaign.setStatus(statusByDate(campaign, AdText.today(clock)));
+        if (campaign.getPausedBy() == AdPausedBy.ADMIN) {
+            throw new ConflictException("AD_CAMPAIGN_PAUSED_BY_ADMIN",
+                    "La campaña fue pausada por Autopartco y solo el equipo de Autopartco puede reanudarla.");
+        }
+        campaign.moveTo(statusByDate(campaign, AdText.today(clock)));
         return changed(campaign);
     }
 
-    /** Cancelación del almacén, sin reembolso automático. */
+    /** Cancelación del almacén, sin reembolso automático (también desde una pausa del admin). */
     @Transactional
     public AdCampaignView cancel(UUID storeId, UUID campaignId) {
         AdCampaign campaign = lockOwned(storeId, campaignId);
         requireStatus(campaign, STORE_CANCELLABLE);
-        campaign.setStatus(AdCampaignStatus.CANCELLED);
+        campaign.moveTo(AdCampaignStatus.CANCELLED);
         return changed(campaign);
     }
 
@@ -224,17 +230,34 @@ public class AdCampaigns {
         if (campaign.getPaidAt() != null && notStarted) {
             campaign.setRequiresManualRefund(true);
         }
-        campaign.setStatus(AdCampaignStatus.REJECTED);
+        campaign.moveTo(AdCampaignStatus.REJECTED);
         campaign.setRejectedReason(trimmed);
         return changed(campaign);
     }
 
-    /** Pausa del admin: {@code SCHEDULED} o {@code ACTIVE} → {@code PAUSED}. */
+    /**
+     * Pausa del admin ({@code paused_by = ADMIN}): {@code SCHEDULED} o {@code ACTIVE} → {@code PAUSED}. Una pausa del
+     * almacén pasa a ser del admin, para que el almacén no pueda levantarla; una pausa del admin ya hecha responde 409
+     * {@code AD_CAMPAIGN_INVALID_STATE}.
+     */
     @Transactional
     public AdCampaignView adminPause(UUID campaignId) {
         AdCampaign campaign = campaignRepository.lockById(campaignId).orElseThrow(AdCampaigns::notFound);
-        requireStatus(campaign, STORE_PAUSABLE);
-        campaign.setStatus(AdCampaignStatus.PAUSED);
+        boolean storePause = campaign.getStatus() == AdCampaignStatus.PAUSED
+                && campaign.getPausedBy() != AdPausedBy.ADMIN;
+        if (!storePause) {
+            requireStatus(campaign, STORE_PAUSABLE);
+        }
+        campaign.pause(AdPausedBy.ADMIN);
+        return changed(campaign);
+    }
+
+    /** Reanudación del admin de cualquier pausa (del almacén o del admin), según la fecha como {@link #resume}. */
+    @Transactional
+    public AdCampaignView adminResume(UUID campaignId) {
+        AdCampaign campaign = campaignRepository.lockById(campaignId).orElseThrow(AdCampaigns::notFound);
+        requireStatus(campaign, EnumSet.of(AdCampaignStatus.PAUSED));
+        campaign.moveTo(statusByDate(campaign, AdText.today(clock)));
         return changed(campaign);
     }
 

@@ -230,6 +230,113 @@ class AdCampaignServiceTest {
     }
 
     @Test
+    void pausedByRecordsWhoPausedAndIsClearedWhenLeavingPaused() {
+        AdCampaign campaign = stored(AdCampaignStatus.ACTIVE, TODAY.minusDays(1), TODAY.plusDays(3));
+
+        AdCampaignView paused = campaigns.pause(STORE, campaign.getId());
+        assertThat(paused.status()).isEqualTo(AdCampaignStatus.PAUSED);
+        assertThat(paused.pausedBy()).isEqualTo(AdPausedBy.STORE);
+        AdCampaignView resumed = campaigns.resume(STORE, campaign.getId());
+        assertThat(resumed.status()).isEqualTo(AdCampaignStatus.ACTIVE);
+        assertThat(resumed.pausedBy()).isNull();
+
+        campaigns.pause(STORE, campaign.getId());
+        assertThat(campaigns.cancel(STORE, campaign.getId()).pausedBy()).isNull();
+
+        AdCampaign rejected = stored(AdCampaignStatus.ACTIVE, TODAY, TODAY.plusDays(3));
+        campaigns.adminPause(rejected.getId());
+        AdCampaignView view = campaigns.reject(rejected.getId(), "Motivo");
+        assertThat(view.status()).isEqualTo(AdCampaignStatus.REJECTED);
+        assertThat(view.pausedBy()).isNull();
+
+        AdCampaign over = stored(AdCampaignStatus.ACTIVE, TODAY.minusDays(5), TODAY.minusDays(1));
+        campaigns.pause(STORE, over.getId());
+        AdCampaignView finished = campaigns.resume(STORE, over.getId());
+        assertThat(finished.status()).isEqualTo(AdCampaignStatus.FINISHED);
+        assertThat(finished.pausedBy()).isNull();
+    }
+
+    @Test
+    void storeCannotResumeAnAdminPauseButTheAdminCan() {
+        AdCampaign campaign = stored(AdCampaignStatus.ACTIVE, TODAY.minusDays(1), TODAY.plusDays(3));
+
+        AdCampaignView paused = campaigns.adminPause(campaign.getId());
+        assertThat(paused.status()).isEqualTo(AdCampaignStatus.PAUSED);
+        assertThat(paused.pausedBy()).isEqualTo(AdPausedBy.ADMIN);
+
+        assertThatThrownBy(() -> campaigns.resume(STORE, campaign.getId()))
+                .isInstanceOf(ConflictException.class)
+                .extracting("code").isEqualTo("AD_CAMPAIGN_PAUSED_BY_ADMIN");
+        assertThat(campaign.getStatus()).isEqualTo(AdCampaignStatus.PAUSED);
+        assertThat(campaign.getPausedBy()).isEqualTo(AdPausedBy.ADMIN);
+        // El almacén tampoco puede convertirla en una pausa propia.
+        assertThatThrownBy(() -> campaigns.pause(STORE, campaign.getId())).isInstanceOf(ConflictException.class);
+
+        AdCampaignView resumed = campaigns.adminResume(campaign.getId());
+        assertThat(resumed.status()).isEqualTo(AdCampaignStatus.ACTIVE);
+        assertThat(resumed.pausedBy()).isNull();
+        assertThatThrownBy(() -> campaigns.adminResume(campaign.getId()))
+                .isInstanceOf(ConflictException.class)
+                .extracting("code").isEqualTo("AD_CAMPAIGN_INVALID_STATE");
+    }
+
+    @Test
+    void adminPauseTakesOverAStorePauseAndAdminResumesAnyPause() {
+        AdCampaign campaign = stored(AdCampaignStatus.SCHEDULED, TODAY.plusDays(2), TODAY.plusDays(5));
+        campaigns.pause(STORE, campaign.getId());
+
+        assertThat(campaigns.adminPause(campaign.getId()).pausedBy()).isEqualTo(AdPausedBy.ADMIN);
+        assertThatThrownBy(() -> campaigns.adminPause(campaign.getId())).isInstanceOf(ConflictException.class);
+        assertThatThrownBy(() -> campaigns.resume(STORE, campaign.getId()))
+                .extracting("code").isEqualTo("AD_CAMPAIGN_PAUSED_BY_ADMIN");
+
+        AdCampaign storePaused = stored(AdCampaignStatus.ACTIVE, TODAY, TODAY.plusDays(5));
+        campaigns.pause(STORE, storePaused.getId());
+        assertThat(campaigns.adminResume(storePaused.getId()).status()).isEqualTo(AdCampaignStatus.ACTIVE);
+        assertThat(campaigns.adminResume(campaign.getId()).status()).isEqualTo(AdCampaignStatus.SCHEDULED);
+    }
+
+    @Test
+    void dateJobFinishesPausedCampaignsAndClearsPausedBy() {
+        assertThat(AdCampaignJobs.FINISH_SQL)
+                .contains("status = 'FINISHED'")
+                .contains("paused_by = null")
+                .contains("'PAUSED'");
+        assertThat(AdCampaignJobs.ACTIVATE_SQL).doesNotContain("PAUSED");
+    }
+
+    @Test
+    void adCheckoutUsesItsOwnWompiRedirect() {
+        AdCampaign draft = stored(AdCampaignStatus.DRAFT, TODAY, TODAY.plusDays(9));
+        com.autopartco.backend.core.advertising.internal.AdPaymentRepository paymentRepository =
+                mock(com.autopartco.backend.core.advertising.internal.AdPaymentRepository.class);
+        when(paymentRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        com.autopartco.backend.core.payments.WompiClient wompiClient =
+                mock(com.autopartco.backend.core.payments.WompiClient.class);
+        when(wompiClient.checkoutUrl(any())).thenReturn("https://checkout.wompi.co/p/?x");
+        com.autopartco.backend.core.payments.WompiProperties properties =
+                new com.autopartco.backend.core.payments.WompiProperties(
+                        com.autopartco.backend.core.payments.WompiEnvironment.SANDBOX, "pub_test_x", "prv_test_x",
+                        "integrity", "events", "https://checkout.wompi.co/p/",
+                        "https://autopartco.co/portal/pago/resultado");
+        AdCheckout checkout = new AdCheckout(campaignRepository, paymentRepository, campaigns, properties,
+                wompiClient, mock(com.autopartco.backend.core.payments.WompiEventRouter.class),
+                mock(com.autopartco.backend.core.payments.PaymentSyncRateLimiter.class),
+                "https://autopartco.co//portal/publicidad/pago", Clock.fixed(NOW, ZoneOffset.UTC));
+
+        AdCheckoutResponse response = checkout.checkout(STORE, draft.getId(), ACCOUNT);
+
+        org.mockito.ArgumentCaptor<com.autopartco.backend.core.payments.WompiCheckoutRequest> sent =
+                org.mockito.ArgumentCaptor.forClass(com.autopartco.backend.core.payments.WompiCheckoutRequest.class);
+        verify(wompiClient).checkoutUrl(sent.capture());
+        assertThat(sent.getValue().redirectUrl()).isEqualTo("https://autopartco.co/portal/publicidad/pago");
+        assertThat(sent.getValue().reference()).startsWith("ADS-").isEqualTo(response.reference());
+        assertThat(AdCheckout.REDIRECT_URL_PROPERTY)
+                .isEqualTo("${app.ads.redirect-url:${app.frontend-base-url:http://localhost:5173}"
+                        + "/portal/publicidad/pago}");
+    }
+
+    @Test
     void adminRejectFlagsManualRefundOnlyWhenPaidAndNotStarted() {
         AdCampaign scheduled = stored(AdCampaignStatus.SCHEDULED, TODAY.plusDays(2), TODAY.plusDays(5));
         scheduled.setPaidAt(LocalDateTime.of(2026, 11, 10, 9, 0));

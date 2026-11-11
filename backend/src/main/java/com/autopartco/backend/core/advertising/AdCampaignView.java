@@ -11,13 +11,15 @@ import com.autopartco.backend.core.advertising.internal.AdCampaign;
 /**
  * Campaña para el portal y el admin ({@code AdCampaign} de §2). {@code totalPrice} en COP (IVA incluido), calculado
  * por el servidor. {@code requiresManualRefund}: pago aprobado que no se pudo aplicar o campaña rechazada antes de
- * empezar; el reembolso es manual.
+ * empezar; el reembolso es manual. {@code pausedBy}: {@code STORE} o {@code ADMIN} solo en {@code PAUSED} (el almacén
+ * no puede reanudar una pausa del admin); nulo en los demás estados.
  */
 public record AdCampaignView(
         UUID id,
         UUID storeId,
         String name,
         AdCampaignStatus status,
+        AdPausedBy pausedBy,
         List<AdPlacement> placements,
         List<UUID> productIds,
         LocalDate startsOn,
@@ -37,6 +39,7 @@ public record AdCampaignView(
                 campaign.getStoreId(),
                 campaign.getName(),
                 campaign.getStatus(),
+                campaign.getPausedBy(),
                 campaign.placementList(),
                 List.copyOf(campaign.getProductIds()),
                 campaign.getStartsOn(),

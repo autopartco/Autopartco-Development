@@ -22,7 +22,8 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class AdCampaignJobs {
     static final String FINISH_SQL = """
-            update ad_campaigns set status = 'FINISHED', updated_at = now(), version = version + 1
+            update ad_campaigns set status = 'FINISHED', paused_by = null, updated_at = now(),
+                                    version = version + 1
             where status in ('SCHEDULED', 'ACTIVE', 'PAUSED') and ends_on < :today
             """;
     static final String ACTIVATE_SQL = """

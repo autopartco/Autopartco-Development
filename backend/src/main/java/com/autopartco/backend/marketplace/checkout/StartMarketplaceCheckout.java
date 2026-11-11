@@ -126,7 +126,8 @@ public class StartMarketplaceCheckout {
                 paymentSettings.wompiEnvironment().name(),
                 expiresAt
         );
-        NewOrder newOrder = new NewOrder(personId, prepared.address(), paymentMethod, reference, prepared.sales());
+        NewOrder newOrder = new NewOrder(personId, prepared.address(), paymentMethod, reference, prepared.sales(),
+                request.anonymousId());
         UUID orderId;
         try {
             orderId = orderPlacement.placeAwaitingPayment(newOrder, payment);

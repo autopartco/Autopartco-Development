@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,6 +43,9 @@ import lombok.extern.slf4j.Slf4j;
 public class AdCheckout {
     public static final String REFERENCE_PREFIX = "ADS-";
     static final String CURRENCY = "COP";
+    /** Retorno de Wompi para anuncios; por defecto {@code <app.frontend-base-url>/portal/publicidad/pago}. */
+    static final String REDIRECT_URL_PROPERTY =
+            "${app.ads.redirect-url:${app.frontend-base-url:http://localhost:5173}/portal/publicidad/pago}";
 
     private final AdCampaignRepository campaignRepository;
     private final AdPaymentRepository paymentRepository;
@@ -50,19 +54,21 @@ public class AdCheckout {
     private final WompiClient wompiClient;
     private final WompiEventRouter eventRouter;
     private final PaymentSyncRateLimiter syncRateLimiter;
+    private final String redirectUrl;
     private final Clock clock;
 
     @Autowired
     public AdCheckout(AdCampaignRepository campaignRepository, AdPaymentRepository paymentRepository,
             AdCampaigns campaigns, WompiProperties wompiProperties, WompiClient wompiClient,
-            WompiEventRouter eventRouter, PaymentSyncRateLimiter syncRateLimiter) {
+            WompiEventRouter eventRouter, PaymentSyncRateLimiter syncRateLimiter,
+            @Value(REDIRECT_URL_PROPERTY) String redirectUrl) {
         this(campaignRepository, paymentRepository, campaigns, wompiProperties, wompiClient, eventRouter,
-                syncRateLimiter, Clock.systemUTC());
+                syncRateLimiter, redirectUrl, Clock.systemUTC());
     }
 
     AdCheckout(AdCampaignRepository campaignRepository, AdPaymentRepository paymentRepository,
             AdCampaigns campaigns, WompiProperties wompiProperties, WompiClient wompiClient,
-            WompiEventRouter eventRouter, PaymentSyncRateLimiter syncRateLimiter, Clock clock) {
+            WompiEventRouter eventRouter, PaymentSyncRateLimiter syncRateLimiter, String redirectUrl, Clock clock) {
         this.campaignRepository = campaignRepository;
         this.paymentRepository = paymentRepository;
         this.campaigns = campaigns;
@@ -70,6 +76,8 @@ public class AdCheckout {
         this.wompiClient = wompiClient;
         this.eventRouter = eventRouter;
         this.syncRateLimiter = syncRateLimiter;
+        // Sin barras dobles si app.frontend-base-url termina en "/" (se conserva la de "https://").
+        this.redirectUrl = redirectUrl.replaceAll("(?<!:)/{2,}", "/");
         this.clock = clock;
     }
 
@@ -115,9 +123,10 @@ public class AdCheckout {
         campaign.setStatus(AdCampaignStatus.PENDING_PAYMENT);
         campaignRepository.save(campaign);
 
-        // Sin expiration-time: el pago de una campaña no reserva nada (igual que la suscripción).
+        // Sin expiration-time: el pago de una campaña no reserva nada (igual que la suscripción). Retorno propio
+        // (app.ads.redirect-url), distinto del de la suscripción (wompi.redirect-url).
         String checkoutUrl = wompiClient.checkoutUrl(new WompiCheckoutRequest(
-                payment.getReference(), amountInCents, CURRENCY, wompiProperties.redirectUrl(), null));
+                payment.getReference(), amountInCents, CURRENCY, redirectUrl, null));
         return new AdCheckoutResponse(payment.getReference(), checkoutUrl, amountInCents, CURRENCY,
                 campaign.getId());
     }

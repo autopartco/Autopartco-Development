@@ -14,6 +14,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import com.autopartco.backend.core.advertising.AdCampaignStatus;
+import com.autopartco.backend.core.advertising.AdPausedBy;
 import com.autopartco.backend.core.advertising.AdPlacement;
 import com.autopartco.backend.core.advertising.AdTargeting;
 
@@ -63,6 +64,11 @@ public class AdCampaign {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private AdCampaignStatus status;
+
+    /** Solo en {@code PAUSED}: {@code STORE} (portal) o {@code ADMIN}; nulo en cualquier otro estado. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "paused_by", length = 10)
+    private AdPausedBy pausedBy;
 
     @JdbcTypeCode(SqlTypes.ARRAY)
     @Column(nullable = false, columnDefinition = "varchar(20)[]")
@@ -131,6 +137,21 @@ public class AdCampaign {
 
     public void setPlacementList(List<AdPlacement> values) {
         placements = values.stream().map(AdPlacement::name).toArray(String[]::new);
+    }
+
+    /** Pasa a {@code PAUSED} y registra quién pausó (regla {@code (status = 'PAUSED') = (paused_by is not null)}). */
+    public void pause(AdPausedBy by) {
+        status = AdCampaignStatus.PAUSED;
+        pausedBy = by;
+    }
+
+    /** Cambia a un estado distinto de {@code PAUSED} y deja {@code paused_by} en nulo. */
+    public void moveTo(AdCampaignStatus next) {
+        if (next == AdCampaignStatus.PAUSED) {
+            throw new IllegalArgumentException("Use pause(AdPausedBy) to pause a campaign");
+        }
+        status = next;
+        pausedBy = null;
     }
 
     public AdTargeting targetingValue() {
