@@ -92,6 +92,11 @@ export function parseSearchState(params: URLSearchParams, fixedCategory?: string
   }
 }
 
+/** `/buscar` ordenado por cercanía («Cerca de ti» del inicio): `cerca=1&orden=nearest`. */
+export function nearbyUrl(): string {
+  return `/buscar?${SEARCH_PARAMS.near}=1&${SEARCH_PARAMS.sort}=nearest`
+}
+
 /** Serializa omitiendo los valores por defecto para mantener URLs cortas. */
 export function toSearchParams(state: SearchState, options: { omitCategory?: boolean } = {}): URLSearchParams {
   const params = new URLSearchParams()

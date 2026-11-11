@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/sheet'
 import { pluralize } from '@/lib/format'
 import { MarketplaceError, type FilterOptions, type SearchResult } from '../api/types'
+import { CategoryAds } from '../components/ads/category-ads'
 import { SponsoredListing } from '../components/ads/sponsored-listing'
 import { ProductList, ProductListSkeleton, ProductRow } from '../components/product-card'
 import { ResultsPagination } from '../components/results-pagination'
@@ -270,6 +271,8 @@ export function SearchResultsView({ fixedCategory }: { fixedCategory?: string })
         description={isCategoryRoute && category?.description ? category.description : undefined}
         className="mb-6"
       />
+
+      {isCategoryRoute && category ? <CategoryAds key={category.id} categoryId={category.id} /> : null}
 
       {state.makeId ? (
         <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-1 border-l-2 border-ap-red bg-ap-paper py-2 pr-3 pl-4">

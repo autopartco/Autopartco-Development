@@ -164,6 +164,20 @@ export interface SearchResponseDto {
   sponsored: SearchItemDto[]
 }
 
+/** `marketplace/home/HomeResponse` (`GET /marketplace/home`). */
+export interface HomeResponseDto {
+  stats: { stores: number; cities: number; products: number }
+  popularSearches: string[]
+  categories: { id: string; code: string; productCount: number }[]
+  nearby: SearchItemDto[]
+  featured: SearchItemDto[]
+}
+
+/** `GET /marketplace/ads` (CATEGORY_TOP y PRODUCT_RELATED). */
+export interface AdsResponseDto {
+  items: SearchItemDto[]
+}
+
 /** `core/search/Suggestions.Result` */
 export interface SuggestResponseDto {
   suggestions: { term: string; kind: string }[]

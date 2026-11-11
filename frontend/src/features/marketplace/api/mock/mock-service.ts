@@ -202,6 +202,29 @@ export function createMockMarketplaceService(): MarketplaceService {
       }
     },
 
+    // Derivado de los datos simulados: sin anuncios y con relleno orgánico.
+    async getHome() {
+      await simulateNetwork()
+      const counts = countBy((product) => product.category?.id)
+      const cities = new Set(MOCK_STORES.map((store) => store.city).filter(Boolean))
+      return {
+        stats: { stores: MOCK_STORES.length, cities: cities.size, products: MOCK_PRODUCTS.length },
+        popularSearches: [],
+        categories: MOCK_CATEGORIES.map((category) => ({
+          id: category.id,
+          code: category.slug.toUpperCase(),
+          productCount: counts.get(category.id) ?? 0,
+        })),
+        nearby: [],
+        featured: MOCK_PRODUCTS.slice(0, 8),
+      }
+    },
+
+    async listAds() {
+      await simulateNetwork()
+      return []
+    },
+
     async listVehicleMakes() {
       await simulateNetwork()
       return MOCK_VEHICLE_CATALOG.map(({ id, name }) => ({ id, name })).toSorted((a, b) => a.name.localeCompare(b.name, 'es'))

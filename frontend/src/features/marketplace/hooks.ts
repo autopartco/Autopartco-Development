@@ -3,6 +3,8 @@ import { useSearchParams } from 'react-router'
 import { useAsync } from '@/lib/use-async'
 import { getMarketplaceService } from './api/marketplace-service'
 import type {
+  AdPlacementQuery,
+  HomeQuery,
   MarketplaceCapabilities,
   MarketplaceService,
   Product,
@@ -66,6 +68,18 @@ export function useSearchSuggestions(text: string, near: { lat: number; lng: num
     data: active && state?.key === key ? state.data : undefined,
     loading: active && state?.key !== key,
   }
+}
+
+/** Datos del inicio en una sola llamada; la clave incluye el punto (redondeado) para no repetir peticiones. */
+export function useHome(query: HomeQuery) {
+  const key = `home:${query.lat ?? ''},${query.lng ?? ''}:${query.cityCode ?? ''}`
+  return useMarketplace(key, (service) => service.getHome(query))
+}
+
+/** Anuncios de categoría o producto; un fallo o una lista vacía simplemente no muestran nada. */
+export function useAds(query: AdPlacementQuery | undefined) {
+  const key = !query ? 'ads:none' : query.placement === 'CATEGORY_TOP' ? `ads:category:${query.categoryId}` : `ads:product:${query.productId}`
+  return useMarketplace(key, (service) => (query ? service.listAds(query).catch(() => []) : Promise.resolve([])))
 }
 
 export function useProduct(id: string) {

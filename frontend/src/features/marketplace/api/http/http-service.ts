@@ -4,7 +4,9 @@ import { getAuthService } from '@/features/auth/api/auth-service'
 import { getAccessToken } from '@/features/auth/api/http/http-auth-service'
 import { PLACEHOLDER_IMAGES } from '@/lib/images'
 import type {
+  AdsResponseDto,
   CategoryOptionDto,
+  HomeResponseDto,
   ProductImageResponseDto,
   ProductOptionsResponseDto,
   ProductResponseDto,
@@ -18,6 +20,7 @@ import type {
   VehicleNameOptionDto,
   VehicleVersionOptionDto,
 } from '../dto'
+import { humanizeCode } from '../../lib/humanize-code'
 import {
   MarketplaceError,
   type Category,
@@ -44,6 +47,8 @@ const PATHS = {
   products: '/marketplace/products',
   search: '/marketplace/search',
   suggest: '/marketplace/search/suggest',
+  home: '/marketplace/home',
+  ads: '/marketplace/ads',
   product: (id: string) => `/marketplace/products/${encodeURIComponent(id)}`,
   frequentlyBought: (id: string) => `/marketplace/products/${encodeURIComponent(id)}/frequently-bought`,
   options: '/marketplace/product-options',
@@ -64,31 +69,6 @@ function toReview(dto: StoreReviewResponseDto): StoreReview {
 
 /** `FrequentlyBoughtController`: `GET /marketplace/products/{id}/frequently-bought` (público, hasta 6). */
 type FrequentlyBoughtDto = Omit<FrequentlyBoughtItem, 'image'> & { image: string | null }
-
-/** Palabras de códigos del catálogo que llevan tilde al mostrarse. */
-const ACCENTED_WORDS: Record<string, string> = {
-  carroceria: 'carrocería',
-  condicion: 'condición',
-  direccion: 'dirección',
-  electrico: 'eléctrico',
-  garantia: 'garantía',
-  iluminacion: 'iluminación',
-  refrigeracion: 'refrigeración',
-  suspension: 'suspensión',
-  transmision: 'transmisión',
-}
-
-/** "FRENOS_Y_DISCOS" -> "Frenos y discos"; "garantia_meses" -> "Garantía meses". */
-function humanizeCode(code: string): string {
-  const words = code
-    .replace(/[_-]+/g, ' ')
-    .trim()
-    .toLowerCase()
-    .split(' ')
-    .map((word) => ACCENTED_WORDS[word] ?? word)
-    .join(' ')
-  return words.charAt(0).toUpperCase() + words.slice(1)
-}
 
 function toCategory(dto: CategoryOptionDto): Category {
   // TODO(api): CategoryOption solo trae `code`. Falta nombre visible, descripción y conteo de productos publicados.
@@ -162,7 +142,11 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
   ): Promise<T> {
     // Las rutas de productos son públicas, pero el precio depende de quién compra (precio para clientes frecuentes):
     // con sesión llevan el token.
-    const token = path.startsWith('/marketplace/products') || path.startsWith('/marketplace/search') ? await bearer() : undefined
+    const token = ['/marketplace/products', '/marketplace/search', '/marketplace/home', '/marketplace/ads'].some((prefix) =>
+      path.startsWith(prefix),
+    )
+      ? await bearer()
+      : undefined
     let response = await send(path, extraHeaders, token, signal)
     // Un token vencido o revocado no debe impedir ver el catálogo: se reintenta como visitante.
     if (response.status === 401 && token) response = await send(path, extraHeaders, undefined, signal)
@@ -244,6 +228,16 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
     }
   }
 
+  /** Ítem de búsqueda, inicio y anuncios: producto aplanado con distancia y datos del anuncio. */
+  function toSearchItem(item: SearchItemDto, maps: Lookups): Product {
+    return {
+      ...toProduct(item, maps),
+      distanceKm: item.distanceKm ?? undefined,
+      sponsored: item.sponsored,
+      adImpressionToken: item.adImpressionToken ?? undefined,
+    }
+  }
+
   return {
     capabilities: {
       // El servidor solo filtra por vehículo (makeId/modelId/versionId); los universales aparecen siempre.
@@ -310,12 +304,7 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
       params.set('facets', 'true')
       if (!query.interpret) params.set('interpret', 'false')
       const dto = await get<SearchResponseDto>(`${PATHS.search}?${params}`, { 'X-Session-Id': getAnonymousSessionId() }, undefined, signal)
-      const toItem = (item: SearchItemDto): Product => ({
-        ...toProduct(item, maps),
-        distanceKm: item.distanceKm ?? undefined,
-        sponsored: item.sponsored,
-        adImpressionToken: item.adImpressionToken ?? undefined,
-      })
+      const toItem = (item: SearchItemDto) => toSearchItem(item, maps)
       const { interpreted, facets } = dto
       return {
         items: dto.items.map(toItem),
@@ -365,6 +354,38 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
         suggestions: dto.suggestions.map((item) => ({ term: item.term, kind: item.kind as SuggestionKind })),
         products: dto.products.map((item) => toProduct(item, maps)),
       }
+    },
+
+    async getHome(query, signal) {
+      const params = new URLSearchParams()
+      if (query.lat !== undefined && query.lng !== undefined) {
+        params.set('lat', String(query.lat))
+        params.set('lng', String(query.lng))
+      }
+      if (query.cityCode) params.set('cityCode', query.cityCode)
+      const qs = params.toString()
+      const [dto, maps] = await Promise.all([
+        get<HomeResponseDto>(`${PATHS.home}${qs ? `?${qs}` : ''}`, { 'X-Session-Id': getAnonymousSessionId() }, undefined, signal),
+        lookups(),
+      ])
+      return {
+        stats: dto.stats,
+        popularSearches: dto.popularSearches ?? [],
+        categories: dto.categories ?? [],
+        nearby: (dto.nearby ?? []).map((item) => toSearchItem(item, maps)),
+        featured: (dto.featured ?? []).map((item) => toSearchItem(item, maps)),
+      }
+    },
+
+    async listAds(query, signal) {
+      const params = new URLSearchParams({ placement: query.placement })
+      if (query.placement === 'CATEGORY_TOP') params.set('categoryId', query.categoryId)
+      else params.set('productId', query.productId)
+      const [dto, maps] = await Promise.all([
+        get<AdsResponseDto>(`${PATHS.ads}?${params}`, { 'X-Session-Id': getAnonymousSessionId() }, undefined, signal),
+        lookups(),
+      ])
+      return (dto.items ?? []).map((item) => toSearchItem(item, maps))
     },
 
     async getProduct(id) {

@@ -17,7 +17,8 @@ import { isNotFoundError, type Product } from '../api/types'
 import { FrequentlyBought } from '../components/frequently-bought'
 import { ProductCard, ProductGrid } from '../components/product-card'
 import { AvailabilityLabel, BrandName, Price, RECOMMENDED_EXPLANATION, RecommendedMark, UniversalTag } from '../components/product-meta'
-import { useProduct, useRelatedProducts } from '../hooks'
+import { SponsoredListing } from '../components/ads/sponsored-listing'
+import { useAds, useProduct, useRelatedProducts } from '../hooks'
 import { ShareButton } from '../components/share-button'
 import { categoryPath, productPath, storePath, storeProductsPath } from '../lib/paths'
 import { NotFoundContent } from './not-found-page'
@@ -271,6 +272,8 @@ function Specifications({ product }: { product: Product }) {
 
 function ProductDetail({ product }: { product: Product }) {
   const related = useRelatedProducts(product)
+  // Hasta 4 anuncios PRODUCT_RELATED; sin anuncios no se muestra nada.
+  const ads = useAds({ placement: 'PRODUCT_RELATED', productId: product.id }).data?.slice(0, 4) ?? []
   const storeId = product.store?.id
   useEffect(() => {
     if (storeId) trackView('PRODUCT_VIEW', storeId, product.id)
@@ -336,7 +339,7 @@ function ProductDetail({ product }: { product: Product }) {
         <FrequentlyBought productId={product.id} />
       </div>
 
-      {related.data && related.data.length > 0 ? (
+      {ads.length + (related.data?.length ?? 0) > 0 ? (
         <section aria-labelledby="relacionados" className="mt-12 sm:mt-16">
           <div className="mb-6 flex flex-col gap-1">
             <p className="ap-index">Catálogo / Relacionados</p>
@@ -345,7 +348,10 @@ function ProductDetail({ product }: { product: Product }) {
             </h2>
           </div>
           <ProductGrid className="lg:grid-cols-4">
-            {related.data.map((item) => (
+            {ads.map((item, index) => (
+              <SponsoredListing key={`ad:${item.listingKey}:${index}`} product={item} variant="card" />
+            ))}
+            {(related.data ?? []).map((item) => (
               <ProductCard key={item.listingKey} product={item} distanceKm={item.store ? distances.get(item.store.id) : undefined} />
             ))}
           </ProductGrid>

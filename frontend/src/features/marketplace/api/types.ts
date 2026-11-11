@@ -300,12 +300,51 @@ export interface StoreReviewInput {
   comment?: string
 }
 
+/** Punto del área elegida para el inicio; sin él el servidor devuelve datos de todo el país. */
+export interface HomeQuery {
+  lat?: number
+  lng?: number
+  cityCode?: string
+}
+
+/** Cifras reales de la plataforma (`GET /marketplace/home`). */
+export interface PlatformStats {
+  stores: number
+  cities: number
+  products: number
+}
+
+export interface HomeCategory {
+  id: string
+  code: string
+  productCount: number
+}
+
+export interface HomeData {
+  stats: PlatformStats
+  /** Puede venir vacío. */
+  popularSearches: string[]
+  categories: HomeCategory[]
+  nearby: Product[]
+  /** Mezcla de anuncios (`sponsored`) y relleno orgánico. */
+  featured: Product[]
+}
+
+/** Ubicaciones de anuncio que se piden aparte de la búsqueda. */
+export type AdPlacementQuery =
+  | { placement: 'CATEGORY_TOP'; categoryId: string }
+  | { placement: 'PRODUCT_RELATED'; productId: string }
+
 export interface MarketplaceService {
   readonly capabilities: MarketplaceCapabilities
   searchProducts(query: ProductQuery): Promise<ProductPage>
   /** Motor de búsqueda v2: texto libre, filtros, facetas, cercanía y anuncios. */
   search(query: SearchQuery, signal?: AbortSignal): Promise<SearchResult>
   suggest(text: string, near?: { lat: number; lng: number }, signal?: AbortSignal): Promise<SearchSuggestions>
+  /** `GET /marketplace/home`: una sola llamada con cifras, búsquedas populares, categorías, cercanos y destacados. */
+  getHome(query: HomeQuery, signal?: AbortSignal): Promise<HomeData>
+  /** `GET /marketplace/ads`: anuncios de una ubicación; vacío si no hay campañas activas. */
+  listAds(query: AdPlacementQuery, signal?: AbortSignal): Promise<Product[]>
   getProduct(id: string): Promise<Product>
   getRelatedProducts(product: Product, limit: number): Promise<Product[]>
   /** `GET /marketplace/products/{id}/frequently-bought` (público): hasta 6 productos que se compran junto con este. */

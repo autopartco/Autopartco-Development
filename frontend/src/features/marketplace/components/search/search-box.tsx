@@ -17,6 +17,10 @@ interface SearchBoxProps {
   autoFocus?: boolean
   /** Activa el atajo "/" para enfocar el campo (solo una caja por página: la de la cabecera). */
   shortcut?: boolean
+  /** `lg`: caja grande del inicio (alto 56 px). */
+  size?: 'md' | 'lg'
+  /** Vehículo elegido al lado de la caja (inicio): se añade a la URL de `/buscar`. */
+  vehicle?: { makeId?: string; modelId?: string; versionId?: string }
 }
 
 const KIND_LABEL: Record<SuggestionKind, string> = {
@@ -41,7 +45,7 @@ function isTyping(target: EventTarget | null): boolean {
  * activa sin sacar el foco del campo. Flechas para recorrer, Enter para elegir, Esc para cerrar.
  * Sincronizada con `/buscar?q=`: en resultados conserva los filtros y vuelve a la primera página.
  */
-export function SearchBox({ className, tone = 'light', autoFocus, shortcut }: SearchBoxProps) {
+export function SearchBox({ className, tone = 'light', autoFocus, shortcut, size = 'md', vehicle }: SearchBoxProps) {
   const uid = useId()
   const listId = `${uid}-list`
   const optionId = (index: number) => `${uid}-opt-${index}`
@@ -118,6 +122,11 @@ export function SearchBox({ className, tone = 'light', autoFocus, shortcut }: Se
     params.delete(SEARCH_PARAMS.interpret)
     if (query) params.set(SEARCH_PARAMS.q, query)
     else params.delete(SEARCH_PARAMS.q)
+    if (vehicle?.makeId) {
+      params.set(SEARCH_PARAMS.makeId, vehicle.makeId)
+      if (vehicle.modelId) params.set(SEARCH_PARAMS.modelId, vehicle.modelId)
+      if (vehicle.modelId && vehicle.versionId) params.set(SEARCH_PARAMS.versionId, vehicle.versionId)
+    }
     const qs = params.toString()
     setOpen(false)
     navigate(qs ? `/buscar?${qs}` : '/buscar')
@@ -190,7 +199,8 @@ export function SearchBox({ className, tone = 'light', autoFocus, shortcut }: Se
     <form ref={containerRef} role="search" onSubmit={handleSubmit} className={cn('relative w-full min-w-0', className)}>
       <div
         className={cn(
-          'group flex h-11 w-full min-w-0 items-center overflow-hidden rounded-md border transition-[background-color,border-color] duration-150 xl:h-10',
+          'group flex w-full min-w-0 items-center overflow-hidden rounded-md border transition-[background-color,border-color] duration-150',
+          size === 'lg' ? 'h-14' : 'h-11 xl:h-10',
           dark
             ? 'border-white/15 bg-white/10 hover:bg-white/15 focus-within:border-transparent focus-within:bg-white focus-within:ring-2 focus-within:ring-ap-red-on-dark focus-within:hover:bg-white'
             : 'border-input bg-ap-white focus-within:border-ap-graphite focus-within:ring-2 focus-within:ring-ap-red',
