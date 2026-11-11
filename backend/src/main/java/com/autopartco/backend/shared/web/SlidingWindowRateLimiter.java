@@ -83,6 +83,28 @@ public final class SlidingWindowRateLimiter {
         }
     }
 
+    /**
+     * {@code true} si {@code key} ya tiene {@code maxPerWindow} llamadas en la ventana. No registra ninguna: sirve para
+     * contar solo los fallos ({@link #acquire} al fallar) y rechazar antes de probar la credencial.
+     */
+    public boolean exhausted(String key) {
+        Instant now = clock.instant();
+        String mapKey = key == null ? "?" : key;
+        if (remote != null) {
+            Optional<Long> shared = remote.count(name + ":" + mapKey, window, now);
+            if (shared.isPresent()) {
+                return shared.get() >= maxPerWindow;
+            }
+        }
+        Deque<Instant> deque = calls.get(mapKey);
+        if (deque == null) {
+            return false;
+        }
+        synchronized (deque) {
+            return deque.stream().filter(at -> at.isAfter(now.minus(window))).count() >= maxPerWindow;
+        }
+    }
+
     /** Purga claves inactivas como mucho una vez por ventana. */
     private synchronized void purgeIfDue(Instant now) {
         if (lastPurge != null && lastPurge.plus(window).isAfter(now)) {

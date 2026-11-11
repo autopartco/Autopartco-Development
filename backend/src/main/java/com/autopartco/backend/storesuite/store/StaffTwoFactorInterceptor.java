@@ -26,7 +26,7 @@ import lombok.AllArgsConstructor;
 /**
  * {@code security.requireStaffTwoFactor}: si el almacén lo exige, toda petición a {@code /api/v1/stores/{storeId}/**}
  * de un colaborador (incluido el dueño) sin 2FA activa responde 403 {@code STAFF_TWO_FACTOR_REQUIRED}. Exentas:
- * {@code /stores/{storeId}/settings} (para poder desactivarlo) y las rutas fuera de {@code /stores}
+ * {@code /stores/{storeId}/settings} (se puede leer; el PATCH lo protege {@code SettingsService.patchStore}) y las rutas fuera de {@code /stores}
  * (p. ej. {@code /account/settings}). La bandera del almacén sale de la caché de {@link SettingsQueries}; solo si está
  * activa se consulta la cuenta (y la membresía, si la cuenta no tiene 2FA). Quien no es del almacén sigue de largo: el
  * caso de uso lo rechaza como siempre.

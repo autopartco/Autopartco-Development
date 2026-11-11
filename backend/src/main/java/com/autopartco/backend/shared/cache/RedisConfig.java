@@ -89,8 +89,9 @@ public class RedisConfig {
     }
 
     @Bean
-    RedisRateLimitStore redisRateLimitStore(RedisGuard redisGuard) {
-        return new RedisRateLimitStore(redisGuard);
+    RedisRateLimitStore redisRateLimitStore(RedisGuard redisGuard,
+            @Value("${app.traffic.salt:${app.public-base-url:autopartco}}") String salt) {
+        return new RedisRateLimitStore(redisGuard, new KeyHmac(salt));
     }
 
     private static String decode(String value) {

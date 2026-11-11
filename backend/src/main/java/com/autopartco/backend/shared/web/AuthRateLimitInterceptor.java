@@ -14,7 +14,8 @@ import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Límite por IP y ruta en los flujos públicos de {@code /auth} que prueban credenciales o códigos, o envían correos:
- * login (contraseña, 2FA, social), verificación de correo y reenvíos, desbloqueo y recuperación de contraseña. Por
+ * login (contraseña, 2FA, social), verificación de correo y reenvíos, desbloqueo y recuperación de contraseña; además
+ * {@code POST /account/settings/two-factor/disable} (contraseña). Por
  * defecto 10 por minuto ({@code app.auth-rate-limit.per-minute}); con Redis el límite es común a todas las
  * instancias. Exceso: 429 {@value #ERROR_CODE} (vía {@code GlobalExceptionHandler}). Complementa el bloqueo por
  * cuenta de {@code LoginAttemptService}.
@@ -23,6 +24,8 @@ import jakarta.servlet.http.HttpServletResponse;
 public class AuthRateLimitInterceptor implements HandlerInterceptor, WebMvcConfigurer {
     static final String ERROR_CODE = "AUTH_RATE_LIMITED";
     static final String AUTH = ApiPaths.BASE + "/auth";
+    /** Desactivar la 2FA con contraseña: prueba credenciales aunque esté fuera de {@code /auth}. */
+    static final String TWO_FACTOR_DISABLE = ApiPaths.BASE + "/account/settings/two-factor/disable";
 
     /** Ruta → grupo (clave del contador). Los dos pasos del login comparten grupo por método. */
     static final Map<String, String> POST_ROUTES = Map.of(
@@ -32,7 +35,8 @@ public class AuthRateLimitInterceptor implements HandlerInterceptor, WebMvcConfi
             AUTH + "/verify-email/code", "verify",
             AUTH + "/verify-email/resend", "verify-resend",
             AUTH + "/unlock/request", "unlock",
-            AUTH + "/password-recovery/request", "recovery");
+            AUTH + "/password-recovery/request", "recovery",
+            TWO_FACTOR_DISABLE, "2fa-disable");
     static final String SOCIAL_PREFIX = AUTH + "/social/";
     static final String VERIFY_LINK = AUTH + "/verify-email";
 
@@ -45,7 +49,7 @@ public class AuthRateLimitInterceptor implements HandlerInterceptor, WebMvcConfi
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(this).addPathPatterns(AUTH + "/**");
+        registry.addInterceptor(this).addPathPatterns(AUTH + "/**", TWO_FACTOR_DISABLE);
     }
 
     @Override

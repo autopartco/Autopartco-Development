@@ -23,8 +23,8 @@ import lombok.extern.slf4j.Slf4j;
  * (la respuesta se cachea como pública, así que nunca lleva precios personalizados).
  *
  * <p>{@link #reload()} reconstruye la tabla con categorías, fabricantes, marcas y modelos que tienen productos
- * publicados (peso = productos) y las búsquedas de los últimos 30 días con resultados hechas en 3 sesiones o más
- * (peso = sesiones).</p>
+ * publicados (peso = productos) y las búsquedas de los últimos 30 días con resultados hechas en
+ * {@value #MIN_QUERY_SESSIONS} sesiones o más y en al menos {@value #MIN_QUERY_DAYS} días distintos (peso = sesiones).</p>
  */
 @Slf4j
 @Service
@@ -33,6 +33,13 @@ public class Suggestions {
     public static final int MAX_SUGGESTIONS = 8;
     public static final int MAX_PRODUCTS = 4;
     static final int MAX_TERM_LENGTH = 120;
+    /**
+     * Umbral de las búsquedas que pasan a sugerencia. {@code session_hash} sale de una cabecera que controla el
+     * cliente y {@code marketplace_searches} no guarda otra fuente (ni {@code ap_aid} ni IP con hash): rotarla basta
+     * para sumar sesiones, así que se exigen más sesiones y días distintos (zona America/Bogota).
+     */
+    static final int MIN_QUERY_SESSIONS = 5;
+    static final int MIN_QUERY_DAYS = 2;
 
     static final String SUGGEST_SQL = """
             select term, kind
@@ -82,12 +89,13 @@ public class Suggestions {
                   and ms.query_normalized is not null
                   and length(ms.query_normalized) between 2 and %d
                 group by ms.query_normalized
-                having count(distinct ms.session_hash) >= 3
+                having count(distinct ms.session_hash) >= %d
+                   and count(distinct (ms.occurred_at at time zone 'America/Bogota')::date) >= %d
             ) s
             where term is not null and term <> ''
             order by term, weight desc
             on conflict (term) do update set kind = excluded.kind, weight = excluded.weight, updated_at = now()
-            """.formatted(MAX_TERM_LENGTH);
+            """.formatted(MAX_TERM_LENGTH, MIN_QUERY_SESSIONS, MIN_QUERY_DAYS);
 
     public record Suggestion(String term, String kind) {
     }

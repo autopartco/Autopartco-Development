@@ -189,6 +189,40 @@ class TwoFactorLoginTest {
     }
 
     @Test
+    void startChallengeHonoursResendCooldownAndHourlyCap() {
+        when(tokenRepository.findFirstByAccount_IdAndPurposeOrderByCreatedAtDesc(account.getId(), TwoFactorLoginService.PURPOSE))
+                .thenAnswer(invocation -> savedTokens.isEmpty()
+                        ? Optional.empty()
+                        : Optional.of(savedTokens.get(savedTokens.size() - 1)));
+        LoginResponse first = login();
+
+        // Dentro de los 60 s: mismo desafío, sin otro correo.
+        LoginResponse again = login();
+        assertEquals(first.challengeId(), again.challengeId());
+        assertThat(savedTokens).hasSize(1);
+        verify(eventPublisher, times(1)).publishEvent(any(TwoFactorCodeRequested.class));
+
+        // Pasada la espera pero con 5 códigos en la última hora: tampoco envía.
+        savedTokens.get(0).setCreatedAt(LocalDateTime.now().minusSeconds(61));
+        when(tokenRepository.countByAccount_IdAndPurposeAndCreatedAtAfter(eq(account.getId()),
+                eq(TwoFactorLoginService.PURPOSE), any())).thenReturn((long) TwoFactorLoginService.MAX_PER_HOUR);
+        assertEquals(first.challengeId(), login().challengeId());
+        verify(eventPublisher, times(1)).publishEvent(any(TwoFactorCodeRequested.class));
+
+        // Sin desafío usable y con el tope alcanzado: 429.
+        savedTokens.get(0).setUsed(true);
+        assertEquals("TWO_FACTOR_RATE_LIMITED",
+                assertThrows(TooManyRequestsException.class, this::login).getCode());
+        verify(eventPublisher, times(1)).publishEvent(any(TwoFactorCodeRequested.class));
+
+        // Bajo el tope y pasada la espera: desafío nuevo.
+        when(tokenRepository.countByAccount_IdAndPurposeAndCreatedAtAfter(eq(account.getId()),
+                eq(TwoFactorLoginService.PURPOSE), any())).thenReturn(1L);
+        assertThat(login().challengeId()).isNotEqualTo(first.challengeId());
+        verify(eventPublisher, times(2)).publishEvent(any(TwoFactorCodeRequested.class));
+    }
+
+    @Test
     void loginWithoutTwoFactorOpensSessionDirectly() {
         account.setConfiguration(Map.of());
 

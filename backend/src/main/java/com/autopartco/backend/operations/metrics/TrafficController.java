@@ -130,7 +130,8 @@ public class TrafficController {
      * impresiones con {@code tokens} (máx. {@value AdEvents#MAX_BATCH}; se suman a {@code token} si llegan ambos).
      * {@code kind}: {@code IMPRESSION|CLICK|WHATSAPP_CLICK|ADD_TO_CART}. Sin validación de forma a propósito: lo que no
      * sirve se ignora (tokens de más de 400 caracteres, más de {@value AdEvents#MAX_BATCH} tokens, {@code anonymousId}
-     * de más de 100).
+     * de más de 100). {@code anonymousId} se acepta por compatibilidad pero se ignora: el visitante es la cookie
+     * {@code ap_aid} o la cuenta.
      */
     public record AdEventRequest(String token, List<String> tokens, String kind, String anonymousId) {
     }
@@ -139,13 +140,20 @@ public class TrafficController {
      * Registra eventos de anuncios. Siempre 204 (salvo 429 por el límite o un JSON ilegible): un token falso, alterado
      * o vencido, un tipo no permitido o un visitante sin id se ignoran. Comparte el límite por IP con
      * {@code /pageview} y {@code /visibility} (un lote cuenta como una llamada). Con sesión, el visitante es la cuenta
-     * (para atribuir pedidos); sin ella, {@code anonymousId}. Nunca guarda la IP ni la cuenta en claro.
+     * (para atribuir pedidos); sin ella, la cookie HttpOnly {@code ap_aid}, que se emite aquí si falta. El
+     * {@code anonymousId} del cuerpo se ignora: lo controla el cliente y rotarlo saltaría la deduplicación por
+     * visitante. {@code POST /marketplace/orders} guarda ese mismo {@code ap_aid} para que {@code AdOrderAttribution}
+     * encuentre los clics. Nunca guarda la IP ni la cuenta en claro.
      */
     @PostMapping("/ads")
     public ResponseEntity<Void> ads(@RequestBody AdEventRequest request, HttpServletRequest http,
             HttpServletResponse response, Authentication authentication) {
         acquire(http.getRemoteAddr());
-        String anonymousId = anonymousId(request.anonymousId(), http, response);
+        UUID accountId = authentication == null || !authentication.isAuthenticated()
+                || authentication.getName() == null
+                ? null
+                : accountLookup.findByEmail(authentication.getName()).map(AccountRef::accountId).orElse(null);
+        String anonymousId = adVisitor(accountId, http, response);
         List<String> tokens = new ArrayList<>();
         if (request.token() != null) {
             tokens.add(request.token());
@@ -155,17 +163,24 @@ public class TrafficController {
                     .forEach(tokens::add);
         }
         if (!tokens.isEmpty()) {
-            UUID accountId = authentication == null || !authentication.isAuthenticated()
-                    || authentication.getName() == null
-                    ? null
-                    : accountLookup.findByEmail(authentication.getName()).map(AccountRef::accountId).orElse(null);
             adEvents.record(tokens, request.kind(), anonymousId, accountId);
         }
         return ResponseEntity.noContent().build();
     }
 
     /**
-     * Visitante anónimo: el {@code anonymousId} del cuerpo tiene prioridad (compatibilidad con clientes que aún lo
+     * Visitante de {@code /ads}: con cuenta manda la cuenta (se pasa la cookie solo si ya llega); sin cuenta, la
+     * cookie {@code ap_aid}, emitida aquí si falta. Nunca el cuerpo.
+     */
+    static String adVisitor(UUID accountId, HttpServletRequest http, HttpServletResponse response) {
+        if (accountId != null) {
+            return VisitorCookie.read(http).map(UUID::toString).orElse(null);
+        }
+        return VisitorCookie.ensure(http, response).toString();
+    }
+
+    /**
+     * Visitante anónimo de {@code /pageview} y {@code /visibility}: el {@code anonymousId} del cuerpo tiene prioridad (compatibilidad con clientes que aún lo
      * envían); si no llega, la cookie {@code ap_aid}, que se emite aquí cuando falta.
      */
     static String anonymousId(String fromBody, HttpServletRequest http, HttpServletResponse response) {

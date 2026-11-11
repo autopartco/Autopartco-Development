@@ -15,4 +15,13 @@ public interface RateLimitStore {
      * @return {@code true} admitida, {@code false} rechazada; vacío si el almacén no está disponible
      */
     Optional<Boolean> tryAcquire(String key, int max, Duration window, Instant now);
+
+    /**
+     * Llamadas de {@code key} dentro de {@code window}, sin registrar ninguna.
+     *
+     * @return el conteo; vacío si el almacén no está disponible
+     */
+    default Optional<Long> count(String key, Duration window, Instant now) {
+        return Optional.empty();
+    }
 }

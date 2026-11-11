@@ -31,6 +31,39 @@ class TrafficControllerTest {
     }
 
     @Test
+    void adEventsIgnoreBodyAnonymousIdAndUseVisitorCookie() {
+        AdEvents adEvents = mock(AdEvents.class);
+        TrafficController controller = new TrafficController(mock(TrafficRecorder.class),
+                mock(VisibilityRecorder.class), mock(AccountLookup.class), adEvents, clock);
+        String cookie = java.util.UUID.randomUUID().toString();
+        for (String body : java.util.List.of("falso-1", "falso-2", "falso-3")) {
+            org.springframework.mock.web.MockHttpServletRequest request =
+                    new org.springframework.mock.web.MockHttpServletRequest();
+            request.setCookies(new jakarta.servlet.http.Cookie("ap_aid", cookie));
+            controller.ads(new TrafficController.AdEventRequest("token", null, "CLICK", body), request,
+                    new org.springframework.mock.web.MockHttpServletResponse(), null);
+        }
+        org.mockito.ArgumentCaptor<String> visitors = org.mockito.ArgumentCaptor.forClass(String.class);
+        org.mockito.Mockito.verify(adEvents, org.mockito.Mockito.times(3))
+                .record(org.mockito.ArgumentMatchers.anyList(), org.mockito.ArgumentMatchers.eq("CLICK"),
+                        visitors.capture(), org.mockito.ArgumentMatchers.isNull());
+        org.assertj.core.api.Assertions.assertThat(java.util.Set.copyOf(visitors.getAllValues()))
+                .containsExactly(cookie);
+
+        // Sin cookie: se emite una nueva y se usa esa, no el cuerpo.
+        org.springframework.mock.web.MockHttpServletResponse response =
+                new org.springframework.mock.web.MockHttpServletResponse();
+        controller.ads(new TrafficController.AdEventRequest("token", null, "CLICK", "falso-4"),
+                new org.springframework.mock.web.MockHttpServletRequest(), response, null);
+        org.mockito.Mockito.verify(adEvents, org.mockito.Mockito.times(4))
+                .record(org.mockito.ArgumentMatchers.anyList(), org.mockito.ArgumentMatchers.eq("CLICK"),
+                        visitors.capture(), org.mockito.ArgumentMatchers.isNull());
+        String issued = visitors.getValue();
+        org.assertj.core.api.Assertions.assertThat(issued).isNotEqualTo("falso-4");
+        org.assertj.core.api.Assertions.assertThat(response.getHeader("Set-Cookie")).startsWith("ap_aid=" + issued);
+    }
+
+    @Test
     void anonymousIdPrefersBodyAndIssuesVisitorCookieWhenMissing() {
         org.springframework.mock.web.MockHttpServletRequest request =
                 new org.springframework.mock.web.MockHttpServletRequest();

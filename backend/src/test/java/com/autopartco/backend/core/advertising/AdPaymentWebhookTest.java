@@ -193,6 +193,30 @@ class AdPaymentWebhookTest {
     }
 
     @Test
+    void staleApprovalWithOldPriceKeepsWaitingForTheNewerPendingPayment() {
+        // El precio cambió (150.000 → 200.000) y hay un pago nuevo pendiente; Wompi aprueba tarde el viejo.
+        campaign.setTotalPrice(new BigDecimal("200000.00"));
+        payment.setCreatedAt(LocalDateTime.of(2026, 11, 10, 8, 0));
+        AdPayment newer = payment(campaign, "ADS-2");
+        newer.setAmountInCents(20_000_000L);
+        newer.setCreatedAt(LocalDateTime.of(2026, 11, 11, 9, 0));
+
+        assertThat(handler.apply(transaction("tx-1", "ADS-1", WompiTransaction.APPROVED, AMOUNT_CENTS),
+                WompiEventSource.WEBHOOK)).isEqualTo(WompiEventOutcome.APPLIED);
+
+        assertThat(payment.getStatus()).isEqualTo(AdPayment.APPROVED);
+        assertThat(campaign.isRequiresManualRefund()).isTrue();
+        assertThat(campaign.getStatus()).isEqualTo(AdCampaignStatus.PENDING_PAYMENT);
+        assertThat(campaign.getPaidAt()).isNull();
+
+        // El pago nuevo aún activa la campaña.
+        assertThat(handler.apply(transaction("tx-2", "ADS-2", WompiTransaction.APPROVED, 20_000_000L),
+                WompiEventSource.WEBHOOK)).isEqualTo(WompiEventOutcome.APPLIED);
+        assertThat(campaign.getStatus()).isEqualTo(AdCampaignStatus.ACTIVE);
+        assertThat(campaign.getPaidAt()).isNotNull();
+    }
+
+    @Test
     void secondApprovedPaymentForAPaidCampaignIsNotAppliedTwice() {
         handler.apply(transaction("tx-1", "ADS-1", WompiTransaction.APPROVED, AMOUNT_CENTS), WompiEventSource.WEBHOOK);
         AdPayment second = payment(campaign, "ADS-2");

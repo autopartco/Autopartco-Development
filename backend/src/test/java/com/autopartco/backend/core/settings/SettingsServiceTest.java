@@ -30,6 +30,7 @@ import com.autopartco.backend.core.organization.StoreConfigurations;
 import com.autopartco.backend.core.organization.internal.Store;
 import com.autopartco.backend.core.organization.internal.StoreRepository;
 import com.autopartco.backend.shared.error.BadRequestException;
+import com.autopartco.backend.shared.error.ForbiddenException;
 
 class SettingsServiceTest {
     private final AccountRepository accountRepository = mock(AccountRepository.class);
@@ -233,9 +234,25 @@ class SettingsServiceTest {
         StoreSettings settings = service.patchStore(storeId, actorId, true, enable);
         assertThat(settings.security().requireStaffTwoFactor()).isTrue();
 
-        // Desactivarlo no exige 2FA.
-        StoreSettings disabled = service.patchStore(storeId, actorId, false,
+        // Quien tiene 2FA puede desactivarlo.
+        StoreSettings disabled = service.patchStore(storeId, actorId, true,
                 Map.of("security", Map.of("requireStaffTwoFactor", false)));
         assertThat(disabled.security().requireStaffTwoFactor()).isFalse();
+    }
+
+    @Test
+    void actorWithoutTwoFactorCannotPatchWhileStaffTwoFactorIsRequired() {
+        store.getConfiguration().put("security", Map.of("requireStaffTwoFactor", true));
+
+        ForbiddenException disable = assertThrows(ForbiddenException.class, () -> service.patchStore(storeId, actorId,
+                false, Map.of("security", Map.of("requireStaffTwoFactor", false))));
+        assertEquals("STAFF_TWO_FACTOR_REQUIRED", disable.getCode());
+        ForbiddenException other = assertThrows(ForbiddenException.class, () -> service.patchStore(storeId, actorId,
+                false, Map.of("catalog", Map.of("showExactStock", true))));
+        assertEquals("STAFF_TWO_FACTOR_REQUIRED", other.getCode());
+
+        assertThat(service.storeSettings(storeId).security().requireStaffTwoFactor()).isTrue();
+        verify(storeRepository, never()).save(any());
+        verify(auditService, never()).record(any(), any(), any(), any(), any());
     }
 }

@@ -17,8 +17,8 @@ import lombok.AllArgsConstructor;
 
 /**
  * Configuración del almacén ({@code GET/PATCH /stores/{storeId}/settings}). Requiere {@code STORE_UPDATE}; si la cuenta
- * no es (ni fue) del almacén responde 404. Está exenta de {@code requireStaffTwoFactor} para que el dueño pueda
- * desactivarlo ({@link StaffTwoFactorInterceptor}).
+ * no es (ni fue) del almacén responde 404. Está exenta de {@link StaffTwoFactorInterceptor} para que se pueda
+ * leer; el PATCH de quien no tiene 2FA, si el almacén la exige, lo rechaza {@code SettingsService.patchStore}.
  */
 @Service
 @AllArgsConstructor

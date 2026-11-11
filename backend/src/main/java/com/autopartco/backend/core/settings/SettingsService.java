@@ -19,6 +19,7 @@ import com.autopartco.backend.core.identity.AccountConfigurations;
 import com.autopartco.backend.core.organization.StoreConfigurations;
 import com.autopartco.backend.core.settings.internal.SettingsSchemas;
 import com.autopartco.backend.shared.error.BadRequestException;
+import com.autopartco.backend.shared.error.ForbiddenException;
 import com.autopartco.backend.shared.events.StoreProfileChanged;
 
 import lombok.AllArgsConstructor;
@@ -78,18 +79,25 @@ public class SettingsService {
     /**
      * PATCH de la configuración del almacén. Solo escribe las secciones del esquema ({@code description} y
      * {@code publicProfile} quedan intactas). Activar {@code security.requireStaffTwoFactor} exige que quien lo
-     * activa tenga 2FA ({@code TWO_FACTOR_REQUIRED_FIRST}).
+     * activa tenga 2FA ({@code TWO_FACTOR_REQUIRED_FIRST}). Si el almacén ya lo exige, quien no tiene 2FA no puede
+     * cambiar nada, ni siquiera desactivarlo (403 {@code STAFF_TWO_FACTOR_REQUIRED}): la ruta está exenta del
+     * {@code StaffTwoFactorInterceptor} solo para poder leerla; la 2FA propia se activa en {@code /account/settings}.
      */
     @Transactional
     public StoreSettings patchStore(UUID storeId, UUID actorAccountId, boolean actorHasTwoFactor, Map<String, Object> patch) {
         Map<String, Object> before = SettingsSchemas.STORE.effective(storeConfigurations.lockForUpdate(storeId));
+        boolean requiredBefore = Boolean.TRUE.equals(
+                SettingsSchemas.section(before, "security").get("requireStaffTwoFactor"));
+        if (requiredBefore && !actorHasTwoFactor) {
+            throw new ForbiddenException("STAFF_TWO_FACTOR_REQUIRED",
+                    "Este almacén exige verificación en dos pasos. Actívala en la configuración de tu cuenta.",
+                    Map.of("storeId", storeId.toString()));
+        }
         Map<String, Object> after = SettingsSchemas.STORE.apply(before, patch);
 
         if (SettingsSchemas.section(patch, "profile").containsKey("featuredProductIds")) {
             requirePublished(storeId, after);
         }
-        boolean requiredBefore = Boolean.TRUE.equals(
-                SettingsSchemas.section(before, "security").get("requireStaffTwoFactor"));
         boolean requiredAfter = Boolean.TRUE.equals(
                 SettingsSchemas.section(after, "security").get("requireStaffTwoFactor"));
         if (!requiredBefore && requiredAfter && !actorHasTwoFactor) {

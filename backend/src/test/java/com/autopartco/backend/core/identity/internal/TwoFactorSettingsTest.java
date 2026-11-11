@@ -44,7 +44,9 @@ class TwoFactorSettingsTest {
     void setUp() {
         service = new TwoFactorSettingsService(accountRepository, tokenRepository,
                 new EmailVerificationTokenService(tokenRepository, null, new TokenMapper()), new TokenMapper(),
-                eventPublisher, passwordEncoder, identityRepository, auditService);
+                eventPublisher, passwordEncoder, identityRepository, auditService,
+                new TwoFactorDisableAttempts(com.autopartco.backend.shared.web.RateLimiters.inMemory(
+                        java.time.Clock.systemUTC())));
         Person person = new Person();
         person.setName("Ana");
         person.setSurname("Pérez");
@@ -104,6 +106,23 @@ class TwoFactorSettingsTest {
         TwoFactorStatusResponse status = service.disableWithPassword("ana@example.com", "Correct123!");
         assertThat(status.enabled()).isFalse();
         verify(auditService).record(eq(account.getId()), eq("TWO_FACTOR_DISABLED"), eq("ACCOUNT"), eq(account.getId()), any());
+    }
+
+    @Test
+    void fiveWrongPasswordsLockDisableEvenWithTheRightPassword() {
+        account.setConfiguration(AccountConfigurations.withTwoFactor(Map.of(), true));
+        when(passwordEncoder.matches("Wrong!", "encoded")).thenReturn(false);
+        when(passwordEncoder.matches("Correct123!", "encoded")).thenReturn(true);
+
+        for (int i = 0; i < TwoFactorDisableAttempts.MAX_FAILURES; i++) {
+            assertEquals("INVALID_PASSWORD", assertThrows(BadRequestException.class,
+                    () -> service.disableWithPassword("ana@example.com", "Wrong!")).getCode());
+        }
+        com.autopartco.backend.shared.error.TooManyRequestsException locked = assertThrows(
+                com.autopartco.backend.shared.error.TooManyRequestsException.class,
+                () -> service.disableWithPassword("ana@example.com", "Correct123!"));
+        assertEquals("TWO_FACTOR_DISABLE_LOCKED", locked.getCode());
+        assertThat(AccountConfigurations.twoFactorEnabled(account.getConfiguration())).isTrue();
     }
 
     @Test

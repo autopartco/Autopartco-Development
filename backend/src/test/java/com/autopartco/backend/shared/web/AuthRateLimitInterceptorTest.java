@@ -72,6 +72,9 @@ class AuthRateLimitInterceptorTest {
         assertThat(AuthRateLimitInterceptor.group("POST", "/api/v1/auth/verify-email/resend"))
                 .isEqualTo("verify-resend");
         assertThat(AuthRateLimitInterceptor.group("POST", "/api/v1/auth/social/google")).isEqualTo("social");
+        assertThat(AuthRateLimitInterceptor.group("POST", "/api/v1/account/settings/two-factor/disable"))
+                .isEqualTo("2fa-disable");
+        assertThat(AuthRateLimitInterceptor.group("POST", "/api/v1/account/settings/two-factor/request")).isNull();
         assertThat(AuthRateLimitInterceptor.group("POST", "/api/v1/auth/register")).isNull();
         assertThat(AuthRateLimitInterceptor.group("POST", "/api/v1/auth/logout")).isNull();
     }

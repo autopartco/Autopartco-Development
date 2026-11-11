@@ -50,6 +50,7 @@ public class TwoFactorSettingsService {
     private final PasswordEncoder passwordEncoder;
     private final AccountIdentityRepository identityRepository;
     private final AuditService auditService;
+    private final TwoFactorDisableAttempts disableAttempts;
 
     @Transactional
     public TwoFactorSetupResponse request(String email, String action) {
@@ -126,12 +127,17 @@ public class TwoFactorSettingsService {
         return apply(account, ENABLE.equals(action));
     }
 
-    /** Desactiva con la contraseña de la cuenta. */
+    /**
+     * Desactiva con la contraseña de la cuenta. Con {@value TwoFactorDisableAttempts#MAX_FAILURES} contraseñas
+     * erradas en una hora responde 429 {@code TWO_FACTOR_DISABLE_LOCKED} ({@link TwoFactorDisableAttempts}).
+     */
     @Transactional
     public TwoFactorStatusResponse disableWithPassword(String email, String password) {
         Account account = lock(email);
         requireEnabled(AccountConfigurations.twoFactorEnabled(account.getConfiguration()));
+        disableAttempts.requireNotLocked(account.getId());
         if (password == null || !passwordEncoder.matches(password, account.getPassword())) {
+            disableAttempts.recordFailure(account.getId());
             auditService.record(account.getId(), "TWO_FACTOR_DISABLE_FAILED", "ACCOUNT", account.getId(), Map.of());
             throw new BadRequestException("INVALID_PASSWORD", "La contraseña no es correcta.");
         }

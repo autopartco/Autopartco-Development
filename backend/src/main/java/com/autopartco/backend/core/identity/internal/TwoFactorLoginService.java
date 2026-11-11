@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.context.ApplicationEventPublisher;
@@ -53,9 +54,29 @@ public class TwoFactorLoginService {
         return AccountConfigurations.twoFactorEnabled(account.getConfiguration());
     }
 
-    /** Crea el desafío (invalida los anteriores) y pide enviar el código. Sin tokens ni sesión. */
+    /**
+     * Crea el desafío (invalida los anteriores) y pide enviar el código. Sin tokens ni sesión. Con la misma espera
+     * ({@value #COOLDOWN_SECONDS} s desde el último código) y el mismo tope ({@value #MAX_PER_HOUR} por hora) que
+     * {@link #resend}, por cuenta: no envía correo y devuelve el desafío vigente; si no queda ninguno usable, 429
+     * {@code TWO_FACTOR_RATE_LIMITED}.
+     */
     @Transactional
     public LoginResponse startChallenge(Account account) {
+        LocalDateTime now = LocalDateTime.now();
+        Optional<AccountToken> latest = accountTokenRepository
+                .findFirstByAccount_IdAndPurposeOrderByCreatedAtDesc(account.getId(), PURPOSE);
+        boolean cooling = latest.map(AccountToken::getCreatedAt)
+                .map(createdAt -> createdAt.plusSeconds(COOLDOWN_SECONDS).isAfter(now))
+                .orElse(false);
+        if (cooling || accountTokenRepository.countByAccount_IdAndPurposeAndCreatedAtAfter(
+                account.getId(), PURPOSE, now.minusHours(1)) >= MAX_PER_HOUR) {
+            AccountToken current = latest
+                    .filter(token -> !token.isUsed())
+                    .filter(token -> token.getExpirationAt().isAfter(now))
+                    .orElseThrow(() -> new TooManyRequestsException("TWO_FACTOR_RATE_LIMITED",
+                            "Pediste demasiados códigos. Espera unos minutos e inicia sesión de nuevo."));
+            return LoginResponse.twoFactorChallenge(current.getId(), toInstant(current.getExpirationAt()));
+        }
         accountTokenRepository.markUsed(account.getId(), List.of(PURPOSE), LocalDateTime.now());
         AccountToken challenge = issue(account);
         auditService.record(account.getId(), "TWO_FACTOR_CHALLENGE_SENT", "ACCOUNT", account.getId(), Map.of());

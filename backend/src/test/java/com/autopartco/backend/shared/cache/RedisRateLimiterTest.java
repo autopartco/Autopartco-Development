@@ -79,7 +79,7 @@ class RedisRateLimiterTest {
 
     private SlidingWindowRateLimiter limiter(StringRedisTemplate template, int max) {
         RedisGuard guard = new RedisGuard(template, Duration.ofSeconds(30), clock, CacheMetrics.NONE);
-        return new RateLimiters(new RedisRateLimitStore(guard), clock)
+        return new RateLimiters(new RedisRateLimitStore(guard, new KeyHmac("sal-de-prueba")), clock)
                 .create("auth", "AUTH_RATE_LIMITED", max, Duration.ofMinutes(1));
     }
 
@@ -95,6 +95,21 @@ class RedisRateLimiterTest {
         assertThat(ex.getCode()).isEqualTo("AUTH_RATE_LIMITED");
         assertDoesNotThrow(() -> second.acquire("2.2.2.2"));
         assertThat(keys).allMatch(key -> key.startsWith("ap:rl:auth:"));
+        assertThat(keys).noneMatch(key -> key.contains("1.1.1.1") || key.contains("2.2.2.2"));
+    }
+
+    @Test
+    void ipPartOfTheKeyIsHmacWithTheSalt() {
+        RedisGuard guard = new RedisGuard(mock(StringRedisTemplate.class), Duration.ofSeconds(30), clock,
+                CacheMetrics.NONE);
+        RedisRateLimitStore store = new RedisRateLimitStore(guard, new KeyHmac("sal-a"));
+        RedisRateLimitStore otherSalt = new RedisRateLimitStore(guard, new KeyHmac("sal-b"));
+
+        String key = store.redisKey("auth:login:10.0.0.1");
+        assertThat(key).startsWith("ap:rl:auth:").doesNotContain("10.0.0.1").hasSize("ap:rl:auth:".length() + 32);
+        assertThat(store.redisKey("auth:login:10.0.0.1")).isEqualTo(key);
+        assertThat(otherSalt.redisKey("auth:login:10.0.0.1")).isNotEqualTo(key);
+        assertThat(store.redisKey("auth:login:10.0.0.2")).isNotEqualTo(key);
     }
 
     @Test

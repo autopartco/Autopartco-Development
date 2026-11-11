@@ -16,8 +16,8 @@ import jakarta.servlet.http.HttpServletResponse;
 /**
  * Cookie funcional {@value #NAME}: identificador anónimo del visitante (UUID aleatorio, sin datos personales), 1 año,
  * {@code HttpOnly}. Se emite en {@code /events/*} si no llega y la usan las métricas de visibilidad, los anuncios
- * (tope de frecuencia y eventos) y {@code POST /marketplace/orders} cuando el cliente no envía {@code anonymousId}
- * (el del cuerpo sigue teniendo prioridad, por compatibilidad).
+ * (tope de frecuencia y eventos, donde es la única fuente del visitante anónimo) y {@code POST /marketplace/orders}
+ * (prioridad sobre el {@code anonymousId} del cuerpo, que solo se usa si no llega la cookie).
  * <p>
  * {@code SameSite=None; Secure} para que viaje en los {@code fetch} con credenciales aunque el frontend y la API
  * estén en sitios distintos; en {@code localhost} va {@code SameSite=Lax} sin {@code Secure} (HTTP local).

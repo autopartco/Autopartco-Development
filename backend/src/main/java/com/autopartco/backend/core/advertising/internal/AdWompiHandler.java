@@ -31,7 +31,8 @@ import lombok.extern.slf4j.Slf4j;
  *   <li>APPROVED: fija {@code paid_at} y pasa la campaña a {@code SCHEDULED} (antes del inicio) o {@code ACTIVE} una
  *       sola vez. Si la campaña ya no se puede activar (rechazada, cancelada, vencida, ya pagada o con otro precio),
  *       el pago queda APPROVED y la campaña con {@code requires_manual_refund}; una vencida sin pagar pasa a
- *       {@code CANCELLED}.</li>
+ *       {@code CANCELLED}. Excepción: un pago viejo con otro monto aprobado mientras la campaña espera un pago
+ *       {@code PENDING} más reciente solo marca {@code requires_manual_refund} (ni cancela ni fija {@code paid_at}).</li>
  *   <li>DECLINED/ERROR/VOIDED: el pago guarda el estado y la campaña {@code PENDING_PAYMENT} vuelve a {@code DRAFT}
  *       si no le queda otro pago pendiente.</li>
  *   <li>Idempotente por {@code provider_transaction_id}: repetir la misma transacción da IGNORED.</li>
@@ -140,6 +141,13 @@ public class AdWompiHandler implements WompiTransactionHandler {
             return WompiEventOutcome.APPLIED;
         }
         campaign.setRequiresManualRefund(true);
+        if (campaign.getPaidAt() == null && AWAITING.contains(campaign.getStatus())
+                && !today.isAfter(campaign.getEndsOn()) && newerPendingPayment(payment)) {
+            // Pago viejo (otro precio) aprobado tarde: la campaña sigue esperando el pago nuevo.
+            log.error("Approved stale Wompi transaction {} for ad campaign {} with a newer pending payment; manual "
+                    + "refund required", transaction.id(), campaign.getId());
+            return WompiEventOutcome.APPLIED;
+        }
         if (campaign.getPaidAt() == null) {
             campaign.setPaidAt(now);
         }
@@ -213,6 +221,14 @@ public class AdWompiHandler implements WompiTransactionHandler {
                 campaign.moveTo(AdCampaignStatus.DRAFT);
             }
         });
+    }
+
+    /** Otro pago {@code PENDING} de la campaña creado después de {@code payment} (o sin fecha conocida). */
+    private boolean newerPendingPayment(AdPayment payment) {
+        return paymentRepository.findByCampaignIdAndStatus(payment.getCampaignId(), AdPayment.PENDING).stream()
+                .filter(other -> !other.getId().equals(payment.getId()))
+                .anyMatch(other -> payment.getCreatedAt() == null || other.getCreatedAt() == null
+                        || other.getCreatedAt().isAfter(payment.getCreatedAt()));
     }
 
     private boolean linkedElsewhere(AdPayment payment, WompiTransaction transaction) {
