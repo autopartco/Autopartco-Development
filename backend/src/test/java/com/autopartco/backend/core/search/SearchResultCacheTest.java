@@ -53,6 +53,22 @@ class SearchResultCacheTest {
     }
 
     @Test
+    void interpretedAndExplicitVehicleDoNotShareAnEntry() {
+        SearchDictionary.Make suzuki = new SearchDictionary.Make(UUID.randomUUID(), "Suzuki");
+        ParsedQuery parsed = new ParsedQuery("bomba suzuki", List.of("bomba"), "bomba:*", null, suzuki, null, null,
+                null, List.of("bomba:*"), "suzuki", null);
+        SearchQuery free = SearchQuery.builder().q("bomba suzuki").build();
+        SearchQuery explicit = free.toBuilder().makeId(suzuki.id()).build();
+
+        String interpretedKey = SearchResultCache.normalized(free.q(), SearchCriteria.of(free, parsed), free);
+        String explicitKey = SearchResultCache.normalized(explicit.q(), SearchCriteria.of(explicit, parsed), explicit);
+
+        assertThat(interpretedKey).contains("make=&").contains("hmake=" + suzuki.id()).contains("hvts=suzuki");
+        assertThat(explicitKey).contains("make=" + suzuki.id()).contains("hmake=&");
+        assertThat(interpretedKey).isNotEqualTo(explicitKey);
+    }
+
+    @Test
     void priceGroupSeparatesSegmentsAndSkipsIndividualPromotions() {
         SearchQuery query = SearchQuery.builder().q("bujia").build();
         BuyerContext withoutSegments = new BuyerContext(UUID.randomUUID(), Set.of(), Map.of());

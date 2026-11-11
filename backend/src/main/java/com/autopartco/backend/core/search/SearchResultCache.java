@@ -83,7 +83,7 @@ public class SearchResultCache {
         return Optional.of("P:" + String.join(",", new TreeSet<>(buyer.platformSegments())));
     }
 
-    /** Filtros efectivos (explícitos + interpretados) con orden y formato estables. */
+    /** Filtros explícitos y pistas interpretadas (por separado) con orden y formato estables. */
     static String normalized(String q, SearchCriteria c, SearchQuery query) {
         StringBuilder key = new StringBuilder(256);
         add(key, "q", q == null ? null : q.strip().toLowerCase(Locale.ROOT).replaceAll("\\s+", " "));
@@ -110,6 +110,14 @@ public class SearchResultCache {
         add(key, "rating", c.minRating());
         add(key, "uni", c.universal());
         add(key, "sort", c.sort());
+        // Pistas interpretadas (ordenan, no filtran), separadas de los filtros explícitos de arriba.
+        SearchCriteria.Hints hints = c.hints();
+        add(key, "hmake", hints.makeId());
+        add(key, "hmodel", hints.modelId());
+        add(key, "hyear", hints.year());
+        add(key, "hcity", hints.cityCode());
+        add(key, "hvts", hints.vehicleTsQuery());
+        add(key, "hmts", hints.modelTsQuery());
         add(key, "page", query.pageOrDefault());
         add(key, "size", query.sizeOrDefault());
         add(key, "facets", query.facetsOrDefault());

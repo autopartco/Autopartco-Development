@@ -32,8 +32,9 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Motor de búsqueda del marketplace sobre {@code search_listings} ({@link SearchSql}). La consulta SQL filtra, ordena,
  * deja un listado por producto y pagina; después solo la página se hidrata con {@link ListingQueries} (precio del
- * comprador y {@link ProductResponse}), de modo que las reglas de publicación y precio no se duplican. Si la consulta
- * de texto no da resultados, se repite con trigramas y se marca {@code fuzzy}.
+ * comprador y {@link ProductResponse}), de modo que las reglas de publicación y precio no se duplican. Lo interpretado
+ * de {@code q} ordena pero no filtra ({@link SearchCriteria.Hints}). Si ningún producto tiene todas las palabras, se
+ * repite con cualquiera de ellas ({@code fuzzy=false}); si tampoco, con trigramas y se marca {@code fuzzy}.
  */
 @Slf4j
 @Service
@@ -187,6 +188,15 @@ public class SearchService {
         SearchCriteria criteria = exact;
         Page found = fetch(criteria, page, size);
         boolean fuzzy = false;
+        if (found.total() == 0 && criteria.tsQuery() != null && parsed.anyTsQuery() != null) {
+            // Ninguno tiene todas las palabras: cualquiera de ellas (sin palabras vacías), antes que los trigramas.
+            SearchCriteria anyWord = criteria.anyWord(parsed.anyTerms());
+            Page anyPage = fetch(anyWord, page, size);
+            if (anyPage.total() > 0) {
+                criteria = anyWord;
+                found = anyPage;
+            }
+        }
         if (found.total() == 0 && parsed.hasText() && parsed.fuzzyText() != null) {
             SearchCriteria similar = criteria.fuzzy(parsed.fuzzyText());
             jdbcClient.sql(SearchSql.FUZZY_THRESHOLD_SQL).query(String.class).single();
@@ -221,8 +231,8 @@ public class SearchService {
         }
         Set<UUID> shown = new HashSet<>();
         items.forEach(hit -> shown.add(hit.listing().id()));
-        AdContext context = new AdContext(parsed.text(), criteria.categoryId(), criteria.makeId(),
-                criteria.modelId(), criteria.cityCode(), shown, visitorKey);
+        AdContext context = new AdContext(parsed.text(), criteria.categoryId(), criteria.targetMakeId(),
+                criteria.targetModelId(), criteria.targetCityCode(), shown, visitorKey);
         return pickListings(AdPlacement.SEARCH_TOP, context, SPONSORED_PER_PAGE, buyer);
     }
 

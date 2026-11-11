@@ -38,6 +38,12 @@ public class QueryParser {
     static final int MAX_NGRAM = 4;
     static final int FUZZY_MIN_LENGTH = 5;
     static final String BOGOTA_CODE = "11001";
+    /**
+     * Palabras vacías frecuentes en las búsquedas: no cuentan en el respaldo «cualquier palabra» ni llevan prefijo.
+     * La configuración {@code spanish_unaccent} también las descarta del {@code tsquery}.
+     */
+    static final Set<String> STOPWORDS = Set.of("a", "al", "con", "de", "del", "el", "en", "la", "las", "lo", "los",
+            "para", "por", "sin", "su", "un", "una", "y", "o", "e", "u", "que", "mi");
 
     private static final Pattern YEAR = Pattern.compile("(19|20)\\d{2}");
     private static final Pattern REFERENCE = Pattern.compile("[A-Z0-9-]{5,}");
@@ -153,8 +159,40 @@ public class QueryParser {
                 }
             }
         }
-        return new ParsedQuery(normalized, words, tsQuery(words, lookup.synonyms), reference, make, model, year,
-                city);
+        List<String> groups = groups(words, lookup.synonyms);
+        List<String> anyTerms = new ArrayList<>();
+        for (int i = 0; i < words.size(); i++) {
+            if (!STOPWORDS.contains(words.get(i))) {
+                anyTerms.add(groups.get(i));
+            }
+        }
+        String modelTerm = model == null ? null : modelTerm(model, make);
+        String vehicleTsQuery = make == null ? null
+                : modelTerm == null ? phrase(make.name()) : phrase(make.name()) + " | " + modelTerm;
+        return new ParsedQuery(normalized, words, groups.isEmpty() ? null : String.join(" & ", groups), reference,
+                make, model, year, city, anyTerms, vehicleTsQuery, modelTerm);
+    }
+
+    /** Nombre normalizado como término de {@code tsquery}: {@code palabra} o {@code (varias & palabras)}. */
+    static String phrase(String name) {
+        String normalized = normalizeName(name);
+        if (normalized == null) {
+            return null;
+        }
+        String[] parts = normalized.split(" ");
+        return parts.length == 1 ? parts[0] : "(" + String.join(" & ", parts) + ")";
+    }
+
+    /** El modelo en el texto: su nombre si tiene letras; si no («3»), junto a la marca («mazda & 3»). */
+    private static String modelTerm(Model model, Make make) {
+        String name = normalizeName(model.name());
+        if (name == null) {
+            return null;
+        }
+        if (name.chars().anyMatch(Character::isLetter) || make == null) {
+            return phrase(name);
+        }
+        return phrase(make.name() + " " + name);
     }
 
     /**
@@ -162,22 +200,26 @@ public class QueryParser {
      * admite sintaxis del usuario.
      */
     static String tsQuery(List<String> words, Map<String, List<String>> synonyms) {
-        if (words.isEmpty()) {
-            return null;
-        }
+        List<String> groups = groups(words, synonyms);
+        return groups.isEmpty() ? null : String.join(" & ", groups);
+    }
+
+    /** Un grupo por palabra: la palabra (con prefijo si es la última) o la alternativa con sus sinónimos. */
+    private static List<String> groups(List<String> words, Map<String, List<String>> synonyms) {
         List<String> groups = new ArrayList<>();
         for (int i = 0; i < words.size(); i++) {
             String word = words.get(i);
             boolean last = i == words.size() - 1;
             List<String> alternatives = new ArrayList<>();
-            alternatives.add(last && word.length() >= 3 ? word + ":*" : word);
+            // Sin prefijo en palabras vacías: «para:*» encontraría «parabrisas».
+            alternatives.add(last && word.length() >= 3 && !STOPWORDS.contains(word) ? word + ":*" : word);
             for (String expansion : synonyms.getOrDefault(word, List.of())) {
                 String[] parts = expansion.split(" ");
                 alternatives.add(parts.length == 1 ? parts[0] : "(" + String.join(" & ", parts) + ")");
             }
             groups.add(alternatives.size() == 1 ? alternatives.getFirst() : "(" + String.join(" | ", alternatives) + ")");
         }
-        return String.join(" & ", groups);
+        return groups;
     }
 
     private static Integer findYear(List<String> tokens, boolean[] used) {

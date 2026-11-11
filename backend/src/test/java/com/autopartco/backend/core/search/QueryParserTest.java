@@ -20,17 +20,20 @@ class QueryParserTest {
     static final Make CHEVROLET = new Make(UUID.randomUUID(), "Chevrolet");
     static final Make MAZDA = new Make(UUID.randomUUID(), "Mazda");
     static final Make RENAULT = new Make(UUID.randomUUID(), "Renault");
+    static final Make SUZUKI = new Make(UUID.randomUUID(), "Suzuki");
     static final Model SPARK = new Model(UUID.randomUUID(), CHEVROLET.id(), "Spark");
     static final Model SPARK_GT = new Model(UUID.randomUUID(), CHEVROLET.id(), "Spark GT");
     static final Model MAZDA_3 = new Model(UUID.randomUUID(), MAZDA.id(), "3");
     static final Model LOGAN = new Model(UUID.randomUUID(), RENAULT.id(), "Logan");
+    static final Model VITARA = new Model(UUID.randomUUID(), SUZUKI.id(), "Vitara");
     static final City BOGOTA = new City("11001", "Bogotá, D.C.", true, 7_900_000);
     static final City MEDELLIN = new City("05001", "Medellín", true, 2_600_000);
     static final City SMALL_LA_UNION = new City("05400", "La Unión", false, 20_000);
     static final City BIG_LA_UNION = new City("52399", "La Unión", false, 30_000);
 
     static Vocabulary vocabulary() {
-        return new Vocabulary(List.of(CHEVROLET, MAZDA, RENAULT), List.of(SPARK, SPARK_GT, MAZDA_3, LOGAN),
+        return new Vocabulary(List.of(CHEVROLET, MAZDA, RENAULT, SUZUKI),
+                List.of(SPARK, SPARK_GT, MAZDA_3, LOGAN, VITARA),
                 List.of(BOGOTA, MEDELLIN, SMALL_LA_UNION, BIG_LA_UNION),
                 Map.of("bandas", List.of("pastillas"), "amortiguador", List.of("shock absorber")));
     }
@@ -139,6 +142,34 @@ class QueryParserTest {
         assertThat(parsed.normalized()).hasSize(QueryParser.MAX_LENGTH);
         assertThat(parser.parse("   ", true)).isEqualTo(ParsedQuery.EMPTY);
         assertThat(parser.parse(null, true).hasText()).isFalse();
+    }
+
+    @Test
+    void freeTextWithAMakeKeepsTheVehicleAsATextAlternativeAndSkipsStopwords() {
+        ParsedQuery parsed = parser.parse("bomba de freno para suzuki", true);
+
+        assertThat(parsed.make()).isEqualTo(SUZUKI);
+        assertThat(parsed.model()).isNull();
+        assertThat(parsed.text()).isEqualTo("bomba de freno para");
+        // «para» es palabra vacía: sin prefijo (no debe encontrar «parabrisas»).
+        assertThat(parsed.tsQuery()).isEqualTo("bomba & de & freno & para");
+        assertThat(parsed.anyTerms()).containsExactly("bomba", "freno");
+        assertThat(parsed.anyTsQuery()).isEqualTo("bomba | freno");
+        assertThat(parsed.vehicleTsQuery()).isEqualTo("suzuki");
+        assertThat(parsed.modelTsQuery()).isNull();
+        assertThat(parsed.interpretation().makeId()).isEqualTo(SUZUKI.id());
+    }
+
+    @Test
+    void modelTermsGoWithTheMakeWhenTheModelHasNoLetters() {
+        ParsedQuery vitara = parser.parse("bomba freno vitara", true);
+        assertThat(vitara.vehicleTsQuery()).isEqualTo("suzuki | vitara");
+        assertThat(vitara.modelTsQuery()).isEqualTo("vitara");
+
+        ParsedQuery mazda = parser.parse("filtro mazda 3", true);
+        assertThat(mazda.vehicleTsQuery()).isEqualTo("mazda | (mazda & 3)");
+        assertThat(mazda.modelTsQuery()).isEqualTo("(mazda & 3)");
+        assertThat(mazda.anyTsQuery()).isNull();
     }
 
     @Test

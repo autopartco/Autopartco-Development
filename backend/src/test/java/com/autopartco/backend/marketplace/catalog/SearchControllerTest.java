@@ -117,6 +117,28 @@ class SearchControllerTest {
     }
 
     @Test
+    void freeTextIsNotTurnedIntoExplicitFiltersButExplicitOnesPassThrough() throws Exception {
+        mvc.perform(get(URL).param("q", "bomba de freno para suzuki"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.interpreted.makeId").value(MAKE.toString()))
+                .andExpect(jsonPath("$.interpreted.makeName").value("Chevrolet"));
+        mvc.perform(get(URL).param("q", "bomba de freno").param("makeId", MAKE.toString()).param("year", "2018"))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<SearchQuery> query = ArgumentCaptor.forClass(SearchQuery.class);
+        verify(searchService, org.mockito.Mockito.times(2)).search(query.capture(), any(), any());
+        SearchQuery free = query.getAllValues().get(0);
+        assertThat(free.q()).isEqualTo("bomba de freno para suzuki");
+        assertThat(free.makeId()).isNull();
+        assertThat(free.modelId()).isNull();
+        assertThat(free.year()).isNull();
+        assertThat(free.cityCode()).isNull();
+        SearchQuery explicit = query.getAllValues().get(1);
+        assertThat(explicit.makeId()).isEqualTo(MAKE);
+        assertThat(explicit.year()).isEqualTo(2018);
+    }
+
+    @Test
     void nearestWithoutPointUsesAreaCookieAndIgnoresInvalidOne() throws Exception {
         mvc.perform(get(URL).param("sort", "nearest")
                         .cookie(new jakarta.servlet.http.Cookie("ap_area", "4.60%2C-74.10%2C")))
