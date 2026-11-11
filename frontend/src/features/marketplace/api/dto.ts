@@ -116,7 +116,40 @@ export interface StorePublicProfileDto {
     instagram: string | null
     facebook: string | null
     tiktok: string | null
+    youtube?: string | null
+    x?: string | null
+    email?: string | null
   }
+  tagline?: string | null
+  verified?: boolean
+  whatsappEnabled?: boolean
+  whatsappMessage?: string | null
+  services?: {
+    id: string
+    category: string
+    name: string
+    description: string | null
+    priceFrom: number | null
+    durationMinutes: number | null
+    branchIds: string[]
+  }[]
+  featuredProductIds?: string[]
+}
+
+/** `core/organization/PublicBranches.PublicBranch` (`GET /marketplace/stores/{id}/branches`). */
+export interface PublicBranchDto {
+  id: string
+  name: string
+  address: string | null
+  city: string | null
+  department: string | null
+  latitude: number | null
+  longitude: number | null
+  phone: string | null
+  whatsapp: string | null
+  openingHours: Record<string, unknown> | null
+  openNow: boolean | null
+  serviceIds: string[] | null
 }
 
 /** `marketplace/reviews/StoreReviewResponse`. */

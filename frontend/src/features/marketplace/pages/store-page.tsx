@@ -9,205 +9,95 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useSession } from '@/features/auth/hooks'
 import { useStoreDistances } from '@/features/location/hooks'
-import { initials, pluralize } from '@/lib/format'
+import { pluralize } from '@/lib/format'
 import { invalidateAsync } from '@/lib/use-async'
 import { cn } from '@/lib/utils'
 import { trackView } from '@/lib/visibility'
 import { getMarketplaceService } from '../api/marketplace-service'
-import { isNotFoundError, type StoreContact, type StoreProfile, type StoreReview } from '../api/types'
+import { isNotFoundError, type StoreBranch, type StoreProfile, type StoreReview } from '../api/types'
 import { ProductCard, ProductGrid, ProductGridSkeleton } from '../components/product-card'
 import { ResultsPagination } from '../components/results-pagination'
-import { ShareButton } from '../components/share-button'
-import { useProductSearch, useReviewEligibility, useStoreProfile, useStoreReviews } from '../hooks'
+import { BranchesPanel } from '../components/store/branches-panel'
+import { ServicesList } from '../components/store/services-list'
+import { Stars } from '../components/store/stars'
+import { StoreFacts } from '../components/store/store-facts'
+import { StoreHeader } from '../components/store/store-header'
+import { useProductSearch, useReviewEligibility, useStoreBranches, useStoreProfile, useStoreReviews } from '../hooks'
 import { storePath, storeProductsPath } from '../lib/paths'
-import { PAGE_SIZE, parseProductQuery } from '../lib/product-query'
+import { PAGE_SIZE, parseProductQuery, QUERY_PARAMS } from '../lib/product-query'
 import { NotFoundContent } from './not-found-page'
 
 const dateFormatter = new Intl.DateTimeFormat('es-CO', { dateStyle: 'long' })
-const monthFormatter = new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric' })
 const ratingFormatter = new Intl.NumberFormat('es-CO', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 
-/** `YYYY-MM-DD` como fecha local (sin desplazar el día por la zona horaria). */
-function localDate(value: string): Date {
-  const [year, month, day] = value.slice(0, 10).split('-').map(Number)
-  return new Date(year ?? 1970, (month ?? 1) - 1, day ?? 1)
-}
+/** Hasta 6 sedes se filtran con botones; con más, un selector (no desborda en 360 px). */
+const MAX_BRANCH_CHIPS = 6
 
-function StoreLogo({ store }: { store: StoreProfile }) {
-  const [failed, setFailed] = useState(false)
-  if (store.logoUrl && !failed) {
+function BranchFilter({ branches, value, onChange }: { branches: StoreBranch[]; value: string | undefined; onChange: (branchId: string | undefined) => void }) {
+  const selectId = useId()
+  if (branches.length > MAX_BRANCH_CHIPS) {
     return (
-      <img
-        src={store.logoUrl}
-        alt={`Logo de ${store.name}`}
-        width={80}
-        height={80}
-        className="size-16 shrink-0 rounded-lg border border-ap-line bg-ap-white object-contain sm:size-20"
-        onError={() => setFailed(true)}
-      />
+      <div className="flex flex-col gap-1.5">
+        <label htmlFor={selectId} className="text-sm font-semibold text-ap-ink">
+          Ver repuestos de la sede
+        </label>
+        <select
+          id={selectId}
+          value={value ?? ''}
+          onChange={(event) => onChange(event.target.value || undefined)}
+          className="h-11 w-full max-w-sm rounded-md border border-input bg-ap-white px-3 text-base text-ap-ink sm:text-sm"
+        >
+          <option value="">Todas las sedes</option>
+          {branches.map((branch) => (
+            <option key={branch.id} value={branch.id}>
+              {branch.name}
+            </option>
+          ))}
+        </select>
+      </div>
     )
   }
+  const chip = (selected: boolean) =>
+    cn(
+      'inline-flex min-h-11 items-center rounded-md border px-3 text-sm font-medium transition-colors',
+      selected ? 'border-ap-graphite bg-ap-graphite text-ap-white' : 'border-input bg-ap-white text-ap-ink hover:border-ap-graphite hover:bg-ap-paper',
+    )
   return (
-    <span className="grid size-16 shrink-0 place-items-center rounded-lg bg-ap-graphite text-xl font-semibold text-ap-white sm:size-20" aria-hidden>
-      {initials(store.name) || store.name.charAt(0)}
-    </span>
-  )
-}
-
-function StoreBanner({ store }: { store: StoreProfile }) {
-  const [failed, setFailed] = useState(false)
-  if (!store.bannerUrl || failed) return null
-  return (
-    <img
-      src={store.bannerUrl}
-      alt=""
-      width={1200}
-      height={240}
-      className="mb-6 aspect-[3/1] w-full rounded-lg border border-ap-line bg-ap-paper object-cover sm:aspect-[5/1]"
-      onError={() => setFailed(true)}
-    />
-  )
-}
-
-/** Estrellas de solo lectura; el valor va en texto para lectores de pantalla. */
-function Stars({ value, className }: { value: number; className?: string }) {
-  return (
-    <span className={cn('inline-flex items-center gap-0.5', className)} role="img" aria-label={`${value} de 5`}>
-      {Array.from({ length: 5 }, (_, index) => (
-        <StarIcon
-          key={index}
-          aria-hidden
-          className={cn('size-4', index < Math.round(value) ? 'fill-ap-graphite text-ap-graphite' : 'text-ap-line-strong')}
-        />
+    <div role="group" aria-label="Filtrar repuestos por sede" className="flex flex-wrap gap-2">
+      <button type="button" aria-pressed={!value} className={chip(!value)} onClick={() => onChange(undefined)}>
+        Todas las sedes
+      </button>
+      {branches.map((branch) => (
+        <button key={branch.id} type="button" aria-pressed={value === branch.id} className={chip(value === branch.id)} onClick={() => onChange(branch.id)}>
+          {branch.name}
+        </button>
       ))}
-    </span>
-  )
-}
-
-function Fact({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="flex min-w-0 flex-col gap-0.5">
-      <dt className="ap-index">{label}</dt>
-      <dd className="text-sm text-ap-ink">{children}</dd>
     </div>
   )
 }
 
-/** «+573001234567» → «+57 300 123 4567». */
-function formatPhone(value: string): string {
-  const digits = value.replace(/\D/g, '').replace(/^57/, '')
-  return digits.length === 10 ? `+57 ${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}` : value
-}
-
-function websiteLabel(value: string): string {
-  try {
-    return new URL(value).host.replace(/^www\./, '')
-  } catch {
-    return value
-  }
-}
-
-/** Contacto que la tienda decidió publicar; enlaces construidos solo con datos validados por el servidor. */
-function contactLinks(contact: StoreContact): { label: string; text: string; href: string }[] {
-  const links: { label: string; text: string; href: string }[] = []
-  if (contact.whatsapp) {
-    links.push({ label: 'WhatsApp', text: formatPhone(contact.whatsapp), href: `https://wa.me/${contact.whatsapp.replace(/\D/g, '')}` })
-  }
-  if (contact.phone) links.push({ label: 'Teléfono', text: formatPhone(contact.phone), href: `tel:${contact.phone}` })
-  if (contact.website?.startsWith('https://')) {
-    links.push({ label: 'Sitio web', text: websiteLabel(contact.website), href: contact.website })
-  }
-  if (contact.instagram) {
-    links.push({ label: 'Instagram', text: `@${contact.instagram}`, href: `https://www.instagram.com/${encodeURIComponent(contact.instagram)}` })
-  }
-  if (contact.facebook) {
-    links.push({ label: 'Facebook', text: contact.facebook, href: `https://www.facebook.com/${encodeURIComponent(contact.facebook)}` })
-  }
-  if (contact.tiktok) {
-    links.push({ label: 'TikTok', text: `@${contact.tiktok}`, href: `https://www.tiktok.com/@${encodeURIComponent(contact.tiktok)}` })
-  }
-  return links
-}
-
-function StoreHeader({ store }: { store: StoreProfile }) {
-  const links = contactLinks(store.contact)
-  return (
-    <header className="flex flex-col gap-6">
-      <StoreBanner store={store} />
-      <div className="flex items-start gap-4 sm:gap-5">
-        <StoreLogo store={store} />
-        <div className="flex min-w-0 flex-1 flex-col gap-1">
-          <p className="ap-index">Tienda / Perfil</p>
-          <h1 className="text-page-title break-words text-ap-ink">{store.name}</h1>
-          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ap-muted">
-            {store.ratingAverage !== undefined && store.ratingCount > 0 ? (
-              <>
-                <Stars value={store.ratingAverage} />
-                <span className="font-semibold text-ap-ink tabular-nums">{ratingFormatter.format(store.ratingAverage)}</span>
-                <a href="#resenas" className="underline-offset-4 hover:text-ap-red hover:underline">
-                  {pluralize(store.ratingCount, 'reseña', 'reseñas')}
-                </a>
-              </>
-            ) : (
-              <span>Sin reseñas todavía</span>
-            )}
-            <span aria-hidden>·</span>
-            <span>Tienda verificada por Autopartco</span>
-          </p>
-        </div>
-        <ShareButton path={storePath(store.id)} title={`${store.name} en Autopartco`} storeId={store.id} />
-      </div>
-
-      <dl className="grid grid-cols-2 gap-x-6 gap-y-4 border-y border-ap-line py-4 sm:grid-cols-4">
-        <Fact label="Repuestos publicados">
-          <span className="tabular-nums">{store.publishedProducts}</span>
-        </Fact>
-        <Fact label={store.cities.length === 1 ? 'Ciudad' : 'Ciudades'}>{store.cities.length > 0 ? store.cities.join(', ') : '—'}</Fact>
-        <Fact label="Sedes">
-          <span className="tabular-nums">{store.branchCount}</span>
-        </Fact>
-        {store.memberSince ? <Fact label="En Autopartco desde">{monthFormatter.format(localDate(store.memberSince))}</Fact> : null}
-      </dl>
-
-      {store.description || links.length > 0 ? (
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:gap-12">
-          {store.description ? <p className="max-w-prose whitespace-pre-line text-ap-ink">{store.description}</p> : <span />}
-          {links.length > 0 ? (
-            <section aria-labelledby="contacto" className="flex flex-col gap-2">
-              <h2 id="contacto" className="ap-index">
-                Contacto
-              </h2>
-              <dl className="flex flex-col divide-y divide-ap-line border-y border-ap-line">
-                {links.map((link) => (
-                  <div key={link.label} className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-center gap-3 py-2">
-                    <dt className="text-sm text-ap-muted">{link.label}</dt>
-                    <dd className="min-w-0">
-                      <a
-                        href={link.href}
-                        target={link.href.startsWith('tel:') ? undefined : '_blank'}
-                        rel="noopener noreferrer"
-                        className="inline-flex min-h-11 items-center break-all text-sm font-medium text-ap-ink underline-offset-4 hover:text-ap-red hover:underline"
-                      >
-                        {link.text}
-                      </a>
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </section>
-          ) : null}
-        </div>
-      ) : null}
-    </header>
-  )
-}
-
-function StoreProducts({ store }: { store: StoreProfile }) {
-  const [searchParams] = useSearchParams()
-  const page = parseProductQuery(searchParams).page
-  const query = { ...parseProductQuery(new URLSearchParams()), store: store.id, page, pageSize: PAGE_SIZE }
+function StoreProducts({ store, branches }: { store: StoreProfile; branches: StoreBranch[] }) {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const parsed = parseProductQuery(searchParams)
+  const page = parsed.page
+  // Un `?sucursal=` que no es de esta tienda se ignora (el servidor respondería 400).
+  const branchId = branches.some((branch) => branch.id === parsed.branch) ? parsed.branch : undefined
+  const query = { ...parseProductQuery(new URLSearchParams()), store: store.id, branch: branchId, page, pageSize: PAGE_SIZE }
   const results = useProductSearch(query)
   const distances = useStoreDistances()
+
+  function selectBranch(next: string | undefined) {
+    setSearchParams(
+      (current) => {
+        const params = new URLSearchParams(current)
+        params.delete(QUERY_PARAMS.page)
+        if (next) params.set(QUERY_PARAMS.branch, next)
+        else params.delete(QUERY_PARAMS.branch)
+        return params
+      },
+      { replace: true, preventScrollReset: true },
+    )
+  }
 
   let content: ReactNode
   if (results.status === 'error') {
@@ -222,7 +112,16 @@ function StoreProducts({ store }: { store: StoreProfile }) {
       </>
     )
   } else if (results.data.items.length === 0) {
-    content = (
+    content = branchId ? (
+      <EmptyState
+        title="Esta sede no tiene repuestos publicados"
+        description="Prueba con otra sede o mira todo el catálogo de la tienda."
+      >
+        <Button variant="outline" onClick={() => selectBranch(undefined)}>
+          Ver todas las sedes
+        </Button>
+      </EmptyState>
+    ) : (
       <EmptyState
         title="Esta tienda aún no tiene repuestos disponibles"
         description="Cuando publique repuestos con existencias aparecerán aquí. Mientras tanto, busca la pieza en otras tiendas."
@@ -264,6 +163,7 @@ function StoreProducts({ store }: { store: StoreProfile }) {
           Buscar en esta tienda con filtros
         </Link>
       </div>
+      {branches.length > 1 ? <BranchFilter branches={branches} value={branchId} onChange={selectBranch} /> : null}
       {content}
     </section>
   )
@@ -390,12 +290,17 @@ function StoreReviews({ store }: { store: StoreProfile }) {
   const eligibleOrders = eligibility.data ?? []
 
   return (
-    <section aria-labelledby="resenas" className="flex scroll-mt-24 flex-col gap-5">
+    <section id="resenas" aria-labelledby="resenas-titulo" className="flex scroll-mt-24 flex-col gap-5">
       <div className="flex flex-col gap-1">
         <p className="ap-index">Tienda / Reseñas</p>
-        <h2 id="resenas" className="text-section text-ap-ink">
+        <h2 id="resenas-titulo" className="text-section text-ap-ink">
           Reseñas de compradores
         </h2>
+        {/*
+          TODO(reseñas): aquí irán el resumen de calificación (promedio, distribución por estrellas) y las insignias
+          de la tienda; este bloque solo muestra el promedio y el total que ya entrega el perfil. La lógica de
+          reseñas llega en otra tarea: no añadir aquí cálculos ni estado nuevos.
+        */}
         {store.ratingAverage !== undefined && store.ratingCount > 0 ? (
           <p className="flex flex-wrap items-center gap-2 text-sm text-ap-muted">
             <Stars value={store.ratingAverage} />
@@ -416,10 +321,11 @@ function StoreReviews({ store }: { store: StoreProfile }) {
         </div>
       ) : reviews.data.items.length === 0 ? (
         <div className="flex flex-col gap-2 border-y border-ap-line py-5 text-sm text-ap-muted">
-          <p>Esta tienda aún no tiene reseñas. Las publican compradores que recibieron un pedido suyo.</p>
+          <p className="text-base font-semibold text-ap-ink">Sé el primero en opinar después de tu compra</p>
+          <p>Las reseñas las publican compradores que ya recibieron un pedido de esta tienda, para que otros compren con confianza.</p>
           {!session ? (
             <p>
-              ¿Le compraste?{' '}
+              ¿Ya le compraste?{' '}
               <Link to="/ingresar" state={{ from: location }} className="font-semibold text-ap-red underline-offset-4 hover:underline">
                 Ingresa para calificarla
               </Link>
@@ -452,47 +358,137 @@ function StoreReviews({ store }: { store: StoreProfile }) {
   )
 }
 
+function AboutSection({ store }: { store: StoreProfile }) {
+  if (!store.description) return null
+  return (
+    <section aria-labelledby="sobre-titulo" className="flex flex-col gap-3">
+      <div className="flex flex-col gap-1">
+        <p className="ap-index">Tienda / Perfil</p>
+        <h2 id="sobre-titulo" className="text-block-title text-ap-ink">
+          Sobre la tienda
+        </h2>
+      </div>
+      <p className="max-w-prose whitespace-pre-line text-ap-ink">{store.description}</p>
+    </section>
+  )
+}
+
+function ServicesSection({ store, branches, wide }: { store: StoreProfile; branches: StoreBranch[]; wide: boolean }) {
+  if (store.services.length === 0) return null
+  return (
+    <section id="servicios" aria-labelledby="servicios-titulo" className="flex scroll-mt-24 flex-col gap-4">
+      <div className="flex flex-col gap-1">
+        <p className="ap-index">Tienda / Servicios</p>
+        <h2 id="servicios-titulo" className="text-block-title text-ap-ink">
+          Servicios que ofrece
+        </h2>
+        <p className="text-sm text-ap-muted">Los precios son de referencia; confirma el valor final con la tienda.</p>
+      </div>
+      <ServicesList services={store.services} branches={branches} wide={wide} />
+    </section>
+  )
+}
+
+function BranchesSkeleton() {
+  return (
+    <div aria-hidden className="flex flex-col gap-4">
+      <Skeleton className="h-6 w-40" />
+      <Skeleton className="aspect-[4/3] w-full rounded-lg" />
+      <Skeleton className="h-24 w-full" />
+    </div>
+  )
+}
+
 function StoreDetail({ store }: { store: StoreProfile }) {
   useEffect(() => {
     trackView('PROFILE_VIEW', store.id)
   }, [store.id])
 
+  const branchesResult = useStoreBranches(store.id)
+  const branches = branchesResult.data ?? []
+  const loadingBranches = !branchesResult.data && branchesResult.status !== 'error' && store.branchCount > 0
+  const hasBranches = branches.length > 0
+  const hasLeft = !!store.description || store.services.length > 0
+  const hasRight = hasBranches || loadingBranches
+  // Una sola columna con contenido: ocupa todo el ancho; con las dos, el mapa queda fijo a la derecha.
+  const twoColumns = hasLeft && hasRight
+
   return (
-    <Container className="py-6 sm:py-8">
+    <>
       <title>{`${store.name} | Tiendas Autopartco`}</title>
-      <Breadcrumbs items={[{ label: 'Inicio', to: '/' }, { label: 'Tiendas', to: '/tiendas' }, { label: store.name }]} className="mb-6" />
-      <StoreHeader store={store} />
-      <div className="mt-10 flex flex-col gap-12 border-t border-ap-graphite pt-8 sm:mt-12 sm:gap-16">
-        <StoreProducts store={store} />
-        <StoreReviews store={store} />
-      </div>
-    </Container>
+      <StoreHeader
+        store={store}
+        branches={branches}
+        crumbs={<Breadcrumbs items={[{ label: 'Inicio', to: '/' }, { label: 'Tiendas', to: '/tiendas' }, { label: store.name }]} />}
+      />
+      <Container className="flex flex-col gap-10 pt-6 pb-8 sm:gap-12 sm:pb-12">
+        <StoreFacts store={store} branches={branches} />
+
+        {hasLeft || hasRight ? (
+          <div className={cn('grid gap-10', twoColumns && 'lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-12')}>
+            {hasLeft ? (
+              <div className="flex min-w-0 flex-col gap-10">
+                <AboutSection store={store} />
+                <ServicesSection store={store} branches={branches} wide={!twoColumns} />
+              </div>
+            ) : null}
+            {hasBranches ? (
+              <BranchesPanel
+                storeId={store.id}
+                storeName={store.name}
+                storePath={storePath(store.id)}
+                branches={branches}
+                whatsappMessage={store.whatsappMessage}
+                whatsappEnabled={store.whatsappEnabled}
+                wide={!twoColumns}
+              />
+            ) : loadingBranches ? (
+              <BranchesSkeleton />
+            ) : null}
+          </div>
+        ) : null}
+
+        <div className="flex flex-col gap-12 border-t border-ap-graphite pt-8 sm:gap-16">
+          <StoreProducts store={store} branches={branches} />
+          <StoreReviews store={store} />
+        </div>
+      </Container>
+    </>
   )
 }
 
 function StoreSkeleton() {
   return (
-    <Container className="py-6 sm:py-8">
+    <>
       <span className="sr-only" role="status">
         Cargando tienda
       </span>
-      <div aria-hidden className="flex flex-col gap-6">
-        <Skeleton className="h-4 w-56" />
-        <div className="flex items-start gap-4">
-          <Skeleton className="size-16 rounded-lg sm:size-20" />
-          <div className="flex flex-1 flex-col gap-2">
-            <Skeleton className="h-3 w-24" />
-            <Skeleton className="h-8 w-2/3" />
-            <Skeleton className="h-4 w-1/3" />
+      <div aria-hidden>
+        <Container className="py-6">
+          <Skeleton className="h-4 w-56" />
+        </Container>
+        <Skeleton className="h-36 w-full rounded-none sm:h-48 lg:h-60" />
+        <Container>
+          <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
+            <Skeleton className="-mt-12 size-24 rounded-xl sm:-mt-16 sm:size-32" />
+            <div className="flex flex-1 flex-col gap-2 sm:pt-3">
+              <Skeleton className="h-8 w-2/3" />
+              <Skeleton className="h-4 w-1/3" />
+              <Skeleton className="h-4 w-1/4" />
+            </div>
           </div>
-        </div>
-        <Skeleton className="h-16 w-full" />
+          <Skeleton className="mt-5 h-11 w-64" />
+          <Skeleton className="mt-6 h-20 w-full" />
+        </Container>
       </div>
-    </Container>
+    </>
   )
 }
 
-/** Perfil público del almacén: identidad, contacto, repuestos y reseñas. `/tiendas/:storeId`. */
+/**
+ * Perfil público del almacén `/tiendas/:storeId`: portada con acciones, datos destacados, «Sobre la tienda» y servicios
+ * junto al mapa de sedes, repuestos (con filtro por sede) y reseñas. Una sección sin datos no se dibuja.
+ */
 export default function StorePage() {
   const { storeId = '' } = useParams()
   const profile = useStoreProfile(storeId)

@@ -15,6 +15,7 @@ import type {
   SearchResponseDto,
   SuggestResponseDto,
   PageResponseDto,
+  PublicBranchDto,
   StorePublicProfileDto,
   StoreResponseDto,
   StoreReviewResponseDto,
@@ -33,6 +34,9 @@ import {
   type ProductQuery,
   type SearchSuggestions,
   type SuggestionKind,
+  type OpeningHours,
+  type ServiceCategory,
+  type StoreBranch,
   type StoreProfile,
   type StoreReview,
   type StoreSummary,
@@ -61,8 +65,43 @@ const PATHS = {
   storeAsset: (storeId: string, assetType: 'logo' | 'banner') =>
     `/marketplace/stores/${encodeURIComponent(storeId)}/brand/${assetType}`,
   store: (storeId: string) => `/marketplace/stores/${encodeURIComponent(storeId)}`,
+  storeBranches: (storeId: string) => `/marketplace/stores/${encodeURIComponent(storeId)}/branches`,
   storeReviews: (storeId: string) => `/marketplace/stores/${encodeURIComponent(storeId)}/reviews`,
 } as const
+
+const WEEK_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
+
+/** Horario del servidor sin confiar en su forma: solo franjas `HH:mm` bien formadas y notas de texto. */
+function toOpeningHours(raw: Record<string, unknown> | null): OpeningHours | undefined {
+  if (!raw) return undefined
+  const hours: OpeningHours = {}
+  for (const day of WEEK_DAYS) {
+    const slots = raw[day]
+    if (!Array.isArray(slots)) continue
+    hours[day] = slots.flatMap((slot): [string, string][] =>
+      Array.isArray(slot) && typeof slot[0] === 'string' && typeof slot[1] === 'string' ? [[slot[0], slot[1]]] : [],
+    )
+  }
+  if (typeof raw.notes === 'string' && raw.notes.trim()) hours.notes = raw.notes.trim()
+  return Object.keys(hours).length > 0 ? hours : undefined
+}
+
+function toBranch(dto: PublicBranchDto): StoreBranch {
+  const hasPoint = typeof dto.latitude === 'number' && typeof dto.longitude === 'number'
+  return {
+    id: dto.id,
+    name: dto.name,
+    address: dto.address ?? '',
+    city: dto.city ?? undefined,
+    department: dto.department ?? undefined,
+    point: hasPoint ? { lat: Number(dto.latitude), lng: Number(dto.longitude) } : undefined,
+    phone: dto.phone ?? undefined,
+    whatsapp: dto.whatsapp ?? undefined,
+    openingHours: toOpeningHours(dto.openingHours),
+    openNow: dto.openNow ?? undefined,
+    serviceIds: dto.serviceIds ?? [],
+  }
+}
 
 function toReview(dto: StoreReviewResponseDto): StoreReview {
   return { id: dto.id, rating: dto.rating, comment: dto.comment ?? undefined, authorName: dto.authorName, createdAt: dto.createdAt }
@@ -271,6 +310,7 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
       const category = query.category ? [...maps.categories.values()].find((item) => item.slug === query.category) : undefined
       if (category) params.set('categoryId', category.id)
       if (query.store) params.set('storeId', query.store)
+      if (query.store && query.branch) params.set('branchId', query.branch)
       params.set('page', String(Math.max(0, query.page - 1)))
       params.set('size', String(query.pageSize))
       const qs = params.toString()
@@ -468,7 +508,26 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
         ratingCount: dto.rating.count,
         publishedProducts: dto.publishedProducts,
         contact,
+        tagline: dto.tagline ?? undefined,
+        verified: dto.verified ?? false,
+        whatsappEnabled: dto.whatsappEnabled ?? false,
+        whatsappMessage: dto.whatsappMessage ?? undefined,
+        services: (dto.services ?? []).map((service) => ({
+          id: service.id,
+          category: service.category as ServiceCategory,
+          name: service.name,
+          description: service.description ?? undefined,
+          priceFrom: service.priceFrom ?? undefined,
+          durationMinutes: service.durationMinutes ?? undefined,
+          branchIds: service.branchIds ?? [],
+        })),
+        featuredProductIds: dto.featuredProductIds ?? [],
       }
+    },
+
+    async listStoreBranches(storeId) {
+      const branches = await get<PublicBranchDto[]>(PATHS.storeBranches(storeId))
+      return branches.map(toBranch)
     },
 
     async listStoreReviews(storeId, page) {
