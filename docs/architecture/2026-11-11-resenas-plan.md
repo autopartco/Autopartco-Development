@@ -175,7 +175,7 @@ alter table search_listings add column product_rating numeric(2,1), add column p
 
 ## Tareas
 
-### T1: Esquema de reseñas
+### T1: Esquema de reseñas ✅ (2026-11-11, migración `reviews_aspects_product_reviews`; más índices `ix_pr_order` y `ix_*_replied_by`, y checks de respuesta con texto y fecha a la vez)
 - **Modelo:** Haiku · **Agente:** database
 - **Contexto:** el SQL de «Datos» se aplica en Supabase `autopartco-dev` y no se escribe en el repo. **Requiere autorización.**
 - **Aceptación:** tablas y columnas creadas, con RLS habilitado y sin alertas nuevas en los advisors.
