@@ -55,6 +55,7 @@ import {
   PortalRoot,
   PortalStorePage,
   PortalTeamPage,
+  PrivacyPage,
   ProductPage,
   RegisterPage,
   SearchPage,
@@ -109,6 +110,7 @@ export const router = createBrowserRouter([
           { path: 'mis-beneficios', element: <RequireSession fallback={<PageFallback />}><BenefitsPage /></RequireSession> },
           { path: 'mis-pedidos/:id', element: <RequireSession fallback={<PageFallback />}><OrderDetailPage /></RequireSession> },
           // Almacenes: landing y solicitud (POST /store-applications).
+          { path: 'privacidad', element: <PrivacyPage /> },
           { path: 'vender', element: <SellPage /> },
           { path: 'vender/registro', element: <SellerRegisterPage /> },
           // Enlace del correo de aprobación (sin token): la página exige sesión y redirige a /ingresar si no hay.

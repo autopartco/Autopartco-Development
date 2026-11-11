@@ -8,7 +8,8 @@ export const CategoryPage = lazy(() => import('@/features/marketplace/pages/cate
 export const ProductPage = lazy(() => import('@/features/marketplace/pages/product-page'))
 export const StoresPage = lazy(() => import('@/features/marketplace/pages/stores-page'))
 export const StorePage = lazy(() => import('@/features/marketplace/pages/store-page'))
-export const SellPage = lazy(() => import('@/features/marketplace/pages/sell-page'))
+export const PrivacyPage = lazy(() => import('@/features/marketplace/pages/privacy-page'))
+export const SellPage =lazy(() => import('@/features/marketplace/pages/sell-page'))
 
 // Cuentas y solicitud de almacén.
 export const LoginPage = lazy(() => import('@/features/auth/pages/login-page'))
