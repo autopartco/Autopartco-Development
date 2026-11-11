@@ -199,7 +199,7 @@ alter table search_listings add column product_rating numeric(2,1), add column p
   - Las insignias salen solo con ≥ 3 calificaciones y promedio ≥ 4,3.
   - El autor nunca incluye apellido completo ni correo.
 
-### T3: Respuestas, moderación y correo
+### T3: Respuestas, moderación y correo ✅ (2026-11-11; puertos en `core.reviews`, evento `SaleDelivered`, idempotencia del correo en `audit_logs`)
 - **Modelo:** Sonnet · **Agente:** backend
 - **Archivos:**
   - `storesuite/reviews/*` (portal);
@@ -212,7 +212,7 @@ alter table search_listings add column product_rating numeric(2,1), add column p
   - Responder exige `STORE_UPDATE`, y una reseña de otro almacén responde 404.
   - El correo se envía una sola vez por pedido.
 
-### T4: Calificaciones visibles en el frontend
+### T4: Calificaciones visibles en el frontend ✅ (2026-11-11, sin prueba en navegador)
 - **Modelo:** Sonnet · **Agente:** frontend
 - **Archivos:**
   - componentes `features/marketplace/components/reviews/*`: `StarRating`, `RatingSummary`, `AspectBars`, `ReviewHighlights`, `ReviewList`;
