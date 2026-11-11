@@ -22,7 +22,7 @@ function post(body: Record<string, unknown>): void {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...body, anonymousId: getAnonymousSessionId() }),
       keepalive: true,
-      credentials: 'omit',
+      credentials: 'include',
     }).catch(() => undefined)
   } catch {
     // La medición nunca debe romper la página.

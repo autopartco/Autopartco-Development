@@ -1,11 +1,19 @@
 import { COLOMBIA_BOUNDS } from './lib/map-config'
 import type { MapArea } from './api/types'
+import { clearAreaCookie, readAreaCookie, roundAreaCoord, writeAreaCookie } from '@/lib/area-cookie'
+import { clearHttpCache } from '@/lib/http'
 
 /**
  * Área de mapa elegida, compartida entre la cabecera y el inicio.
- * Solo se guarda en localStorage un área de zona: la ubicación exacta (`user`) vive en memoria.
+ * Solo se persiste un área de zona, en la cookie `ap_area` (centro redondeado a 0,01° y código de ciudad):
+ * la ubicación exacta (`user`) vive en memoria y nunca se guarda.
+ * La cookie no lleva la etiqueta ni los límites del mapa: se guardan solo para mostrarlos en `localStorage`
+ * y se descartan si ya no coinciden con el centro de la cookie.
  */
-const STORAGE_KEY = 'autopartco:area:v1'
+const LEGACY_STORAGE_KEY = 'autopartco:area:v1'
+const VIEW_STORAGE_KEY = 'autopartco:area-view:v1'
+/** Medio lado (grados) de los límites cuando solo se conoce el centro. */
+const FALLBACK_HALF_SPAN = 0.25
 
 export const DEFAULT_MAP_AREA: MapArea = {
   label: 'Colombia',
@@ -36,13 +44,67 @@ function parseZoneArea(value: unknown): MapArea | undefined {
   }
 }
 
-function readStored(): MapArea | undefined {
+function readJson(key: string): unknown {
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY)
-    return raw ? parseZoneArea(JSON.parse(raw)) : undefined
+    const raw = window.localStorage.getItem(key)
+    return raw ? JSON.parse(raw) : undefined
   } catch {
     return undefined
   }
+}
+
+function saveView(area: MapArea): void {
+  try {
+    const { label, precision, bounds, center } = area
+    window.localStorage.setItem(VIEW_STORAGE_KEY, JSON.stringify({ label, precision, bounds, center }))
+  } catch {
+    // Almacenamiento no disponible (modo privado): la etiqueta se reconstruye como «Tu zona».
+  }
+}
+
+function dropView(): void {
+  try {
+    window.localStorage.removeItem(VIEW_STORAGE_KEY)
+  } catch {
+    // Sin almacenamiento: no hay nada que quitar.
+  }
+}
+
+/** Escribe la cookie `ap_area` con el centro redondeado de una zona (el código de ciudad no se conoce aquí). */
+function persistZone(area: MapArea): void {
+  writeAreaCookie({ lat: area.center.lat, lng: area.center.lng })
+  saveView(area)
+}
+
+function readStored(): MapArea | undefined {
+  // Migración única: el área de localStorage pasa a la cookie y se quita la clave anterior.
+  try {
+    if (window.localStorage.getItem(LEGACY_STORAGE_KEY) !== null) {
+      const legacy = parseZoneArea(readJson(LEGACY_STORAGE_KEY))
+      if (legacy && !readAreaCookie()) persistZone(legacy)
+      window.localStorage.removeItem(LEGACY_STORAGE_KEY)
+    }
+  } catch {
+    // Sin almacenamiento: no hay nada que migrar.
+  }
+
+  const cookie = readAreaCookie()
+  if (!cookie) return undefined
+  const view = parseZoneArea(readJson(VIEW_STORAGE_KEY))
+  if (view && roundAreaCoord(view.center.lat) === roundAreaCoord(cookie.lat) && roundAreaCoord(view.center.lng) === roundAreaCoord(cookie.lng)) {
+    return view
+  }
+  return parseZoneArea({
+    label: 'Tu zona',
+    precision: 'zone',
+    center: { lat: cookie.lat, lng: cookie.lng },
+    bounds: {
+      south: cookie.lat - FALLBACK_HALF_SPAN,
+      north: cookie.lat + FALLBACK_HALF_SPAN,
+      west: cookie.lng - FALLBACK_HALF_SPAN,
+      east: cookie.lng + FALLBACK_HALF_SPAN,
+    },
+  })
 }
 
 let current: MapArea = (typeof window === 'undefined' ? undefined : readStored()) ?? DEFAULT_MAP_AREA
@@ -63,12 +125,15 @@ export function setMapArea(area: MapArea): void {
   current = area
   // Una ubicación exacta nunca se persiste: al recargar vuelve al último área de zona guardada.
   if (area.precision === 'zone') {
-    try {
-      const { label, precision, bounds, center } = area
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ label, precision, bounds, center }))
-    } catch {
-      // Almacenamiento no disponible (modo privado): la elección dura la sesión.
+    if (area.label === DEFAULT_MAP_AREA.label) {
+      // «Colombia» es no tener área: el servidor no recibe punto por defecto.
+      clearAreaCookie()
+      dropView()
+    } else {
+      persistZone(area)
     }
   }
+  // La respuesta del servidor puede depender del área: se descartan las respuestas guardadas.
+  clearHttpCache()
   for (const listener of listeners) listener()
 }

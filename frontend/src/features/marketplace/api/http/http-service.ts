@@ -1,4 +1,5 @@
 import { apiRequest } from '@/lib/api'
+import { cachedGet, type HttpResult } from '@/lib/http'
 import { getAnonymousSessionId } from '@/lib/anonymous-session'
 import { getAuthService } from '@/features/auth/api/auth-service'
 import { getAccessToken } from '@/features/auth/api/http/http-auth-service'
@@ -118,18 +119,24 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
     }
   }
 
+  /**
+   * GET con caché por ETag (`lib/http`): solo sin `Authorization`; home y anuncios nunca se guardan.
+   * `credentials: 'include'` deja viajar la cookie `ap_area` (CORS ya permite credenciales con orígenes explícitos).
+   */
   async function send(
     path: string,
     extraHeaders: Record<string, string>,
     token: string | undefined,
     signal?: AbortSignal,
-  ): Promise<Response> {
+  ): Promise<HttpResult<unknown> | Response> {
     try {
-      return await fetch(`${root}${path}`, {
+      return await cachedGet<unknown>(`${root}${path}`, {
         signal,
+        credentials: 'include',
         headers: { Accept: 'application/json', ...extraHeaders, ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       })
     } catch (cause) {
+      if (signal?.aborted) throw cause
       throw new MarketplaceError('No hay conexión con el servidor de Autopartco.', { cause })
     }
   }
@@ -149,7 +156,11 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
       : undefined
     let response = await send(path, extraHeaders, token, signal)
     // Un token vencido o revocado no debe impedir ver el catálogo: se reintenta como visitante.
-    if (response.status === 401 && token) response = await send(path, extraHeaders, undefined, signal)
+    if (response instanceof Response && response.status === 401 && token) response = await send(path, extraHeaders, undefined, signal)
+    if (!(response instanceof Response)) {
+      onHeaders?.(response.headers)
+      return response.data as T
+    }
     if (!response.ok) {
       const body = (await response.json().catch(() => null)) as {
         message?: string
