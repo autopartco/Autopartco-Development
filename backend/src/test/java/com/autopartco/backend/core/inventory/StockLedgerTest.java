@@ -36,7 +36,7 @@ class StockLedgerTest {
     @BeforeEach
     void setUp() {
         jdbc = new FakeJdbc();
-        ledger = new StockLedger(jdbc.client);
+        ledger = new StockLedger(jdbc.client, event -> { });
     }
 
     private static Map<String, Object> listing(UUID id, UUID branchId, int stock) {

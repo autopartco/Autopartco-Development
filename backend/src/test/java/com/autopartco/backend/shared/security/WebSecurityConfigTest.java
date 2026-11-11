@@ -100,6 +100,8 @@ class WebSecurityConfigTest {
                 Arguments.of(HttpMethod.GET, BASE + "/marketplace/product-options/manufacturers"),
                 Arguments.of(HttpMethod.GET, BASE + "/marketplace/product-options/categories"),
                 Arguments.of(HttpMethod.GET, BASE + "/marketplace/product-options/compatibilities"),
+                Arguments.of(HttpMethod.GET, BASE + "/marketplace/search"),
+                Arguments.of(HttpMethod.GET, BASE + "/marketplace/search/suggest"),
                 Arguments.of(HttpMethod.GET, BASE + "/marketplace/vehicles/makes"),
                 Arguments.of(HttpMethod.GET, BASE + "/marketplace/vehicles/makes/" + ID + "/models"),
                 Arguments.of(HttpMethod.GET, BASE + "/marketplace/vehicles/models/" + ID + "/versions"),
@@ -133,6 +135,9 @@ class WebSecurityConfigTest {
                 // Rutas públicas con otro método o más profundidad no quedan abiertas
                 Arguments.of(HttpMethod.POST, BASE + "/marketplace/products"),
                 Arguments.of(HttpMethod.GET, BASE + "/marketplace/products/" + ID + "/extra"),
+                Arguments.of(HttpMethod.POST, BASE + "/marketplace/search"),
+                Arguments.of(HttpMethod.GET, BASE + "/marketplace/search/suggest/extra"),
+                Arguments.of(HttpMethod.POST, BASE + "/admin/search/reindex"),
                 Arguments.of(HttpMethod.DELETE, BASE + "/plans"),
                 Arguments.of(HttpMethod.POST, BASE + "/marketplace/vehicles/makes"),
                 Arguments.of(HttpMethod.GET, BASE + "/marketplace/vehicles/makes/" + ID),
@@ -153,6 +158,7 @@ class WebSecurityConfigTest {
                 Arguments.of(HttpMethod.DELETE, BASE + "/admin/manufacturers/" + ID),
                 Arguments.of(HttpMethod.POST, BASE + "/admin/plans"),
                 Arguments.of(HttpMethod.PUT, BASE + "/admin/promotions/" + ID),
+                Arguments.of(HttpMethod.POST, BASE + "/admin/search/reindex"),
                 Arguments.of(HttpMethod.GET, BASE + "/admin/store-applications/pending"),
                 Arguments.of(HttpMethod.PATCH, BASE + "/admin/store-applications/" + ID + "/review"),
                 Arguments.of(HttpMethod.GET, BASE + "/admin/store-applications/" + ID + "/documents/" + ID));
@@ -195,6 +201,8 @@ class WebSecurityConfigTest {
                         "GET /api/v1/marketplace/products/*/frequently-bought",
                         "GET /api/v1/marketplace/product-options",
                         "GET /api/v1/marketplace/product-options/*",
+                        "GET /api/v1/marketplace/search",
+                        "GET /api/v1/marketplace/search/suggest",
                         "GET /api/v1/marketplace/vehicles/makes",
                         "GET /api/v1/marketplace/vehicles/makes/*/models",
                         "GET /api/v1/marketplace/vehicles/models/*/versions");

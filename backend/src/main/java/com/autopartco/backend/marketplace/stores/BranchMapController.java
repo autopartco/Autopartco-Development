@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.autopartco.backend.core.organization.BranchMapQueries;
 import com.autopartco.backend.core.organization.MapBranchView;
 import com.autopartco.backend.shared.error.BadRequestException;
+import com.autopartco.backend.shared.location.ColombiaBounds;
 import com.autopartco.backend.shared.web.ApiPaths;
 import com.autopartco.backend.shared.web.SlidingWindowRateLimiter;
 
@@ -24,10 +25,10 @@ import jakarta.servlet.http.HttpServletRequest;
 @RestController
 @RequestMapping(ApiPaths.MARKETPLACE + "/branches")
 public class BranchMapController {
-    static final BigDecimal MIN_LAT = new BigDecimal("-4.3");
-    static final BigDecimal MAX_LAT = new BigDecimal("13.5");
-    static final BigDecimal MIN_LNG = new BigDecimal("-82");
-    static final BigDecimal MAX_LNG = new BigDecimal("-66.8");
+    static final BigDecimal MIN_LAT = ColombiaBounds.MIN_LAT;
+    static final BigDecimal MAX_LAT = ColombiaBounds.MAX_LAT;
+    static final BigDecimal MIN_LNG = ColombiaBounds.MIN_LNG;
+    static final BigDecimal MAX_LNG = ColombiaBounds.MAX_LNG;
     static final int DEFAULT_LIMIT = 4;
     static final int MAX_LIMIT = 8;
 
@@ -58,8 +59,7 @@ public class BranchMapController {
         if ((lat == null) != (lng == null)) {
             throw new BadRequestException("MAP_POINT_INCOMPLETE", "Envía lat y lng juntos o ninguno.");
         }
-        if (lat != null && (lat.compareTo(MIN_LAT) < 0 || lat.compareTo(MAX_LAT) > 0 || lng.compareTo(MIN_LNG) < 0
-                || lng.compareTo(MAX_LNG) > 0)) {
+        if (lat != null && !ColombiaBounds.contains(lat, lng)) {
             throw new BadRequestException("MAP_POINT_OUTSIDE_COVERAGE", "La ubicación está fuera de Colombia.");
         }
         if (limit < 1 || limit > MAX_LIMIT) {

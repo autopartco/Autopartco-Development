@@ -195,6 +195,26 @@ public class ListingQueries {
               and bs.code = 'ACTIVE'
             """;
 
+    /**
+     * Listados publicados (mismos joins y filtros que {@link #PUBLISHED_LISTINGS_WHERE_SQL}, con stock) restringidos a
+     * los pares pedidos. Lo usa {@code core.search} para hidratar la página de resultados.
+     */
+    static final String PUBLISHED_BY_KEYS_SQL = PURCHASABLE_LISTINGS_SQL + """
+              and i.stock > 0
+            """;
+
+    /** Productos con algún listado publicado, por id (reconstrucción del índice de búsqueda). */
+    static final String PUBLISHED_PRODUCT_IDS_SQL = "select distinct x.product_id from ("
+            + PUBLISHED_LISTINGS_WHERE_SQL + ") x order by x.product_id";
+
+    static final String IDS_PLACEHOLDER = "{ids}";
+
+    /** Listados publicados de los productos pedidos ({@link #IDS_PLACEHOLDER} = tantos {@code ?} como ids). */
+    static final String PUBLISHED_OF_PRODUCTS_SQL = PUBLISHED_LISTINGS_WHERE_SQL + """
+              and p.id in ({ids})
+            order by p.id, b.id
+            """;
+
     private final JdbcTemplate jdbcTemplate;
     private final ProductRepository productRepository;
     private final ProductImageRepository productImageRepository;
@@ -405,6 +425,53 @@ public class ListingQueries {
                 Function.identity(),
                 (first, second) -> first,
                 LinkedHashMap::new));
+    }
+
+    /**
+     * Listados publicados (producto, almacén y sucursal {@code ACTIVE}, sin borrar y con stock) entre los pares
+     * pedidos, con el precio de {@code buyer}. Conserva el orden de {@code keys}; las claves que ya no están
+     * publicadas no aparecen. Lo usa la búsqueda para hidratar solo la página pedida.
+     */
+    @Transactional(readOnly = true)
+    public List<ProductResponse> publishedListingsByKeys(List<ListingKey> keys, BuyerContext buyer) {
+        if (keys == null || keys.isEmpty()) {
+            return List.of();
+        }
+        List<ListingKey> distinctKeys = List.copyOf(new LinkedHashSet<>(keys));
+        String values = String.join(", ", Collections.nCopies(distinctKeys.size(), "(?::uuid, ?::uuid)"));
+        Object[] args = new Object[distinctKeys.size() * 2];
+        for (int index = 0; index < distinctKeys.size(); index++) {
+            args[index * 2] = distinctKeys.get(index).productId();
+            args[index * 2 + 1] = distinctKeys.get(index).branchId();
+        }
+        List<ListingRow> rows = jdbcTemplate.query(
+                PUBLISHED_BY_KEYS_SQL.replace(KEYS_PLACEHOLDER, values), ListingQueries::mapRow, args);
+        Map<ListingKey, ProductResponse> byKey = toResponses(rows, buyer).stream().collect(Collectors.toMap(
+                response -> new ListingKey(response.id(), response.branchId()),
+                Function.identity(),
+                (first, second) -> first));
+        return distinctKeys.stream().map(byKey::get).filter(java.util.Objects::nonNull).toList();
+    }
+
+    /** Ids de los productos con algún listado publicado, ordenados (reconstrucción del índice de búsqueda). */
+    @Transactional(readOnly = true)
+    public List<UUID> publishedProductIds() {
+        return jdbcTemplate.queryForList(PUBLISHED_PRODUCT_IDS_SQL, UUID.class);
+    }
+
+    /**
+     * Listados publicados de los productos pedidos con el precio general (comprador anónimo): la misma definición de
+     * publicado que el catálogo. Lo usa el indexador de búsqueda; el llamador limita el número de ids por lote.
+     */
+    @Transactional(readOnly = true)
+    public List<ProductResponse> publishedListingsOfProducts(Collection<UUID> productIds) {
+        if (productIds == null || productIds.isEmpty()) {
+            return List.of();
+        }
+        List<UUID> ids = List.copyOf(new LinkedHashSet<>(productIds));
+        String placeholders = String.join(",", Collections.nCopies(ids.size(), "?"));
+        return toResponses(jdbcTemplate.query(PUBLISHED_OF_PRODUCTS_SQL.replace(IDS_PLACEHOLDER, placeholders),
+                ListingQueries::mapRow, ids.toArray()), BuyerContext.anonymous());
     }
 
     @Transactional(readOnly = true)

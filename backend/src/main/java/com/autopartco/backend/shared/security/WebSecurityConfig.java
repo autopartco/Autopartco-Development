@@ -98,6 +98,9 @@ public class WebSecurityConfig {
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/products/*/frequently-bought"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/product-options"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/product-options/*"),
+                // marketplace: búsqueda v2 y autocompletado (precio general en sugerencias; con límite por IP).
+                new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/search"),
+                new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/search/suggest"),
                 // marketplace: catálogo de vehículos en cascada.
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/vehicles/makes"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/vehicles/makes/*/models"),

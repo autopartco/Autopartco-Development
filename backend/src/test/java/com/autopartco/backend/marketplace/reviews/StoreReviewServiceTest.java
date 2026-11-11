@@ -37,7 +37,8 @@ class StoreReviewServiceTest {
     private final PublishedStores publishedStores = mock(PublishedStores.class);
     private final AccountLookup accountLookup = mock(AccountLookup.class);
     private final StoreAccess storeAccess = mock(StoreAccess.class);
-    private final StoreReviewService service = new StoreReviewService(queries, publishedStores, accountLookup, storeAccess);
+    private final StoreReviewService service = new StoreReviewService(queries, publishedStores, accountLookup, storeAccess,
+            event -> { });
 
     private final UUID storeId = UUID.randomUUID();
     private final UUID orderId = UUID.randomUUID();

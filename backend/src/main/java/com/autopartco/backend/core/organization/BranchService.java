@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +16,7 @@ import com.autopartco.backend.core.organization.internal.StoreRepository;
 import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
+import com.autopartco.backend.shared.events.ListingsChanged;
 import com.autopartco.backend.shared.location.Location;
 import com.autopartco.backend.shared.location.LocationRepository;
 import com.autopartco.backend.shared.persistence.State;
@@ -40,6 +42,8 @@ public class BranchService {
     private final LocationRepository locationRepository;
     private final StoreRepository storeRepository;
     private final StateRepository stateRepository;
+    /** Publica {@link ListingsChanged}: {@code core.search} reindexa la sucursal (ubicación, estado) tras el commit. */
+    private final ApplicationEventPublisher events;
 
     @Transactional(readOnly = true)
     public List<BranchResponse> list(UUID storeId) {
@@ -93,6 +97,7 @@ public class BranchService {
             branch.setOpeningHours(OpeningHours.validate(request.openingHours()));
         }
 
+        events.publishEvent(ListingsChanged.ofBranch(branchId));
         return toResponse(branch);
     }
 
@@ -101,6 +106,7 @@ public class BranchService {
         requireStore(storeId);
         Branch branch = findBranch(storeId, branchId);
         branch.setState(findState(StateCodes.INACTIVE));
+        events.publishEvent(ListingsChanged.ofBranch(branchId));
     }
 
     @Transactional(readOnly = true)

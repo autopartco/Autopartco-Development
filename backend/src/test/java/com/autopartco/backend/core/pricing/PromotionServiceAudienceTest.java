@@ -23,7 +23,7 @@ class PromotionServiceAudienceTest {
     private static final UUID STORE_ID = UUID.randomUUID();
 
     private final PromotionRepository repository = mock(PromotionRepository.class);
-    private final PromotionService service = new PromotionService(repository, mock(PromotionTargets.class));
+    private final PromotionService service = new PromotionService(repository, mock(PromotionTargets.class), event -> { });
 
     @Test
     void audienceDefaultsToAllAndIsReturned() {

@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import org.springframework.dao.support.DataAccessUtils;
 import org.springframework.jdbc.core.simple.JdbcClient;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,6 +15,7 @@ import com.autopartco.backend.core.inventory.internal.Inventory;
 import com.autopartco.backend.core.inventory.internal.InventoryRepository;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
+import com.autopartco.backend.shared.events.ListingsChanged;
 
 import lombok.AllArgsConstructor;
 
@@ -64,6 +66,8 @@ public class StockService {
     private final InventoryRepository inventoryRepository;
     private final JdbcClient jdbcClient;
     private final StockLedger stockLedger;
+    /** Publica {@link ListingsChanged}: {@code core.search} reindexa tras el commit. */
+    private final ApplicationEventPublisher events;
 
     private void recordStock(UUID inventoryId, Integer stock, String reasonCode) {
         if (stock == null) {
@@ -80,6 +84,7 @@ public class StockService {
     @Transactional
     public void createListing(UUID branchId, UUID productId, Integer stock, BigDecimal price) {
         com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
+        events.publishEvent(ListingsChanged.ofProduct(productId));
         Inventory saved = inventoryRepository.saveAndFlush(Inventory.builder()
                 .branchId(branchId)
                 .productId(productId)
@@ -97,6 +102,7 @@ public class StockService {
     @Transactional
     public void updateListing(UUID branchId, UUID productId, BigDecimal price, Integer stock) {
         com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
+        events.publishEvent(ListingsChanged.ofProduct(productId));
         Inventory inventory = DataAccessUtils.singleResult(inventoryRepository.findListings(branchId, productId));
         if (inventory == null) {
             throw new NotFoundException("PRODUCT_NOT_FOUND", "No se encontró el repuesto.");
@@ -113,6 +119,7 @@ public class StockService {
     @Transactional
     public void setPrice(UUID inventoryId, BigDecimal price) {
         com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
+        events.publishEvent(ListingsChanged.ofInventory(List.of(inventoryId)));
         if (inventoryRepository.updatePrice(inventoryId, price) == 0) {
             throw new NotFoundException("LISTING_NOT_FOUND", "El producto no está listado en esa sucursal.");
         }
@@ -122,6 +129,7 @@ public class StockService {
     @Transactional
     public void removeAllForProduct(UUID productId) {
         com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
+        events.publishEvent(ListingsChanged.ofProduct(productId));
         inventoryRepository.softDeleteAllForProduct(productId);
     }
 
@@ -135,6 +143,7 @@ public class StockService {
         if (units < 1) {
             throw new IllegalArgumentException("units must be >= 1");
         }
+        events.publishEvent(ListingsChanged.ofProduct(productId));
         return jdbcClient.sql(DECREMENT_SQL)
                 .param("units", units)
                 .param("branchId", branchId)
@@ -159,6 +168,7 @@ public class StockService {
         if (returns == null || returns.isEmpty()) {
             return;
         }
+        events.publishEvent(ListingsChanged.ofInventory(returns.stream().map(StockReturn::inventoryId).toList()));
         List<UUID> locked = jdbcClient.sql(LOCK_FOR_RETURN_SQL)
                 .param("inventoryIds", returns.stream().map(StockReturn::inventoryId).distinct().toList())
                 .query((result, row) -> result.getObject("id", UUID.class))
@@ -194,6 +204,7 @@ public class StockService {
     @Transactional
     public void addListing(UUID branchId, UUID productId, Integer stock, BigDecimal price) {
         com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
+        events.publishEvent(ListingsChanged.ofProduct(productId));
         if (!inventoryRepository.findListings(branchId, productId).isEmpty()) {
             throw new ConflictException("LISTING_ALREADY_EXISTS", "El producto ya está listado en esa sucursal.");
         }
@@ -212,6 +223,7 @@ public class StockService {
     @Transactional
     public void removeListing(UUID storeId, UUID branchId, UUID productId) {
         com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
+        events.publishEvent(ListingsChanged.ofProduct(productId));
         if (inventoryRepository.softDeleteListing(storeId, branchId, productId) == 0) {
             throw new NotFoundException("LISTING_NOT_FOUND", "El producto no está listado en esa sucursal.");
         }

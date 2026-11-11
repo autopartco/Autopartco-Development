@@ -51,7 +51,8 @@ class UpdateBranchCrossStoreTest {
 
     private UpdateBranch useCase() {
         return new UpdateBranch(storeAccess,
-                new BranchService(branchRepository, locationRepository, storeRepository, stateRepository));
+                new BranchService(branchRepository, locationRepository, storeRepository, stateRepository,
+                        event -> { }));
     }
 
     private static BranchUpdateRequest renameRequest() {

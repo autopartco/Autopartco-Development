@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -24,6 +25,7 @@ import com.autopartco.backend.core.organization.BranchService;
 import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
+import com.autopartco.backend.shared.events.ListingsChanged;
 import com.autopartco.backend.shared.persistence.State;
 import com.autopartco.backend.shared.persistence.StateCodes;
 import com.autopartco.backend.shared.persistence.StateRepository;
@@ -53,6 +55,8 @@ public class ProductCatalog {
     private final ListingQueries listingQueries;
     private final ProductVehicleRules vehicleRules;
     private final StoreManufacturers storeManufacturers;
+    /** Publica {@link ListingsChanged}: {@code core.search} reindexa el producto tras el commit. */
+    private final ApplicationEventPublisher events;
 
     /**
      * Alta atómica: producto, un listado por sucursal (todas del almacén y activas, validadas antes de escribir; cada
@@ -115,6 +119,7 @@ public class ProductCatalog {
         if (!images.isEmpty()) {
             productImages.applyGallery(saved, gallery);
         }
+        events.publishEvent(ListingsChanged.ofProduct(saved.getId()));
         return reloadListing(storeId, listings.getFirst().branchId(), saved.getId());
     }
 
@@ -193,6 +198,7 @@ public class ProductCatalog {
         if (gallery != null) productImages.applyGallery(product, gallery);
         if (state != null) product.setState(state);
 
+        events.publishEvent(ListingsChanged.ofProduct(productId));
         return reloadListing(storeId, branchId, productId);
     }
 
@@ -208,6 +214,7 @@ public class ProductCatalog {
                 product.isUniversal() || !vehicleRules.forProduct(productId).isEmpty(),
                 currentManufacturerUsable(storeId, product), subscriptionActive);
         product.setState(findState(StateCodes.ACTIVE));
+        events.publishEvent(ListingsChanged.ofProduct(productId));
     }
 
     /** Retira ({@code INACTIVE}) el producto del almacén; no exige requisitos. */
@@ -216,6 +223,7 @@ public class ProductCatalog {
         com.autopartco.backend.shared.cache.TtlCache.invalidateAll();
         Product product = productRepository.findOwned(storeId, productId).orElseThrow(ProductCatalog::productNotFound);
         product.setState(findState(StateCodes.INACTIVE));
+        events.publishEvent(ListingsChanged.ofProduct(productId));
     }
 
     /** Producto omitido en una acción masiva con el motivo ({@code code}). */
@@ -250,6 +258,7 @@ public class ProductCatalog {
             }
             product.setState(active);
         }
+        events.publishEvent(ListingsChanged.ofProducts(productIds));
         return skipped;
     }
 
@@ -270,6 +279,7 @@ public class ProductCatalog {
             }
             product.setState(inactive);
         }
+        events.publishEvent(ListingsChanged.ofProducts(productIds));
         return skipped;
     }
 
@@ -293,6 +303,7 @@ public class ProductCatalog {
         stockService.removeAllForProduct(productId);
         productRepository.delete(product);
         productRepository.flush();
+        events.publishEvent(ListingsChanged.ofProduct(productId));
     }
 
     /** Detalle del producto del almacén con sus listados por sucursal. */
@@ -309,6 +320,7 @@ public class ProductCatalog {
         branchService.requireActiveInStore(storeId, request.branchId());
         stockService.addListing(request.branchId(), productId, request.stock(), request.price());
         productRepository.flush();
+        events.publishEvent(ListingsChanged.ofProduct(productId));
         return listingQueries.storeProductDetail(storeId, productId);
     }
 
@@ -325,6 +337,7 @@ public class ProductCatalog {
                     "Es el único listado del producto. Para quitarlo, borra el producto."
             );
         }
+        events.publishEvent(ListingsChanged.ofProduct(productId));
     }
 
     @Transactional(readOnly = true)

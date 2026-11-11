@@ -99,7 +99,7 @@ class ProductCatalogAtomicTest {
                 new ProductImageValidator(), imageMapper, storageService);
         catalog = new ProductCatalog(productRepository, manufacturerRepository, categoryRepository, stateRepository,
                 branchService, stockService, images, listingQueries, vehicleRules,
-                new StoreManufacturers(manufacturerRepository));
+                new StoreManufacturers(manufacturerRepository), event -> { });
 
         when(manufacturerRepository.findVisibleToStore(bosch.getId(), STORE)).thenReturn(Optional.of(bosch));
         when(categoryRepository.findById(any())).thenReturn(Optional.of(new Category()));

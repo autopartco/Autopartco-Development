@@ -33,6 +33,10 @@ import com.autopartco.backend.core.organization.BranchService;
 import com.autopartco.backend.core.pricing.BuyerContext;
 import com.autopartco.backend.core.pricing.PromotionAudience;
 import com.autopartco.backend.core.pricing.PromotionExposureRecorder;
+import com.autopartco.backend.core.search.SearchQuery;
+import com.autopartco.backend.core.search.SearchResult;
+import com.autopartco.backend.core.search.SearchService;
+import com.autopartco.backend.core.search.SearchSort;
 import com.autopartco.backend.marketplace.benefits.BuyerContexts;
 import com.autopartco.backend.shared.error.BadRequestException;
 
@@ -42,9 +46,11 @@ class ProductBrowseControllerSearchLogTest {
     private final BuyerContexts buyerContexts = mock(BuyerContexts.class);
     private final PromotionExposureRecorder exposureRecorder = mock(PromotionExposureRecorder.class);
     private final BranchService branchService = mock(BranchService.class);
+    /** Por defecto el índice no está listo ({@code indexReady()=false}): se usa la consulta anterior. */
+    private final SearchService searchService = mock(SearchService.class);
     private final ProductBrowseController controller =
             new ProductBrowseController(new ListingCache(listingQueries), searchLog, buyerContexts, exposureRecorder,
-                    branchService);
+                    branchService, searchService);
     private final UUID brakes = UUID.randomUUID();
 
     @BeforeEach
@@ -201,6 +207,59 @@ class ProductBrowseControllerSearchLogTest {
         assertThatThrownBy(() -> controller.published(null, null, null, null, null, null, foreignBranch, null, null,
                 null, null)).isInstanceOf(BadRequestException.class);
         verify(listingQueries, never()).publishedListings(any());
+    }
+
+    @Test
+    void withIndexReadyUsesTheSearchEngineWithoutInterpretationAndKeepsTheContract() {
+        UUID person = UUID.randomUUID();
+        UUID promotion = UUID.randomUUID();
+        UUID store = UUID.randomUUID();
+        UUID branch = UUID.randomUUID();
+        BuyerContext buyer = new BuyerContext(person, Set.of("FREQUENT"), Map.of());
+        when(buyerContexts.forBrowsing(any())).thenReturn(buyer);
+        when(branchService.isInStore(store, branch)).thenReturn(true);
+        when(searchService.indexReady()).thenReturn(true);
+        ProductResponse hit = listing("Pastillas", brakes, promotion, PromotionAudience.PLATFORM_FREQUENT);
+        when(searchService.catalog(any(), eq(buyer))).thenReturn(new SearchResult(
+                List.of(new SearchResult.Hit(hit, null)), 1, 1, 7, false, null, null));
+
+        var response = controller.published(null, null, null, "pastillas", brakes, store, branch, 1, 1, "sess",
+                new UsernamePasswordAuthenticationToken("a@b.co", null, AuthorityUtils.NO_AUTHORITIES));
+
+        assertThat(response.getBody()).containsExactly(hit);
+        assertThat(response.getHeaders().getFirst("X-Total-Count")).isEqualTo("7");
+        ArgumentCaptor<SearchQuery> query = ArgumentCaptor.forClass(SearchQuery.class);
+        verify(searchService).catalog(query.capture(), eq(buyer));
+        assertThat(query.getValue().interpret()).isFalse();
+        assertThat(query.getValue().facets()).isFalse();
+        assertThat(query.getValue().sort()).isEqualTo(SearchSort.RELEVANCE);
+        assertThat(query.getValue().branchId()).isEqualTo(branch);
+        assertThat(query.getValue().storeId()).isEqualTo(store);
+        assertThat(query.getValue().categoryId()).isEqualTo(brakes);
+        assertThat(query.getValue().page()).isEqualTo(1);
+        assertThat(query.getValue().size()).isEqualTo(1);
+        verify(listingQueries, never()).publishedListings(any(), any());
+        ArgumentCaptor<MarketplaceSearch> search = ArgumentCaptor.forClass(MarketplaceSearch.class);
+        verify(searchLog).record(search.capture());
+        assertThat(search.getValue().resultsCount()).isEqualTo(7);
+        verify(exposureRecorder).record(eq(person), any());
+    }
+
+    @Test
+    void withIndexReadyAndNoTextOrPagingReturnsTheWholeListByName() {
+        when(searchService.indexReady()).thenReturn(true);
+        ProductResponse hit = listing("Filtro", brakes);
+        when(searchService.catalog(any(), any())).thenReturn(new SearchResult(
+                List.of(new SearchResult.Hit(hit, null)), 0, SearchService.MAX_CATALOG_SIZE, 1, false, null, null));
+
+        var response = controller.published(null, null, null, null, null, null, null, null, null, null, null);
+
+        assertThat(response.getBody()).containsExactly(hit);
+        assertThat(response.getHeaders().getFirst("X-Total-Count")).isNull();
+        ArgumentCaptor<SearchQuery> query = ArgumentCaptor.forClass(SearchQuery.class);
+        verify(searchService).catalog(query.capture(), any());
+        assertThat(query.getValue().sort()).isEqualTo(SearchSort.NAME);
+        assertThat(query.getValue().size()).isEqualTo(SearchService.MAX_CATALOG_SIZE);
     }
 
     private static ProductResponse inBranch(UUID product, UUID store, UUID branch, String price) {

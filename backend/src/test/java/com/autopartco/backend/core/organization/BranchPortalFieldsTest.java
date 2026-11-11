@@ -39,7 +39,8 @@ class BranchPortalFieldsTest {
     private final LocationRepository locationRepository = mock(LocationRepository.class);
     private final StoreRepository storeRepository = mock(StoreRepository.class);
     private final BranchService service =
-            new BranchService(branchRepository, locationRepository, storeRepository, mock(StateRepository.class));
+            new BranchService(branchRepository, locationRepository, storeRepository, mock(StateRepository.class),
+                    event -> { });
     private final UUID storeId = UUID.randomUUID();
     private final Branch branch = branch();
 
