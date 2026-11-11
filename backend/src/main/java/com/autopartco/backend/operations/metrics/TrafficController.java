@@ -4,7 +4,9 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.autopartco.backend.core.advertising.AdEvents;
 import com.autopartco.backend.core.analytics.TrafficRecorder;
 import com.autopartco.backend.core.analytics.VisibilityRecorder;
 import com.autopartco.backend.core.identity.AccountLookup;
@@ -24,7 +27,10 @@ import com.autopartco.backend.core.identity.AccountRef;
 import com.autopartco.backend.shared.error.TooManyRequestsException;
 import com.autopartco.backend.shared.web.ApiPaths;
 
+import com.autopartco.backend.shared.web.VisitorCookie;
+
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Size;
 
@@ -46,23 +52,24 @@ public class TrafficController {
     private final TrafficRecorder trafficRecorder;
     private final VisibilityRecorder visibilityRecorder;
     private final AccountLookup accountLookup;
+    private final AdEvents adEvents;
     private final Clock clock;
     private final Map<String, Deque<Instant>> calls = new ConcurrentHashMap<>();
     private final Map<String, Deque<Instant>> storeCalls = new ConcurrentHashMap<>();
     private final Map<String, Deque<Instant>> storeDailyCalls = new ConcurrentHashMap<>();
 
     @Autowired
-    public TrafficController(
-            TrafficRecorder trafficRecorder, VisibilityRecorder visibilityRecorder, AccountLookup accountLookup) {
-        this(trafficRecorder, visibilityRecorder, accountLookup, Clock.systemUTC());
+    public TrafficController(TrafficRecorder trafficRecorder, VisibilityRecorder visibilityRecorder,
+            AccountLookup accountLookup, AdEvents adEvents) {
+        this(trafficRecorder, visibilityRecorder, accountLookup, adEvents, Clock.systemUTC());
     }
 
-    TrafficController(
-            TrafficRecorder trafficRecorder, VisibilityRecorder visibilityRecorder, AccountLookup accountLookup,
-            Clock clock) {
+    TrafficController(TrafficRecorder trafficRecorder, VisibilityRecorder visibilityRecorder,
+            AccountLookup accountLookup, AdEvents adEvents, Clock clock) {
         this.trafficRecorder = trafficRecorder;
         this.visibilityRecorder = visibilityRecorder;
         this.accountLookup = accountLookup;
+        this.adEvents = adEvents;
         this.clock = clock;
     }
 
@@ -74,12 +81,14 @@ public class TrafficController {
     }
 
     @PostMapping("/pageview")
-    public ResponseEntity<Void> pageview(@Valid @RequestBody PageviewRequest request, HttpServletRequest http, Authentication authentication) {
+    public ResponseEntity<Void> pageview(@Valid @RequestBody PageviewRequest request, HttpServletRequest http,
+            HttpServletResponse response, Authentication authentication) {
         acquire(http.getRemoteAddr());
         UUID accountId = authentication == null || !authentication.isAuthenticated() || authentication.getName() == null
                 ? null
                 : accountLookup.findByEmail(authentication.getName()).map(AccountRef::accountId).orElse(null);
-        trafficRecorder.record(request.anonymousId(), request.path(), request.referrer(), http.getHeader("User-Agent"), accountId);
+        trafficRecorder.record(anonymousId(request.anonymousId(), http, response), request.path(), request.referrer(),
+                http.getHeader("User-Agent"), accountId);
         return ResponseEntity.noContent().build();
     }
 
@@ -91,24 +100,92 @@ public class TrafficController {
             @Size(max = 10) String ref,
             @Size(max = 100) String utmSource,
             @Size(max = 500) String referrer,
-            @Size(max = 10) String channel
+            @Size(max = 10) String channel,
+            UUID branchId,
+            UUID serviceId
     ) {
     }
 
     /**
-     * Visita al perfil o a una publicación, o un compartido, para las métricas del almacén. Siempre 204 (lo inválido
+     * Visita al perfil o a una publicación, compartido, o clic de WhatsApp o «Cómo llegar» (estos con {@code branchId}
+     * del almacén; {@code productId} y {@code serviceId} opcionales), para las métricas del almacén. Siempre 204 (lo inválido
      * se ignora); comparte el límite por IP con {@code /pageview}. Nunca guarda la cuenta.
      */
     @PostMapping("/visibility")
-    public ResponseEntity<Void> visibility(@Valid @RequestBody VisibilityRequest request, HttpServletRequest http) {
+    public ResponseEntity<Void> visibility(@Valid @RequestBody VisibilityRequest request, HttpServletRequest http,
+            HttpServletResponse response) {
         acquire(http.getRemoteAddr());
         if (request.storeId() != null) {
             acquireStore(http.getRemoteAddr(), request.storeId());
         }
-        visibilityRecorder.record(new VisibilityRecorder.Visit(request.anonymousId(), request.kind(),
+        visibilityRecorder.record(new VisibilityRecorder.Visit(anonymousId(request.anonymousId(), http, response),
+                request.kind(),
                 request.storeId(), request.productId(), request.ref(), request.utmSource(), request.referrer(),
-                request.channel()));
+                request.channel(), request.branchId(), request.serviceId()));
         return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Evento de anuncio. Una impresión, clic, clic de WhatsApp o «agregar al carrito» con {@code token}, o un lote de
+     * impresiones con {@code tokens} (máx. {@value AdEvents#MAX_BATCH}; se suman a {@code token} si llegan ambos).
+     * {@code kind}: {@code IMPRESSION|CLICK|WHATSAPP_CLICK|ADD_TO_CART}. Sin validación de forma a propósito: lo que no
+     * sirve se ignora (tokens de más de 400 caracteres, más de {@value AdEvents#MAX_BATCH} tokens, {@code anonymousId}
+     * de más de 100). {@code anonymousId} se acepta por compatibilidad pero se ignora: el visitante es la cookie
+     * {@code ap_aid} o la cuenta.
+     */
+    public record AdEventRequest(String token, List<String> tokens, String kind, String anonymousId) {
+    }
+
+    /**
+     * Registra eventos de anuncios. Siempre 204 (salvo 429 por el límite o un JSON ilegible): un token falso, alterado
+     * o vencido, un tipo no permitido o un visitante sin id se ignoran. Comparte el límite por IP con
+     * {@code /pageview} y {@code /visibility} (un lote cuenta como una llamada). Con sesión, el visitante es la cuenta
+     * (para atribuir pedidos); sin ella, la cookie HttpOnly {@code ap_aid}, que se emite aquí si falta. El
+     * {@code anonymousId} del cuerpo se ignora: lo controla el cliente y rotarlo saltaría la deduplicación por
+     * visitante. {@code POST /marketplace/orders} guarda ese mismo {@code ap_aid} para que {@code AdOrderAttribution}
+     * encuentre los clics. Nunca guarda la IP ni la cuenta en claro.
+     */
+    @PostMapping("/ads")
+    public ResponseEntity<Void> ads(@RequestBody AdEventRequest request, HttpServletRequest http,
+            HttpServletResponse response, Authentication authentication) {
+        acquire(http.getRemoteAddr());
+        UUID accountId = authentication == null || !authentication.isAuthenticated()
+                || authentication.getName() == null
+                ? null
+                : accountLookup.findByEmail(authentication.getName()).map(AccountRef::accountId).orElse(null);
+        String anonymousId = adVisitor(accountId, http, response);
+        List<String> tokens = new ArrayList<>();
+        if (request.token() != null) {
+            tokens.add(request.token());
+        }
+        if (request.tokens() != null) {
+            request.tokens().stream().filter(java.util.Objects::nonNull).limit(AdEvents.MAX_BATCH)
+                    .forEach(tokens::add);
+        }
+        if (!tokens.isEmpty()) {
+            adEvents.record(tokens, request.kind(), anonymousId, accountId);
+        }
+        return ResponseEntity.noContent().build();
+    }
+
+    /**
+     * Visitante de {@code /ads}: con cuenta manda la cuenta (se pasa la cookie solo si ya llega); sin cuenta, la
+     * cookie {@code ap_aid}, emitida aquí si falta. Nunca el cuerpo.
+     */
+    static String adVisitor(UUID accountId, HttpServletRequest http, HttpServletResponse response) {
+        if (accountId != null) {
+            return VisitorCookie.read(http).map(UUID::toString).orElse(null);
+        }
+        return VisitorCookie.ensure(http, response).toString();
+    }
+
+    /**
+     * Visitante anónimo de {@code /pageview} y {@code /visibility}: el {@code anonymousId} del cuerpo tiene prioridad (compatibilidad con clientes que aún lo
+     * envían); si no llega, la cookie {@code ap_aid}, que se emite aquí cuando falta.
+     */
+    static String anonymousId(String fromBody, HttpServletRequest http, HttpServletResponse response) {
+        UUID cookie = VisitorCookie.ensure(http, response);
+        return fromBody != null && !fromBody.isBlank() ? fromBody : cookie.toString();
     }
 
     void acquire(String key) {

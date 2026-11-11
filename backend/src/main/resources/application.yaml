@@ -10,6 +10,24 @@ spring:
   application:
     name: backend
 
+  # Redis es opcional (shared/cache). La autoconfiguración de Boot queda excluida: sin REDIS_URL nunca se intenta
+  # localhost:6379 ni aparece Redis en /actuator/health; con REDIS_URL la conexión la arma shared/cache/RedisConfig.
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.data.redis.autoconfigure.DataRedisAutoConfiguration
+      - org.springframework.boot.data.redis.autoconfigure.DataRedisReactiveAutoConfiguration
+      - org.springframework.boot.data.redis.autoconfigure.DataRedisRepositoriesAutoConfiguration
+      - org.springframework.boot.data.redis.autoconfigure.health.DataRedisHealthContributorAutoConfiguration
+      - org.springframework.boot.data.redis.autoconfigure.health.DataRedisReactiveHealthContributorAutoConfiguration
+      - org.springframework.boot.data.redis.autoconfigure.observation.LettuceObservationAutoConfiguration
+
+  data:
+    redis:
+      # redis://[usuario:clave@]host:puerto[/db] o rediss:// (TLS). Vacío: cachés y limitadores en memoria.
+      url: "${REDIS_URL:}"
+      connect-timeout: "${REDIS_CONNECT_TIMEOUT:500ms}"
+      timeout: "${REDIS_COMMAND_TIMEOUT:200ms}"
+
   datasource:
     url: "jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:autopartco}"
     username: "${DB_USERNAME:postgres}"
@@ -103,6 +121,16 @@ app:
     payment-jobs-initial-delay-ms: "${APP_CHECKOUT_PAYMENT_JOBS_INITIAL_DELAY_MS:60000}"
     payment-jobs-delay-ms: "${APP_CHECKOUT_PAYMENT_JOBS_DELAY_MS:300000}"
   frontend-base-url: "${APP_FRONTEND_BASE_URL:http://localhost:5173}"
+  cache:
+    redis:
+      # Tras un fallo de Redis, tiempo durante el que se usa solo la memoria antes de reintentar.
+      retry-after: "${APP_CACHE_REDIS_RETRY_AFTER:30s}"
+  http-cache:
+    # ETag débil y Cache-Control en los GET públicos del marketplace (shared/web/MarketplaceHttpCacheFilter).
+    enabled: "${APP_HTTP_CACHE_ENABLED:true}"
+  auth-rate-limit:
+    # Por IP y ruta en login, verificación y reenvíos de /auth (shared/web/AuthRateLimitInterceptor).
+    per-minute: "${APP_AUTH_RATE_LIMIT_PER_MINUTE:10}"
   email-verification:
     expires-minutes: "${EMAIL_VERIFICATION_EXPIRES_MINUTES:30}"
     from: "${MAIL_FROM:no-reply@autopartco.com}"

@@ -9,11 +9,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import lombok.AllArgsConstructor;
+import com.autopartco.backend.shared.events.OrderPaid;
 
 /**
  * Estado del pago de un pedido con un proveedor asíncrono (Wompi, ADR 0004) y sus efectos sobre el pedido, con
@@ -24,7 +26,6 @@ import lombok.AllArgsConstructor;
  * activo ({@code database/init.sql}); no escribe {@code payment_events.source} ni {@code order_status_history}.
  */
 @Service
-@AllArgsConstructor
 public class OrderPayments {
     public static final String AWAITING_PAYMENT = "AWAITING_PAYMENT";
     public static final String CONFIRMED = "CONFIRMED";
@@ -222,6 +223,19 @@ public class OrderPayments {
             """;
 
     private final JdbcClient jdbcClient;
+    private final ApplicationEventPublisher events;
+
+    @Autowired
+    public OrderPayments(JdbcClient jdbcClient, ApplicationEventPublisher events) {
+        this.jdbcClient = jdbcClient;
+        this.events = events;
+    }
+
+    /** Sin publicador de eventos: no anuncia {@link OrderPaid} (pruebas y dobles). */
+    public OrderPayments(JdbcClient jdbcClient) {
+        this(jdbcClient, event -> {
+        });
+    }
 
     /**
      * Bloquea ({@code FOR UPDATE}) el pago del proveedor con esa referencia y luego su pedido, y devuelve el estado ya
@@ -304,7 +318,11 @@ public class OrderPayments {
     /** AWAITING_PAYMENT → CONFIRMED. {@code false} si el pedido ya no estaba en espera. */
     @Transactional
     public boolean confirmAwaitingOrder(UUID orderId) {
-        return jdbcClient.sql(CONFIRM_ORDER_SQL).param("orderId", orderId).update() == 1;
+        boolean confirmed = jdbcClient.sql(CONFIRM_ORDER_SQL).param("orderId", orderId).update() == 1;
+        if (confirmed) {
+            events.publishEvent(new OrderPaid(orderId));
+        }
+        return confirmed;
     }
 
     /**

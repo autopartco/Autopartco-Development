@@ -6,15 +6,24 @@ import java.util.UUID;
 
 /**
  * Pedido ya validado y tarificado por el caso de uso, listo para persistir con {@link OrderPlacement}. Los montos
- * llegan calculados (escala 2); {@code core.order} no recalcula precios ni valida stock.
+ * llegan calculados (escala 2); {@code core.order} no recalcula precios ni valida stock. {@code anonymousId}: id anónimo
+ * del navegador de quien compra (opcional); si llega, se guarda en {@code order_attributions} para atribuir el pedido a
+ * los anuncios que clicó antes de iniciar sesión.
  */
 public record NewOrder(
         UUID personId,
         DeliveryAddress address,
         String paymentMethodCode,
         String paymentReference,
-        List<NewSale> sales
+        List<NewSale> sales,
+        UUID anonymousId
 ) {
+    /** Pedido sin id anónimo (sin fila en {@code order_attributions}). */
+    public NewOrder(UUID personId, DeliveryAddress address, String paymentMethodCode, String paymentReference,
+            List<NewSale> sales) {
+        this(personId, address, paymentMethodCode, paymentReference, sales, null);
+    }
+
     /** Dirección congelada en {@code order_addresses}. */
     public record DeliveryAddress(
             String addressLine,

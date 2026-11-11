@@ -119,7 +119,8 @@ public class PlaceMarketplaceOrder {
         }
 
         // 11. Persistencia; una referencia repetida en carrera es un 409.
-        NewOrder newOrder = new NewOrder(personId, prepared.address(), paymentMethod, reference, sales);
+        NewOrder newOrder = new NewOrder(personId, prepared.address(), paymentMethod, reference, sales,
+                request.anonymousId());
         UUID orderId;
         try {
             orderId = orderPlacement.placeApproved(newOrder);

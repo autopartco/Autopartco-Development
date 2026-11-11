@@ -11,4 +11,6 @@ public interface AccountIdentityRepository extends JpaRepository<AccountIdentity
     Optional<AccountIdentity> findByProviderAndSubject(String provider, String subject);
 
     long countByProvider(String provider);
+
+    boolean existsByAccount_Id(UUID accountId);
 }

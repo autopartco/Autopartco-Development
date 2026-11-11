@@ -4,10 +4,14 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Base64;
+import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import com.autopartco.backend.shared.config.AppProperties;
 import com.autopartco.backend.shared.error.BadRequestException;
@@ -18,8 +22,13 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class EmailVerificationTokenService {
     public static final String PURPOSE_EMAIL_VERIFICATION = "EMAIL_VERIFICATION";
+    public static final String PURPOSE_EMAIL_VERIFICATION_CODE = "EMAIL_VERIFICATION_CODE";
     public static final String PURPOSE_ACCOUNT_UNLOCK = "ACCOUNT_UNLOCK";
     public static final String PURPOSE_PASSWORD_RECOVERY = "PASSWORD_RECOVERY";
+    public static final String PURPOSE_TWO_FACTOR_LOGIN = "TWO_FACTOR_LOGIN";
+    public static final String PURPOSE_TWO_FACTOR_SETUP = "TWO_FACTOR_SETUP";
+
+    private static final Duration MAX_CODE_VALIDITY = Duration.ofMinutes(30);
 
     private static final int TOKEN_BYTES = 32;
 
@@ -43,6 +52,54 @@ public class EmailVerificationTokenService {
         accountTokenRepository.save(accountToken);
 
         return new CreatedEmailVerificationToken(rawToken, expiresAt);
+    }
+
+    /** Vigencia del código de 6 dígitos: la del enlace, con tope de {@link #MAX_CODE_VALIDITY}. */
+    public Duration codeValidity() {
+        Duration linkValidity = appProperties.emailVerification().expiresIn();
+        return linkValidity.compareTo(MAX_CODE_VALIDITY) < 0 ? linkValidity : MAX_CODE_VALIDITY;
+    }
+
+    /** Crea el enlace y el código de 6 dígitos de una verificación de correo. */
+    public IssuedVerification issueVerification(Account account) {
+        CreatedEmailVerificationToken link = create(account);
+        String code = newCode();
+        LocalDateTime codeExpiresAt = LocalDateTime.now().plus(codeValidity());
+        accountTokenRepository.save(tokenMapper.toAccountToken(
+                account,
+                PURPOSE_EMAIL_VERIFICATION_CODE,
+                hashVerificationCode(account.getId(), code),
+                codeExpiresAt
+        ));
+        return new IssuedVerification(link.rawToken(), link.expiresAt(), code, codeExpiresAt);
+    }
+
+    /** Código de 6 dígitos con {@link SecureRandom}. */
+    public String newCode() {
+        return "%06d".formatted(secureRandom.nextInt(1_000_000));
+    }
+
+    /** SHA-256 de {@code accountId:code}: el id de cuenta hace de sal para que el hash no sirva entre cuentas. */
+    public String hashVerificationCode(UUID accountId, String code) {
+        return hash(accountId + ":" + code);
+    }
+
+    /** Marca como usados el enlace y el código pendientes de la cuenta. */
+    public void invalidatePendingVerification(UUID accountId) {
+        accountTokenRepository.markUsed(
+                accountId,
+                List.of(PURPOSE_EMAIL_VERIFICATION, PURPOSE_EMAIL_VERIFICATION_CODE),
+                LocalDateTime.now()
+        );
+    }
+
+    public String verificationLink(String rawToken) {
+        return UriComponentsBuilder
+                .fromUriString(appProperties.frontendBaseUrl().replaceAll("/+$", ""))
+                .path("/verify-email")
+                .queryParam("token", rawToken)
+                .build()
+                .toUriString();
     }
 
     public String hash(String rawToken) {
@@ -163,6 +220,14 @@ public class EmailVerificationTokenService {
     public record CreatedEmailVerificationToken(
             String rawToken,
             LocalDateTime expiresAt
+    ) {
+    }
+
+    public record IssuedVerification(
+            String rawToken,
+            LocalDateTime linkExpiresAt,
+            String code,
+            LocalDateTime codeExpiresAt
     ) {
     }
 }

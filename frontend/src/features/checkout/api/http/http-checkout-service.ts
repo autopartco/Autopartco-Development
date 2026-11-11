@@ -1,4 +1,5 @@
 import { apiRequest, ApiError } from '@/lib/api'
+import { getAnonymousSessionId } from '@/lib/anonymous-session'
 import { getAuthService } from '@/features/auth/api/auth-service'
 import type { BuyerOrderDto, CheckoutOptionsDto, CheckoutService, OrderPaymentDto, PlaceOrderRequestDto, WompiCheckoutDto } from '../types'
 
@@ -40,6 +41,7 @@ export function createHttpCheckoutService(): CheckoutService {
           addressId: input.addressId,
           paymentMethod: input.paymentMethod,
           simulatedOutcome: input.simulatedOutcome ?? null,
+          anonymousId: getAnonymousSessionId(),
           items: input.items.map(({ productId, branchId, quantity }) => ({ productId, branchId, quantity })),
         },
         token,

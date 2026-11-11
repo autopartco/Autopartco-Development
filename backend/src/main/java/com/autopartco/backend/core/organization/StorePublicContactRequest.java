@@ -1,5 +1,6 @@
 package com.autopartco.backend.core.organization;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
@@ -20,10 +21,17 @@ public record StorePublicContactRequest(
         @Pattern(regexp = "^$|^[A-Za-z0-9.]{1,50}$", message = "Escribe solo el usuario de Facebook, sin enlace.")
         String facebook,
         @Pattern(regexp = "^$|^[A-Za-z0-9._]{1,30}$", message = "Escribe solo el usuario de TikTok, sin @ ni enlace.")
-        String tiktok
+        String tiktok,
+        @Pattern(regexp = "^$|^[A-Za-z0-9._]{1,30}$", message = "Escribe solo el usuario de YouTube, sin @ ni enlace.")
+        String youtube,
+        @Pattern(regexp = "^$|^[A-Za-z0-9._]{1,30}$", message = "Escribe solo el usuario de X, sin @ ni enlace.")
+        String x,
+        @Size(max = 200, message = "El correo no puede superar 200 caracteres.")
+        @Email(message = "El correo público no es válido.")
+        String email
 ) {
     boolean hasChanges() {
         return whatsapp != null || phone != null || website != null || instagram != null || facebook != null
-                || tiktok != null;
+                || tiktok != null || youtube != null || x != null || email != null;
     }
 }

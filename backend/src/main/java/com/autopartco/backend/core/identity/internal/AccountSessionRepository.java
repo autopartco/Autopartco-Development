@@ -70,6 +70,10 @@ public interface AccountSessionRepository extends JpaRepository<AccountSession, 
             @Param("currentTime") LocalDateTime currentTime
     );
 
+    /** User-agents distintos de todas las sesiones de la cuenta (vigentes, vencidas o revocadas). */
+    @Query("SELECT DISTINCT session.userAgent FROM AccountSession session WHERE session.account.id = :accountId")
+    List<String> findDistinctUserAgentsByAccountId(@Param("accountId") UUID accountId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT session FROM AccountSession session WHERE session.refreshTokenHash = :tokenHash")
     Optional<AccountSession> lockByRefreshTokenHash(@Param("tokenHash") String tokenHash);

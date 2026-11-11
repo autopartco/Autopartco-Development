@@ -98,6 +98,12 @@ export interface Product {
   universal: boolean
   vehicleRules: VehicleRule[]
   specifications: Specification[]
+  /** Solo en la búsqueda: distancia en km a la sede, cuando se envió la ubicación. */
+  distanceKm?: number
+  /** Solo en la búsqueda: es un anuncio pagado; debe llevar la etiqueta «Patrocinado». */
+  sponsored?: boolean
+  /** Token firmado del anuncio para registrar impresión y clic. */
+  adImpressionToken?: string
 }
 
 /** Por qué se sugiere: pedidos reales, mismo vehículo o misma categoría. */
@@ -129,6 +135,84 @@ export interface ProductQuery {
   sort: SortOption
   page: number
   pageSize: number
+}
+
+export type SearchSort = 'relevance' | 'price_asc' | 'price_desc' | 'nearest' | 'newest' | 'rating' | 'name'
+
+/** Consulta del motor de búsqueda (`GET /marketplace/search`). `page` va desde 1. */
+export interface SearchQuery {
+  q: string
+  /** Slug o id de categoría; el servicio lo resuelve a `categoryId`. */
+  category?: string
+  manufacturers: string[]
+  makeId?: string
+  modelId?: string
+  versionId?: string
+  year?: number
+  minPrice?: number
+  maxPrice?: number
+  inStock: boolean
+  onSale: boolean
+  store?: string
+  cityCode?: string
+  lat?: number
+  lng?: number
+  radiusKm?: number
+  minRating?: number
+  universal: boolean
+  sort: SearchSort
+  page: number
+  pageSize: number
+  /** `false` desactiva la interpretación del texto (al quitar un chip). */
+  interpret: boolean
+}
+
+export interface InterpretedQuery {
+  text: string
+  makeId?: string
+  makeName?: string
+  modelId?: string
+  modelName?: string
+  year?: number
+  cityCode?: string
+  cityName?: string
+  reference?: string
+}
+
+export interface IdFacet {
+  id: string
+  name: string
+  count: number
+}
+
+export interface SearchFacets {
+  categories: IdFacet[]
+  manufacturers: IdFacet[]
+  cities: { code: string; name: string; count: number }[]
+  price?: { min: number; max: number }
+  inStock: number
+  onSale: number
+}
+
+export interface SearchResult {
+  items: Product[]
+  /** Anuncios que van arriba de los resultados. */
+  sponsored: Product[]
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
+  /** Sin coincidencias exactas: son resultados parecidos. */
+  fuzzy: boolean
+  interpreted?: InterpretedQuery
+  facets?: SearchFacets
+}
+
+export type SuggestionKind = 'CATEGORY' | 'MANUFACTURER' | 'VEHICLE' | 'QUERY'
+
+export interface SearchSuggestions {
+  suggestions: { term: string; kind: SuggestionKind }[]
+  products: Product[]
 }
 
 export interface ProductPage {
@@ -216,9 +300,51 @@ export interface StoreReviewInput {
   comment?: string
 }
 
+/** Punto del área elegida para el inicio; sin él el servidor devuelve datos de todo el país. */
+export interface HomeQuery {
+  lat?: number
+  lng?: number
+  cityCode?: string
+}
+
+/** Cifras reales de la plataforma (`GET /marketplace/home`). */
+export interface PlatformStats {
+  stores: number
+  cities: number
+  products: number
+}
+
+export interface HomeCategory {
+  id: string
+  code: string
+  productCount: number
+}
+
+export interface HomeData {
+  stats: PlatformStats
+  /** Puede venir vacío. */
+  popularSearches: string[]
+  categories: HomeCategory[]
+  nearby: Product[]
+  /** Mezcla de anuncios (`sponsored`) y relleno orgánico. */
+  featured: Product[]
+}
+
+/** Ubicaciones de anuncio que se piden aparte de la búsqueda. */
+export type AdPlacementQuery =
+  | { placement: 'CATEGORY_TOP'; categoryId: string }
+  | { placement: 'PRODUCT_RELATED'; productId: string }
+
 export interface MarketplaceService {
   readonly capabilities: MarketplaceCapabilities
   searchProducts(query: ProductQuery): Promise<ProductPage>
+  /** Motor de búsqueda v2: texto libre, filtros, facetas, cercanía y anuncios. */
+  search(query: SearchQuery, signal?: AbortSignal): Promise<SearchResult>
+  suggest(text: string, near?: { lat: number; lng: number }, signal?: AbortSignal): Promise<SearchSuggestions>
+  /** `GET /marketplace/home`: una sola llamada con cifras, búsquedas populares, categorías, cercanos y destacados. */
+  getHome(query: HomeQuery, signal?: AbortSignal): Promise<HomeData>
+  /** `GET /marketplace/ads`: anuncios de una ubicación; vacío si no hay campañas activas. */
+  listAds(query: AdPlacementQuery, signal?: AbortSignal): Promise<Product[]>
   getProduct(id: string): Promise<Product>
   getRelatedProducts(product: Product, limit: number): Promise<Product[]>
   /** `GET /marketplace/products/{id}/frequently-bought` (público): hasta 6 productos que se compran junto con este. */

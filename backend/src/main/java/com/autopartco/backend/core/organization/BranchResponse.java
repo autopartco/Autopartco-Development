@@ -1,5 +1,6 @@
 package com.autopartco.backend.core.organization;
 
+import java.util.Map;
 import java.util.UUID;
 
 public record BranchResponse(
@@ -8,6 +9,8 @@ public record BranchResponse(
         String name,
         String numberPhone,
         String state,
-        BranchLocationResponse location
+        BranchLocationResponse location,
+        String whatsapp,
+        Map<String, Object> openingHours
 ) {
 }

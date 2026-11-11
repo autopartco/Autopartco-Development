@@ -44,5 +44,8 @@ public class AccountToken extends BaseEntity {
 
     @Column(nullable = false)
     private boolean used;
-    
+
+    /** Intentos fallidos contra un código de un solo uso (verificación por código). */
+    @Column(nullable = false)
+    private short attempts;
 }

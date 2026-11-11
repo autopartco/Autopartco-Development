@@ -7,6 +7,11 @@ package com.autopartco.backend.core.identity;
 public record PreparedRegistration(
         RegisterResponse response,
         String fullName,
-        String verificationLink
+        String verificationLink,
+        String verificationCode
 ) {
+    @Override
+    public String toString() {
+        return "PreparedRegistration[redacted]";
+    }
 }

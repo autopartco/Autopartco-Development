@@ -19,7 +19,7 @@ export function OrderSalesList({ sales }: { sales: BuyerSaleDto[] }) {
                 <StoreIcon className="mt-0.5 size-5 shrink-0 text-ap-muted" aria-hidden />
                 <div className="min-w-0">
                   <h3 className="font-semibold text-ap-ink">{sale.storeName}</h3>
-                  <p className="text-sm text-ap-muted">Sucursal {sale.branchName}</p>
+                  <p className="text-sm text-ap-muted">{/^sucursal\b/i.test(sale.branchName) ? sale.branchName : `Sucursal ${sale.branchName}`}</p>
                 </div>
               </div>
               <Badge variant="neutral">
