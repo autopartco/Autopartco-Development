@@ -268,7 +268,66 @@ alter table search_listings add column product_rating numeric(2,1), add column p
   - el workflow de promoción en verde;
   - en producción, calificar un pedido entregado de prueba y ver las estrellas en la ficha.
 
-Orden: T1 → T2 → (T3 ∥ T4) → T5 → T6 → T7 → T8. T3 y T4 tocan capas distintas.
+Orden: T1 → T2 → (T3 ∥ T4) → T5 → T6 → (T9 → T10 → T11) → T7 → T8. T3 y T4 tocan capas distintas.
+
+## Preguntas y respuestas (añadido)
+
+- **Quién pregunta y quién responde:** cualquier comprador con sesión pregunta en la ficha de un producto, sin necesidad de haberlo comprado. Responde el almacén: el dueño o un colaborador con `STORE_UPDATE`, o uno asignado a una sucursal que tenga el producto.
+- **Quién se entera:**
+  - Al llegar una pregunta se notifica dentro de la app al dueño y a los colaboradores activos de las sucursales con inventario del producto.
+  - Además se envía un correo a los destinatarios de `notifications.recipients` del almacén si el ajuste nuevo `notifications.questions` (por defecto activo) lo permite.
+  - Cuando el almacén responde, el que preguntó recibe una notificación y un correo.
+- **Qué se ve en la ficha:** «Preguntas sobre este producto», con las respondidas primero, el buscador de preguntas y «Pregúntale al almacén». Las pendientes las ven solo su autor y el almacén.
+- **Reglas:**
+  - Pregunta de 10 a 300 caracteres y respuesta de hasta 1000.
+  - No se aceptan enlaces, teléfonos ni correos (`QUESTION_CONTACT_NOT_ALLOWED`), para que la conversación siga en la plataforma.
+  - Límite de 5 preguntas por hora por cuenta.
+  - El autor público se muestra como en las reseñas: nombre e inicial del apellido.
+  - El admin puede ocultar preguntas, con el mismo flujo que las reseñas.
+
+**Datos (Supabase):**
+```sql
+create table product_questions (id uuid primary key default gen_random_uuid(),
+  product_id uuid not null references products(id), store_id uuid not null references store(id),
+  person_id uuid not null references persons(id),
+  question text not null check (char_length(question) between 10 and 300),
+  answer text check (char_length(answer) <= 1000), answered_at timestamptz, answered_by uuid references accounts(id),
+  hidden_at timestamptz, hidden_reason varchar(200),
+  created_at timestamptz not null default now(), updated_at timestamptz not null default now(),
+  deleted_at timestamptz, version bigint not null default 0,
+  check ((answer is null) = (answered_at is null)));
+create index ix_pq_product on product_questions (product_id, answered_at desc nulls last, created_at desc) where deleted_at is null and hidden_at is null;
+create index ix_pq_store_pending on product_questions (store_id, created_at) where answer is null and deleted_at is null;
+-- notifications: enlace al que lleva la notificación
+alter table notifications add column link varchar(300);
+```
+
+**Contratos:**
+- `GET /marketplace/products/{id}/questions?page&size&q` (público): `{id, question, author, createdAt, answer:{text, answeredAt}|null, mine}`. Las no respondidas solo aparecen al autor.
+- `POST /marketplace/products/{id}/questions {question}` (sesión) → 201. Errores 400 `QUESTION_INVALID` y `QUESTION_CONTACT_NOT_ALLOWED`, 429 `QUESTION_RATE_LIMITED`.
+- `DELETE /marketplace/products/{id}/questions/{qid}`: solo el autor y solo si no tiene respuesta.
+- Portal:
+  - `GET /stores/{storeId}/questions?answered&branchId&page` (`STORE_READ`, o colaborador de la sucursal);
+  - `PUT …/questions/{qid}/answer {text}` y `DELETE …/answer` (`STORE_UPDATE` o colaborador de una sucursal con el producto);
+  - `GET /stores/{storeId}/questions/summary` → `{pending}`.
+- Admin: `GET /admin/questions?hidden`, `POST …/{qid}/hide {reason}` y `POST …/unhide`.
+- `NotificationResponse` añade `link`, para ir directo a la pregunta.
+- Eventos `ProductQuestionAsked` y `ProductQuestionAnswered`, procesados después del commit y en segundo plano.
+
+**Tareas:**
+- **T9 · database · Haiku:** el SQL de arriba en Supabase. **Requiere autorización.** Aceptación: tablas creadas y advisors sin alertas nuevas.
+- **T10 · backend · Sonnet:**
+  - Archivos: `marketplace/questions/*`, `storesuite/questions/*`, `operations/questions/*`, puertos en `core.reviews` o en un `core.questions` nuevo, `NotificationService` (destinatarios y `link`), plantillas de correo, el ajuste `notifications.questions` en `SettingsSchemas`, `WebSecurityConfig`.
+  - Aceptación: `-Dtest=ProductQuestionServiceTest,QuestionNotificationTest,StoreQuestionsPortalTest,AdminQuestionsTest,ModularityTests,WebSecurityConfigTest` en verde.
+    - Una pregunta con teléfono responde 400.
+    - Notifica al dueño y a los colaboradores de la sucursal.
+    - Una respuesta de otro almacén responde 404.
+    - El autor ve su pregunta pendiente; otros no.
+- **T11 · frontend · Sonnet:**
+  - Archivos: la sección «Preguntas» en la ficha de producto; `/portal/:storeId/preguntas` con un contador en la navegación y una tarjeta en el panel; las notificaciones con enlace; el admin de preguntas.
+  - Aceptación: build y lint en verde, el flujo completo se maneja con teclado y sin scroll horizontal a 360 px.
+
+Orden: T9 → T10 → T11, antes de T7 (QA), que cubre también el diff de preguntas.
 
 ## Riesgos y puntos a verificar
 
