@@ -107,6 +107,16 @@ public class GlobalExceptionHandler {
                 .body(new ErrorResponse(error));
     }
 
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<ErrorResponse> handleForbidden(ForbiddenException exception) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                .body(new ErrorResponse(new ApiError(
+                        exception.getCode(),
+                        exception.getMessage(),
+                        exception.getDetails()
+                )));
+    }
+
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException exception) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN)

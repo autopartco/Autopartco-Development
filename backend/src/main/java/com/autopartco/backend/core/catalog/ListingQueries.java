@@ -295,6 +295,26 @@ public class ListingQueries {
         );
     }
 
+    /**
+     * De {@code productIds}, los que son del almacén y están publicados ({@code ACTIVE}, sin borrar). No exige stock:
+     * sirve para validar destacados del perfil.
+     */
+    public Set<UUID> publishedProductIdsAmong(UUID storeId, Collection<UUID> productIds) {
+        if (productIds == null || productIds.isEmpty()) {
+            return Set.of();
+        }
+        List<UUID> ids = List.copyOf(new LinkedHashSet<>(productIds));
+        String placeholders = String.join(",", Collections.nCopies(ids.size(), "?"));
+        List<Object> args = new java.util.ArrayList<>();
+        args.add(storeId);
+        args.addAll(ids);
+        return Set.copyOf(jdbcTemplate.queryForList("""
+                select p.id from products p
+                join states ps on ps.id = p.state_id and ps.deleted_at is null
+                where p.deleted_at is null and ps.code = 'ACTIVE' and p.store_id = ? and p.id in (%s)
+                """.formatted(placeholders), UUID.class, args.toArray()));
+    }
+
     /** Productos publicados del almacén (cada producto cuenta una vez aunque esté en varias sucursales). */
     public long publishedProductCount(UUID storeId) {
         Long count = jdbcTemplate.queryForObject(PUBLISHED_PRODUCT_COUNT_SQL, Long.class, storeId);

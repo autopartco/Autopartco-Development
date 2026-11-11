@@ -2,16 +2,15 @@ package com.autopartco.backend.core.identity.internal;
 
 import java.util.Locale;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import com.autopartco.backend.core.identity.RegisterRequest;
 import com.autopartco.backend.core.identity.PreparedRegistration;
 import com.autopartco.backend.core.identity.RegisterResponse;
 import com.autopartco.backend.core.audit.AuditService;
-import com.autopartco.backend.core.notification.EmailService;
 import com.autopartco.backend.shared.persistence.StateCodes;
 import com.autopartco.backend.shared.persistence.StateRepository;
 import com.autopartco.backend.shared.persistence.State;
@@ -35,7 +34,7 @@ public class RegistrationService {
     private final AccountMapper accountMapper;
     private final AuthResponseMapper authResponseMapper;
     private final EmailVerificationTokenService tokenService;
-    private final EmailService emailService;
+    private final ApplicationEventPublisher eventPublisher;
     private final AuditService auditService;
     private final AppProperties appProperties;
 
@@ -85,30 +84,25 @@ public class RegistrationService {
 
         personRepository.save(person);
         Account savedAccount = accountRepository.save(account);
-        EmailVerificationTokenService.CreatedEmailVerificationToken token = tokenService.create(savedAccount);
+        EmailVerificationTokenService.IssuedVerification issued = tokenService.issueVerification(savedAccount);
 
         auditService.recordRegistrationRequested(savedAccount.getId(), savedAccount.getEmail(), savedAccount.getAccountType().getCode(), savedAccount.getState().getCode());
         return new PreparedRegistration(
-                authResponseMapper.toRegisterResponse(savedAccount, token.expiresAt()),
+                authResponseMapper.toRegisterResponse(savedAccount, issued.linkExpiresAt()),
                 person.getName() + " " + person.getSurname(),
-                buildVerificationLink(token.rawToken())
+                tokenService.verificationLink(issued.rawToken()),
+                issued.code()
         );
     }
 
     private void sendVerification(PreparedRegistration prepared) {
-        emailService.sendEmailVerification(
+        eventPublisher.publishEvent(new EmailVerificationRequested(
                 prepared.response().email(),
                 prepared.fullName(),
-                prepared.verificationLink()
-        );
-    }
-
-    private String buildVerificationLink(String rawToken) {
-        return UriComponentsBuilder
-                .fromUriString(appProperties.frontendBaseUrl().replaceAll("/+$", ""))
-                .path("/verify-email")
-                .queryParam("token", rawToken)
-                .build()
-                .toUriString();
+                prepared.verificationLink(),
+                prepared.verificationCode(),
+                appProperties.emailVerification().expiresIn().toMinutes(),
+                tokenService.codeValidity().toMinutes()
+        ));
     }
 }

@@ -1,6 +1,8 @@
 package com.autopartco.backend.marketplace.catalog;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -21,10 +23,12 @@ import com.autopartco.backend.core.catalog.ListingCache;
 import com.autopartco.backend.core.catalog.ProductOptionsResponse;
 import com.autopartco.backend.core.catalog.ProductResponse;
 import com.autopartco.backend.core.catalog.VehicleFilter;
+import com.autopartco.backend.core.organization.BranchService;
 import com.autopartco.backend.core.pricing.BuyerContext;
 import com.autopartco.backend.core.pricing.PromotionAudience;
 import com.autopartco.backend.core.pricing.PromotionExposureRecorder;
 import com.autopartco.backend.marketplace.benefits.BuyerContexts;
+import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.web.ApiPaths;
 import com.autopartco.backend.shared.web.Paging;
 
@@ -43,6 +47,7 @@ public class ProductBrowseController {
     private final SearchLog searchLog;
     private final BuyerContexts buyerContexts;
     private final PromotionExposureRecorder exposureRecorder;
+    private final BranchService branchService;
 
     /**
      * Listados publicados. Filtro opcional por vehículo ({@code makeId}, {@code modelId}, {@code versionId}): solo
@@ -53,6 +58,9 @@ public class ProductBrowseController {
      * <p>Si hay algún criterio (texto, vehículo o categoría) registra la búsqueda en {@code core.analytics.SearchLog}
      * de forma asíncrona y best-effort: un fallo del registro no afecta la respuesta. La sesión se toma de la cabecera
      * {@value #SESSION_HEADER} (solo se guarda su hash diario).</p>
+     *
+     * <p>{@code branchId} deja solo los listados de esa sucursal y exige {@code storeId} de su almacén (si no, 400
+     * {@code BRANCH_NOT_IN_STORE}). Se aplica antes de elegir un resultado por producto.</p>
      */
     @GetMapping(PRODUCTS)
     public ResponseEntity<List<ProductResponse>> published(
@@ -62,21 +70,27 @@ public class ProductBrowseController {
             @RequestParam(required = false) String q,
             @RequestParam(required = false) UUID categoryId,
             @RequestParam(required = false) UUID storeId,
+            @RequestParam(required = false) UUID branchId,
             @RequestParam(required = false) Integer page,
             @RequestParam(required = false) Integer size,
             @RequestHeader(name = SESSION_HEADER, required = false) String sessionId,
             Authentication authentication
     ) {
+        if (branchId != null && (storeId == null || !branchService.isInStore(storeId, branchId))) {
+            throw new BadRequestException("BRANCH_NOT_IN_STORE", "La sucursal no pertenece al almacén indicado.");
+        }
         BuyerContext buyer = buyerContexts.forBrowsing(authentication);
         List<ProductResponse> listings = listingQueries.published(new VehicleFilter(makeId, modelId, versionId), buyer);
         String text = SearchText.normalize(q);
-        if (text != null || categoryId != null || storeId != null) {
+        if (text != null || categoryId != null || storeId != null || branchId != null) {
             listings = listings.stream()
                     .filter(listing -> categoryId == null || categoryId.equals(listing.categoryId()))
                     .filter(listing -> storeId == null || storeId.equals(listing.storeId()))
+                    .filter(listing -> branchId == null || branchId.equals(listing.branchId()))
                     .filter(listing -> text == null || matches(listing, text))
                     .toList();
         }
+        listings = cheapestPerProduct(listings);
         recordSearch(new MarketplaceSearch(q, makeId, modelId, versionId, null, categoryId, null, listings.size(),
                 sessionId, isAuthenticated(authentication)));
         ResponseEntity<List<ProductResponse>> response = Paging.slice(listings, page, size);
@@ -113,6 +127,19 @@ public class ProductBrowseController {
         } catch (RuntimeException ignored) {
             // Best-effort: el registro de búsquedas nunca rompe el catálogo.
         }
+    }
+
+    /**
+     * Un resultado por producto: el listado de menor precio base, el mismo criterio con que el detalle elige la
+     * sucursal, de modo que la tarjeta y la ficha muestran el mismo precio. Conserva el orden del listado.
+     */
+    private static List<ProductResponse> cheapestPerProduct(List<ProductResponse> listings) {
+        Map<UUID, ProductResponse> best = new LinkedHashMap<>();
+        for (ProductResponse listing : listings) {
+            best.merge(listing.id(), listing,
+                    (current, candidate) -> candidate.price().compareTo(current.price()) < 0 ? candidate : current);
+        }
+        return List.copyOf(best.values());
     }
 
     /** Todas las palabras del texto aparecen en el nombre, SKU, referencia o fabricante. */

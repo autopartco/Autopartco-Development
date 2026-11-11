@@ -34,25 +34,26 @@ class StorePublicContactTest {
     void acceptsColombianNumbersHttpsAndUsernames() {
         assertThat(invalidFields(new StorePublicContactRequest(
                 "+573001234567", "+576015551234", "https://repuestos.co", "repuestos.andes", "RepuestosAndes",
-                "repuestos_andes"))).isEmpty();
+                "repuestos_andes", "repuestos.canal", "andes_co", "ventas@andes.co"))).isEmpty();
     }
 
     @Test
     void emptyStringsAreValidToClearFields() {
-        assertThat(invalidFields(new StorePublicContactRequest("", "", "", "", "", ""))).isEmpty();
+        assertThat(invalidFields(new StorePublicContactRequest("", "", "", "", "", "", "", "", ""))).isEmpty();
     }
 
     @Test
     void rejectsMalformedValues() {
         assertThat(invalidFields(new StorePublicContactRequest(
-                "3001234567", "+1 555", "http://repuestos.co", "@andes", "facebook.com/x", "https://tiktok.com/@a")))
+                "3001234567", "+1 555", "http://repuestos.co", "@andes", "facebook.com/x", "https://tiktok.com/@a", "@canal", "x.com/a", "no-es-correo")))
                 .containsExactlyInAnyOrder("publicProfile.whatsapp", "publicProfile.phone", "publicProfile.website",
-                        "publicProfile.instagram", "publicProfile.facebook", "publicProfile.tiktok");
+                        "publicProfile.instagram", "publicProfile.facebook", "publicProfile.tiktok", "publicProfile.youtube", "publicProfile.x",
+                        "publicProfile.email");
     }
 
     @Test
     void requestWithOnlyEmptyContactHasNoChanges() {
-        assertThat(invalidFields(new StorePublicContactRequest(null, null, null, null, null, null)))
+        assertThat(invalidFields(new StorePublicContactRequest(null, null, null, null, null, null, null, null, null)))
                 .contains("changes");
     }
 
@@ -60,9 +61,9 @@ class StorePublicContactTest {
     void mergeKeepsNullClearsBlankAndTrims() {
         Map<String, Object> merged = StoreService.mergeContact(
                 Map.of("whatsapp", "+573001234567", "instagram", "viejo", "website", "https://a.co"),
-                new StorePublicContactRequest(null, null, "", " nuevo ", null, "tt"));
+                new StorePublicContactRequest(null, null, "", " nuevo ", null, "tt", " canal ", "", null));
 
         assertThat(merged).containsExactlyInAnyOrderEntriesOf(Map.of(
-                "whatsapp", "+573001234567", "instagram", "nuevo", "tiktok", "tt"));
+                "whatsapp", "+573001234567", "instagram", "nuevo", "tiktok", "tt", "youtube", "canal"));
     }
 }

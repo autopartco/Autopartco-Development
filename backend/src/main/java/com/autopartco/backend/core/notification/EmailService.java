@@ -1,11 +1,16 @@
 package com.autopartco.backend.core.notification;
 
+import org.springframework.mail.MailPreparationException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import com.autopartco.backend.shared.config.AppProperties;
 import java.time.LocalDateTime;
+
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 
 import lombok.AllArgsConstructor;
 
@@ -15,23 +20,117 @@ public class EmailService {
     private final JavaMailSender mailSender;
     private final AppProperties appProperties;
 
-    public void sendEmailVerification(String to, String fullName, String verificationLink) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(appProperties.emailVerification().from());
-        message.setTo(to);
-        message.setSubject("Verifica tu correo en Autopartco");
-        message.setText("""
+    /** Correo HTML (con alternativa de texto) con el botón de verificación y el código de 6 dígitos. */
+    public void sendEmailVerification(
+            String to,
+            String fullName,
+            String verificationLink,
+            String code,
+            long linkValidMinutes,
+            long codeValidMinutes
+    ) {
+        String text = """
                 Hola %s,
 
                 Recibimos una solicitud para crear tu cuenta en Autopartco.
 
-                Para activar tu cuenta, abre este enlace:
+                Para activarla, abre este enlace (vence en %s):
+                %s
+
+                O ingresa este código de verificación (vence en %s):
                 %s
 
                 Si no solicitaste esta cuenta, puedes ignorar este correo.
-                """.formatted(fullName, verificationLink));
+                """.formatted(fullName, formatMinutes(linkValidMinutes), verificationLink,
+                formatMinutes(codeValidMinutes), code);
 
-        mailSender.send(message);
+        String html = EmailTemplate.layout("Verifica tu correo",
+                EmailTemplate.paragraph("Hola " + EmailTemplate.escape(fullName) + ",")
+                        + EmailTemplate.paragraph("Recibimos una solicitud para crear tu cuenta en Autopartco. "
+                                + "Confirma tu correo para activarla.")
+                        + EmailTemplate.button("Verificar mi correo", verificationLink)
+                        + EmailTemplate.note("El enlace vence en " + formatMinutes(linkValidMinutes) + ".")
+                        + EmailTemplate.paragraph("¿Prefieres ingresar un código? Escríbelo en la pantalla de verificación:")
+                        + EmailTemplate.highlightedCode(code)
+                        + EmailTemplate.note("El código vence en " + formatMinutes(codeValidMinutes) + ".")
+                        + EmailTemplate.note("Si no solicitaste esta cuenta, puedes ignorar este correo."));
+
+        sendHtml(to, "Verifica tu correo en Autopartco", text, html);
+    }
+
+    /**
+     * Código de verificación en dos pasos. {@code purposeText} describe la acción en minúsculas
+     * (p. ej. «iniciar sesión», «activar la verificación en dos pasos»).
+     */
+    public void sendTwoFactorCode(String to, String fullName, String code, String purposeText, long validMinutes) {
+        String text = """
+                Hola %s,
+
+                Usa este código para %s en Autopartco (vence en %s):
+                %s
+
+                Si no fuiste tú, cambia tu contraseña: alguien podría conocerla.
+                """.formatted(fullName, purposeText, formatMinutes(validMinutes), code);
+
+        String html = EmailTemplate.layout("Tu código de verificación",
+                EmailTemplate.paragraph("Hola " + EmailTemplate.escape(fullName) + ",")
+                        + EmailTemplate.paragraph("Usa este código para " + EmailTemplate.escape(purposeText)
+                                + " en Autopartco:")
+                        + EmailTemplate.highlightedCode(code)
+                        + EmailTemplate.note("El código vence en " + formatMinutes(validMinutes)
+                                + " y solo puede usarse una vez.")
+                        + EmailTemplate.note("Si no fuiste tú, cambia tu contraseña: alguien podría conocerla."));
+
+        sendHtml(to, "Tu código de verificación de Autopartco", text, html);
+    }
+
+    /** Aviso de inicio de sesión desde un dispositivo nuevo. Los datos llegan ya resumidos (IP enmascarada). */
+    public void sendLoginAlert(String to, String fullName, String when, String device, String maskedIp) {
+        String text = """
+                Hola %s,
+
+                Detectamos un nuevo inicio de sesión en tu cuenta de Autopartco.
+
+                Fecha: %s (hora de Colombia)
+                Dispositivo: %s
+                Dirección IP aproximada: %s
+
+                Si fuiste tú, no tienes que hacer nada. Si no lo reconoces, cambia tu contraseña y cierra las
+                demás sesiones desde tu cuenta.
+                """.formatted(fullName, when, device, maskedIp);
+
+        String html = EmailTemplate.layout("Nuevo inicio de sesión",
+                EmailTemplate.paragraph("Hola " + EmailTemplate.escape(fullName) + ",")
+                        + EmailTemplate.paragraph("Detectamos un nuevo inicio de sesión en tu cuenta de Autopartco.")
+                        + EmailTemplate.paragraph("<strong>Fecha:</strong> " + EmailTemplate.escape(when)
+                                + " (hora de Colombia)<br><strong>Dispositivo:</strong> " + EmailTemplate.escape(device)
+                                + "<br><strong>Dirección IP aproximada:</strong> " + EmailTemplate.escape(maskedIp))
+                        + EmailTemplate.note("Si fuiste tú, no tienes que hacer nada. Si no lo reconoces, cambia tu "
+                                + "contraseña y cierra las demás sesiones desde tu cuenta."));
+
+        sendHtml(to, "Nuevo inicio de sesión en Autopartco", text, html);
+    }
+
+    private void sendHtml(String to, String subject, String text, String html) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setFrom(appProperties.emailVerification().from());
+            helper.setTo(to);
+            helper.setSubject(subject);
+            helper.setText(text, html);
+            mailSender.send(message);
+        } catch (MessagingException exception) {
+            throw new MailPreparationException(exception);
+        }
+    }
+
+    private static String formatMinutes(long minutes) {
+        if (minutes >= 60 && minutes % 60 == 0) {
+            long hours = minutes / 60;
+            return hours + (hours == 1 ? " hora" : " horas");
+        }
+        return minutes + (minutes == 1 ? " minuto" : " minutos");
     }
 
     public void sendAccountUnlock(String to, String fullName, String unlockLink) {

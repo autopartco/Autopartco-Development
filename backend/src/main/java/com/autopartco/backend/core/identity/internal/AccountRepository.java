@@ -21,6 +21,10 @@ public interface AccountRepository extends JpaRepository<Account, UUID> {
     @Query("SELECT account FROM Account account WHERE lower(account.email) = lower(:email)")
     Optional<Account> lockByEmail(@Param("email") String email);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT account FROM Account account WHERE account.id = :id")
+    Optional<Account> lockById(@Param("id") UUID id);
+
     /** Cuentas con su persona en una sola consulta (listados). */
     @Query("SELECT account FROM Account account JOIN FETCH account.person WHERE account.id IN :ids")
     List<Account> findAllWithPersonByIdIn(@Param("ids") Collection<UUID> ids);

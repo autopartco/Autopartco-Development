@@ -61,12 +61,17 @@ public class WebSecurityConfig {
                 // core.identity: flujos sin sesión (logout y logout/others siguen autenticados).
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/register"),
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/login"),
+                // Segundo paso del login con 2FA por correo: el desafío (challengeId) sustituye a la sesión.
+                new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/login/two-factor"),
+                new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/login/two-factor/resend"),
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/social/*"),
                 // operations.metrics: visitas del marketplace (sin datos personales, con límite por IP).
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/events/pageview"),
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/events/visibility"),
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/refresh"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.BASE + "/auth/verify-email"),
+                new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/verify-email/code"),
+                new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/verify-email/resend"),
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/unlock/request"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.BASE + "/auth/unlock"),
                 new PublicRoute(HttpMethod.POST, ApiPaths.BASE + "/auth/password-recovery/request"),
@@ -85,6 +90,7 @@ public class WebSecurityConfig {
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/stores/*"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/stores/*/brand/*"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/stores/*/reviews"),
+                new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/stores/*/branches"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/products"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/products/*"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/products/*/frequently-bought"),

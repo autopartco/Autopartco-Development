@@ -29,8 +29,12 @@ public record PublishedStoreProfile(
             String website,
             String instagram,
             String facebook,
-            String tiktok
+            String tiktok,
+            String youtube,
+            String x,
+            String email
     ) {
-        public static final PublicContact EMPTY = new PublicContact(null, null, null, null, null, null);
+        public static final PublicContact EMPTY =
+                new PublicContact(null, null, null, null, null, null, null, null, null);
     }
 }

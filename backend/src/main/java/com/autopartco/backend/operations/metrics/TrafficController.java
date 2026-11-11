@@ -91,12 +91,15 @@ public class TrafficController {
             @Size(max = 10) String ref,
             @Size(max = 100) String utmSource,
             @Size(max = 500) String referrer,
-            @Size(max = 10) String channel
+            @Size(max = 10) String channel,
+            UUID branchId,
+            UUID serviceId
     ) {
     }
 
     /**
-     * Visita al perfil o a una publicación, o un compartido, para las métricas del almacén. Siempre 204 (lo inválido
+     * Visita al perfil o a una publicación, compartido, o clic de WhatsApp o «Cómo llegar» (estos con {@code branchId}
+     * del almacén; {@code productId} y {@code serviceId} opcionales), para las métricas del almacén. Siempre 204 (lo inválido
      * se ignora); comparte el límite por IP con {@code /pageview}. Nunca guarda la cuenta.
      */
     @PostMapping("/visibility")
@@ -107,7 +110,7 @@ public class TrafficController {
         }
         visibilityRecorder.record(new VisibilityRecorder.Visit(request.anonymousId(), request.kind(),
                 request.storeId(), request.productId(), request.ref(), request.utmSource(), request.referrer(),
-                request.channel()));
+                request.channel(), request.branchId(), request.serviceId()));
         return ResponseEntity.noContent().build();
     }
 

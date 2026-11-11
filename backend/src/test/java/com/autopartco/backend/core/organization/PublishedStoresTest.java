@@ -57,7 +57,7 @@ class PublishedStoresTest {
         assertThat(profile.branchCount()).isEqualTo(4);
         assertThat(profile.memberSince()).isEqualTo(LocalDate.of(2026, 10, 1));
         assertThat(profile.contact()).isEqualTo(new PublishedStoreProfile.PublicContact(
-                "+573001234567", null, null, "andes", null, null));
+                "+573001234567", null, null, "andes", null, null, null, null, null));
     }
 
     @Test

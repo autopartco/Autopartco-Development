@@ -55,7 +55,7 @@ class UpdateBranchCrossStoreTest {
     }
 
     private static BranchUpdateRequest renameRequest() {
-        return new BranchUpdateRequest("Robada", null, null);
+        return new BranchUpdateRequest("Robada", null, null, null, null);
     }
 
     @Test

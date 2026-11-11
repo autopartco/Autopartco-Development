@@ -34,7 +34,10 @@ import com.autopartco.backend.core.identity.internal.AccountTypeRepository;
 import com.autopartco.backend.core.identity.internal.AuthTokenService;
 import com.autopartco.backend.core.identity.internal.LoginAttemptService;
 import com.autopartco.backend.core.identity.internal.Person;
+import com.autopartco.backend.core.identity.internal.LoginAlerts;
 import com.autopartco.backend.core.identity.internal.PersonRepository;
+import com.autopartco.backend.core.identity.internal.SessionOpener;
+import com.autopartco.backend.core.identity.internal.TwoFactorLoginService;
 import com.autopartco.backend.core.identity.web.SocialLoginRequest;
 import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.ConflictException;
@@ -58,6 +61,8 @@ class SocialLoginServiceTest {
     private final AuthTokenService authTokenService = mock(AuthTokenService.class);
     private final AccountSessionService accountSessionService = mock(AccountSessionService.class);
     private final AuditService auditService = mock(AuditService.class);
+    private final LoginAlerts loginAlerts = mock(LoginAlerts.class);
+    private final TwoFactorLoginService twoFactorLoginService = mock(TwoFactorLoginService.class);
     private final LoginResponse tokens = new LoginResponse("access", "refresh", "Bearer", 900);
 
     private SocialLoginService service;
@@ -72,7 +77,7 @@ class SocialLoginServiceTest {
                 .thenReturn(new AuthTokenService.TokenPair(tokens, LocalDateTime.now().plusDays(7), UUID.randomUUID()));
         service = new SocialLoginService(List.of(google, facebook), identityRepository, accountRepository, personRepository,
                 accountTypeRepository, stateRepository, passwordEncoder, accountStatusService, loginAttemptService,
-                authTokenService, accountSessionService, auditService);
+                new SessionOpener(authTokenService, accountSessionService, loginAlerts), twoFactorLoginService, auditService);
     }
 
     @Test
@@ -87,6 +92,23 @@ class SocialLoginServiceTest {
         assertSame(tokens, response);
         verify(loginAttemptService).record(account, true, "1.1.1.1");
         verify(auditService).record(eq(account.getId()), eq("SOCIAL_LOGIN"), eq("ACCOUNT"), eq(account.getId()), any());
+    }
+
+    @Test
+    void linkedIdentityWithTwoFactorGetsChallengeWithoutTokens() {
+        Account account = account(StateCodes.ACTIVE);
+        when(google.verify("tok")).thenReturn(identity(SocialProvider.GOOGLE, "ana@example.com", true));
+        when(identityRepository.findByProviderAndSubject("google", "sub-1"))
+                .thenReturn(Optional.of(AccountIdentity.builder().account(account).provider("google").subject("sub-1").build()));
+        LoginResponse challenge = LoginResponse.twoFactorChallenge(UUID.randomUUID(), java.time.Instant.now());
+        when(twoFactorLoginService.isEnabled(account)).thenReturn(true);
+        when(twoFactorLoginService.startChallenge(account)).thenReturn(challenge);
+
+        LoginResponse response = service.login(SocialProvider.GOOGLE, new SocialLoginRequest("tok", null), "1.1.1.1", "UA");
+
+        assertSame(challenge, response);
+        verify(authTokenService, never()).issue(any(Account.class));
+        verify(loginAttemptService, never()).record(any(), eq(true), any());
     }
 
     @Test
