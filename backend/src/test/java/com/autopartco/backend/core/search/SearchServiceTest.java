@@ -423,6 +423,78 @@ class SearchServiceTest {
         return row;
     }
 
+    @Test
+    void categoryAdsUseTheCategoryAndItsSubcategoriesAndHydrateListings() {
+        UUID sub = UUID.randomUUID();
+        UUID advertised = UUID.randomUUID();
+        UUID branch = UUID.randomUUID();
+        AdServer adServer = mock(AdServer.class);
+        service = new SearchService(jdbc.client, new QueryParser(dictionary), listingQueries, adServer);
+        jdbc.rows(sql -> sql.contains("category_path @> array"), call -> List.of(Map.of("category_id", sub)));
+        jdbc.rows(sql -> sql.contains("distinct on (product_id) product_id, branch_id"),
+                call -> List.of(Map.of("product_id", advertised, "branch_id", branch)));
+        when(listingQueries.publishedListingsByKeys(eq(List.of(new ListingKey(advertised, branch))), any()))
+                .thenReturn(List.of(listing(advertised, branch)));
+        when(adServer.pick(eq(AdPlacement.CATEGORY_TOP), any(), eq(3))).thenReturn(List.of(
+                new AdPick(UUID.randomUUID(), advertised, AdPlacement.CATEGORY_TOP, "tok-c")));
+
+        List<SearchResult.Sponsored> ads = service.categoryAds(CATEGORY, "s:abc", null);
+
+        assertThat(ads).hasSize(1);
+        assertThat(ads.getFirst().adImpressionToken()).isEqualTo("tok-c");
+        org.mockito.ArgumentCaptor<AdContext> context = org.mockito.ArgumentCaptor.forClass(AdContext.class);
+        verify(adServer).pick(eq(AdPlacement.CATEGORY_TOP), context.capture(), eq(3));
+        assertThat(context.getValue().categoryScope()).containsExactlyInAnyOrder(CATEGORY, sub);
+        assertThat(context.getValue().visitorKey()).isEqualTo("s:abc");
+        assertThat(service.categoryAds(null, "s:abc", null)).isEmpty();
+    }
+
+    @Test
+    void relatedAdsUseTheProductCategoryVehiclesAndExcludeItsStoreAndItself() {
+        UUID product = UUID.randomUUID();
+        UUID store = UUID.randomUUID();
+        UUID make = UUID.randomUUID();
+        UUID advertised = UUID.randomUUID();
+        UUID branch = UUID.randomUUID();
+        AdServer adServer = mock(AdServer.class);
+        service = new SearchService(jdbc.client, new QueryParser(dictionary), listingQueries, adServer);
+        jdbc.rows(sql -> sql.contains("select category_id, store_id, name"),
+                call -> List.of(Map.of("category_id", CATEGORY, "store_id", store, "name", "Pastillas Bosch")));
+        jdbc.rows(sql -> sql.contains("unnest(sl.vehicle_make_ids)"), call -> List.of(Map.of("make_id", make)));
+        jdbc.rows(sql -> sql.contains("distinct on (product_id) product_id, branch_id"),
+                call -> List.of(Map.of("product_id", advertised, "branch_id", branch)));
+        when(listingQueries.publishedListingsByKeys(eq(List.of(new ListingKey(advertised, branch))), any()))
+                .thenReturn(List.of(listing(advertised, branch)));
+        when(adServer.pick(eq(AdPlacement.PRODUCT_RELATED), any(), eq(4))).thenReturn(List.of(
+                new AdPick(UUID.randomUUID(), advertised, AdPlacement.PRODUCT_RELATED, "tok-r")));
+
+        List<SearchResult.Sponsored> ads = service.relatedAds(product, null, BuyerContext.anonymous());
+
+        assertThat(ads).extracting(SearchResult.Sponsored::adImpressionToken).containsExactly("tok-r");
+        org.mockito.ArgumentCaptor<AdContext> context = org.mockito.ArgumentCaptor.forClass(AdContext.class);
+        verify(adServer).pick(eq(AdPlacement.PRODUCT_RELATED), context.capture(), eq(4));
+        assertThat(context.getValue().excludedProductIds()).containsExactly(product);
+        assertThat(context.getValue().excludedStoreId()).isEqualTo(store);
+        assertThat(context.getValue().categoryId()).isEqualTo(CATEGORY);
+        assertThat(context.getValue().makeScope()).containsExactly(make);
+        assertThat(context.getValue().text()).isEqualTo("pastillas bosch");
+    }
+
+    @Test
+    void relatedAndCategoryAdsNeverFail() {
+        AdServer adServer = mock(AdServer.class);
+        service = new SearchService(jdbc.client, new QueryParser(dictionary), listingQueries, adServer);
+        // Producto sin publicar: no se consulta al servidor de anuncios.
+        assertThat(service.relatedAds(UUID.randomUUID(), "s:1", null)).isEmpty();
+        verify(adServer, never()).pick(any(), any(), org.mockito.ArgumentMatchers.anyInt());
+
+        when(adServer.pick(any(), any(), org.mockito.ArgumentMatchers.anyInt()))
+                .thenThrow(new IllegalStateException("x"));
+        assertThat(service.categoryAds(CATEGORY, "s:1", null)).isEmpty();
+        assertThat(new SearchService(jdbc.client, new QueryParser(dictionary), listingQueries)
+                .categoryAds(CATEGORY, "s:1", null)).isEmpty();
+    }
+
     private static ProductResponse listing(UUID product, UUID branch) {
         return new ProductResponse(product, UUID.randomUUID(), branch, "Sede", "Pastillas", "SKU", null, null,
                 BigDecimal.TEN, BigDecimal.TEN, BigDecimal.ZERO, null, 1, null, null, false, CATEGORY, "ACTIVE",

@@ -47,6 +47,32 @@ public class SearchService {
     static final int SPONSORED_PER_PAGE = AdPlacement.SEARCH_TOP.slots();
     /** Anuncios {@code HOME_FEATURED} del inicio (cupo de la ubicación). */
     public static final int FEATURED_SLOTS = AdPlacement.HOME_FEATURED.slots();
+    /** Anuncios {@code CATEGORY_TOP} de la cabecera de categoría. */
+    public static final int CATEGORY_SLOTS = AdPlacement.CATEGORY_TOP.slots();
+    /** Anuncios {@code PRODUCT_RELATED} del detalle de producto. */
+    public static final int RELATED_SLOTS = AdPlacement.PRODUCT_RELATED.slots();
+    static final String CATEGORY_SCOPE_SQL = """
+            select distinct category_id
+            from search_listings
+            where category_path @> array[cast(:categoryId as uuid)] and category_id is not null
+            limit 500
+            """;
+    static final String PRODUCT_CONTEXT_SQL = """
+            select category_id, store_id, name
+            from search_listings
+            where product_id = :productId
+            limit 1
+            """;
+    static final String PRODUCT_MAKES_SQL = """
+            select distinct make_id
+            from search_listings sl, unnest(sl.vehicle_make_ids) as make_id
+            where sl.product_id = :productId
+            """;
+    static final String PRODUCT_MODELS_SQL = """
+            select distinct model_id
+            from search_listings sl, unnest(sl.vehicle_model_ids) as model_id
+            where sl.product_id = :productId
+            """;
     static final String SPONSORED_LISTINGS_SQL = """
             select distinct on (product_id) product_id, branch_id
             from search_listings
@@ -186,6 +212,63 @@ public class SearchService {
         BuyerContext effectiveBuyer = buyer == null ? BuyerContext.anonymous() : buyer;
         AdContext context = new AdContext(null, null, null, null, cityCode, Set.of(), visitorKey);
         return pickListings(AdPlacement.HOME_FEATURED, context, FEATURED_SLOTS, effectiveBuyer);
+    }
+
+    /**
+     * Anuncios {@code CATEGORY_TOP} (hasta {@value #CATEGORY_SLOTS}) de la categoría pedida o de una subcategoría
+     * ({@code category_path} del índice): por la segmentación de la campaña o por la categoría del producto anunciado.
+     * Un fallo responde sin anuncios.
+     */
+    public List<SearchResult.Sponsored> categoryAds(UUID categoryId, String visitorKey, BuyerContext buyer) {
+        if (adServer == null || categoryId == null) {
+            return List.of();
+        }
+        try {
+            Set<UUID> scope = new HashSet<>(jdbcClient.sql(CATEGORY_SCOPE_SQL).param("categoryId", categoryId)
+                    .query(UUID.class).list());
+            scope.add(categoryId);
+            AdContext context = new AdContext(null, categoryId, null, null, null, Set.of(), visitorKey, scope, null,
+                    null, null);
+            return pickListings(AdPlacement.CATEGORY_TOP, context, CATEGORY_SLOTS, effective(buyer));
+        } catch (RuntimeException failure) {
+            log.warn("Category ads unavailable: {}", failure.getClass().getSimpleName());
+            return List.of();
+        }
+    }
+
+    /**
+     * Anuncios {@code PRODUCT_RELATED} (hasta {@value #RELATED_SLOTS}) para un producto publicado: misma categoría,
+     * vehículos del producto en la segmentación de la campaña (marcas y modelos) o palabras clave que aparecen en su
+     * nombre. Nunca el mismo producto ni otro del mismo almacén. Producto sin publicar o fallo: sin anuncios.
+     */
+    public List<SearchResult.Sponsored> relatedAds(UUID productId, String visitorKey, BuyerContext buyer) {
+        if (adServer == null || productId == null) {
+            return List.of();
+        }
+        try {
+            List<Object[]> product = jdbcClient.sql(PRODUCT_CONTEXT_SQL).param("productId", productId)
+                    .query((rs, rowNum) -> new Object[] {rs.getObject("category_id", UUID.class),
+                            rs.getObject("store_id", UUID.class), rs.getString("name")})
+                    .list();
+            if (product.isEmpty()) {
+                return List.of();
+            }
+            Object[] row = product.getFirst();
+            Set<UUID> makes = new HashSet<>(jdbcClient.sql(PRODUCT_MAKES_SQL).param("productId", productId)
+                    .query(UUID.class).list());
+            Set<UUID> models = new HashSet<>(jdbcClient.sql(PRODUCT_MODELS_SQL).param("productId", productId)
+                    .query(UUID.class).list());
+            AdContext context = new AdContext((String) row[2], (UUID) row[0], null, null, null, Set.of(productId),
+                    visitorKey, null, makes, models, (UUID) row[1]);
+            return pickListings(AdPlacement.PRODUCT_RELATED, context, RELATED_SLOTS, effective(buyer));
+        } catch (RuntimeException failure) {
+            log.warn("Related ads unavailable: {}", failure.getClass().getSimpleName());
+            return List.of();
+        }
+    }
+
+    private static BuyerContext effective(BuyerContext buyer) {
+        return buyer == null ? BuyerContext.anonymous() : buyer;
     }
 
     private List<SearchResult.Sponsored> pickListings(AdPlacement placement, AdContext context, int limit,

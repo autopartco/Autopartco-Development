@@ -78,6 +78,7 @@ public class AdServer {
         Map<UUID, List<AdCandidate>> byCampaign = new LinkedHashMap<>();
         for (AdCandidate candidate : candidates) {
             if (!context.excludedProductIds().contains(candidate.productId())
+                    && !(context.excludedStoreId() != null && context.excludedStoreId().equals(candidate.storeId()))
                     && matches(candidate, context, placement)) {
                 byCampaign.computeIfAbsent(candidate.campaignId(), ignored -> new ArrayList<>()).add(candidate);
             }
@@ -143,14 +144,10 @@ public class AdServer {
         if (!context.hasSignals()) {
             return placement != AdPlacement.SEARCH_TOP;
         }
-        if (context.categoryId() != null && (targeting.categoryIds().contains(context.categoryId())
-                || context.categoryId().equals(candidate.productCategoryId()))) {
-            return true;
-        }
-        if (context.makeId() != null && targeting.makeIds().contains(context.makeId())) {
-            return true;
-        }
-        if (context.modelId() != null && targeting.modelIds().contains(context.modelId())) {
+        if ((candidate.productCategoryId() != null && context.categoryScope().contains(candidate.productCategoryId()))
+                || intersects(targeting.categoryIds(), context.categoryScope())
+                || intersects(targeting.makeIds(), context.makeScope())
+                || intersects(targeting.modelIds(), context.modelScope())) {
             return true;
         }
         if (context.text().isEmpty()) {
@@ -163,6 +160,15 @@ public class AdServer {
             }
         }
         return nameMatches(context.text(), candidate.productWords());
+    }
+
+    private static boolean intersects(List<UUID> targeted, Set<UUID> wanted) {
+        for (UUID id : targeted) {
+            if (wanted.contains(id)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** Todas las palabras de la consulta son prefijo de alguna palabra del nombre. */

@@ -174,4 +174,36 @@ class AdServerTest {
         assertThat(server(5).pick(AdPlacement.SEARCH_TOP,
                 new AdContext("correa", null, null, null, null, Set.of(), "v"), 2)).isEmpty();
     }
+
+    @Test
+    void scopesMatchSubcategoriesVehiclesAndSkipTheViewedStore() {
+        UUID sub = UUID.randomUUID();
+        UUID store = UUID.randomUUID();
+        AdCandidate inSubcategory = candidate(UUID.randomUUID(), UUID.randomUUID(), "Disco", sub, AdTargeting.NONE);
+        AdCandidate targetsSub = candidate(UUID.randomUUID(), UUID.randomUUID(), "Filtro", null,
+                new AdTargeting(List.of(), List.of(sub), List.of(), List.of(), List.of()));
+        AdCandidate byModel = candidate(UUID.randomUUID(), UUID.randomUUID(), "Amortiguador", null,
+                new AdTargeting(List.of(), List.of(), List.of(), List.of(MODEL), List.of()));
+        AdCandidate other = candidate(UUID.randomUUID(), UUID.randomUUID(), "Radiador", UUID.randomUUID(),
+                AdTargeting.NONE);
+
+        AdContext category = new AdContext(null, CATEGORY, null, null, null, Set.of(), null, Set.of(sub), null, null,
+                null);
+        assertThat(AdServer.matches(inSubcategory, category, AdPlacement.CATEGORY_TOP)).isTrue();
+        assertThat(AdServer.matches(targetsSub, category, AdPlacement.CATEGORY_TOP)).isTrue();
+        assertThat(AdServer.matches(other, category, AdPlacement.CATEGORY_TOP)).isFalse();
+
+        AdContext vehicles = new AdContext(null, null, null, null, null, Set.of(), null, null, Set.of(MAKE),
+                Set.of(MODEL), null);
+        assertThat(AdServer.matches(byModel, vehicles, AdPlacement.PRODUCT_RELATED)).isTrue();
+        assertThat(AdServer.matches(other, vehicles, AdPlacement.PRODUCT_RELATED)).isFalse();
+
+        AdCandidate sameStore = new AdCandidate(UUID.randomUUID(), store, UUID.randomUUID(), List.of(), sub,
+                AdTargeting.NONE);
+        given(AdPlacement.CATEGORY_TOP, sameStore, inSubcategory);
+        AdContext viewing = new AdContext(null, CATEGORY, null, null, null, Set.of(), null, Set.of(sub), null, null,
+                store);
+        assertThat(server(1).pick(AdPlacement.CATEGORY_TOP, viewing, 3)).extracting(AdPick::productId)
+                .containsExactly(inSubcategory.productId());
+    }
 }

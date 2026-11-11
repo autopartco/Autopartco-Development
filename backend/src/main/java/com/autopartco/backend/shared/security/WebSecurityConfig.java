@@ -105,6 +105,8 @@ public class WebSecurityConfig {
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/search/suggest"),
                 // marketplace: inicio v2 (cifras, categorías, cercanía y destacados; precios generales, con límite por IP).
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/home"),
+                // marketplace: anuncios de categoría y de producto relacionado (con límite por IP).
+                new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/ads"),
                 // marketplace: catálogo de vehículos en cascada.
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/vehicles/makes"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/vehicles/makes/*/models"),
