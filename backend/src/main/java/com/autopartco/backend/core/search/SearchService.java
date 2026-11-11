@@ -45,6 +45,8 @@ public class SearchService {
 
     /** Anuncios {@code SEARCH_TOP} por página (cupo de la ubicación). */
     static final int SPONSORED_PER_PAGE = AdPlacement.SEARCH_TOP.slots();
+    /** Anuncios {@code HOME_FEATURED} del inicio (cupo de la ubicación). */
+    public static final int FEATURED_SLOTS = AdPlacement.HOME_FEATURED.slots();
     static final String SPONSORED_LISTINGS_SQL = """
             select distinct on (product_id) product_id, branch_id
             from search_listings
@@ -165,12 +167,31 @@ public class SearchService {
         if (adServer == null || criteria.storeId() != null || criteria.branchId() != null) {
             return List.of();
         }
+        Set<UUID> shown = new HashSet<>();
+        items.forEach(hit -> shown.add(hit.listing().id()));
+        AdContext context = new AdContext(parsed.text(), criteria.categoryId(), criteria.makeId(),
+                criteria.modelId(), criteria.cityCode(), shown, visitorKey);
+        return pickListings(AdPlacement.SEARCH_TOP, context, SPONSORED_PER_PAGE, buyer);
+    }
+
+    /**
+     * Anuncios {@code HOME_FEATURED} del inicio (hasta {@value #FEATURED_SLOTS}), sin señales de búsqueda: solo cuenta
+     * la ciudad. Nunca se cachean (cada llamada respeta la rotación y el tope de frecuencia de {@code visitorKey}). Un
+     * fallo responde sin anuncios.
+     */
+    public List<SearchResult.Sponsored> featuredAds(String cityCode, String visitorKey, BuyerContext buyer) {
+        if (adServer == null) {
+            return List.of();
+        }
+        BuyerContext effectiveBuyer = buyer == null ? BuyerContext.anonymous() : buyer;
+        AdContext context = new AdContext(null, null, null, null, cityCode, Set.of(), visitorKey);
+        return pickListings(AdPlacement.HOME_FEATURED, context, FEATURED_SLOTS, effectiveBuyer);
+    }
+
+    private List<SearchResult.Sponsored> pickListings(AdPlacement placement, AdContext context, int limit,
+            BuyerContext buyer) {
         try {
-            Set<UUID> shown = new HashSet<>();
-            items.forEach(hit -> shown.add(hit.listing().id()));
-            AdContext context = new AdContext(parsed.text(), criteria.categoryId(), criteria.makeId(),
-                    criteria.modelId(), criteria.cityCode(), shown, visitorKey);
-            List<AdPick> picks = adServer.pick(AdPlacement.SEARCH_TOP, context, SPONSORED_PER_PAGE);
+            List<AdPick> picks = adServer.pick(placement, context, limit);
             if (picks.isEmpty()) {
                 return List.of();
             }
