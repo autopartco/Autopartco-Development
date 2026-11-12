@@ -85,6 +85,23 @@ public class EmailService {
     }
 
     /** Aviso de inicio de sesión desde un dispositivo nuevo. Los datos llegan ya resumidos (IP enmascarada). */
+    /** Aviso de seguridad de la cuenta (contraseña o correo cambiados). {@code message} es texto plano. */
+    public void sendSecurityNotice(String to, String fullName, String title, String message) {
+        String text = """
+                Hola %s,
+
+                %s
+
+                Si no fuiste tú, recupera tu contraseña de inmediato desde "¿Olvidaste tu contraseña?" y escríbenos.
+                """.formatted(fullName, message);
+        String html = EmailTemplate.layout(title,
+                EmailTemplate.paragraph("Hola " + EmailTemplate.escape(fullName) + ",")
+                        + EmailTemplate.paragraph(EmailTemplate.escape(message))
+                        + EmailTemplate.note("Si no fuiste tú, recupera tu contraseña de inmediato desde "
+                                + "«¿Olvidaste tu contraseña?» y escríbenos."));
+        sendHtml(to, title + " · Autopartco", text, html);
+    }
+
     public void sendLoginAlert(String to, String fullName, String when, String device, String maskedIp) {
         String text = """
                 Hola %s,
@@ -109,6 +126,21 @@ public class EmailService {
                                 + "contraseña y cierra las demás sesiones desde tu cuenta."));
 
         sendHtml(to, "Nuevo inicio de sesión en Autopartco", text, html);
+    }
+
+    /** Recordatorio de calificación (como máximo dos por venta; ver {@code ReviewReminderJob}). */
+    public void sendReviewReminder(String to, String givenName, long orderNumber, String reviewLink, String settingsLink) {
+        String text = """
+                Hola %s,
+
+                Hace unos días recibiste tu pedido #%d. Si ya usaste los repuestos, cuéntanos cómo te fue:
+                %s
+
+                Es opcional y no te lo recordaremos más de dos veces. Puedes desactivar estos recordatorios en %s
+                """.formatted(givenName, orderNumber, reviewLink, settingsLink);
+
+        sendHtml(to, "Califica tu pedido #" + orderNumber, text,
+                EmailTemplate.reviewReminder(givenName, orderNumber, reviewLink, settingsLink));
     }
 
     /** Invitación a calificar un pedido entregado; {@code reviewLink} lleva a {@code /cuenta/calificar?pedido=…}. */

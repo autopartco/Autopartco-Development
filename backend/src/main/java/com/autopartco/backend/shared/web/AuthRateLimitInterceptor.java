@@ -26,17 +26,23 @@ public class AuthRateLimitInterceptor implements HandlerInterceptor, WebMvcConfi
     static final String AUTH = ApiPaths.BASE + "/auth";
     /** Desactivar la 2FA con contraseña: prueba credenciales aunque esté fuera de {@code /auth}. */
     static final String TWO_FACTOR_DISABLE = ApiPaths.BASE + "/account/settings/two-factor/disable";
+    /** Administración de la cuenta: prueban la contraseña o envían códigos aunque estén fuera de {@code /auth}. */
+    static final String ME = ApiPaths.BASE + "/me";
 
     /** Ruta → grupo (clave del contador). Los dos pasos del login comparten grupo por método. */
-    static final Map<String, String> POST_ROUTES = Map.of(
-            AUTH + "/login", "login",
-            AUTH + "/login/two-factor", "login-2fa",
-            AUTH + "/login/two-factor/resend", "login-2fa-resend",
-            AUTH + "/verify-email/code", "verify",
-            AUTH + "/verify-email/resend", "verify-resend",
-            AUTH + "/unlock/request", "unlock",
-            AUTH + "/password-recovery/request", "recovery",
-            TWO_FACTOR_DISABLE, "2fa-disable");
+    static final Map<String, String> POST_ROUTES = Map.ofEntries(
+            Map.entry(AUTH + "/login", "login"),
+            Map.entry(AUTH + "/login/two-factor", "login-2fa"),
+            Map.entry(AUTH + "/login/two-factor/resend", "login-2fa-resend"),
+            Map.entry(AUTH + "/verify-email/code", "verify"),
+            Map.entry(AUTH + "/verify-email/resend", "verify-resend"),
+            Map.entry(AUTH + "/unlock/request", "unlock"),
+            Map.entry(AUTH + "/password-recovery/request", "recovery"),
+            Map.entry(TWO_FACTOR_DISABLE, "2fa-disable"),
+            Map.entry(ME + "/password", "password-change"),
+            Map.entry(ME + "/email", "email-change"),
+            Map.entry(ME + "/email/confirm", "email-confirm"),
+            Map.entry(ME + "/deletion-request", "deletion"));
     static final String SOCIAL_PREFIX = AUTH + "/social/";
     static final String VERIFY_LINK = AUTH + "/verify-email";
 
@@ -49,7 +55,8 @@ public class AuthRateLimitInterceptor implements HandlerInterceptor, WebMvcConfi
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(this).addPathPatterns(AUTH + "/**", TWO_FACTOR_DISABLE);
+        registry.addInterceptor(this).addPathPatterns(AUTH + "/**", TWO_FACTOR_DISABLE, ME + "/password", ME + "/email",
+                ME + "/email/confirm", ME + "/deletion-request", ME + "/identities/*/unlink");
     }
 
     @Override
@@ -66,6 +73,9 @@ public class AuthRateLimitInterceptor implements HandlerInterceptor, WebMvcConfi
             String group = POST_ROUTES.get(path);
             if (group != null) {
                 return group;
+            }
+            if (path.startsWith(ME + "/identities/") && path.endsWith("/unlink")) {
+                return "unlink";
             }
             return path.startsWith(SOCIAL_PREFIX) ? "social" : null;
         }

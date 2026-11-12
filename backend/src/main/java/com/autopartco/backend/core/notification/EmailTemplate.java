@@ -48,6 +48,16 @@ final class EmailTemplate {
                         + note("Calificar toma un minuto y es opcional. Si no quieres hacerlo, puedes ignorar este correo."));
     }
 
+    static String reviewReminder(String givenName, long orderNumber, String reviewLink, String settingsLink) {
+        return layout("¿Ya probaste lo que compraste?",
+                paragraph("Hola " + escape(givenName) + ",")
+                        + paragraph("Hace unos días recibiste tu pedido #" + orderNumber + ". Si ya usaste los repuestos, "
+                                + "cuéntanos cómo te fue con ellos y con el almacén.")
+                        + button("Calificar mi compra", reviewLink)
+                        + note("Es opcional y no te lo recordaremos más de dos veces. Puedes desactivar estos recordatorios "
+                                + "en tus preferencias: " + escape(settingsLink)));
+    }
+
     /** Cita (pregunta o respuesta); se escapa aquí. */
     static String quote(String text) {
         return "<p style=\"margin:0 0 16px;padding:12px 16px;border-left:4px solid " + BRAND_COLOR

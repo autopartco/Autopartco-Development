@@ -222,6 +222,14 @@
     --ap-index-color: var(--ap-on-dark-muted);
     background-color: var(--ap-graphite);
     color: var(--ap-white);
+    /* Barras de scroll (menús laterales del portal y del admin): finas y del tono de la superficie, no la clara del sistema.
+       `scrollbar-color` se hereda, así que cubre cualquier contenedor con scroll dentro de la superficie. */
+    scrollbar-width: thin;
+    scrollbar-color: rgb(255 255 255 / 0.22) transparent;
+}
+/* `scrollbar-width` no se hereda: se aplica a los contenedores con scroll de la superficie. */
+.ap-surface-dark :where(*) {
+    scrollbar-width: thin;
 }
 
 @layer base {
