@@ -50,6 +50,11 @@ export function aspectCopy(kind: ReviewKind, code: string): AspectCopy {
   return COPY[kind][code] ?? { label: humanizeCode(code), badge: humanizeCode(code), icon: GemIcon }
 }
 
+/** Códigos de las categorías que se pueden puntuar, en el orden de la tabla (los del formulario de reseña). */
+export function aspectCodes(kind: ReviewKind): string[] {
+  return Object.keys(COPY[kind])
+}
+
 /** Posición de la categoría en el orden de la tabla; las desconocidas van al final. */
 export function aspectRank(kind: ReviewKind, code: string): number {
   const index = Object.keys(COPY[kind]).indexOf(code)

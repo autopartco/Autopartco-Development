@@ -12,6 +12,7 @@ import {
   AdminPromotionsPage,
   AdminSearchesPage,
   AdminStatsPage,
+  AdminReviewsPage,
   AdminRoot,
   BenefitsPage,
   CartPage,
@@ -22,6 +23,7 @@ import {
   HomePage,
   LoginPage,
   OrderDetailPage,
+  RatePage,
   OrderResultPage,
   OrdersPage,
   PasswordRecoveryPage,
@@ -54,6 +56,7 @@ import {
   PortalSalesPage,
   PortalRoot,
   PortalStorePage,
+  PortalReviewsPage,
   PortalTeamPage,
   PrivacyPage,
   ProductPage,
@@ -109,6 +112,8 @@ export const router = createBrowserRouter([
           // Beneficios del comprador (GET /marketplace/me/benefits): exigen sesión.
           { path: 'mis-beneficios', element: <RequireSession fallback={<PageFallback />}><BenefitsPage /></RequireSession> },
           { path: 'mis-pedidos/:id', element: <RequireSession fallback={<PageFallback />}><OrderDetailPage /></RequireSession> },
+          // Reseñas pendientes (GET /account/reviews/pending); el correo de invitación enlaza con ?pedido=.
+          { path: 'cuenta/calificar', element: <RequireSession fallback={<PageFallback />}><RatePage /></RequireSession> },
           // Almacenes: landing y solicitud (POST /store-applications).
           { path: 'privacidad', element: <PrivacyPage /> },
           { path: 'vender', element: <SellPage /> },
@@ -177,6 +182,7 @@ export const router = createBrowserRouter([
           { path: 'publicidad/:campaignId/estadisticas', element: <RequirePermission permission="ANALYTICS_READ"><PortalAdsCampaignStatsPage /></RequirePermission> },
           // El correo de alertas enlaza aquí: /portal/{storeId}/alertas
           { path: 'alertas', element: <RequirePermission permission="STORE_READ"><PortalAlertsPage /></RequirePermission> },
+          { path: 'resenas', element: <RequirePermission permission="STORE_READ"><PortalReviewsPage /></RequirePermission> },
           { path: 'sucursales', element: <RequirePermission permission="BRANCH_READ"><PortalBranchesPage /></RequirePermission> },
           { path: 'equipo', element: <RequirePermission permission="COLLABORATOR_READ"><PortalTeamPage /></RequirePermission> },
           { path: 'tienda', element: <RequirePermission permission="STORE_READ"><PortalStorePage /></RequirePermission> },
@@ -207,6 +213,7 @@ export const router = createBrowserRouter([
       { path: 'catalogo', element: <AdminCatalogPage /> },
       { path: 'clientes', element: <AdminCustomersPage /> },
       { path: 'busquedas', element: <AdminSearchesPage /> },
+      { path: 'resenas', element: <AdminReviewsPage /> },
       { path: '*', element: <Navigate to="resumen" replace /> },
     ],
   },

@@ -1,19 +1,15 @@
-import { useEffect, useId, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useId, useState, type ReactNode } from 'react'
 import { Link, useLocation, useParams, useSearchParams } from 'react-router'
-import { StarIcon } from 'lucide-react'
-import { toast } from 'sonner'
 import { Breadcrumbs, Container } from '@/components/common/page-header'
-import { FieldShell, FormAlert } from '@/components/common/form-fields'
 import { EmptyState, ErrorState } from '@/components/common/states'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useSession } from '@/features/auth/hooks'
+import { ReviewDialog } from '@/features/reviews/components/review-dialog'
 import { useStoreDistances } from '@/features/location/hooks'
 import { pluralize } from '@/lib/format'
-import { invalidateAsync } from '@/lib/use-async'
 import { cn } from '@/lib/utils'
 import { trackView } from '@/lib/visibility'
-import { getMarketplaceService } from '../api/marketplace-service'
 import { isNotFoundError, type StoreBranch, type StoreProfile } from '../api/types'
 import { ProductCard, ProductGrid, ProductGridSkeleton } from '../components/product-card'
 import { ResultsPagination } from '../components/results-pagination'
@@ -166,106 +162,31 @@ function StoreProducts({ store, branches }: { store: StoreProfile; branches: Sto
   )
 }
 
-function ReviewForm({ storeId, orderIds }: { storeId: string; orderIds: string[] }) {
-  const formId = useId()
-  const [orderId, setOrderId] = useState(orderIds[0] ?? '')
-  const [rating, setRating] = useState(0)
-  const [comment, setComment] = useState('')
-  const [error, setError] = useState<string>()
-  const [pending, setPending] = useState(false)
-
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (rating < 1) {
-      setError('Elige de 1 a 5 estrellas.')
-      return
-    }
-    setError(undefined)
-    setPending(true)
-    try {
-      const service = await getMarketplaceService()
-      await service.createStoreReview(storeId, { orderId, rating, comment: comment.trim() || undefined })
-      toast.success('Gracias por calificar la tienda')
-      invalidateAsync(`store-reviews:${storeId}`)
-      invalidateAsync(`store-profile:${storeId}`)
-      invalidateAsync(`store-review-eligibility:${storeId}`)
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'No pudimos guardar tu reseña. Inténtalo de nuevo.')
-    } finally {
-      setPending(false)
-    }
-  }
-
+/** Invitación a calificar al almacén: abre el diálogo de reseña con los pedidos entregados sin calificar. */
+function RateStoreAction({ store, orderIds }: { store: StoreProfile; orderIds: string[] }) {
+  const [open, setOpen] = useState(false)
   return (
-    <form onSubmit={submit} className="flex flex-col gap-4 border-y border-ap-graphite py-5" aria-labelledby={`${formId}-titulo`}>
-      <div className="flex flex-col gap-1">
-        <h3 id={`${formId}-titulo`} className="text-block-title text-ap-ink">
-          Califica tu compra
-        </h3>
-        <p className="text-sm text-ap-muted">Solo pueden calificar quienes recibieron un pedido de esta tienda.</p>
-      </div>
-      {error ? <FormAlert title={error} /> : null}
-      {orderIds.length > 1 ? (
-        <FieldShell id={`${formId}-pedido`} label="Pedido">
-          {(describedBy) => (
-            <select
-              id={`${formId}-pedido`}
-              value={orderId}
-              aria-describedby={describedBy}
-              onChange={(event) => setOrderId(event.target.value)}
-              className="h-11 w-full max-w-xs rounded-md border border-input bg-ap-white px-3 text-base text-ap-ink sm:text-sm"
-            >
-              {orderIds.map((id) => (
-                <option key={id} value={id}>
-                  Pedido {id.slice(0, 8).toUpperCase()}
-                </option>
-              ))}
-            </select>
-          )}
-        </FieldShell>
-      ) : null}
-      <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1.5 text-sm font-semibold text-ap-ink">Calificación</legend>
-        <div className="flex flex-wrap gap-1">
-          {[1, 2, 3, 4, 5].map((value) => (
-            <label
-              key={value}
-              className={cn(
-                'inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-md border px-3 text-sm font-medium transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ap-red',
-                rating === value ? 'border-ap-graphite bg-ap-paper text-ap-ink' : 'border-input bg-ap-white text-ap-muted hover:border-ap-graphite',
-              )}
-            >
-              <input type="radio" name={`${formId}-rating`} value={value} checked={rating === value} onChange={() => setRating(value)} className="sr-only" />
-              <StarIcon aria-hidden className={cn('size-4', rating >= value ? 'fill-ap-graphite text-ap-graphite' : 'text-ap-line-strong')} />
-              {value}
-            </label>
-          ))}
-        </div>
-      </fieldset>
-      <FieldShell id={`${formId}-comentario`} label="Comentario" optional hint={`${comment.length} de 1000 caracteres.`}>
-        {(describedBy) => (
-          <textarea
-            id={`${formId}-comentario`}
-            value={comment}
-            maxLength={1000}
-            rows={3}
-            aria-describedby={describedBy}
-            onChange={(event) => setComment(event.target.value)}
-            placeholder="Ej.: entregaron a tiempo y la referencia era la correcta."
-            className="w-full rounded-md border border-input bg-ap-white px-3 py-2 text-base text-ap-ink placeholder:text-ap-muted hover:border-ap-graphite focus-visible:border-ap-graphite sm:text-sm"
-          />
-        )}
-      </FieldShell>
-      <Button type="submit" className="w-fit" disabled={pending}>
-        {pending ? 'Publicando…' : 'Publicar reseña'}
+    <div className="flex flex-col items-start gap-2 rounded-xl border border-ap-line-strong bg-ap-white p-4 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm text-ap-ink">Recibiste un pedido de esta tienda. Cuéntanos cómo te fue; tu opinión ayuda a otros compradores.</p>
+      <Button className="shrink-0" onClick={() => setOpen(true)}>
+        Califica a {store.name}
       </Button>
-    </form>
+      {open ? (
+        <ReviewDialog
+          open
+          onOpenChange={setOpen}
+          target={{ type: 'store', id: store.id }}
+          targetName={store.name}
+          orders={orderIds.map((id) => ({ id, label: `Pedido ${id.slice(0, 8).toUpperCase()}` }))}
+        />
+      ) : null}
+    </div>
   )
 }
 
 /**
- * «Lo que dicen sus clientes»: resumen, categorías, insignias y lista. El formulario actual de calificación
- * (pedidos entregados sin reseña) se conserva hasta que lo reemplace el diálogo de calificar.
+ * «Lo que dicen sus clientes»: resumen, categorías, insignias y lista, más la invitación a calificar para quien
+ * recibió un pedido del almacén.
  */
 function StoreReviews({ store }: { store: StoreProfile }) {
   const session = useSession()
@@ -291,7 +212,7 @@ function StoreReviews({ store }: { store: StoreProfile }) {
           </p>
         ) : null
       }
-      action={eligibleOrders.length > 0 ? <ReviewForm key={eligibleOrders.join(',')} storeId={store.id} orderIds={eligibleOrders} /> : null}
+      action={eligibleOrders.length > 0 ? <RateStoreAction store={store} orderIds={eligibleOrders} /> : null}
     />
   )
 }

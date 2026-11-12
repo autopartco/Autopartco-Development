@@ -31,6 +31,12 @@ export const BenefitsPage = lazy(() => import('@/features/benefits/pages/benefit
 // Mis pedidos y seguimiento del comprador.
 export const OrdersPage = lazy(() => import('@/features/orders/pages/orders-page'))
 export const OrderDetailPage = lazy(() => import('@/features/orders/pages/order-detail-page'))
+// Reseñas pendientes del comprador (enlace del correo de invitación: /cuenta/calificar?pedido=).
+export const RatePage = lazy(() => import('@/features/reviews/pages/rate-page'))
+
+// Reseñas en el portal del almacén y en la moderación del admin.
+export const PortalReviewsPage = lazy(() => import('@/features/portal/pages/reviews-page'))
+export const AdminReviewsPage = lazy(() => import('@/features/admin/pages/reviews-page'))
 
 // Portal del almacén (SaaS vendedores): cada pantalla se descarga al visitarla.
 export const PortalRoot = lazy(() => import('@/features/portal/layout/portal-root').then((module) => ({ default: module.PortalRoot })))

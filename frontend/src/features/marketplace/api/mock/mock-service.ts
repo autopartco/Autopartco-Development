@@ -345,9 +345,5 @@ export function createMockMarketplaceService(): MarketplaceService {
     async getReviewEligibility() {
       return []
     },
-
-    async createStoreReview() {
-      throw new MarketplaceError('Las reseñas solo están disponibles con la API real.', { status: 409, code: 'REVIEW_NOT_ALLOWED' })
-    },
   }
 }

@@ -4,9 +4,10 @@ import { CheckIcon, CopyIcon, InfoIcon } from 'lucide-react'
 import { Breadcrumbs, Container, type Crumb } from '@/components/common/page-header'
 import { SmartImage } from '@/components/common/smart-image'
 import { ErrorState } from '@/components/common/states'
-import { Button, buttonVariants } from '@/components/ui/button'
+import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useSession } from '@/features/auth/hooks'
+import { ReviewDialog } from '@/features/reviews/components/review-dialog'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AddToCart } from '@/features/cart/components/add-to-cart'
 import { useDistanceOrigin, useStoreDistances } from '@/features/location/hooks'
@@ -296,16 +297,31 @@ function ProductRatingLine({ productId }: { productId: string }) {
 }
 
 /** «Califica este producto» solo si el servidor dice que la persona con sesión compró y recibió el repuesto. */
-function RateProductAction({ productId }: { productId: string }) {
+function RateProductAction({ productId, productName }: { productId: string; productName: string }) {
   const session = useSession()
-  const eligibility = useProductReviewEligibility(productId, session?.user.email)
-  if ((eligibility.data?.eligibleOrderIds.length ?? 0) === 0) return null
+  const eligibility = useProductReviewEligibility(productId, session?.user.email).data
+  const [open, setOpen] = useState(false)
+  const orderIds = eligibility?.eligibleOrderIds ?? []
+  const existingId = eligibility?.existingReviewId
+  if (orderIds.length === 0 && !existingId) return null
   return (
     <div className="flex flex-col items-start gap-2 rounded-xl border border-ap-line-strong bg-ap-white p-4 sm:flex-row sm:items-center sm:justify-between">
-      <p className="text-sm text-ap-ink">Recibiste este repuesto. Tu opinión ayuda a otros compradores a elegir mejor.</p>
-      <Link to="/cuenta/calificar" className={cn(buttonVariants({ variant: 'default' }), 'shrink-0')}>
-        Califica este producto
-      </Link>
+      <p className="text-sm text-ap-ink">
+        {existingId ? 'Ya opinaste sobre este repuesto. Puedes editar tu reseña cuando quieras.' : 'Recibiste este repuesto. Tu opinión ayuda a otros compradores a elegir mejor.'}
+      </p>
+      <Button className="shrink-0" onClick={() => setOpen(true)}>
+        {existingId ? 'Editar mi reseña' : 'Califica este producto'}
+      </Button>
+      {open ? (
+        <ReviewDialog
+          open
+          onOpenChange={setOpen}
+          target={{ type: 'product', id: productId }}
+          targetName={productName}
+          orders={orderIds.map((id) => ({ id, label: `Pedido ${id.slice(0, 8).toUpperCase()}` }))}
+          existing={existingId ? { id: existingId, editableUntil: eligibility?.editableUntil } : undefined}
+        />
+      ) : null}
     </div>
   )
 }
@@ -388,7 +404,7 @@ function ProductDetail({ product }: { product: Product }) {
           title="Opiniones de compradores"
           storeName={product.store?.name}
           emptyText="Aquí aparecen las opiniones de quienes ya recibieron este repuesto, para que comprar sea más fácil y seguro."
-          action={<RateProductAction productId={product.id} />}
+          action={<RateProductAction productId={product.id} productName={product.name} />}
         />
       </div>
 

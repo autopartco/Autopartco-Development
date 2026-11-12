@@ -5,6 +5,7 @@ import { Container, PageIntro } from '@/components/common/page-header'
 import { EmptyState, ErrorState } from '@/components/common/states'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { PendingReviewsNotice } from '@/features/reviews/components/pending-reviews-notice'
 import { useAsync } from '@/lib/use-async'
 import { getOrdersService } from '../api/orders-service'
 import { ORDER_ROW_GRID, OrderCard } from '../components/order-card'
@@ -21,6 +22,8 @@ export default function OrdersPage() {
     <Container className="py-6 sm:py-8">
       <title>Mis pedidos | Autopartco</title>
       <PageIntro crumbs={[{ label: 'Inicio', to: '/' }, { label: 'Mis pedidos' }]} label="Tu cuenta" title="Mis pedidos" description="Revisa tus compras y sigue el envío de cada una." />
+
+      <PendingReviewsNotice />
 
       {orders.status === 'error' ? (
         <ErrorState title="No pudimos cargar tus pedidos" onRetry={orders.retry} />
