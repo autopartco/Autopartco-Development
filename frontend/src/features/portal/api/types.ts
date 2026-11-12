@@ -492,6 +492,15 @@ export interface OrderDetail {
     country: string | null
     postalCode: string | null
   } | null
+  /** Factura en PDF adjunta; `null` si aún no se subió. */
+  invoice?: SaleInvoice | null
+}
+
+/** `SaleInvoice`. */
+export interface SaleInvoice {
+  fileName: string
+  sizeBytes: number
+  uploadedAt: string
 }
 
 /** `SaleStatusRequest`: solo estos tres destinos existen en el API. */

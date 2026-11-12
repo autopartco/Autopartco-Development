@@ -40,9 +40,17 @@ export interface ShipmentDto {
   events: ShipmentEventDto[]
 }
 
-/** Venta del detalle: la del checkout más el envío (`null` si aún no tiene). */
+/** `SaleInvoice`: factura en PDF que adjuntó el almacén (se descarga por su endpoint). */
+export interface SaleInvoiceDto {
+  fileName: string
+  sizeBytes: number
+  uploadedAt: string
+}
+
+/** Venta del detalle: la del checkout más el envío (`null` si aún no tiene) y la factura (`null` si no la adjuntó). */
 export interface BuyerOrderSaleDto extends BuyerSaleDto {
   shipment: ShipmentDto | null
+  invoice?: SaleInvoiceDto | null
 }
 
 export interface BuyerOrderDetailDto extends Omit<BuyerOrderDto, 'sales'> {
@@ -56,4 +64,8 @@ export interface OrdersService {
   list(page: number, size: number): Promise<PageDto<BuyerOrderSummaryDto>>
   /** Lanza `ApiError` 404 `ORDER_NOT_FOUND` si no existe o es ajeno. */
   get(orderId: string): Promise<BuyerOrderDetailDto>
+  /** Comprobante de compra en HTML (no es factura). */
+  receipt(orderId: string): Promise<Blob>
+  /** Factura en PDF que adjuntó el almacén; 404 `INVOICE_NOT_FOUND` si no hay. */
+  invoice(orderId: string, saleId: string): Promise<Blob>
 }

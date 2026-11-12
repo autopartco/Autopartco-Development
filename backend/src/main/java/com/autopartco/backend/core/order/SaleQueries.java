@@ -317,8 +317,22 @@ public class SaleQueries {
                 base.paymentMethod(),
                 shipment,
                 items,
-                address
+                address,
+                invoice(base.saleId())
         );
+    }
+
+    static final String INVOICE_SQL = """
+            SELECT file_name, size_bytes, created_at
+            FROM order_invoices
+            WHERE sale_id = ? AND deleted_at IS NULL
+            """;
+
+    private SaleInvoice invoice(UUID saleId) {
+        List<SaleInvoice> found = jdbcTemplate.query(INVOICE_SQL, (result, row) -> new SaleInvoice(
+                result.getString("file_name"), result.getLong("size_bytes"), localDateTime(result, "created_at")),
+                saleId);
+        return found == null || found.isEmpty() ? null : found.getFirst();
     }
 
     private static LocalDateTime localDateTime(ResultSet result, String column) throws SQLException {
