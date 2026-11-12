@@ -1,5 +1,5 @@
 import { DATA_SOURCE } from '@/lib/api'
-import type { OrderDetail, OrderStatusTarget, OrderSummary, ShipmentCreateInput, ShipmentStatusInput } from './types'
+import type { OrderDetail, OrderStatusTarget, OrderSummary, SaleInvoice, ShipmentCreateInput, ShipmentStatusInput } from './types'
 
 /** Pedidos (ventas) del almacén y sus envíos. */
 export interface OrderService {
@@ -13,6 +13,12 @@ export interface OrderService {
   createShipment(storeId: string, saleId: string, input: ShipmentCreateInput): Promise<OrderDetail>
   /** `PATCH /stores/{id}/orders/{saleId}/shipment`. */
   updateShipment(storeId: string, saleId: string, input: ShipmentStatusInput): Promise<OrderDetail>
+  /** `POST /stores/{id}/orders/{saleId}/invoice` (multipart `file`, PDF ≤ 5 MB; reemplaza la anterior). `ORDER_UPDATE`. */
+  uploadInvoice(storeId: string, saleId: string, file: File): Promise<SaleInvoice>
+  /** `DELETE /stores/{id}/orders/{saleId}/invoice`. */
+  deleteInvoice(storeId: string, saleId: string): Promise<void>
+  /** `GET /stores/{id}/orders/{saleId}/invoice` (PDF). */
+  downloadInvoice(storeId: string, saleId: string): Promise<Blob>
 }
 
 let servicePromise: Promise<OrderService> | undefined

@@ -21,7 +21,9 @@ public record SaleDetailResponse(
         String paymentMethod,
         Shipment shipment,
         List<Item> items,
-        DeliveryAddress deliveryAddress
+        DeliveryAddress deliveryAddress,
+        /** Factura adjunta; {@code null} si el almacén no la ha subido. */
+        SaleInvoice invoice
 ) {
     public record Item(
             UUID inventoryId,

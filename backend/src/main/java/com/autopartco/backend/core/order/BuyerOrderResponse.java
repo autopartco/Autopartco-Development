@@ -50,7 +50,9 @@ public record BuyerOrderResponse(
             BigDecimal shippingCost,
             BigDecimal total,
             List<Item> items,
-            Shipment shipment
+            Shipment shipment,
+            /** Factura del almacén para esta venta; {@code null} si no la ha adjuntado. */
+            SaleInvoice invoice
     ) {
     }
 

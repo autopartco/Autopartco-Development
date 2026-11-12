@@ -8,6 +8,7 @@ import { ApiError } from '@/lib/api'
 import { formatCOP } from '@/lib/format'
 import { getOrderService } from '../api/order-service'
 import type { OrderDetail, OrderItem } from '../api/types'
+import { InvoicePanel } from '../components/invoice-panel'
 import { OrderStatusActions } from '../components/order-status-actions'
 import { PageHeader } from '../components/page-header'
 import { QueryBoundary } from '../components/query-boundary'
@@ -100,6 +101,9 @@ function OrderView({ order }: { order: OrderDetail }) {
               <dd className="font-semibold">{order.branchName}</dd>
             </div>
           </dl>
+        </Section>
+        <Section id="factura-pedido" title="Factura">
+          <InvoicePanel order={order} />
         </Section>
         <Section id="pago-pedido" title="Pago">
           <dl className="flex flex-col gap-3 text-sm">

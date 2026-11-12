@@ -130,5 +130,16 @@ export function createMockOrdersService(): OrdersService {
       if (!found) throw new ApiError('No se encontró el pedido.', { status: 404, code: 'ORDER_NOT_FOUND' })
       return found
     },
+    async receipt(orderId) {
+      await simulateLatency(300)
+      const found = ORDERS.find((item) => item.orderId === orderId)
+      if (!found) throw new ApiError('No se encontró el pedido.', { status: 404, code: 'ORDER_NOT_FOUND' })
+      const html = `<!doctype html><meta charset="utf-8"><title>Comprobante (simulado)</title><h1>Comprobante de compra #${found.orderNumber}</h1><p>Datos simulados.</p>`
+      return new Blob([html], { type: 'text/html' })
+    },
+    async invoice() {
+      await simulateLatency(300)
+      throw new ApiError('Esta venta no tiene factura adjunta.', { status: 404, code: 'INVOICE_NOT_FOUND' })
+    },
   }
 }

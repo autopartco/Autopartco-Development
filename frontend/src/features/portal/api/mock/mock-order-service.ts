@@ -137,5 +137,27 @@ export function createMockOrderService(): OrderService {
       }
       return clone(sale)
     },
+
+    async uploadInvoice(storeId, saleId, file) {
+      await simulateNetwork(700)
+      const store = getStore(storeId)
+      requirePermission(store, 'ORDER_UPDATE')
+      const order = find(store, saleId)
+      order.invoice = { fileName: file.name || 'factura.pdf', sizeBytes: file.size, uploadedAt: new Date().toISOString() }
+      return structuredClone(order.invoice)
+    },
+
+    async deleteInvoice(storeId, saleId) {
+      await simulateNetwork(400)
+      const store = getStore(storeId)
+      requirePermission(store, 'ORDER_UPDATE')
+      find(store, saleId).invoice = null
+    },
+
+    async downloadInvoice(storeId, saleId) {
+      await simulateNetwork(300)
+      const order = find(getStore(storeId), saleId)
+      return new Blob(['%PDF-1.4 simulado ' + (order.invoice?.fileName ?? '')], { type: 'application/pdf' })
+    },
   }
 }
