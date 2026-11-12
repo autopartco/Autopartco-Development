@@ -1,7 +1,9 @@
 package com.autopartco.backend.core.notification;
 
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+
 import org.springframework.mail.MailPreparationException;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -17,6 +19,10 @@ import lombok.AllArgsConstructor;
 @Service
 @AllArgsConstructor
 public class EmailService {
+    /** Fechas de vencimiento legibles: «12 de noviembre de 2026, 3:40 p. m.» (hora de Colombia). */
+    static final DateTimeFormatter EXPIRY =
+            DateTimeFormatter.ofPattern("d 'de' MMMM 'de' yyyy, h:mm a", Locale.forLanguageTag("es-CO"));
+
     private final JavaMailSender mailSender;
     private final AppProperties appProperties;
 
@@ -119,9 +125,9 @@ public class EmailService {
         String html = EmailTemplate.layout("Nuevo inicio de sesión",
                 EmailTemplate.paragraph("Hola " + EmailTemplate.escape(fullName) + ",")
                         + EmailTemplate.paragraph("Detectamos un nuevo inicio de sesión en tu cuenta de Autopartco.")
-                        + EmailTemplate.paragraph("<strong>Fecha:</strong> " + EmailTemplate.escape(when)
-                                + " (hora de Colombia)<br><strong>Dispositivo:</strong> " + EmailTemplate.escape(device)
-                                + "<br><strong>Dirección IP aproximada:</strong> " + EmailTemplate.escape(maskedIp))
+                        + EmailTemplate.detail("Fecha", when + " (hora de Colombia)", true)
+                        + EmailTemplate.detail("Dispositivo", device, false)
+                        + EmailTemplate.detail("Dirección IP aproximada", maskedIp, true)
                         + EmailTemplate.note("Si fuiste tú, no tienes que hacer nada. Si no lo reconoces, cambia tu "
                                 + "contraseña y cierra las demás sesiones desde tu cuenta."));
 
@@ -226,11 +232,7 @@ public class EmailService {
     }
 
     public void sendAccountUnlock(String to, String fullName, String unlockLink) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(appProperties.emailVerification().from());
-        message.setTo(to);
-        message.setSubject("Desbloquea tu cuenta de Autopartco");
-        message.setText("""
+        String text = """
                 Hola %s,
 
                 Tu cuenta fue bloqueada por varios intentos de inicio de sesión fallidos.
@@ -238,36 +240,40 @@ public class EmailService {
                 %s
 
                 Si no solicitaste este desbloqueo, puedes ignorar este correo.
-                """.formatted(fullName, unlockLink));
-
-        mailSender.send(message);
+                """.formatted(fullName, unlockLink);
+        String html = EmailTemplate.layout("Desbloquea tu cuenta",
+                EmailTemplate.paragraph("Hola " + EmailTemplate.escape(fullName) + ",")
+                        + EmailTemplate.paragraph("Bloqueamos tu cuenta por varios intentos de inicio de sesión fallidos. "
+                                + "Para desbloquearla, usa este botón:")
+                        + EmailTemplate.button("Desbloquear mi cuenta", unlockLink)
+                        + EmailTemplate.note("Si no fuiste tú, ignora este correo y considera cambiar tu contraseña."));
+        sendHtml(to, "Desbloquea tu cuenta de Autopartco", text, html);
     }
 
     public void sendPasswordRecovery(String to, String fullName, String token, LocalDateTime expiresAt) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(appProperties.emailVerification().from());
-        message.setTo(to);
-        message.setSubject("Recupera tu contraseña de Autopartco");
-        message.setText("""
+        String expires = EXPIRY.format(expiresAt);
+        String text = """
                 Hola %s,
 
                 Recibimos una solicitud para cambiar la contraseña de tu cuenta.
-                Usa este token en el formulario de recuperación:
+                Usa este código en el formulario de recuperación:
                 %s
 
-                El token vence el %s y solo puede utilizarse una vez.
+                Vence el %s y solo puede utilizarse una vez.
                 Si no solicitaste este cambio, puedes ignorar este correo.
-                """.formatted(fullName, token, expiresAt));
-
-        mailSender.send(message);
+                """.formatted(fullName, token, expires);
+        String html = EmailTemplate.layout("Recupera tu contraseña",
+                EmailTemplate.paragraph("Hola " + EmailTemplate.escape(fullName) + ",")
+                        + EmailTemplate.paragraph("Recibimos una solicitud para cambiar la contraseña de tu cuenta. "
+                                + "Copia este código en el formulario de recuperación:")
+                        + EmailTemplate.highlightedCode(token)
+                        + EmailTemplate.note("Vence el " + EmailTemplate.escape(expires) + " y solo sirve una vez. "
+                                + "Si no pediste el cambio, ignora este correo: tu contraseña sigue igual."));
+        sendHtml(to, "Recupera tu contraseña de Autopartco", text, html);
     }
 
     public void sendSellerOnboarding(String to, String fullName, String setupLink) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(appProperties.emailVerification().from());
-        message.setTo(to);
-        message.setSubject("Tu solicitud de vendedor fue aprobada");
-        message.setText("""
+        String text = """
                 Hola %s,
 
                 Revisamos y aprobamos tu solicitud para vender en Autopartco.
@@ -276,9 +282,15 @@ public class EmailService {
                 %s
 
                 Por seguridad, solo esa cuenta puede completar la configuración.
-                """.formatted(fullName, setupLink));
-
-        mailSender.send(message);
+                """.formatted(fullName, setupLink);
+        String html = EmailTemplate.layout("Tu almacén fue aprobado",
+                EmailTemplate.paragraph("Hola " + EmailTemplate.escape(fullName) + ",")
+                        + EmailTemplate.paragraph("Revisamos y aprobamos tu solicitud para vender en Autopartco. "
+                                + "Falta un paso: configura tu almacén para publicarlo.")
+                        + EmailTemplate.button("Configurar mi almacén", setupLink)
+                        + EmailTemplate.note("Ingresa con la cuenta con la que hiciste la solicitud: por seguridad, "
+                                + "solo esa cuenta puede completar la configuración."));
+        sendHtml(to, "Tu solicitud de vendedor fue aprobada", text, html);
     }
 
     /**
@@ -286,13 +298,11 @@ public class EmailService {
      * redactadas en español; {@code portalLink} lleva al centro de alertas del portal.
      */
     public void sendStoreAlerts(String to, String storeName, java.util.List<String> alertLines, String portalLink) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(appProperties.emailVerification().from());
-        message.setTo(to);
-        message.setSubject(alertLines.size() == 1
-                ? "Nueva alerta en " + storeName
-                : alertLines.size() + " alertas nuevas en " + storeName);
-        message.setText("""
+        boolean single = alertLines.size() == 1;
+        String subject = single
+                ? "Nueva alerta en " + oneLine(storeName)
+                : alertLines.size() + " alertas nuevas en " + oneLine(storeName);
+        String text = """
                 Hola,
 
                 Autopartco detectó %s sobre tu almacén %s:
@@ -304,10 +314,16 @@ public class EmailService {
 
                 Recibes este correo porque tienes activas las alertas por correo. Puedes cambiarlo en
                 Alertas > Preferencias.
-                """.formatted(alertLines.size() == 1 ? "una novedad" : "novedades", storeName,
-                String.join("\n", alertLines.stream().map(line -> "- " + line).toList()), portalLink));
-
-        mailSender.send(message);
+                """.formatted(single ? "una novedad" : "novedades", storeName,
+                String.join("\n", alertLines.stream().map(line -> "- " + line).toList()), portalLink);
+        String html = EmailTemplate.layout(single ? "Nueva alerta en tu almacén" : alertLines.size() + " alertas nuevas",
+                EmailTemplate.paragraph("Detectamos " + (single ? "una novedad" : "novedades") + " en <strong>"
+                        + EmailTemplate.escape(storeName) + "</strong>:")
+                        + EmailTemplate.bulletList(alertLines)
+                        + EmailTemplate.button("Ver alertas en el portal", portalLink)
+                        + EmailTemplate.note("Recibes este correo porque tienes activas las alertas por correo. "
+                                + "Puedes cambiarlo en Alertas &gt; Preferencias."));
+        sendHtml(to, subject, text, html);
     }
 
     public void sendSellerCollaboratorInvitation(
@@ -317,11 +333,8 @@ public class EmailService {
             String invitationLink,
             LocalDateTime expiresAt
     ) {
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(appProperties.emailVerification().from());
-        message.setTo(to);
-        message.setSubject("Invitación para colaborar en " + storeName);
-        message.setText("""
+        String expires = EXPIRY.format(expiresAt);
+        String text = """
                 Recibiste una invitación para colaborar en el almacén %s con el rol "%s".
 
                 Para aceptar y activar tu acceso, abre este enlace:
@@ -329,8 +342,15 @@ public class EmailService {
 
                 El enlace es de un solo uso y vence el %s. Si ya venció, solicita al
                 administrador del almacén que reenvíe la invitación.
-                """.formatted(storeName, roleName, invitationLink, expiresAt));
-
-        mailSender.send(message);
+                """.formatted(storeName, roleName, invitationLink, expires);
+        String html = EmailTemplate.layout("Te invitaron a un equipo",
+                EmailTemplate.paragraph("<strong>" + EmailTemplate.escape(storeName) + "</strong> te invitó a su equipo en "
+                        + "Autopartco.")
+                        + EmailTemplate.detail("Rol", roleName, false)
+                        + EmailTemplate.detail("Vence", expires, true)
+                        + EmailTemplate.button("Aceptar invitación", invitationLink)
+                        + EmailTemplate.note("El enlace es de un solo uso. Si ya venció, pide al administrador del almacén "
+                                + "que reenvíe la invitación. Si no esperabas este correo, ignóralo."));
+        sendHtml(to, "Invitación para colaborar en " + oneLine(storeName), text, html);
     }
 }

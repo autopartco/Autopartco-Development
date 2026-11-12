@@ -120,6 +120,8 @@ export interface BuyerOrderItemDto {
   quantity: number
   unitPrice: number
   lineTotal: number
+  /** Miniatura de la imagen principal (solo en «Mis pedidos»); `null` o ausente si no hay. */
+  imageUrl?: string | null
 }
 
 /** `details.items` de los errores con líneas. */
