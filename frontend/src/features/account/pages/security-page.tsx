@@ -115,8 +115,8 @@ function EmailSection({ email, social }: { email: string; social: boolean }) {
       setError('Escribe un correo válido.')
       return
     }
-    if (!social && !password) {
-      setError('Confirma tu contraseña.')
+    if (!password) {
+      setError(social ? 'Confirma tu contraseña. Si ingresas con Google y no tienes una, créala con «¿Olvidaste tu contraseña?».' : 'Confirma tu contraseña.')
       return
     }
     setBusy(true)
@@ -169,7 +169,7 @@ function EmailSection({ email, social }: { email: string; social: boolean }) {
       ) : (
         <form noValidate onSubmit={(event) => void request(event)} className="grid max-w-md gap-4">
           <TextField id="correo-new" name="newEmail" type="email" label="Correo nuevo" autoComplete="email" maxLength={100} required />
-          <PasswordField id="correo-password" name="password" label="Tu contraseña" autoComplete="current-password" hint={social ? 'Opcional si ingresas con Google.' : undefined} />
+          <PasswordField id="correo-password" name="password" label="Tu contraseña" autoComplete="current-password" hint={social ? 'Si ingresas con Google y no tienes contraseña, créala con «¿Olvidaste tu contraseña?».' : undefined} />
           <Button type="submit" className="h-11 w-fit px-5" disabled={busy}>
             {busy ? 'Enviando…' : 'Enviar código'}
           </Button>

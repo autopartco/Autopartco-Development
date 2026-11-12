@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.4.2 — 2026-11-12
+
+### Seguridad
+- Cambiar el correo o solicitar la eliminación de la cuenta exige siempre la contraseña, también al ingresar con Google.
+- El comprobante de compra servido por la API no ejecuta scripts ni carga recursos externos.
+- Reemplazar o quitar una factura solo borra el archivo anterior cuando el cambio se confirma.
+
 ## v2.4.1 — 2026-11-12
 
 ### Correcciones

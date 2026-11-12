@@ -116,15 +116,22 @@ class AccountManagementServiceTest {
     }
 
     @Test
-    void passwordAccountsMustConfirmThePasswordButSocialAccountsMayNot() {
+    void changingTheEmailAlwaysRequiresThePasswordEvenWithGoogle() {
         when(accounts.findByEmailIgnoreCase("nuevo@correo.co")).thenReturn(Optional.empty());
-        when(tokenService.hashVerificationCode(any(), anyString())).thenReturn("h");
+        when(identities.existsByAccount_Id(account.getId())).thenReturn(true);
 
+        // Una sesión robada no basta para llevar la cuenta a otro correo.
         assertThatThrownBy(() -> service.requestEmailChange(EMAIL, "nuevo@correo.co", null))
                 .isInstanceOfSatisfying(BadRequestException.class, error -> assertThat(error.getCode()).isEqualTo("INVALID_PASSWORD"));
+        verify(events, never()).publishEvent(any());
+    }
 
+    @Test
+    void requestingDeletionAlwaysRequiresThePassword() {
         when(identities.existsByAccount_Id(account.getId())).thenReturn(true);
-        assertThat(service.requestEmailChange(EMAIL, "nuevo@correo.co", null).sent()).isTrue();
+
+        assertThatThrownBy(() -> service.requestDeletion(EMAIL, null, null))
+                .isInstanceOfSatisfying(BadRequestException.class, error -> assertThat(error.getCode()).isEqualTo("INVALID_PASSWORD"));
     }
 
     @Test
