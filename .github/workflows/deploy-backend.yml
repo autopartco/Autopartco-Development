@@ -1,0 +1,50 @@
+name: Desplegar backend (VPS)
+
+# Despliega main en el VPS de Hostinger (api.autopartco.co) cuando "Promover a main" termina bien.
+# También se puede lanzar a mano. La lógica vive en tools/release/deploy-vps.sh.
+#
+# Secrets requeridos del repositorio:
+#   VPS_HOST     IP o hostname del VPS
+#   VPS_SSH_KEY  llave privada dedicada al deploy (su pública va en ~/.ssh/authorized_keys del VPS)
+
+on:
+  workflow_run:
+    workflows: ["Promover a main"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # main solo trae lo necesario para deploy (sin tools/): el script se toma de develop
+      # y el código que se despliega es origin/main.
+      - uses: actions/checkout@v4
+        with:
+          ref: develop
+          fetch-depth: 0
+
+      - name: Preparar SSH
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts
+
+      - name: Desplegar
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+        run: |
+          SSH_KEY="$HOME/.ssh/deploy_key" bash tools/release/deploy-vps.sh origin/main
