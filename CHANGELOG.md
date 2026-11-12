@@ -1,5 +1,14 @@
 # Changelog
 
+## v2.3.0 — 2026-11-11
+
+### Pedidos
+- Comprobante de compra imprimible desde el detalle del pedido.
+- Los almacenes adjuntan la factura electrónica (PDF) a cada venta; el comprador la descarga desde «Mis pedidos».
+
+### Sitio
+- Pie de página actualizado: sección «Comprar» con carrito, pedidos, calificaciones y notificaciones.
+
 ## v2.2.1 — 2026-11-11
 
 ### Notificaciones

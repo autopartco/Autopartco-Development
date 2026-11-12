@@ -81,11 +81,15 @@ public class BuyerOrderQueries {
                    sale_state.code AS sale_status,
                    sale.subtotal,
                    sale.shipping_cost,
-                   sale.total
+                   sale.total,
+                   invoice.file_name AS invoice_file_name,
+                   invoice.size_bytes AS invoice_size_bytes,
+                   invoice.created_at AS invoice_uploaded_at
             FROM sales sale
             JOIN branches branch ON branch.id = sale.branch_id
             JOIN store ON store.id = branch.store_id
             JOIN states sale_state ON sale_state.id = sale.state_id
+            LEFT JOIN order_invoices invoice ON invoice.sale_id = sale.id AND invoice.deleted_at IS NULL
             WHERE sale.order_id = :orderId
               AND sale.deleted_at IS NULL
             ORDER BY store.business_name, branch.name, sale.id
@@ -291,7 +295,8 @@ public class BuyerOrderQueries {
                     money(sale.shippingCost()),
                     money(sale.total()),
                     List.copyOf(itemsBySale.getOrDefault(sale.saleId(), List.of())),
-                    shipmentsBySale.get(sale.saleId())
+                    shipmentsBySale.get(sale.saleId()),
+                    sale.invoice()
             ));
         }
         subtotal = money(subtotal);
@@ -420,7 +425,11 @@ public class BuyerOrderQueries {
                 result.getString("sale_status"),
                 result.getBigDecimal("subtotal"),
                 result.getBigDecimal("shipping_cost"),
-                result.getBigDecimal("total"));
+                result.getBigDecimal("total"),
+                result.getString("invoice_file_name") == null
+                        ? null
+                        : new SaleInvoice(result.getString("invoice_file_name"), result.getLong("invoice_size_bytes"),
+                                localDateTime(result, "invoice_uploaded_at")));
     }
 
     private static ItemRow mapItem(ResultSet result, int row) throws SQLException {
@@ -466,7 +475,8 @@ public class BuyerOrderQueries {
             String status,
             BigDecimal subtotal,
             BigDecimal shippingCost,
-            BigDecimal total
+            BigDecimal total,
+            SaleInvoice invoice
     ) {
     }
 

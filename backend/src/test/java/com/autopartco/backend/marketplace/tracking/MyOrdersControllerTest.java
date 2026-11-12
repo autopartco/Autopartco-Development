@@ -25,7 +25,7 @@ class MyOrdersControllerTest {
 
     private final BuyerOrderQueries queries = mock(BuyerOrderQueries.class);
     private final AccountLookup accountLookup = mock(AccountLookup.class, org.mockito.Mockito.RETURNS_DEEP_STUBS);
-    private final MyOrdersController controller = new MyOrdersController(queries, accountLookup);
+    private final MyOrdersController controller = new MyOrdersController(queries, mock(com.autopartco.backend.core.order.OrderInvoiceService.class), accountLookup);
     private final Authentication authentication = new UsernamePasswordAuthenticationToken(EMAIL, null, List.of());
 
     @Test

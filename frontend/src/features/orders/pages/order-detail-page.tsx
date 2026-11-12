@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
+import { toast } from 'sonner'
 import { Link, useParams } from 'react-router'
-import { ClockIcon, InfoIcon, PackageSearchIcon, StoreIcon } from 'lucide-react'
+import { ClockIcon, FileDownIcon, InfoIcon, PackageSearchIcon, ReceiptTextIcon, StoreIcon } from 'lucide-react'
 import { getCheckoutService } from '@/features/checkout/api/checkout-service'
 import { formatPaymentDeadline, isSafeCheckoutUrl } from '@/features/checkout/lib/order-payment'
 import { orderResultPath } from '@/features/checkout/lib/paths'
@@ -14,9 +15,59 @@ import { ProductReviewAction, StoreReviewAction } from '@/features/reviews/compo
 import { ApiError } from '@/lib/api'
 import { formatCOP } from '@/lib/format'
 import { useAsync } from '@/lib/use-async'
+import { openHtmlInNewTab, saveBlob } from '@/lib/download'
 import { getOrdersService } from '../api/orders-service'
 import { SaleTracking } from '../components/sale-tracking'
 import { buyerOrderStatus, isUnpaidOrder, orderStatus, ordersPath } from '../lib/labels'
+
+function errorMessage(error: unknown, fallback: string): string {
+  return error instanceof ApiError ? error.message : fallback
+}
+
+/** Factura en PDF que adjuntó el almacén. */
+function InvoiceDownload({ orderId, saleId, fileName }: { orderId: string; saleId: string; fileName: string }) {
+  const [busy, setBusy] = useState(false)
+  async function download() {
+    setBusy(true)
+    try {
+      const service = await getOrdersService()
+      saveBlob(await service.invoice(orderId, saleId), fileName)
+    } catch (error) {
+      toast.error(errorMessage(error, 'No pudimos descargar la factura. Inténtalo de nuevo.'))
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <Button variant="outline" size="sm" className="h-11 w-fit sm:h-9" disabled={busy} onClick={() => void download()}>
+      <FileDownIcon aria-hidden />
+      {busy ? 'Descargando…' : 'Descargar factura'}
+      <span className="sr-only"> ({fileName})</span>
+    </Button>
+  )
+}
+
+/** Comprobante de compra imprimible (no es la factura). */
+function ReceiptButton({ orderId }: { orderId: string }) {
+  const [busy, setBusy] = useState(false)
+  async function open() {
+    setBusy(true)
+    try {
+      const service = await getOrdersService()
+      await openHtmlInNewTab(() => service.receipt(orderId))
+    } catch (error) {
+      toast.error(errorMessage(error, 'No pudimos abrir el comprobante. Inténtalo de nuevo.'))
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <Button variant="outline" disabled={busy} onClick={() => void open()}>
+      <ReceiptTextIcon aria-hidden />
+      {busy ? 'Abriendo…' : 'Ver comprobante de compra'}
+    </Button>
+  )
+}
 
 export default function OrderDetailPage() {
   const { id = '' } = useParams()
@@ -133,6 +184,14 @@ export default function OrderDetailPage() {
                       <Row label="Total de esta tienda" value={formatCOP(sale.total)} strong />
                     </dl>
 
+                    {sale.invoice ? (
+                      <div className="mt-3 flex flex-col gap-1">
+                        <InvoiceDownload orderId={order.orderId} saleId={sale.saleId} fileName={sale.invoice.fileName} />
+                      </div>
+                    ) : unpaid ? null : (
+                      <p className="mt-3 text-xs text-ap-muted">La factura la emite el almacén; cuando la adjunte podrás descargarla aquí.</p>
+                    )}
+
                     {sale.status === 'DELIVERED' ? (
                       <div className="mt-4 flex flex-col gap-1.5 border-t border-ap-line pt-4 empty:hidden">
                         <StoreReviewAction orderId={order.orderId} orderNumber={order.orderNumber} storeId={sale.storeId} storeName={sale.storeName} />
@@ -176,6 +235,7 @@ export default function OrderDetailPage() {
             </address>
           </section>
 
+          {unpaid ? null : <ReceiptButton orderId={order.orderId} />}
           <Button variant="outline" nativeButton={false} render={<Link to={ordersPath()} />}>
             Volver a mis pedidos
           </Button>
