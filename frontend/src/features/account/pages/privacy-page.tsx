@@ -99,7 +99,7 @@ function DeletionSection() {
       ) : open ? (
         <form noValidate onSubmit={(event) => void submit(event)} className="grid max-w-md gap-4">
           {error ? <FormAlert title="No se envió la solicitud">{error}</FormAlert> : null}
-          <PasswordField id="baja-password" name="password" label="Confirma tu contraseña" autoComplete="current-password" hint={social ? 'Opcional si ingresas con Google.' : undefined} />
+          <PasswordField id="baja-password" name="password" label="Confirma tu contraseña" autoComplete="current-password" hint={social ? 'Si ingresas con Google y no tienes contraseña, créala con «¿Olvidaste tu contraseña?».' : undefined} />
           <label htmlFor="baja-reason" className="flex flex-col gap-1.5 text-sm font-medium text-ap-ink">
             Motivo (opcional)
             <textarea id="baja-reason" name="reason" maxLength={500} rows={3} className="rounded-md border border-input bg-ap-white px-3 py-2 text-base font-normal outline-none focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm" />

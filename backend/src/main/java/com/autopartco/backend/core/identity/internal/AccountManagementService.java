@@ -90,8 +90,8 @@ public class AccountManagementService {
     // ------------------------------------------------------------------ correo
 
     /**
-     * Envía un código al correo nuevo. Exige la contraseña, salvo en cuentas con ingreso social (pueden no conocerla):
-     * ahí basta la sesión, y el código prueba que el correo nuevo es de la persona.
+     * Envía un código al correo nuevo. Exige siempre la contraseña: con solo una sesión robada (un access token) no se
+     * puede llevar la cuenta a otro correo. Quien ingresa con Google la define antes con «¿Olvidaste tu contraseña?».
      */
     @Transactional
     public EmailChangeRequested requestEmailChange(String email, String newEmail, String currentPassword) {
@@ -100,9 +100,7 @@ public class AccountManagementService {
         if (target.equals(account.getEmail())) {
             throw new BadRequestException("EMAIL_UNCHANGED", "Ese ya es tu correo.");
         }
-        if (!identityRepository.existsByAccount_Id(account.getId()) || (currentPassword != null && !currentPassword.isBlank())) {
-            requirePassword(account, currentPassword);
-        }
+        requirePassword(account, currentPassword);
         requireAvailable(target);
 
         LocalDateTime now = LocalDateTime.now();
@@ -264,9 +262,7 @@ public class AccountManagementService {
     @Transactional
     public DeletionRequest requestDeletion(String email, String currentPassword, String reason) {
         Account account = lock(email);
-        if (!identityRepository.existsByAccount_Id(account.getId()) || (currentPassword != null && !currentPassword.isBlank())) {
-            requirePassword(account, currentPassword);
-        }
+        requirePassword(account, currentPassword);
         Boolean owner = jdbcTemplate.queryForObject("""
                 SELECT EXISTS (
                     SELECT 1 FROM collaborators c
