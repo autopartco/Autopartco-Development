@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.1.2 — 2026-11-11
+
+### Correcciones
+- El logo del almacén se ve completo sobre el banner del perfil.
+- En el teléfono, la ubicación va junto al buscador y ya no se solapa con el imagotipo.
+- En escritorio el buscador mantiene un ancho mínimo; si falta espacio se recorta el nombre de la ciudad.
+
 ## v2.1.1 — 2026-11-11
 
 ### Correcciones

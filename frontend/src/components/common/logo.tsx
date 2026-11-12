@@ -10,6 +10,8 @@ interface LogoProps {
   /** Nombre accesible del enlace. */
   label?: string
   className?: string
+  /** Oculta el nombre por debajo de 360 px (queda el isotipo): en la cabecera del marketplace no cabe junto a las acciones. */
+  compact?: boolean
 }
 
 /**
@@ -19,7 +21,7 @@ interface LogoProps {
  * lectores de pantalla porque ya lo anuncia `aria-label`.
  * Si la imagen no carga, queda solo el nombre.
  */
-export function Logo({ tone = 'light', to = '/', label = 'Autopartco, ir al inicio', className }: LogoProps) {
+export function Logo({ tone = 'light', to = '/', label = 'Autopartco, ir al inicio', className, compact = false }: LogoProps) {
   const [failed, setFailed] = useState(false)
   const dark = tone === 'dark'
   return (
@@ -44,6 +46,7 @@ export function Logo({ tone = 'light', to = '/', label = 'Autopartco, ir al inic
         className={cn(
           'text-[1.1875rem] leading-none font-extrabold tracking-[-0.035em] lg:text-[1.375rem]',
           dark ? 'text-white' : 'text-foreground',
+          compact && 'max-[359px]:hidden',
         )}
       >
         Autopart<span className={dark ? 'text-ap-red-on-dark' : 'text-ap-red'}>co</span>
