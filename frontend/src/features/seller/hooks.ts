@@ -1,6 +1,8 @@
 import { useSession } from '@/features/auth/hooks'
 import { accountKindOf } from '@/features/auth/lib/account-menu-items'
 import { useAsync } from '@/lib/use-async'
+import { getPortalService } from '@/features/portal/api/portal-service'
+import type { MyStore } from '@/features/portal/api/types'
 import { getSellerApplicationService } from './api/seller-service'
 import type { MyStoreApplication } from './api/types'
 
@@ -21,7 +23,7 @@ export const SELLER_CACHE_PREFIX = 'seller:'
  * valida cada solicitud.
  * - `register`: puede registrar (sin sesión, cliente sin solicitud o con una rechazada).
  * - `review`: solicitud en curso (`PENDING_REVIEW` o `CONFIGURATION_PENDING`), aún sin almacén operativo.
- * - `manage`: ya administra un almacén (rol de almacén o solicitud `ACTIVE`).
+ * - `manage`: ya administra un almacén (rol de almacén, solicitud `ACTIVE` o colaborador de uno activo).
  * - `learn`: cuenta que no puede solicitar (administrador u otra): solo información.
  * - `loading`: consultando las solicitudes del cliente.
  */
@@ -46,6 +48,11 @@ export function useSellerCta(): SellerCta {
     `${SELLER_CACHE_PREFIX}applications:${isCustomer ? session?.user.email : 'none'}`,
     async () => (isCustomer ? (await getSellerApplicationService()).myApplications() : []),
   )
+  // Un cliente también puede ser colaborador invitado de un almacén sin tener solicitud propia.
+  const stores = useAsync<MyStore[]>(
+    `${SELLER_CACHE_PREFIX}stores:${isCustomer ? session?.user.email : 'none'}`,
+    async () => (isCustomer ? (await getPortalService()).myStores() : []),
+  )
 
   if (kind === 'store') return { state: 'manage', to: '/portal', label: 'Ir a mi almacén' }
   if (kind === 'admin' || kind === 'unknown') return { state: 'learn', to: '/vender', label: 'Vende en Autopartco' }
@@ -57,6 +64,13 @@ export function useSellerCta(): SellerCta {
     const list = applications.data ?? []
     const active = list.find((application) => application.status === 'ACTIVE')
     if (active) return { state: 'manage', to: '/portal', label: 'Ir a mi almacén', application: active }
+    // Si `/me/stores` falla se sigue con las solicitudes: solo se pierde el atajo al portal.
+    if (stores.status === 'loading' || stores.isStale) {
+      return { state: 'loading', to: '/vender', label: 'Vende en Autopartco' }
+    }
+    if (stores.data?.some((store) => store.applicationStatus === 'ACTIVE')) {
+      return { state: 'manage', to: '/portal', label: 'Ir a mi almacén' }
+    }
     const inReview = [...list]
       .filter((application) => IN_REVIEW.includes(application.status))
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0]
