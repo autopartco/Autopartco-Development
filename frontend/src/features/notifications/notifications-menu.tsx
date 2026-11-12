@@ -39,7 +39,7 @@ function NotificationBody({ notification }: { notification: AppNotification }) {
  */
 export function NotificationsMenu({ className }: { className?: string }) {
   const session = useSession()
-  const result = useAsync(`${KEY_PREFIX}${session?.user.email ?? 'none'}`, async () => (session ? listNotifications() : []))
+  const result = useAsync(`${KEY_PREFIX}${session?.user.email ?? 'none'}`, async () => (session ? (await listNotifications('active', 1, MAX_SHOWN)).items : []))
   if (!session) return null
 
   const items = result.data ?? []
