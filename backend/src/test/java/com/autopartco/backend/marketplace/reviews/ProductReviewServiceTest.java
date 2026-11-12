@@ -134,6 +134,49 @@ class ProductReviewServiceTest {
     }
 
     @Test
+    void recreatingAReviewHiddenByModerationIsConflict() {
+        when(queries.deliveredInOrder(orderId, personId, productId)).thenReturn(true);
+        when(queries.deleted(personId, productId)).thenReturn(Optional.of(new ReviewQueries.Deleted(reviewId, true)));
+
+        assertThatThrownBy(() -> service.create(productId, EMAIL, request(5, "Excelente", null)))
+                .isInstanceOfSatisfying(ConflictException.class,
+                        error -> assertThat(error.getCode()).isEqualTo("REVIEW_MODERATED"));
+        verify(queries, never()).insert(any(), any(), any(), any(), anyInt(), any());
+        verify(reviews, never()).restore(any(), any(), any(), anyInt(), any());
+        assertThat(published).isEmpty();
+    }
+
+    @Test
+    void recreatingADeletedReviewReusesTheRow() {
+        when(queries.deliveredInOrder(orderId, personId, productId)).thenReturn(true);
+        when(queries.deleted(personId, productId)).thenReturn(Optional.of(new ReviewQueries.Deleted(reviewId, false)));
+        when(reviews.restore(ReviewKind.PRODUCT, reviewId, orderId, 3, "Regular")).thenReturn(true);
+        when(reviews.row(ReviewKind.PRODUCT, reviewId)).thenReturn(Optional.of(row(3, "Regular")));
+
+        ProductReviewResponse review = service.create(productId, EMAIL, request(3, "Regular", Map.of("FIT", 3)));
+
+        assertThat(review.id()).isEqualTo(reviewId);
+        verify(queries, never()).insert(any(), any(), any(), any(), anyInt(), any());
+        verify(reviews).replaceAspects(ReviewKind.PRODUCT, reviewId, Map.of("FIT", 3));
+        assertThat(published).containsExactly(ListingsChanged.ofProduct(productId));
+        assertThat(ProductReviewQueries.DELETED_SQL).contains("deleted_at IS NOT NULL",
+                "ORDER BY (hidden_at IS NOT NULL) DESC");
+    }
+
+    @Test
+    void rejectedAttemptsDoNotSpendTheWriteQuota() {
+        when(queries.deliveredInOrder(orderId, personId, productId)).thenReturn(true);
+        when(queries.insert(productId, storeId, personId, orderId, 5, null)).thenReturn(reviewId);
+        when(reviews.row(ReviewKind.PRODUCT, reviewId)).thenReturn(Optional.of(row(5, null)));
+        for (int i = 0; i <= ReviewWriteLimiter.MAX_PER_HOUR; i++) {
+            assertThatThrownBy(() -> service.create(productId, EMAIL, request(5, "Mejor en https://otro.co", null)))
+                    .isInstanceOf(BadRequestException.class);
+        }
+
+        assertThat(service.create(productId, EMAIL, request(5, null, null)).id()).isEqualTo(reviewId);
+    }
+
+    @Test
     void invalidAspectsAndLinksAreBadRequests() {
         assertThatThrownBy(() -> service.create(productId, EMAIL, request(5, null, Map.of("SERVICE", 5))))
                 .isInstanceOfSatisfying(BadRequestException.class,

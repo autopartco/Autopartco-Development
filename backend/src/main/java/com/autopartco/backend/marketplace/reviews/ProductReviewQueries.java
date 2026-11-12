@@ -57,6 +57,15 @@ class ProductReviewQueries {
             WHERE person_id = :personId AND product_id = :productId AND deleted_at IS NULL
             """;
 
+    /** Reseña borrada de la persona sobre el producto; si alguna estaba oculta, esa primero. */
+    static final String DELETED_SQL = """
+            SELECT id, hidden_at IS NOT NULL AS hidden
+            FROM product_reviews
+            WHERE person_id = :personId AND product_id = :productId AND deleted_at IS NOT NULL
+            ORDER BY (hidden_at IS NOT NULL) DESC, deleted_at DESC, id
+            LIMIT 1
+            """;
+
     static final String INSERT_SQL = """
             INSERT INTO product_reviews (product_id, store_id, person_id, order_id, rating, comment)
             VALUES (:productId, :storeId, :personId, :orderId, :rating, :comment)
@@ -98,6 +107,15 @@ class ProductReviewQueries {
                 .param("productId", productId)
                 .query((rs, row) -> new Existing(rs.getObject("id", UUID.class),
                         rs.getObject("created_at", OffsetDateTime.class)))
+                .optional();
+    }
+
+    Optional<ReviewQueries.Deleted> deleted(UUID personId, UUID productId) {
+        return jdbcClient.sql(DELETED_SQL)
+                .param("personId", personId)
+                .param("productId", productId)
+                .query((rs, row) -> new ReviewQueries.Deleted(rs.getObject("id", UUID.class),
+                        rs.getBoolean("hidden")))
                 .optional();
     }
 

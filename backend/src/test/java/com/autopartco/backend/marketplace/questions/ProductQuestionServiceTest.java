@@ -94,7 +94,17 @@ class ProductQuestionServiceTest {
             "Mi fijo es 601 234 5678 en Bogotá",
             "Escríbeme a ana.perez@correo.com por favor",
             "Mira esta oferta en www.otrositio.co ahora",
-            "Más info en https://ejemplo.com/repuesto"
+            "Más info en https://ejemplo.com/repuesto",
+            "Llámame al 300 123 45 67 por favor",
+            "Llámame al 300 12 34 567 por favor",
+            "Llámame al (300) 123 4567 por favor",
+            "Llámame al 300/123/4567 por favor",
+            "Llámame al 3 0 0 1 2 3 4 5 6 7 por favor",
+            "Llámame al 57 300 123 4567 por favor",
+            "Escríbeme a pepe@gmail por favor",
+            "Escríbeme a pepe arroba gmail punto com",
+            "Escríbeme al whatsapp 300 por favor",
+            "Mándame un wsp: 3 por favor"
     })
     void contactDataIsRejected(String text) {
         assertThatThrownBy(() -> service.ask(productId, EMAIL, new ProductQuestionRequest(text)))
@@ -111,10 +121,20 @@ class ProductQuestionServiceTest {
             "¿Viene con la referencia 04465 original?",
             "¿Es equivalente a la OEM 04465-33450?",
             "¿Sirve para Mazda 3 2015 2016 y 2017?",
-            "¿Cruza con la referencia 8200 123 456?"
+            "¿Cruza con la referencia 8200 123 456?",
+            "¿Cruza con la ref 8200 123 456?",
+            "¿Sirve para Mazda 3 2015 2016?",
+            "¿Sirve para Mazda 3 del 2015?",
+            "¿Tienen la 04465-33450 en stock?",
+            "¿Lo dejan en 1.250.000 con envío?"
     })
     void ordinaryQuestionsAreAccepted(String text) {
         assertThat(QuestionRules.question(text)).isEqualTo(text);
+    }
+
+    @Test
+    void tenDigitReferenceStartingWithThreeIsAnAcceptedFalsePositive() {
+        assertThat(QuestionRules.hasContact("¿Tienen la ref 3101234567?")).isTrue();
     }
 
     @Test

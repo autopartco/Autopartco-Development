@@ -23,7 +23,8 @@ import lombok.extern.slf4j.Slf4j;
  * Avisos de preguntas. Pregunta nueva: notificación in-app (una por cuenta) al dueño del almacén y a los colaboradores
  * activos de las sucursales con inventario del producto, y correo a {@code notifications.recipients} (o, sin
  * destinatarios, al correo del almacén) si {@code notifications.questions} está activo. Respuesta: notificación y
- * correo al autor (el correo, si su ajuste {@code notifications.storeReplies} lo permite). Las preguntas ocultas o
+ * correo al autor (el correo, si su ajuste {@code notifications.storeReplies} lo permite), solo la primera vez que se
+ * responde (si ya tiene la notificación con el enlace de esa pregunta, no se repite). Las preguntas ocultas o
  * borradas no avisan. Un fallo con un destinatario no corta a los demás; los registros no incluyen correos ni textos.
  */
 @Service
@@ -44,9 +45,9 @@ public class QuestionNotifier {
         return "/portal/" + storeId + "/preguntas?pregunta=" + questionId;
     }
 
-    /** Ruta interna de la ficha del producto, en la sección de preguntas. */
-    static String productPath(UUID productId) {
-        return "/producto/" + productId + "#preguntas";
+    /** Ruta interna de la ficha del producto, en la sección de preguntas; identifica la pregunta. */
+    static String productPath(UUID productId, UUID questionId) {
+        return "/producto/" + productId + "?pregunta=" + questionId + "#preguntas";
     }
 
     public void asked(UUID questionId) {
@@ -89,7 +90,11 @@ public class QuestionNotifier {
             return;
         }
         QuestionQueries.Author to = author.get();
-        String path = productPath(row.productId());
+        String path = productPath(row.productId(), row.id());
+        // Solo la primera respuesta avisa: borrar la respuesta y responder de nuevo no reenvía aviso ni correo.
+        if (notifications.exists(to.accountId(), path)) {
+            return;
+        }
         notifications.notify(to.accountId(), ANSWERED_TITLE,
                 row.storeName() + " respondió tu pregunta sobre " + row.productName() + ".", path);
         if (!settingsQueries.accountSettings(to.accountId()).notifications().storeReplies()) {

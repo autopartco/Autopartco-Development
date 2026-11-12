@@ -18,8 +18,11 @@ import lombok.AllArgsConstructor;
 public class NotificationService {
     static final int MAX_TITLE = 150;
     static final int MAX_LINK = 300;
-    /** Solo rutas internas del frontend ({@code /portal/…}); nunca {@code //host} ni URL absolutas (check de la BD). */
-    static final Pattern INTERNAL_LINK = Pattern.compile("^/[^/].*");
+    /**
+     * Solo rutas internas del frontend ({@code /portal/…}): sin {@code //host}, {@code /\host}, URL absolutas, barras
+     * invertidas ni espacios (el check de la BD es más laxo).
+     */
+    static final Pattern INTERNAL_LINK = Pattern.compile("^/(?![/\\\\])[^\\s\\\\]*$");
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -42,6 +45,14 @@ public class NotificationService {
         jdbcTemplate.update(
                 "INSERT INTO notifications (account_id, title, message, link) VALUES (?, ?, ?, ?)",
                 accountId, safeTitle, message, link);
+    }
+
+    /** La cuenta ya recibió alguna notificación con ese enlace (leída o no). */
+    @Transactional(readOnly = true)
+    public boolean exists(UUID accountId, String link) {
+        return Boolean.TRUE.equals(jdbcTemplate.queryForObject(
+                "SELECT EXISTS (SELECT 1 FROM notifications WHERE account_id = ? AND link = ?)", Boolean.class,
+                accountId, link));
     }
 
     @Transactional(readOnly = true)

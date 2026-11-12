@@ -115,4 +115,16 @@ final class ReviewRules {
                     "Las reseñas se pueden editar hasta 30 días después de publicarlas.");
         }
     }
+
+    /**
+     * Al volver a calificar: si la reseña borrada estaba oculta, 409 {@code REVIEW_MODERATED} (borrar y crear de nuevo
+     * no evade la moderación). Si no lo estaba, devuelve su id para reutilizar la fila.
+     */
+    static Optional<UUID> reusable(Optional<ReviewQueries.Deleted> deleted) {
+        if (deleted.isPresent() && deleted.get().hidden()) {
+            throw new ConflictException("REVIEW_MODERATED",
+                    "Esta reseña fue retirada por moderación y no se puede publicar de nuevo.");
+        }
+        return deleted.map(ReviewQueries.Deleted::id);
+    }
 }

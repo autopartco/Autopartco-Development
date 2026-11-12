@@ -105,13 +105,13 @@ public class ProductReviewService {
 
     /**
      * 403 {@code REVIEW_NOT_ELIGIBLE} sin compra entregada del producto en ese pedido (o pedido ajeno, o equipo del
-     * almacén); 409 {@code REVIEW_ALREADY_EXISTS} con una reseña vigente del producto.
+     * almacén); 409 {@code REVIEW_ALREADY_EXISTS} con una reseña vigente del producto; 409 {@code REVIEW_MODERATED}
+     * si la persona borró una reseña oculta del producto. Una borrada sin ocultar se reutiliza (misma fila).
      */
     @Transactional
     public ProductReviewResponse create(UUID productId, String email, ProductReviewRequest request) {
         UUID storeId = requireStore(productId);
         AccountRef account = account(email);
-        limiter.acquire(account.accountId());
         String comment = ReviewRules.comment(request.comment());
         Map<String, Integer> aspects = ReviewRules.aspects(KIND, request.aspects());
         if (storeAccess.isMember(account.personId(), storeId)
@@ -122,14 +122,23 @@ public class ProductReviewService {
         if (queries.existing(account.personId(), productId).isPresent()) {
             throw alreadyExists();
         }
+        Optional<UUID> reusable = ReviewRules.reusable(queries.deleted(account.personId(), productId));
+        limiter.acquire(account.accountId());
         UUID reviewId;
         try {
-            reviewId = queries.insert(productId, storeId, account.personId(), request.orderId(), request.rating(),
-                    comment);
+            if (reusable.isPresent()) {
+                reviewId = reusable.get();
+                if (!reviews.restore(KIND, reviewId, request.orderId(), request.rating(), comment)) {
+                    throw alreadyExists();
+                }
+            } else {
+                reviewId = queries.insert(productId, storeId, account.personId(), request.orderId(),
+                        request.rating(), comment);
+            }
         } catch (DuplicateKeyException duplicate) {
             throw alreadyExists();
         }
-        if (!aspects.isEmpty()) {
+        if (reusable.isPresent() || !aspects.isEmpty()) {
             reviews.replaceAspects(KIND, reviewId, aspects);
         }
         events.publishEvent(ListingsChanged.ofProduct(productId));
@@ -140,12 +149,12 @@ public class ProductReviewService {
     @Transactional
     public ProductReviewResponse update(UUID productId, UUID reviewId, String email, ReviewUpdateRequest request) {
         AccountRef account = account(email);
-        limiter.acquire(account.accountId());
         ReviewQueries.OwnedReview review = ReviewRules.requireOwn(reviews.owned(KIND, reviewId), productId,
                 account.personId());
         ReviewRules.requireEditable(review, OffsetDateTime.now(clock));
         String comment = ReviewRules.comment(request.comment());
         Map<String, Integer> aspects = ReviewRules.aspects(KIND, request.aspects());
+        limiter.acquire(account.accountId());
         reviews.update(KIND, reviewId, request.rating(), comment);
         reviews.replaceAspects(KIND, reviewId, aspects);
         events.publishEvent(ListingsChanged.ofProduct(productId));
@@ -156,8 +165,8 @@ public class ProductReviewService {
     @Transactional
     public void delete(UUID productId, UUID reviewId, String email) {
         AccountRef account = account(email);
-        limiter.acquire(account.accountId());
         ReviewRules.requireOwn(reviews.owned(KIND, reviewId), productId, account.personId());
+        limiter.acquire(account.accountId());
         reviews.softDelete(KIND, reviewId);
         events.publishEvent(ListingsChanged.ofProduct(productId));
     }

@@ -332,6 +332,54 @@ class StoreReviewServiceTest {
     }
 
     @Test
+    void recreatingAReviewHiddenByModerationIsConflict() {
+        eligible();
+        when(queries.deleted(storeId, personId, orderId)).thenReturn(Optional.of(
+                new ReviewQueries.Deleted(reviewId, true)));
+
+        assertThatThrownBy(() -> service.create(storeId, EMAIL, new StoreReviewRequest(orderId, 5, "Excelente")))
+                .isInstanceOfSatisfying(ConflictException.class,
+                        error -> assertThat(error.getCode()).isEqualTo("REVIEW_MODERATED"));
+        verify(queries, never()).insert(any(), any(), any(), anyInt(), any());
+        verify(reviews, never()).restore(any(), any(), any(), anyInt(), any());
+        assertThat(published).isEmpty();
+    }
+
+    @Test
+    void recreatingADeletedReviewReusesTheRow() {
+        eligible();
+        when(queries.deleted(storeId, personId, orderId)).thenReturn(Optional.of(
+                new ReviewQueries.Deleted(reviewId, false)));
+        when(reviews.restore(ReviewKind.STORE, reviewId, orderId, 4, "Volví a comprar")).thenReturn(true);
+        when(reviews.row(ReviewKind.STORE, reviewId)).thenReturn(Optional.of(row(4, "Volví a comprar")));
+
+        StoreReviewResponse review = service.create(storeId, EMAIL,
+                new StoreReviewRequest(orderId, 4, "Volví a comprar"));
+
+        assertThat(review.id()).isEqualTo(reviewId);
+        verify(queries, never()).insert(any(), any(), any(), anyInt(), any());
+        verify(reviews).replaceAspects(ReviewKind.STORE, reviewId, Map.of());
+        assertThat(published).containsExactly(ListingsChanged.ofStore(storeId));
+        assertThat(StoreReviewQueries.DELETED_SQL).contains("order_id = :orderId", "deleted_at IS NOT NULL");
+        assertThat(StoreReviewQueries.ELIGIBLE_ORDERS_SQL)
+                .contains("r.deleted_at IS NULL OR r.hidden_at IS NOT NULL");
+    }
+
+    @Test
+    void rejectedAttemptsDoNotSpendTheWriteQuota() {
+        eligible();
+        when(queries.insert(storeId, personId, orderId, 5, null)).thenReturn(reviewId);
+        when(reviews.row(ReviewKind.STORE, reviewId)).thenReturn(Optional.of(row(5, null)));
+        for (int i = 0; i <= ReviewWriteLimiter.MAX_PER_HOUR; i++) {
+            assertThatThrownBy(() -> service.create(storeId, EMAIL,
+                    new StoreReviewRequest(orderId, 5, "Mejor en https://otro.co")))
+                    .isInstanceOf(BadRequestException.class);
+        }
+
+        assertThat(service.create(storeId, EMAIL, new StoreReviewRequest(orderId, 5, null)).id()).isEqualTo(reviewId);
+    }
+
+    @Test
     void authorNameShowsFirstNameAndSurnameInitial() {
         assertThat(StoreReviewService.authorName("Ana María", "pérez Gómez")).isEqualTo("Ana P.");
         assertThat(StoreReviewService.authorName("Luis", null)).isEqualTo("Luis");

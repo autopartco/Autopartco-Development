@@ -52,6 +52,7 @@ class StoreReviewQueries {
               AND NOT EXISTS (
                   SELECT 1 FROM store_reviews r
                   WHERE r.store_id = :storeId AND r.person_id = :personId AND r.order_id = o.id
+                    AND (r.deleted_at IS NULL OR r.hidden_at IS NOT NULL)
               )
             ORDER BY o.created_at DESC
             LIMIT 20
@@ -83,6 +84,13 @@ class StoreReviewQueries {
             FROM store_reviews r
             WHERE r.store_id = :storeId AND r.person_id = :personId AND r.order_id = :orderId
               AND r.deleted_at IS NULL
+            """;
+
+    /** Reseña borrada de la persona sobre el almacén en ese pedido (el índice único no es parcial: hay una a lo sumo). */
+    static final String DELETED_SQL = """
+            SELECT id, hidden_at IS NOT NULL AS hidden
+            FROM store_reviews
+            WHERE store_id = :storeId AND person_id = :personId AND order_id = :orderId AND deleted_at IS NOT NULL
             """;
 
     record Reviewed(UUID id, OffsetDateTime createdAt) {
@@ -140,6 +148,16 @@ class StoreReviewQueries {
                 .param("personId", personId)
                 .query(UUID.class)
                 .list();
+    }
+
+    Optional<ReviewQueries.Deleted> deleted(UUID storeId, UUID personId, UUID orderId) {
+        return jdbcClient.sql(DELETED_SQL)
+                .param("storeId", storeId)
+                .param("personId", personId)
+                .param("orderId", orderId)
+                .query((rs, row) -> new ReviewQueries.Deleted(rs.getObject("id", UUID.class),
+                        rs.getBoolean("hidden")))
+                .optional();
     }
 
     /** @throws org.springframework.dao.DuplicateKeyException si ya hay reseña del pedido para el almacén. */

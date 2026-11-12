@@ -40,6 +40,10 @@ class ReviewQueries {
     record OwnedReview(UUID id, UUID scopeId, UUID personId, OffsetDateTime createdAt) {
     }
 
+    /** Reseña borrada por su autor que puede reutilizarse al volver a calificar; {@code hidden}: estaba oculta. */
+    record Deleted(UUID id, boolean hidden) {
+    }
+
     private final JdbcClient jdbcClient;
 
     static String listSql(ReviewKind kind, ReviewListQuery query) {
@@ -183,6 +187,25 @@ class ReviewQueries {
                 .param("comment", comment)
                 .param("id", reviewId)
                 .update();
+    }
+
+    /**
+     * Reutiliza una reseña borrada y no oculta como si fuera nueva: valores nuevos, sin respuesta del almacén y con
+     * {@code created_at} reiniciado (abre de nuevo la ventana de edición). Las categorías se reemplazan aparte.
+     *
+     * @return {@code false} si ya no está borrada o fue ocultada entre la lectura y la escritura
+     * @throws org.springframework.dao.DuplicateKeyException si otra petición creó una reseña vigente
+     */
+    boolean restore(ReviewKind kind, UUID reviewId, UUID orderId, int rating, String comment) {
+        return jdbcClient.sql("UPDATE " + kind.table() + " SET deleted_at = NULL, order_id = :orderId,"
+                        + " rating = :rating, comment = :comment, created_at = now(), updated_at = now(),"
+                        + " version = version + 1, reply = NULL, replied_at = NULL, replied_by = NULL"
+                        + " WHERE id = :id AND deleted_at IS NOT NULL AND hidden_at IS NULL")
+                .param("orderId", orderId)
+                .param("rating", rating)
+                .param("comment", comment)
+                .param("id", reviewId)
+                .update() == 1;
     }
 
     void softDelete(ReviewKind kind, UUID reviewId) {

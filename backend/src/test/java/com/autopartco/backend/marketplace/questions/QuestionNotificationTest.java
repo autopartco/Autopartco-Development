@@ -160,11 +160,28 @@ class QuestionNotificationTest {
 
         notifier.answered(questionId);
 
-        String path = "/producto/" + productId + "#preguntas";
+        String path = "/producto/" + productId + "?pregunta=" + questionId + "#preguntas";
         verify(notifications).notify(authorAccount, "Respondieron tu pregunta",
                 "Repuestos A respondió tu pregunta sobre Filtro de aceite.", path);
         verify(emailService).sendQuestionAnswered("ana@correo.co", "Ana", "Repuestos A", "Filtro de aceite",
                 "¿Sirve para un Mazda 3 2015?", "Sí, sirve.", "https://autopartco.co" + path);
+    }
+
+    @Test
+    void answeringAgainAfterRemovingTheAnswerDoesNotNotifyTwice() {
+        when(queries.find(questionId)).thenReturn(Optional.of(row("Sí, sirve.", null)));
+        when(queries.author(authorPerson)).thenReturn(Optional.of(
+                new QuestionQueries.Author(authorAccount, "ana@correo.co", "Ana María")));
+        when(settingsQueries.accountSettings(authorAccount)).thenReturn(account(true));
+        String path = "/producto/" + productId + "?pregunta=" + questionId + "#preguntas";
+        // La primera respuesta deja la notificación guardada; la segunda la encuentra.
+        when(notifications.exists(authorAccount, path)).thenReturn(false, true);
+
+        notifier.answered(questionId);
+        notifier.answered(questionId);
+
+        verify(notifications).notify(eq(authorAccount), anyString(), anyString(), eq(path));
+        verify(emailService).sendQuestionAnswered(any(), any(), any(), any(), any(), any(), any());
     }
 
     @Test

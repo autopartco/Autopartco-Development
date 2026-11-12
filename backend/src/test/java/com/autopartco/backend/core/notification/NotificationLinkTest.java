@@ -35,11 +35,21 @@ class NotificationLinkTest {
 
     @Test
     void externalOrProtocolRelativeLinksAreRejected() {
-        for (String link : new String[] {"https://evil.co", "//evil.co/x", "portal/x", "/" + "x".repeat(300)}) {
+        for (String link : new String[] {"https://evil.co", "//evil.co/x", "portal/x", "/" + "x".repeat(300),
+                "/\\evil.com", "/\\\\evil.com", "/portal/\\evil", "/portal/a b", "/portal\n/x", "\\/evil.com",
+                "/\t/evil.com"}) {
             assertThatThrownBy(() -> service.notify(accountId, "T", "M", link))
                     .isInstanceOf(IllegalArgumentException.class);
         }
         verifyNoInteractions(jdbcTemplate);
+    }
+
+    @Test
+    void internalPathsWithQueryAndAnchorAreAccepted() {
+        for (String link : new String[] {"/producto/p?pregunta=q#preguntas", "/portal/s/resenas", "/x"}) {
+            service.notify(accountId, "T", "M", link);
+        }
+        assertThat(NotificationService.INTERNAL_LINK.matcher("/").matches()).isTrue();
     }
 
     @Test

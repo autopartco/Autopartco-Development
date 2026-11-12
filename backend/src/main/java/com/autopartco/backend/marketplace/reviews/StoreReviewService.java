@@ -116,11 +116,14 @@ public class StoreReviewService {
         return load(reviewId);
     }
 
+    /**
+     * 409 {@code REVIEW_ALREADY_EXISTS} con una reseña vigente del pedido; 409 {@code REVIEW_MODERATED} si la persona
+     * borró la reseña oculta de ese pedido. Una borrada sin ocultar se reutiliza (el índice único no es parcial).
+     */
     @Transactional
     public StoreReviewResponse create(UUID storeId, String email, StoreReviewRequest request) {
         publishedStores.requirePublished(storeId);
         AccountRef account = account(email);
-        limiter.acquire(account.accountId());
         String comment = ReviewRules.comment(request.comment());
         Map<String, Integer> aspects = ReviewRules.aspects(KIND, request.aspects());
         UUID owner = queries.orderOwner(request.orderId()).orElse(null);
@@ -135,13 +138,23 @@ public class StoreReviewService {
             throw new ConflictException("REVIEW_NOT_ALLOWED",
                     "Podrás calificar este almacén cuando recibas tu pedido.");
         }
+        Optional<UUID> reusable = ReviewRules.reusable(
+                queries.deleted(storeId, account.personId(), request.orderId()));
+        limiter.acquire(account.accountId());
         UUID reviewId;
         try {
-            reviewId = queries.insert(storeId, account.personId(), request.orderId(), request.rating(), comment);
+            if (reusable.isPresent()) {
+                reviewId = reusable.get();
+                if (!reviews.restore(KIND, reviewId, request.orderId(), request.rating(), comment)) {
+                    throw alreadyExists();
+                }
+            } else {
+                reviewId = queries.insert(storeId, account.personId(), request.orderId(), request.rating(), comment);
+            }
         } catch (DuplicateKeyException duplicate) {
-            throw new ConflictException("REVIEW_ALREADY_EXISTS", "Ya calificaste este almacén por este pedido.");
+            throw alreadyExists();
         }
-        if (!aspects.isEmpty()) {
+        if (reusable.isPresent() || !aspects.isEmpty()) {
             reviews.replaceAspects(KIND, reviewId, aspects);
         }
         // La calificación del almacén forma parte del índice de búsqueda y del perfil público cacheado.
@@ -153,12 +166,12 @@ public class StoreReviewService {
     @Transactional
     public StoreReviewResponse update(UUID storeId, UUID reviewId, String email, ReviewUpdateRequest request) {
         AccountRef account = account(email);
-        limiter.acquire(account.accountId());
         ReviewQueries.OwnedReview review = ReviewRules.requireOwn(reviews.owned(KIND, reviewId), storeId,
                 account.personId());
         ReviewRules.requireEditable(review, OffsetDateTime.now(clock));
         String comment = ReviewRules.comment(request.comment());
         Map<String, Integer> aspects = ReviewRules.aspects(KIND, request.aspects());
+        limiter.acquire(account.accountId());
         reviews.update(KIND, reviewId, request.rating(), comment);
         reviews.replaceAspects(KIND, reviewId, aspects);
         events.publishEvent(ListingsChanged.ofStore(storeId));
@@ -169,10 +182,14 @@ public class StoreReviewService {
     @Transactional
     public void delete(UUID storeId, UUID reviewId, String email) {
         AccountRef account = account(email);
-        limiter.acquire(account.accountId());
         ReviewRules.requireOwn(reviews.owned(KIND, reviewId), storeId, account.personId());
+        limiter.acquire(account.accountId());
         reviews.softDelete(KIND, reviewId);
         events.publishEvent(ListingsChanged.ofStore(storeId));
+    }
+
+    private static ConflictException alreadyExists() {
+        return new ConflictException("REVIEW_ALREADY_EXISTS", "Ya calificaste este almacén por este pedido.");
     }
 
     private StoreReviewResponse load(UUID reviewId) {

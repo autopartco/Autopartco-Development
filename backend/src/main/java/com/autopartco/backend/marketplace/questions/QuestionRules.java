@@ -1,5 +1,6 @@
 package com.autopartco.backend.marketplace.questions;
 
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.autopartco.backend.shared.error.BadRequestException;
@@ -19,18 +20,31 @@ final class QuestionRules {
             "(?i)(\\b[a-z][a-z0-9+.-]*://|\\bwww\\.|\\b[a-z0-9][a-z0-9-]*\\.(com|co|net|org|info|biz|io|me|ly|app|"
                     + "xyz|online|store|shop|site|top|link|click|gl|es|us|tk|ru|cn)(/|\\b))");
 
-    /** Correo, aunque lleve espacios alrededor de la arroba. */
-    static final Pattern EMAIL = Pattern.compile("(?i)[a-z0-9._%+-]+\\s*@\\s*[a-z0-9-]+(\\.[a-z0-9-]+)*\\.[a-z]{2,}");
+    /** Correo, aunque lleve espacios alrededor de la arroba o no tenga TLD ({@code pepe@gmail}). */
+    static final Pattern EMAIL = Pattern.compile("(?i)[a-z0-9._%+-]+\\s*@\\s*[a-z0-9-]{2,}");
+
+    /** Correo escrito con la palabra «arroba» ({@code pepe arroba gmail}, {@code pepe (arroba) gmail}). */
+    static final Pattern EMAIL_WORD = Pattern.compile(
+            "(?iu)[a-z0-9._%+-]+\\s*[(\\[]?\\s*\\barroba\\b\\s*[)\\]]?\\s*[a-z0-9-]{2,}");
 
     /** Indicativo de Colombia ({@code +57}). */
     static final Pattern COUNTRY_CODE = Pattern.compile("\\+\\s*57");
 
+    /** «WhatsApp» o «wsp» seguidos de dígitos ({@code wsp 300...}, {@code WhatsApp: 3...}). */
+    static final Pattern MESSAGING = Pattern.compile("(?iu)\\b(?:whats\\s?app|wsp)\\b[\\s:.#()/-]*\\d");
+
+    /** Racha de dígitos separados solo por espacios, puntos, guiones, paréntesis o barras (sin letras de por medio). */
+    static final Pattern DIGIT_RUN = Pattern.compile("\\d(?:[\\s.()/-]*\\d)*");
+
     /**
-     * Número colombiano de 10 dígitos: celular ({@code 3xx}) o fijo ({@code 60x}), con espacios, puntos o guiones
-     * opcionales ({@code 300 123 4567}, {@code 601-234-5678}). No se rechazan dígitos sueltos: en repuestos son comunes
-     * las referencias OEM ({@code 04465-33450}) y los años («Mazda 3 2015 2016»).
+     * Número colombiano de 10 dígitos, celular ({@code 3xx}) o fijo ({@code 60x}), opcionalmente con {@code 57}
+     * delante, que ocupa la racha completa una vez quitados los separadores: {@code 300 123 45 67},
+     * {@code (300) 123 4567}, {@code 300/123/4567} y {@code 3 0 0 1 2 3 4 5 6 7} se rechazan. Exigir la racha
+     * completa evita rechazar referencias OEM ({@code 04465-33450}, {@code 8200 123 456}), precios
+     * ({@code 1.250.000}) y años («Mazda 3 2015 2016»). Falso positivo aceptado: una referencia de 10 dígitos que
+     * empiece por 3 o 60 ({@code ref 3101234567}) se rechaza como teléfono.
      */
-    static final Pattern PHONE = Pattern.compile("(?<![\\d.-])(?:3\\d{2}|60\\d)[ \\t.-]?\\d{3}[ \\t.-]?\\d{4}(?![\\d])");
+    static final Pattern PHONE = Pattern.compile("(?:57)?(?:3\\d{2}|60\\d)\\d{7}");
 
     private QuestionRules() {
     }
@@ -79,8 +93,19 @@ final class QuestionRules {
     }
 
     static boolean hasContact(String text) {
-        return LINK.matcher(text).find() || EMAIL.matcher(text).find() || COUNTRY_CODE.matcher(text).find()
-                || PHONE.matcher(text).find();
+        return LINK.matcher(text).find() || EMAIL.matcher(text).find() || EMAIL_WORD.matcher(text).find()
+                || COUNTRY_CODE.matcher(text).find() || MESSAGING.matcher(text).find() || hasPhone(text);
+    }
+
+    /** Alguna racha de dígitos, sin separadores, es exactamente un teléfono ({@link #PHONE}). */
+    static boolean hasPhone(String text) {
+        Matcher run = DIGIT_RUN.matcher(text);
+        while (run.find()) {
+            if (PHONE.matcher(run.group().replaceAll("\\D", "")).matches()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static void requireNoContact(String text, String subject) {
