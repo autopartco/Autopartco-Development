@@ -52,6 +52,27 @@ public class StoreAccess {
         }
     }
 
+    /** Como {@link #requirePermission}, pero sin lanzar: {@code false} si no tiene el permiso. */
+    @Transactional(readOnly = true)
+    public boolean hasPermission(String email, UUID storeId, String permissionCode) {
+        var account = findAccount(email);
+        return applicationAllowsAccess(storeId)
+                && collaboratorRepository.hasPermission(account.personId(), storeId, permissionCode);
+    }
+
+    /**
+     * Sucursales del almacén asignadas a la cuenta como colaboradora activa ({@code branches_collaborators}). Vacío si
+     * no tiene ninguna o si la solicitud del almacén no está activa.
+     */
+    @Transactional(readOnly = true)
+    public List<UUID> assignedBranches(String email, UUID storeId) {
+        var account = findAccount(email);
+        if (!applicationAllowsAccess(storeId)) {
+            return List.of();
+        }
+        return collaboratorRepository.findAssignedBranchIds(account.personId(), storeId);
+    }
+
     /** Tiendas donde la persona es colaborador activo. Solo deriva de {@code email}; no acepta más filtros. */
     @Transactional(readOnly = true)
     public List<MyStoreMembership> storesOf(String email) {

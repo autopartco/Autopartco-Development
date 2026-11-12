@@ -111,6 +111,66 @@ public class EmailService {
         sendHtml(to, "Nuevo inicio de sesión en Autopartco", text, html);
     }
 
+    /** Invitación a calificar un pedido entregado; {@code reviewLink} lleva a {@code /cuenta/calificar?pedido=…}. */
+    public void sendReviewInvitation(String to, String givenName, long orderNumber, String reviewLink) {
+        String text = """
+                Hola %s,
+
+                Tu pedido #%d fue entregado. Cuéntanos qué tal estuvo el almacén y los repuestos que recibiste:
+                %s
+
+                Calificar toma un minuto y es opcional. Si no quieres hacerlo, puedes ignorar este correo.
+                """.formatted(givenName, orderNumber, reviewLink);
+
+        sendHtml(to, "¿Cómo te fue con tu pedido?", text,
+                EmailTemplate.reviewInvitation(givenName, orderNumber, reviewLink));
+    }
+
+    /** Aviso al almacén de una pregunta nueva; {@code portalLink} lleva a la pregunta en el portal. */
+    public void sendQuestionAsked(String to, String storeName, String productName, String question,
+            String portalLink) {
+        String text = """
+                Hola,
+
+                Un comprador preguntó por %s en %s:
+
+                "%s"
+
+                Respóndela en el portal:
+                %s
+
+                Recibes este correo porque tu almacén tiene activos los avisos de preguntas. Puedes cambiarlo en
+                Configuración > Notificaciones.
+                """.formatted(productName, storeName, question, portalLink);
+
+        sendHtml(to, "Nueva pregunta sobre " + oneLine(productName), text,
+                EmailTemplate.questionAsked(storeName, productName, question, portalLink));
+    }
+
+    /** Aviso al comprador de que el almacén respondió su pregunta; {@code productLink} lleva a la ficha. */
+    public void sendQuestionAnswered(String to, String givenName, String storeName, String productName,
+            String question, String answer, String productLink) {
+        String text = """
+                Hola %s,
+
+                %s respondió tu pregunta sobre %s.
+
+                Tu pregunta: "%s"
+                Respuesta: "%s"
+
+                Míralo en la ficha del producto:
+                %s
+                """.formatted(givenName, storeName, productName, question, answer, productLink);
+
+        sendHtml(to, "Respondieron tu pregunta sobre " + oneLine(productName), text,
+                EmailTemplate.questionAnswered(givenName, storeName, productName, question, answer, productLink));
+    }
+
+    /** Asunto en una línea (sin saltos que alteren las cabeceras). */
+    private static String oneLine(String value) {
+        return value == null ? "" : value.replaceAll("[\\r\\n]+", " ").strip();
+    }
+
     private void sendHtml(String to, String subject, String text, String html) {
         try {
             MimeMessage message = mailSender.createMimeMessage();

@@ -72,6 +72,9 @@ function buildChips(state: SearchState, { options, facets, stores, fixedCategory
   if (state.minRating !== undefined) {
     chips.push({ key: 'rating', label: `Tienda ${state.minRating}★ o más`, patch: { minRating: undefined } })
   }
+  if (state.minProductRating !== undefined) {
+    chips.push({ key: 'product-rating', label: `Repuesto ${state.minProductRating}★ o más`, patch: { minProductRating: undefined } })
+  }
   if (state.universal) chips.push({ key: 'universal', label: 'Universales', patch: { universal: false } })
   return chips
 }

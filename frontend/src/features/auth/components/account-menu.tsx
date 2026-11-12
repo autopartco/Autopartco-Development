@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
+import { NotificationsMenu } from '@/features/notifications/notifications-menu'
 import { SELLER_SETUP_PATH, useSellerCta, type SellerCta } from '@/features/seller/hooks'
 import type { Session } from '../api/types'
 import { useSession, useSignOut } from '../hooks'
@@ -118,6 +119,8 @@ export function HeaderAccount({ className, ...context }: { className?: string } 
   }
 
   return (
+    <>
+    <NotificationsMenu />
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label={`Cuenta de ${session.user.name}`}
@@ -156,6 +159,7 @@ export function HeaderAccount({ className, ...context }: { className?: string } 
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
+    </>
   )
 }
 

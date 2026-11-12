@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.autopartco.backend.core.notification.NotificationService;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
+import com.autopartco.backend.shared.events.SaleDelivered;
 
 import lombok.AllArgsConstructor;
 
@@ -24,6 +26,7 @@ public class SaleStatusService {
     private final JdbcTemplate jdbcTemplate;
     private final SaleQueries saleQueries;
     private final NotificationService notificationService;
+    private final ApplicationEventPublisher events;
 
     @Transactional
     public SaleDetailResponse updateStatus(UUID storeId, UUID saleId, SaleStatusRequest request) {
@@ -88,6 +91,11 @@ public class SaleStatusService {
                 """, status, saleId);
         if (updated != 1) {
             throw new NotFoundException("SELLER_ORDER_NOT_FOUND", "No se encontró la venta.");
+        }
+        if ("DELIVERED".equals(status)) {
+            UUID orderId = jdbcTemplate.queryForObject("SELECT order_id FROM sales WHERE id = ?", UUID.class, saleId);
+            // Tras el commit se invita al comprador a calificar (marketplace.reviews).
+            events.publishEvent(new SaleDelivered(saleId, orderId));
         }
     }
 

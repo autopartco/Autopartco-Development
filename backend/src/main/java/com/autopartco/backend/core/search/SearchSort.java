@@ -12,6 +12,7 @@ public enum SearchSort {
     NEAREST,
     NEWEST,
     RATING,
+    PRODUCT_RATING,
     NAME;
 
     /** Valor público del parámetro {@code sort} ({@code relevance} por defecto); otro valor: 400 {@code SEARCH_SORT_INVALID}. */
@@ -26,6 +27,6 @@ public enum SearchSort {
             }
         }
         throw new BadRequestException("SEARCH_SORT_INVALID",
-                "El orden debe ser relevance, price_asc, price_desc, nearest, newest o rating.");
+                "El orden debe ser relevance, price_asc, price_desc, nearest, newest, rating o product_rating.");
     }
 }

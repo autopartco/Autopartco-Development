@@ -48,6 +48,9 @@ export interface ProductResponseDto {
   universal: boolean | null
   vehicleRules: VehicleRuleResponseDto[] | null
   images: ProductImageResponseDto[] | null
+  /** Promedio de reseñas (un decimal); `null` sin reseñas. */
+  rating?: number | null
+  reviewCount?: number | null
 }
 
 /** core/catalog/ProductOptionsResponse.java */
@@ -116,16 +119,69 @@ export interface StorePublicProfileDto {
     instagram: string | null
     facebook: string | null
     tiktok: string | null
+    youtube?: string | null
+    x?: string | null
+    email?: string | null
   }
+  tagline?: string | null
+  verified?: boolean
+  whatsappEnabled?: boolean
+  whatsappMessage?: string | null
+  services?: {
+    id: string
+    category: string
+    name: string
+    description: string | null
+    priceFrom: number | null
+    durationMinutes: number | null
+    branchIds: string[]
+  }[]
+  featuredProductIds?: string[]
 }
 
-/** `marketplace/reviews/StoreReviewResponse`. */
-export interface StoreReviewResponseDto {
+/** `core/organization/PublicBranches.PublicBranch` (`GET /marketplace/stores/{id}/branches`). */
+export interface PublicBranchDto {
+  id: string
+  name: string
+  address: string | null
+  city: string | null
+  department: string | null
+  latitude: number | null
+  longitude: number | null
+  phone: string | null
+  whatsapp: string | null
+  openingHours: Record<string, unknown> | null
+  openNow: boolean | null
+  serviceIds: string[] | null
+}
+
+/** `marketplace/reviews/ReviewSummary`. `distribution` trae siempre las claves "1"…"5". */
+export interface ReviewSummaryDto {
+  average: number | null
+  count: number
+  distribution: Record<string, number>
+  aspects: { aspect: string; average: number; count: number }[]
+  highlights: string[]
+}
+
+/** `marketplace/reviews/ProductReviewResponse` y `StoreReviewResponse` (esta añade `authorName`, igual a `author`). */
+export interface ReviewResponseDto {
   id: string
   rating: number
   comment: string | null
-  authorName: string
+  aspects: Record<string, number> | null
+  author: string
+  verified: boolean
   createdAt: string
+  updatedAt: string
+  reply: { text: string; repliedAt: string } | null
+}
+
+/** `marketplace/reviews/ProductReviewEligibility`. */
+export interface ProductReviewEligibilityDto {
+  eligibleOrderIds: string[]
+  existingReviewId: string | null
+  editableUntil: string | null
 }
 
 /** `marketplace/catalog/SearchResponse.Item`: el producto al mismo nivel, más distancia y datos del anuncio. */

@@ -8,9 +8,13 @@ import type {
   MarketplaceCapabilities,
   MarketplaceService,
   Product,
+  ProductReviewEligibility,
   ProductQuery,
+  ReviewListQuery,
+  ReviewTarget,
   SearchQuery,
   SearchSuggestions,
+  StoreReviewEligibility,
 } from './api/types'
 import { parseProductQuery, productQueryKey, toSearchParams as toProductSearchParams } from './lib/product-query'
 import { parseSearchState, searchQueryKey, toSearchParams, type SearchState } from './lib/search-query'
@@ -145,14 +149,40 @@ export function useStoreProfile(storeId: string) {
   return useMarketplace(`store-profile:${storeId}`, (service) => service.getStoreProfile(storeId))
 }
 
-export function useStoreReviews(storeId: string, page: number) {
-  return useMarketplace(`store-reviews:${storeId}:${page}`, (service) => service.listStoreReviews(storeId, page))
+/** Sucursales públicas; un fallo no tumba el perfil: las secciones que las usan simplemente no se muestran. */
+export function useStoreBranches(storeId: string | undefined) {
+  return useMarketplace(`store-branches:${storeId ?? 'none'}`, (service) =>
+    storeId ? service.listStoreBranches(storeId) : Promise.resolve([]),
+  )
+}
+
+/** Resumen de reseñas (promedio, distribución, categorías, insignias) de un producto o almacén. */
+export function useReviewSummary(target: ReviewTarget) {
+  return useMarketplace(`review-summary:${target.type}:${target.id}`, (service) => service.getReviewSummary(target))
+}
+
+export function useReviews(target: ReviewTarget, query: ReviewListQuery) {
+  return useMarketplace(
+    `reviews:${target.type}:${target.id}:${query.page}:${query.sort}:${query.stars ?? ''}:${query.withComment}`,
+    (service) => service.listReviews(target, query),
+  )
+}
+
+/** Si la persona con sesión puede calificar el producto; un fallo se trata como «no puede». */
+export function useProductReviewEligibility(productId: string, sessionKey: string | undefined) {
+  return useMarketplace(`product-review-eligibility:${productId}:${sessionKey ?? 'anon'}`, (service) =>
+    sessionKey
+      ? service.getProductReviewEligibility(productId).catch((): ProductReviewEligibility => ({ eligibleOrderIds: [] }))
+      : Promise.resolve<ProductReviewEligibility>({ eligibleOrderIds: [] }),
+  )
 }
 
 /** Pedidos con los que el comprador puede calificar; la clave incluye la sesión para no reutilizar la de otro usuario. */
 export function useReviewEligibility(storeId: string, sessionKey: string | undefined) {
   return useMarketplace(`store-review-eligibility:${storeId}:${sessionKey ?? 'anon'}`, (service) =>
-    sessionKey ? service.getReviewEligibility(storeId).catch(() => []) : Promise.resolve([]),
+    sessionKey
+      ? service.getReviewEligibility(storeId).catch((): StoreReviewEligibility => ({ eligibleOrderIds: [] }))
+      : Promise.resolve<StoreReviewEligibility>({ eligibleOrderIds: [] }),
   )
 }
 

@@ -108,6 +108,7 @@ public class SearchResultCache {
         add(key, "lng", c.lng());
         add(key, "r", c.radiusKm());
         add(key, "rating", c.minRating());
+        add(key, "prating", c.minProductRating());
         add(key, "uni", c.universal());
         add(key, "sort", c.sort());
         // Pistas interpretadas (ordenan, no filtran), separadas de los filtros explícitos de arriba.

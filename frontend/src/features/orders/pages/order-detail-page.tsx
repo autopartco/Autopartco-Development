@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatOrderDate } from '@/features/checkout/lib/labels'
+import { ProductReviewAction, StoreReviewAction } from '@/features/reviews/components/order-review-actions'
 import { ApiError } from '@/lib/api'
 import { formatCOP } from '@/lib/format'
 import { useAsync } from '@/lib/use-async'
@@ -115,6 +116,11 @@ export default function OrderDetailPage() {
                             <p className="font-mono text-xs text-ap-muted tabular-nums">
                               {item.quantity} × {formatCOP(item.unitPrice)}
                             </p>
+                            {sale.status === 'DELIVERED' ? (
+                              <div className="mt-2 empty:hidden">
+                                <ProductReviewAction orderId={order.orderId} orderNumber={order.orderNumber} productId={item.productId} productName={item.name} />
+                              </div>
+                            ) : null}
                           </div>
                           <p className="ap-price ap-num shrink-0 text-sm text-ap-ink">{formatCOP(item.lineTotal)}</p>
                         </li>
@@ -126,6 +132,12 @@ export default function OrderDetailPage() {
                       <Row label="Envío" value={sale.shippingCost > 0 ? formatCOP(sale.shippingCost) : 'Sin costo'} />
                       <Row label="Total de esta tienda" value={formatCOP(sale.total)} strong />
                     </dl>
+
+                    {sale.status === 'DELIVERED' ? (
+                      <div className="mt-4 flex flex-col gap-1.5 border-t border-ap-line pt-4 empty:hidden">
+                        <StoreReviewAction orderId={order.orderId} orderNumber={order.orderNumber} storeId={sale.storeId} storeName={sale.storeName} />
+                      </div>
+                    ) : null}
 
                     {unpaid ? null : (
                       <div className="mt-5 border-t border-ap-line pt-4">

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { formatCOP, formatNumber } from '@/lib/format'
+import { cn } from '@/lib/utils'
 import type { FilterOptions, SearchFacets } from '../../api/types'
 import type { SearchState } from '../../lib/search-query'
 import { VehiclePicker } from '../vehicle-picker'
@@ -161,6 +162,39 @@ function YearFilter({ year, onChange }: { year: number | undefined; onChange: Se
   )
 }
 
+const PRODUCT_RATING_OPTIONS = [
+  { value: 4, label: '4★ o más' },
+  { value: 3, label: '3★ o más' },
+] as const
+
+/** Calificación mínima del repuesto: botones que se activan y desactivan (`aria-pressed`). */
+function ProductRatingFilter({ value, onChange }: { value: number | undefined; onChange: (value: number | undefined) => void }) {
+  return (
+    <div role="group" aria-label="Calificación del repuesto" className="flex flex-col gap-1.5">
+      <p className="text-sm font-medium text-ap-ink">Calificación del repuesto</p>
+      <div className="flex flex-wrap gap-2">
+        {PRODUCT_RATING_OPTIONS.map((option) => {
+          const pressed = value === option.value
+          return (
+            <button
+              key={option.value}
+              type="button"
+              aria-pressed={pressed}
+              onClick={() => onChange(pressed ? undefined : option.value)}
+              className={cn(
+                'inline-flex min-h-11 items-center rounded-md border px-3 text-sm font-medium transition-colors',
+                pressed ? 'border-ap-graphite bg-ap-graphite text-ap-white' : 'border-input bg-ap-white text-ap-ink hover:border-ap-graphite hover:bg-ap-paper',
+              )}
+            >
+              {option.label}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 const RATING_OPTIONS = [
   { value: '4', label: '4 estrellas o más' },
   { value: '3', label: '3 estrellas o más' },
@@ -244,6 +278,7 @@ export function SearchFilters({ state, facets, options, nearMe, onChange, fixedC
             En oferta
           </CheckRow>
         </div>
+        <ProductRatingFilter value={state.minProductRating} onChange={(minProductRating) => onChange({ minProductRating })} />
         <OptionSelect
           id={ratingId}
           label="Calificación de la tienda"
