@@ -30,6 +30,7 @@ export const BenefitsPage = lazy(() => import('@/features/benefits/pages/benefit
 
 // Mis pedidos y seguimiento del comprador.
 export const OrdersPage = lazy(() => import('@/features/orders/pages/orders-page'))
+export const NotificationsPage = lazy(() => import('@/features/notifications/notifications-page'))
 export const OrderDetailPage = lazy(() => import('@/features/orders/pages/order-detail-page'))
 // Reseñas pendientes del comprador (enlace del correo de invitación: /cuenta/calificar?pedido=).
 export const RatePage = lazy(() => import('@/features/reviews/pages/rate-page'))
