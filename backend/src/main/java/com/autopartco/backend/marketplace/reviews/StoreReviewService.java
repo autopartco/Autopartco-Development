@@ -5,6 +5,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -93,9 +94,26 @@ public class StoreReviewService {
         publishedStores.requirePublished(storeId);
         AccountRef account = account(email);
         if (storeAccess.isMember(account.personId(), storeId)) {
-            return new ReviewEligibility(List.of());
+            return ReviewEligibility.none();
         }
-        return new ReviewEligibility(queries.eligibleOrders(storeId, account.personId()));
+        Optional<StoreReviewQueries.Reviewed> latest = queries.latestReviewed(storeId, account.personId());
+        return new ReviewEligibility(queries.eligibleOrders(storeId, account.personId()),
+                latest.map(StoreReviewQueries.Reviewed::id).orElse(null),
+                latest.map(reviewed -> ReviewRules.editableUntil(reviewed.createdAt())).orElse(null));
+    }
+
+    /**
+     * Reseña propia vigente (aunque esté oculta) con sus categorías, para precargar el formulario: la del pedido
+     * indicado o, sin pedido, la del pedido entregado más reciente. 404 {@code REVIEW_NOT_FOUND} si no hay.
+     */
+    @Transactional(readOnly = true)
+    public StoreReviewResponse mine(UUID storeId, String email, UUID orderId) {
+        AccountRef account = account(email);
+        UUID reviewId = (orderId == null
+                ? queries.latestReviewed(storeId, account.personId()).map(StoreReviewQueries.Reviewed::id)
+                : queries.reviewOfOrder(storeId, account.personId(), orderId))
+                .orElseThrow(() -> new NotFoundException("REVIEW_NOT_FOUND", "No se encontró la reseña."));
+        return load(reviewId);
     }
 
     @Transactional
@@ -164,7 +182,7 @@ public class StoreReviewService {
     }
 
     /** «Ana María» + «Pérez Gómez» → «Ana P.». Sin apellido, solo el primer nombre. */
-    static String authorName(String name, String surname) {
+    public static String authorName(String name, String surname) {
         String first = name == null || name.isBlank() ? "Comprador" : name.trim().split("\\s+")[0];
         if (surname == null || surname.isBlank()) {
             return first;

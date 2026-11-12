@@ -26,7 +26,11 @@ class PendingReviewQueries {
                    max(coalesce(sh.delivered_at, s.updated_at))::timestamptz AS delivered_at,
                    EXISTS (SELECT 1 FROM store_reviews r
                            WHERE r.store_id = b.store_id AND r.person_id = :personId AND r.order_id = s.order_id)
-                       AS store_reviewed
+                       AS store_reviewed,
+                   (SELECT r.id FROM store_reviews r
+                    WHERE r.store_id = b.store_id AND r.person_id = :personId AND r.order_id = s.order_id
+                      AND r.deleted_at IS NULL
+                    ORDER BY r.created_at DESC, r.id LIMIT 1) AS store_review_id
             FROM sales s
             JOIN orders o ON o.id = s.order_id
             JOIN branches b ON b.id = s.branch_id
@@ -48,7 +52,10 @@ class PendingReviewQueries {
                    s.order_id, b.store_id, p.id AS product_id, p.name, img.storage_path,
                    EXISTS (SELECT 1 FROM product_reviews r
                            WHERE r.person_id = :personId AND r.product_id = p.id AND r.deleted_at IS NULL)
-                       AS reviewed
+                       AS reviewed,
+                   (SELECT r.id FROM product_reviews r
+                    WHERE r.person_id = :personId AND r.product_id = p.id AND r.deleted_at IS NULL
+                    ORDER BY r.created_at DESC, r.id LIMIT 1) AS review_id
             FROM order_details d
             JOIN sales s ON s.id = d.sale_id
             JOIN branches b ON b.id = s.branch_id
@@ -66,12 +73,14 @@ class PendingReviewQueries {
             ORDER BY s.order_id, b.store_id, p.id
             """;
 
+    /** {@code storeReviewId}: reseña vigente del almacén en el pedido, o {@code null}. */
     record OrderStore(UUID orderId, long orderNumber, UUID storeId, String storeName, OffsetDateTime deliveredAt,
-            boolean storeReviewed) {
+            boolean storeReviewed, UUID storeReviewId) {
     }
 
+    /** {@code reviewId}: reseña vigente de la persona sobre el producto, o {@code null}. */
     record ProductLine(UUID orderId, UUID storeId, UUID productId, String name, String storagePath,
-            boolean reviewed) {
+            boolean reviewed, UUID reviewId) {
     }
 
     private final JdbcClient jdbcClient;
@@ -83,7 +92,8 @@ class PendingReviewQueries {
                 .param("limit", MAX_ENTRIES)
                 .query((rs, row) -> new OrderStore(rs.getObject("order_id", UUID.class), rs.getLong("order_number"),
                         rs.getObject("store_id", UUID.class), rs.getString("store_name"),
-                        rs.getObject("delivered_at", OffsetDateTime.class), rs.getBoolean("store_reviewed")))
+                        rs.getObject("delivered_at", OffsetDateTime.class), rs.getBoolean("store_reviewed"),
+                        rs.getObject("store_review_id", UUID.class)))
                 .list();
     }
 
@@ -96,7 +106,8 @@ class PendingReviewQueries {
                 .param("orderIds", List.copyOf(orderIds))
                 .query((rs, row) -> new ProductLine(rs.getObject("order_id", UUID.class),
                         rs.getObject("store_id", UUID.class), rs.getObject("product_id", UUID.class),
-                        rs.getString("name"), rs.getString("storage_path"), rs.getBoolean("reviewed")))
+                        rs.getString("name"), rs.getString("storage_path"), rs.getBoolean("reviewed"),
+                        rs.getObject("review_id", UUID.class)))
                 .list();
     }
 }

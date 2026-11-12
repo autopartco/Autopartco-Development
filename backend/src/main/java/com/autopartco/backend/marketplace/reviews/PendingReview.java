@@ -19,9 +19,11 @@ public record PendingReview(
         products = products == null ? List.of() : List.copyOf(products);
     }
 
-    public record Store(UUID id, String name, boolean reviewed) {
+    /** {@code reviewId}: la reseña vigente del almacén en este pedido, para editarla; {@code null} si no hay. */
+    public record Store(UUID id, String name, boolean reviewed, UUID reviewId) {
     }
 
-    public record Product(UUID productId, String name, String image, boolean reviewed) {
+    /** {@code reviewId}: la reseña vigente del producto, para editarla; {@code null} si no hay. */
+    public record Product(UUID productId, String name, String image, boolean reviewed, UUID reviewId) {
     }
 }

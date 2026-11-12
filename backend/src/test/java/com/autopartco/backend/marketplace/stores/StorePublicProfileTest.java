@@ -52,7 +52,7 @@ class StorePublicProfileTest {
                 new StoreSettings.Contact(whatsappEnabled, message),
                 new StoreSettings.Profile(true, featured, tagline),
                 new StoreSettings.Catalog(false),
-                new StoreSettings.Notifications(true, true, true, true, List.of()),
+                new StoreSettings.Notifications(true, true, true, true, true, List.of()),
                 new StoreSettings.Security(false));
     }
 

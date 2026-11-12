@@ -27,11 +27,13 @@ public record StoreSettings(
     public record Catalog(boolean showExactStock) {
     }
 
+    /** {@code questions}: correo a los destinatarios por cada pregunta nueva sobre un producto del almacén. */
     public record Notifications(
             boolean newOrder,
             boolean lowStock,
             boolean newReview,
             boolean weeklyReport,
+            boolean questions,
             List<String> recipients
     ) {
         public Notifications {

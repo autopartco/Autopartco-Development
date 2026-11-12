@@ -93,6 +93,16 @@ public class ProductReviewService {
         return new ProductReviewEligibility(queries.eligibleOrders(productId, account.personId()), null, null);
     }
 
+    /** Reseña propia vigente (aunque esté oculta) con sus categorías. 404 {@code REVIEW_NOT_FOUND} si no hay. */
+    @Transactional(readOnly = true)
+    public ProductReviewResponse mine(UUID productId, String email) {
+        AccountRef account = account(email);
+        UUID reviewId = queries.existing(account.personId(), productId)
+                .map(ProductReviewQueries.Existing::id)
+                .orElseThrow(() -> new NotFoundException("REVIEW_NOT_FOUND", "No se encontró la reseña."));
+        return load(reviewId);
+    }
+
     /**
      * 403 {@code REVIEW_NOT_ELIGIBLE} sin compra entregada del producto en ese pedido (o pedido ajeno, o equipo del
      * almacén); 409 {@code REVIEW_ALREADY_EXISTS} con una reseña vigente del producto.

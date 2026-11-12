@@ -37,6 +37,8 @@ class PendingReviewsTest {
     private final UUID storeB = UUID.randomUUID();
     private final UUID filter = UUID.randomUUID();
     private final UUID pads = UUID.randomUUID();
+    private final UUID storeReview = UUID.randomUUID();
+    private final UUID padsReview = UUID.randomUUID();
     private final OffsetDateTime delivered = OffsetDateTime.parse("2026-11-01T10:00:00Z");
 
     @BeforeEach
@@ -49,11 +51,11 @@ class PendingReviewsTest {
     @Test
     void groupsByOrderAndStoreAndMarksWhatIsAlreadyReviewed() {
         when(queries.orderStores(personId)).thenReturn(List.of(
-                new PendingReviewQueries.OrderStore(order, 1042, storeA, "Repuestos A", delivered, true),
-                new PendingReviewQueries.OrderStore(order, 1042, storeB, "Repuestos B", delivered, false)));
+                new PendingReviewQueries.OrderStore(order, 1042, storeA, "Repuestos A", delivered, true, storeReview),
+                new PendingReviewQueries.OrderStore(order, 1042, storeB, "Repuestos B", delivered, false, null)));
         when(queries.products(personId, Set.of(order))).thenReturn(List.of(
-                new PendingReviewQueries.ProductLine(order, storeA, filter, "Filtro de aceite", "p/filtro.webp", false),
-                new PendingReviewQueries.ProductLine(order, storeB, pads, "Pastillas", null, true)));
+                new PendingReviewQueries.ProductLine(order, storeA, filter, "Filtro de aceite", "p/filtro.webp", false, null),
+                new PendingReviewQueries.ProductLine(order, storeB, pads, "Pastillas", null, true, padsReview)));
 
         List<PendingReview> result = pending.pending(EMAIL);
 
@@ -62,19 +64,19 @@ class PendingReviewsTest {
         assertThat(first.orderId()).isEqualTo(order);
         assertThat(first.orderNumber()).isEqualTo(1042);
         assertThat(first.deliveredAt()).isEqualTo(delivered);
-        assertThat(first.store()).isEqualTo(new PendingReview.Store(storeA, "Repuestos A", true));
+        assertThat(first.store()).isEqualTo(new PendingReview.Store(storeA, "Repuestos A", true, storeReview));
         assertThat(first.products()).containsExactly(
-                new PendingReview.Product(filter, "Filtro de aceite", "https://cdn/filtro-thumb.webp", false));
+                new PendingReview.Product(filter, "Filtro de aceite", "https://cdn/filtro-thumb.webp", false, null));
         assertThat(result.get(1).store().reviewed()).isFalse();
-        assertThat(result.get(1).products()).containsExactly(new PendingReview.Product(pads, "Pastillas", null, true));
+        assertThat(result.get(1).products()).containsExactly(new PendingReview.Product(pads, "Pastillas", null, true, padsReview));
     }
 
     @Test
     void entriesWithEverythingReviewedAreLeftOut() {
         when(queries.orderStores(personId)).thenReturn(List.of(
-                new PendingReviewQueries.OrderStore(order, 7, storeA, "Repuestos A", delivered, true)));
+                new PendingReviewQueries.OrderStore(order, 7, storeA, "Repuestos A", delivered, true, storeReview)));
         when(queries.products(eq(personId), any())).thenReturn(List.of(
-                new PendingReviewQueries.ProductLine(order, storeA, filter, "Filtro", null, true)));
+                new PendingReviewQueries.ProductLine(order, storeA, filter, "Filtro", null, true, padsReview)));
 
         assertThat(pending.pending(EMAIL)).isEmpty();
     }
@@ -82,7 +84,7 @@ class PendingReviewsTest {
     @Test
     void storesOfTheBuyersOwnTeamAreSkipped() {
         when(queries.orderStores(personId)).thenReturn(List.of(
-                new PendingReviewQueries.OrderStore(order, 7, storeA, "Mi almacén", delivered, false)));
+                new PendingReviewQueries.OrderStore(order, 7, storeA, "Mi almacén", delivered, false, null)));
         when(storeAccess.isMember(personId, storeA)).thenReturn(true);
 
         assertThat(pending.pending(EMAIL)).isEmpty();
@@ -102,6 +104,8 @@ class PendingReviewsTest {
         assertThat(PendingReviewQueries.ORDER_STORES_SQL)
                 .contains("o.person_id = :personId", "ss.code = 'DELIVERED'", "make_interval(days => :days)");
         assertThat(PendingReviewQueries.WINDOW_DAYS).isEqualTo(90);
-        assertThat(PendingReviewQueries.PRODUCTS_SQL).contains("r.person_id = :personId", "r.deleted_at IS NULL");
+        assertThat(PendingReviewQueries.PRODUCTS_SQL).contains("r.person_id = :personId", "r.deleted_at IS NULL",
+                "AS review_id");
+        assertThat(PendingReviewQueries.ORDER_STORES_SQL).contains("AS store_review_id", "r.deleted_at IS NULL");
     }
 }

@@ -56,6 +56,16 @@ public class StoreReviewController {
         return storeReviewService.eligibility(storeId, authentication.getName());
     }
 
+    /** La reseña propia (del pedido o la más reciente) con sus categorías; 404 {@code REVIEW_NOT_FOUND}. */
+    @GetMapping("/mine")
+    public StoreReviewResponse mine(
+            @PathVariable UUID storeId,
+            @RequestParam(required = false) UUID orderId,
+            Authentication authentication
+    ) {
+        return storeReviewService.mine(storeId, authentication.getName(), orderId);
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public StoreReviewResponse create(

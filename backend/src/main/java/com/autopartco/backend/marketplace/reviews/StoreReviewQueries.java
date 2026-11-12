@@ -2,6 +2,7 @@ package com.autopartco.backend.marketplace.reviews;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -62,7 +63,51 @@ class StoreReviewQueries {
             RETURNING id
             """;
 
+    /**
+     * Reseña vigente (no borrada, aunque esté oculta) de la persona sobre el almacén en su pedido entregado más
+     * reciente que ya calificó.
+     */
+    static final String LATEST_REVIEWED_SQL = """
+            SELECT r.id, r.created_at::timestamptz AS created_at
+            FROM store_reviews r
+            JOIN orders o ON o.id = r.order_id AND o.deleted_at IS NULL
+            WHERE r.store_id = :storeId AND r.person_id = :personId AND r.deleted_at IS NULL
+              AND EXISTS (""" + DELIVERED_SALE_OF_STORE + """
+            )
+            ORDER BY o.created_at DESC, r.created_at DESC, r.id
+            LIMIT 1
+            """;
+
+    static final String REVIEW_OF_ORDER_SQL = """
+            SELECT r.id
+            FROM store_reviews r
+            WHERE r.store_id = :storeId AND r.person_id = :personId AND r.order_id = :orderId
+              AND r.deleted_at IS NULL
+            """;
+
+    record Reviewed(UUID id, OffsetDateTime createdAt) {
+    }
+
     private final JdbcClient jdbcClient;
+
+    Optional<Reviewed> latestReviewed(UUID storeId, UUID personId) {
+        return jdbcClient.sql(LATEST_REVIEWED_SQL)
+                .param("storeId", storeId)
+                .param("personId", personId)
+                .query((rs, row) -> new Reviewed(rs.getObject("id", UUID.class),
+                        rs.getObject("created_at", OffsetDateTime.class)))
+                .optional();
+    }
+
+    /** Reseña vigente de la persona sobre el almacén en ese pedido. */
+    Optional<UUID> reviewOfOrder(UUID storeId, UUID personId, UUID orderId) {
+        return jdbcClient.sql(REVIEW_OF_ORDER_SQL)
+                .param("storeId", storeId)
+                .param("personId", personId)
+                .param("orderId", orderId)
+                .query(UUID.class)
+                .optional();
+    }
 
     StoreRating rating(UUID storeId) {
         return jdbcClient.sql(RATING_SQL)

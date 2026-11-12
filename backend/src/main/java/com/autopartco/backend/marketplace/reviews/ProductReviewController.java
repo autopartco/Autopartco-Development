@@ -56,6 +56,12 @@ public class ProductReviewController {
         return productReviewService.eligibility(productId, authentication.getName());
     }
 
+    /** La reseña propia vigente con sus categorías, para precargar el formulario; 404 {@code REVIEW_NOT_FOUND}. */
+    @GetMapping("/mine")
+    public ProductReviewResponse mine(@PathVariable UUID productId, Authentication authentication) {
+        return productReviewService.mine(productId, authentication.getName());
+    }
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ProductReviewResponse create(

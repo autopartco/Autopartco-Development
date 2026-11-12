@@ -101,6 +101,8 @@ public class WebSecurityConfig {
                 // marketplace.reviews: reseñas visibles de producto y su resumen (la elegibilidad exige sesión).
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/products/*/reviews"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/products/*/reviews/summary"),
+                // marketplace.questions: preguntas respondidas (con sesión, también las pendientes propias).
+                new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/products/*/questions"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/products/*/frequently-bought"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/product-options"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/product-options/*"),

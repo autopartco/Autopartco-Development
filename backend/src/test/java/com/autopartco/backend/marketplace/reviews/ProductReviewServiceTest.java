@@ -259,4 +259,27 @@ class ProductReviewServiceTest {
         assertThat(ReviewQueries.aspectStatsSql(ReviewKind.STORE))
                 .contains("FROM store_review_aspects a", "JOIN store_reviews r", "hidden_at IS NULL");
     }
+
+    @Test
+    void mineReturnsTheOwnReviewWithItsAspects() {
+        when(queries.existing(personId, productId)).thenReturn(Optional.of(
+                new ProductReviewQueries.Existing(reviewId, now)));
+        when(reviews.row(ReviewKind.PRODUCT, reviewId)).thenReturn(Optional.of(row(4, "Bueno")));
+        when(reviews.aspectsOf(ReviewKind.PRODUCT, reviewId)).thenReturn(Map.of("FIT", 5));
+
+        ProductReviewResponse mine = service.mine(productId, EMAIL);
+
+        assertThat(mine.id()).isEqualTo(reviewId);
+        assertThat(mine.rating()).isEqualTo(4);
+        assertThat(mine.aspects()).containsEntry("FIT", 5);
+    }
+
+    @Test
+    void mineWithoutReviewIsNotFound() {
+        when(queries.existing(personId, productId)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> service.mine(productId, EMAIL))
+                .isInstanceOfSatisfying(NotFoundException.class,
+                        error -> assertThat(error.getCode()).isEqualTo("REVIEW_NOT_FOUND"));
+    }
 }

@@ -68,6 +68,33 @@ class StoreAccessTest {
         );
     }
 
+    @Test
+    void hasPermissionAnswersWithoutThrowing() {
+        UUID personId = UUID.randomUUID();
+        UUID storeId = UUID.randomUUID();
+        when(applicationRepository.existsForStore(storeId)).thenReturn(false);
+        when(accountLookup.findByEmail("ana@example.com")).thenReturn(Optional.of(account(personId)));
+        when(collaboratorRepository.hasPermission(personId, storeId, "STORE_READ")).thenReturn(false);
+
+        assertEquals(false, storeAccess.hasPermission("ana@example.com", storeId, "STORE_READ"));
+    }
+
+    @Test
+    void assignedBranchesComeFromTheCollaboratorAndAreEmptyWhileTheApplicationIsNotActive() {
+        UUID personId = UUID.randomUUID();
+        UUID storeId = UUID.randomUUID();
+        UUID branchId = UUID.randomUUID();
+        when(accountLookup.findByEmail("ana@example.com")).thenReturn(Optional.of(account(personId)));
+        when(applicationRepository.existsForStore(storeId)).thenReturn(false);
+        when(collaboratorRepository.findAssignedBranchIds(personId, storeId)).thenReturn(List.of(branchId));
+
+        assertEquals(List.of(branchId), storeAccess.assignedBranches("ana@example.com", storeId));
+
+        when(applicationRepository.existsForStore(storeId)).thenReturn(true);
+        when(applicationRepository.isActive(storeId)).thenReturn(false);
+        assertEquals(List.of(), storeAccess.assignedBranches("ana@example.com", storeId));
+    }
+
     private AccountRef account(UUID personId) {
         return new AccountRef(UUID.randomUUID(), personId, "ana@example.com", "Ana Pérez", "ACTIVE", "CUSTOMER", "Ana");
     }

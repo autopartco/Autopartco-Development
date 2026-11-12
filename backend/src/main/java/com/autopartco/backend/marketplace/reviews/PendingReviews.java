@@ -50,7 +50,7 @@ public class PendingReviews {
         for (PendingReviewQueries.ProductLine line : queries.products(personId, orderIds)) {
             productsByPair.computeIfAbsent(key(line.orderId(), line.storeId()), ignored -> new ArrayList<>())
                     .add(new PendingReview.Product(line.productId(), line.name(), image(line.storagePath()),
-                            line.reviewed()));
+                            line.reviewed(), line.reviewId()));
         }
         List<PendingReview> result = new ArrayList<>();
         for (PendingReviewQueries.OrderStore pair : allowed) {
@@ -62,7 +62,8 @@ public class PendingReviews {
             boolean somethingLeft = !pair.storeReviewed() || products.stream().anyMatch(p -> !p.reviewed());
             if (somethingLeft) {
                 result.add(new PendingReview(pair.orderId(), pair.orderNumber(), pair.deliveredAt(),
-                        new PendingReview.Store(pair.storeId(), pair.storeName(), pair.storeReviewed()), products));
+                        new PendingReview.Store(pair.storeId(), pair.storeName(), pair.storeReviewed(),
+                                pair.storeReviewId()), products));
             }
         }
         return result;

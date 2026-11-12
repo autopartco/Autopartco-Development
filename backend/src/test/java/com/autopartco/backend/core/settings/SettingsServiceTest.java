@@ -96,7 +96,17 @@ class SettingsServiceTest {
         assertThat(settings.profile().featuredProductIds()).isEmpty();
         assertThat(settings.catalog().showExactStock()).isFalse();
         assertThat(settings.notifications().recipients()).isEmpty();
+        assertThat(settings.notifications().questions()).isTrue();
         assertThat(settings.security().requireStaffTwoFactor()).isFalse();
+    }
+
+    @Test
+    void questionsNotificationCanBeTurnedOff() {
+        StoreSettings settings = service.patchStore(storeId, actorId, false,
+                Map.of("notifications", Map.of("questions", false)));
+
+        assertThat(settings.notifications().questions()).isFalse();
+        assertThat(settings.notifications().newReview()).isTrue();
     }
 
     @Test

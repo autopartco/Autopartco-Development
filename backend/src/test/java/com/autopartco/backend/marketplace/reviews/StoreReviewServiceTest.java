@@ -204,7 +204,69 @@ class StoreReviewServiceTest {
     void eligibilityListsBuyerOrders() {
         when(queries.eligibleOrders(storeId, personId)).thenReturn(List.of(orderId));
 
-        assertThat(service.eligibility(storeId, EMAIL).eligibleOrderIds()).containsExactly(orderId);
+        ReviewEligibility eligibility = service.eligibility(storeId, EMAIL);
+
+        assertThat(eligibility.eligibleOrderIds()).containsExactly(orderId);
+        assertThat(eligibility.existingReviewId()).isNull();
+        assertThat(eligibility.editableUntil()).isNull();
+    }
+
+    @Test
+    void eligibilityIncludesTheLatestReviewedOrderAndItsEditWindow() {
+        when(queries.eligibleOrders(storeId, personId)).thenReturn(List.of(orderId));
+        when(queries.latestReviewed(storeId, personId)).thenReturn(Optional.of(
+                new StoreReviewQueries.Reviewed(reviewId, now.minusDays(5))));
+
+        ReviewEligibility eligibility = service.eligibility(storeId, EMAIL);
+
+        assertThat(eligibility.eligibleOrderIds()).containsExactly(orderId);
+        assertThat(eligibility.existingReviewId()).isEqualTo(reviewId);
+        assertThat(eligibility.editableUntil()).isEqualTo(now.plusDays(25));
+    }
+
+    @Test
+    void teamMembersGetAnEmptyEligibility() {
+        when(storeAccess.isMember(personId, storeId)).thenReturn(true);
+
+        assertThat(service.eligibility(storeId, EMAIL)).isEqualTo(new ReviewEligibility(List.of(), null, null));
+        verify(queries, never()).latestReviewed(any(), any());
+    }
+
+    @Test
+    void mineReturnsTheOwnReviewOfTheOrderWithItsAspects() {
+        when(queries.reviewOfOrder(storeId, personId, orderId)).thenReturn(Optional.of(reviewId));
+        when(reviews.row(ReviewKind.STORE, reviewId)).thenReturn(Optional.of(row(4, "Bien")));
+        when(reviews.aspectsOf(ReviewKind.STORE, reviewId)).thenReturn(Map.of("SPEED", 5));
+
+        StoreReviewResponse mine = service.mine(storeId, EMAIL, orderId);
+
+        assertThat(mine.id()).isEqualTo(reviewId);
+        assertThat(mine.aspects()).containsEntry("SPEED", 5);
+        assertThat(mine.author()).isEqualTo("Ana P.");
+    }
+
+    @Test
+    void mineWithoutOrderUsesTheLatestReviewedOrder() {
+        when(queries.latestReviewed(storeId, personId)).thenReturn(Optional.of(
+                new StoreReviewQueries.Reviewed(reviewId, now)));
+        when(reviews.row(ReviewKind.STORE, reviewId)).thenReturn(Optional.of(row(5, null)));
+
+        assertThat(service.mine(storeId, EMAIL, null).id()).isEqualTo(reviewId);
+    }
+
+    @Test
+    void mineWithoutReviewIsNotFound() {
+        assertThatThrownBy(() -> service.mine(storeId, EMAIL, orderId))
+                .isInstanceOfSatisfying(NotFoundException.class,
+                        error -> assertThat(error.getCode()).isEqualTo("REVIEW_NOT_FOUND"));
+    }
+
+    @Test
+    void latestReviewedOnlyReadsOwnLiveReviewsOfDeliveredOrders() {
+        assertThat(StoreReviewQueries.LATEST_REVIEWED_SQL)
+                .contains("r.person_id = :personId", "r.deleted_at IS NULL", "st.code = 'DELIVERED'");
+        assertThat(StoreReviewQueries.REVIEW_OF_ORDER_SQL)
+                .contains("r.person_id = :personId", "r.order_id = :orderId", "r.deleted_at IS NULL");
     }
 
     @Test
