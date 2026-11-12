@@ -118,11 +118,15 @@ function MobileMenu({ className }: { className?: string }) {
 export function SiteHeader() {
   return (
     <header className="ap-surface-dark sticky top-0 z-40 bg-ap-graphite">
-      <Container className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 [grid-template-areas:'logo_actions'_'search_search'] xl:h-16 xl:grid-cols-[auto_minmax(0,1fr)_auto_auto] xl:gap-x-4 xl:[grid-template-areas:'logo_search_nav_actions'] 2xl:gap-x-6">
-        <div className="flex h-14 min-w-0 items-center [grid-area:logo] xl:h-auto">
-          <Logo tone="dark" />
+      <Container className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 [grid-template-areas:'logo_actions'_'search_search'] xl:h-16 xl:grid-cols-[auto_minmax(17rem,1fr)_auto_minmax(0,auto)] xl:gap-x-4 xl:[grid-template-areas:'logo_search_nav_actions'] 2xl:gap-x-6">
+        <div className="flex h-14 items-center [grid-area:logo] xl:h-auto">
+          <Logo tone="dark" compact />
         </div>
-        <SearchBox tone="dark" shortcut className="pb-3 [grid-area:search] xl:min-w-48 xl:max-w-2xl xl:pb-0" />
+        {/* En móvil la ubicación va junto al buscador: en la fila del logo no cabe sin solaparse con el imagotipo. */}
+        <div className="flex min-w-0 items-center gap-1 pb-3 [grid-area:search] xl:min-w-68 xl:max-w-2xl xl:pb-0">
+          <SearchBox tone="dark" shortcut className="min-w-0 flex-1" />
+          <LocationPicker className="md:hidden" />
+        </div>
         {/* Enlaces desde xl, en la misma fila; por debajo van en el menú para dejar sitio a la ciudad y a la cuenta. */}
         <nav aria-label="Principal" className="hidden min-w-0 items-center gap-0 [grid-area:nav] xl:flex">
           {NAV.map((item) => (
@@ -130,16 +134,17 @@ export function SiteHeader() {
               key={item.to}
               to={item.to}
               // «Productos» duplica al buscador: solo se muestra donde sobra ancho para no pisarlo.
-              className={(state) => cn(navClass(state), item.wide && 'hidden min-[1400px]:inline-flex')}
+              className={(state) => cn(navClass(state), item.wide && 'hidden min-[1600px]:inline-flex')}
             >
               {item.label}
             </NavLink>
           ))}
         </nav>
-        <div className="flex items-center gap-0.5 [grid-area:actions]">
+        <div className="flex min-w-0 items-center justify-end gap-0.5 *:shrink-0 [grid-area:actions]">
           <SellerHeaderLink />
           <span className="mx-1.5 hidden h-5 w-px bg-ap-line-on-dark xl:block" aria-hidden />
-          <LocationPicker />
+          {/* `shrink!`: único elemento de las acciones que se recorta (trunca la ciudad) si falta espacio. */}
+          <LocationPicker className="hidden shrink! md:inline-flex" />
           <CartIndicator />
           <HeaderAccount />
           <MobileMenu className="xl:hidden" />
