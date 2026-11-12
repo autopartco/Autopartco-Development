@@ -1,5 +1,10 @@
 # Changelog
 
+## v2.1.1 — 2026-11-11
+
+### Correcciones
+- El registro de cuentas nuevas con Google ya no falla con error del servidor.
+
 ## v2.1.0 — 2026-11-11
 
 ### Reseñas y calificaciones

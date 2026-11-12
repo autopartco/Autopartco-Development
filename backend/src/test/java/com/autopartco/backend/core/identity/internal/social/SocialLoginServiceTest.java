@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -90,7 +91,7 @@ class SocialLoginServiceTest {
         LoginResponse response = service.login(SocialProvider.GOOGLE, new SocialLoginRequest("tok", null), "1.1.1.1", "UA");
 
         assertSame(tokens, response);
-        verify(loginAttemptService).record(account, true, "1.1.1.1");
+        verify(loginAttemptService).recordSuccessful(account, "1.1.1.1");
         verify(auditService).record(eq(account.getId()), eq("SOCIAL_LOGIN"), eq("ACCOUNT"), eq(account.getId()), any());
     }
 
@@ -108,7 +109,7 @@ class SocialLoginServiceTest {
 
         assertSame(challenge, response);
         verify(authTokenService, never()).issue(any(Account.class));
-        verify(loginAttemptService, never()).record(any(), eq(true), any());
+        verify(loginAttemptService, never()).recordSuccessful(any(), any());
     }
 
     @Test
@@ -201,6 +202,9 @@ class SocialLoginServiceTest {
         assertSame(active, account.getValue().getState());
         verify(identityRepository).save(any(AccountIdentity.class));
         verify(auditService).record(any(), eq("USER_REGISTERED_SOCIAL"), eq("ACCOUNT"), any(), any());
+        // La cuenta nueva aún no está confirmada: el intento no puede ir en otra transacción (FK -> 500).
+        verify(loginAttemptService, never()).record(any(), anyBoolean(), any());
+        verify(loginAttemptService).recordSuccessful(account.getValue(), "1.1.1.1");
     }
 
     @Test

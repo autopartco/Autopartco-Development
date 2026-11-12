@@ -52,4 +52,14 @@ public class LoginAttemptService {
         return repository.save(loginAttemptMapper.toLoginAttempt(account, successful, ipAddress));
     }
 
+    /**
+     * Ingreso exitoso dentro de la transacción del llamador. Necesario cuando la cuenta se crea en esa misma
+     * transacción (registro social): con {@code REQUIRES_NEW} la FK a {@code accounts} apuntaría a una fila aún
+     * no confirmada y la petición fallaría con 500.
+     */
+    @Transactional
+    public LoginAttempt recordSuccessful(Account account, String ipAddress) {
+        return repository.save(loginAttemptMapper.toLoginAttempt(account, true, ipAddress));
+    }
+
 }
