@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import com.autopartco.backend.core.notification.EmailService;
+import com.autopartco.backend.core.notification.NotificationKind;
 import com.autopartco.backend.core.notification.NotificationService;
 import com.autopartco.backend.core.settings.SettingsQueries;
 import com.autopartco.backend.core.settings.StoreSettings;
@@ -59,7 +60,8 @@ public class QuestionNotifier {
         String path = portalPath(row.storeId(), row.id());
         for (UUID accountId : queries.storeRecipients(row.storeId(), row.productId(), row.personId())) {
             try {
-                notifications.notify(accountId, ASKED_TITLE + row.productName(), row.question(), path);
+                notifications.notify(accountId, NotificationKind.QUESTION, ASKED_TITLE + row.productName(), row.question(),
+                        path);
             } catch (RuntimeException failure) {
                 log.warn("Could not store question notification ({})", failure.getClass().getSimpleName());
             }
@@ -95,7 +97,7 @@ public class QuestionNotifier {
         if (notifications.exists(to.accountId(), path)) {
             return;
         }
-        notifications.notify(to.accountId(), ANSWERED_TITLE,
+        notifications.notify(to.accountId(), NotificationKind.ANSWER, ANSWERED_TITLE,
                 row.storeName() + " respondió tu pregunta sobre " + row.productName() + ".", path);
         if (!settingsQueries.accountSettings(to.accountId()).notifications().storeReplies()) {
             return;

@@ -19,18 +19,16 @@ class NotificationLinkTest {
 
     @Test
     void internalLinkIsStored() {
-        service.notify(accountId, "Título", "Mensaje", "/portal/abc/preguntas?pregunta=1");
+        service.notify(accountId, NotificationKind.QUESTION, "Título", "Mensaje", "/portal/abc/preguntas?pregunta=1");
 
-        verify(jdbcTemplate).update("INSERT INTO notifications (account_id, title, message, link) VALUES (?, ?, ?, ?)",
-                accountId, "Título", "Mensaje", "/portal/abc/preguntas?pregunta=1");
+        verify(jdbcTemplate).update(NotificationService.INSERT_SQL, accountId, "QUESTION", "Título", "Mensaje", "/portal/abc/preguntas?pregunta=1");
     }
 
     @Test
     void notificationsWithoutLinkKeepWorking() {
-        service.notify(accountId, "Pedido actualizado", "Mensaje");
+        service.notify(accountId, null, "Pedido actualizado", "Mensaje", null);
 
-        verify(jdbcTemplate).update("INSERT INTO notifications (account_id, title, message, link) VALUES (?, ?, ?, ?)",
-                accountId, "Pedido actualizado", "Mensaje", null);
+        verify(jdbcTemplate).update(NotificationService.INSERT_SQL, accountId, "SYSTEM", "Pedido actualizado", "Mensaje", null);
     }
 
     @Test
@@ -38,7 +36,7 @@ class NotificationLinkTest {
         for (String link : new String[] {"https://evil.co", "//evil.co/x", "portal/x", "/" + "x".repeat(300),
                 "/\\evil.com", "/\\\\evil.com", "/portal/\\evil", "/portal/a b", "/portal\n/x", "\\/evil.com",
                 "/\t/evil.com"}) {
-            assertThatThrownBy(() -> service.notify(accountId, "T", "M", link))
+            assertThatThrownBy(() -> service.notify(accountId, NotificationKind.SYSTEM, "T", "M", link))
                     .isInstanceOf(IllegalArgumentException.class);
         }
         verifyNoInteractions(jdbcTemplate);
@@ -47,17 +45,16 @@ class NotificationLinkTest {
     @Test
     void internalPathsWithQueryAndAnchorAreAccepted() {
         for (String link : new String[] {"/producto/p?pregunta=q#preguntas", "/portal/s/resenas", "/x"}) {
-            service.notify(accountId, "T", "M", link);
+            service.notify(accountId, NotificationKind.SYSTEM, "T", "M", link);
         }
         assertThat(NotificationService.INTERNAL_LINK.matcher("/").matches()).isTrue();
     }
 
     @Test
     void longTitlesAreCutToTheColumnSize() {
-        service.notify(accountId, "x".repeat(200), "Mensaje", null);
+        service.notify(accountId, NotificationKind.SYSTEM, "x".repeat(200), "Mensaje", null);
 
-        verify(jdbcTemplate).update("INSERT INTO notifications (account_id, title, message, link) VALUES (?, ?, ?, ?)",
-                accountId, "x".repeat(149) + "…", "Mensaje", null);
+        verify(jdbcTemplate).update(NotificationService.INSERT_SQL, accountId, "SYSTEM", "x".repeat(149) + "…", "Mensaje", null);
     }
 
     @Test

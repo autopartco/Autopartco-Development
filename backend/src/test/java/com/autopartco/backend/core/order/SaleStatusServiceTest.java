@@ -20,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
+import com.autopartco.backend.core.notification.NotificationKind;
 import com.autopartco.backend.core.notification.NotificationService;
 
 @ExtendWith(MockitoExtension.class)
@@ -51,13 +52,18 @@ class SaleStatusServiceTest {
         UUID saleId = UUID.randomUUID();
         UUID firstAccount = UUID.randomUUID();
         UUID secondAccount = UUID.randomUUID();
-        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(saleId)))
-                .thenReturn(List.of(firstAccount, secondAccount));
+        UUID orderId = UUID.randomUUID();
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(saleId))).thenReturn(List.of(
+                new SaleStatusService.CustomerAccount(firstAccount, orderId),
+                new SaleStatusService.CustomerAccount(secondAccount, orderId)));
 
         saleStatusService.notifyCustomer(saleId, "Pedido actualizado", "Mensaje");
 
-        verify(notificationService).notify(firstAccount, "Pedido actualizado", "Mensaje");
-        verify(notificationService).notify(secondAccount, "Pedido actualizado", "Mensaje");
+        // Cada aviso de estado lleva al detalle del pedido del comprador.
+        verify(notificationService).notify(firstAccount, NotificationKind.ORDER_STATUS, "Pedido actualizado", "Mensaje",
+                "/mis-pedidos/" + orderId);
+        verify(notificationService).notify(secondAccount, NotificationKind.ORDER_STATUS, "Pedido actualizado",
+                "Mensaje", "/mis-pedidos/" + orderId);
     }
 
     @Test

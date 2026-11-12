@@ -9,6 +9,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.autopartco.backend.core.notification.NotificationKind;
 import com.autopartco.backend.core.notification.NotificationService;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
@@ -99,16 +100,29 @@ public class SaleStatusService {
         }
     }
 
-    /** Notifica a las cuentas del cliente de la venta (venta → pedido → persona → cuenta) en la misma transacción. */
+    /**
+     * Notifica a las cuentas del cliente de la venta (venta → pedido → persona → cuenta) en la misma transacción, con
+     * enlace al detalle del pedido.
+     */
     void notifyCustomer(UUID saleId, String title, String message) {
-        List<UUID> accountIds = jdbcTemplate.query("""
-                SELECT account.id
+        List<CustomerAccount> accounts = jdbcTemplate.query("""
+                SELECT account.id AS account_id, customer_order.id AS order_id
                 FROM sales sale
                 JOIN orders customer_order ON customer_order.id = sale.order_id
                 JOIN accounts account ON account.id_person = customer_order.person_id
                 WHERE sale.id = ?
-                """, (result, row) -> result.getObject(1, UUID.class), saleId);
-        accountIds.forEach(accountId -> notificationService.notify(accountId, title, message));
+                """, (result, row) -> new CustomerAccount(
+                result.getObject("account_id", UUID.class), result.getObject("order_id", UUID.class)), saleId);
+        accounts.forEach(account -> notificationService.notify(account.accountId(), NotificationKind.ORDER_STATUS,
+                title, message, orderPath(account.orderId())));
+    }
+
+    /** Ruta interna del detalle del pedido del comprador. */
+    static String orderPath(UUID orderId) {
+        return "/mis-pedidos/" + orderId;
+    }
+
+    record CustomerAccount(UUID accountId, UUID orderId) {
     }
 
     static boolean isOrderTransitionAllowed(String current, String next) {

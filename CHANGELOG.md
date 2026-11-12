@@ -1,5 +1,13 @@
 # Changelog
 
+## v2.2.0 — 2026-11-11
+
+### Notificaciones
+- Bandeja paginada con contador de no leídas, «marcar todo como leído» y limpiar (archivar) con histórico.
+- Las notificaciones de pedido y envío llevan al detalle del pedido.
+- Cada notificación tiene un tipo (pedido, pregunta, respuesta…).
+- El histórico se depura a los 180 días.
+
 ## v2.1.3 — 2026-11-11
 
 ### Sedes en el mapa
