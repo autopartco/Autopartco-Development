@@ -19,7 +19,7 @@ export function OrderCard({ order }: { order: BuyerOrderSummaryDto }) {
   const unpaid = isUnpaidOrder(order.status)
   return (
     <article className={`group relative grid grid-cols-[minmax(0,1fr)_auto] gap-x-4 gap-y-2 px-2 py-4 transition-colors hover:bg-ap-paper sm:px-3 ${ORDER_ROW_GRID}`}>
-      <div className="order-1 min-w-0">
+      <div className="order-1 min-w-0 sm:order-none">
         <h2 className="font-mono text-base font-semibold text-ap-ink tabular-nums">
           <Link
             to={orderDetailPath(order.orderId)}

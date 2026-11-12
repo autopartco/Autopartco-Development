@@ -12,22 +12,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.NotFoundException;
+import com.autopartco.backend.shared.storage.ImageUrls;
+import com.autopartco.backend.shared.storage.ImageVariant;
 import com.autopartco.backend.shared.web.PageResponse;
 
-import lombok.AllArgsConstructor;
 
 /**
  * Lecturas del pedido desde el punto de vista del comprador, con {@link JdbcClient}. Siempre filtra por la persona
  * dueña del pedido; un pedido ajeno se trata igual que uno inexistente.
  */
 @Service
-@AllArgsConstructor
 public class BuyerOrderQueries {
     static final String DEFAULT_CURRENCY = "COP";
 
@@ -101,10 +102,17 @@ public class BuyerOrderQueries {
                    product.name,
                    product.part_number,
                    detail.units,
-                   detail.unit_price
+                   detail.unit_price,
+                   image.storage_path AS image_path
             FROM order_details detail
             JOIN inventory ON inventory.id = detail.inventory_id
             JOIN products product ON product.id = inventory.product_id
+            LEFT JOIN LATERAL (
+                SELECT product_image.storage_path FROM product_images product_image
+                WHERE product_image.product_id = product.id AND product_image.deleted_at IS NULL
+                ORDER BY product_image.is_main DESC, product_image.display_order, product_image.id
+                LIMIT 1
+            ) image ON true
             WHERE detail.order_id = :orderId
               AND detail.deleted_at IS NULL
             ORDER BY product.name, product.id
@@ -190,6 +198,19 @@ public class BuyerOrderQueries {
             """;
 
     private final JdbcClient jdbcClient;
+    /** Construye las miniaturas; {@code null} en pruebas que no las necesitan. */
+    private final ImageUrls imageUrls;
+
+    @Autowired
+    public BuyerOrderQueries(JdbcClient jdbcClient, ImageUrls imageUrls) {
+        this.jdbcClient = jdbcClient;
+        this.imageUrls = imageUrls;
+    }
+
+    /** Sin miniaturas (pruebas). */
+    BuyerOrderQueries(JdbcClient jdbcClient) {
+        this(jdbcClient, null);
+    }
 
     /**
      * Recibo del checkout: pedido de esa persona con la forma del contrato y sin envíos ({@code shipment} nulo); si no
@@ -266,7 +287,7 @@ public class BuyerOrderQueries {
                 .list();
         List<ItemRow> itemRows = jdbcClient.sql(ITEMS_SQL)
                 .param("orderId", orderId)
-                .query(BuyerOrderQueries::mapItem)
+                .query(this::mapItem)
                 .list();
 
         Map<UUID, BuyerOrderResponse.Shipment> shipmentsBySale = withShipments
@@ -432,7 +453,7 @@ public class BuyerOrderQueries {
                                 localDateTime(result, "invoice_uploaded_at")));
     }
 
-    private static ItemRow mapItem(ResultSet result, int row) throws SQLException {
+    private ItemRow mapItem(ResultSet result, int row) throws SQLException {
         int units = result.getInt("units");
         BigDecimal unitPrice = money(result.getBigDecimal("unit_price"));
         return new ItemRow(
@@ -443,7 +464,12 @@ public class BuyerOrderQueries {
                         result.getString("part_number"),
                         units,
                         unitPrice,
-                        money(unitPrice.multiply(BigDecimal.valueOf(units)))));
+                        money(unitPrice.multiply(BigDecimal.valueOf(units))),
+                        thumbnail(result.getString("image_path"))));
+    }
+
+    private String thumbnail(String storagePath) {
+        return storagePath == null || imageUrls == null ? null : imageUrls.variant(storagePath, ImageVariant.THUMB);
     }
 
     private static BigDecimal money(BigDecimal value) {

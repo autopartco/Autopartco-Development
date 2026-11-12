@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 import { toast } from 'sonner'
 import { Link, useParams } from 'react-router'
-import { ClockIcon, FileDownIcon, InfoIcon, PackageSearchIcon, ReceiptTextIcon, StoreIcon } from 'lucide-react'
+import { ClockIcon, FileDownIcon, ImageOffIcon, InfoIcon, PackageSearchIcon, ReceiptTextIcon, StoreIcon } from 'lucide-react'
 import { getCheckoutService } from '@/features/checkout/api/checkout-service'
 import { formatPaymentDeadline, isSafeCheckoutUrl } from '@/features/checkout/lib/order-payment'
 import { orderResultPath } from '@/features/checkout/lib/paths'
@@ -160,10 +160,23 @@ export default function OrderDetailPage() {
 
                     <ul className="flex flex-col divide-y divide-ap-line">
                       {sale.items.map((item) => (
-                        <li key={item.productId} className="flex justify-between gap-3 py-3">
-                          <div className="min-w-0">
+                        <li key={item.productId} className="flex gap-3 py-3">
+                          <Link to={`/producto/${encodeURIComponent(item.productId)}`} className="shrink-0 rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/50" tabIndex={-1} aria-hidden>
+                            {item.imageUrl ? (
+                              <img src={item.imageUrl} alt="" width={56} height={56} loading="lazy" className="size-14 rounded-md border border-ap-line bg-ap-white object-contain" />
+                            ) : (
+                              <span className="grid size-14 place-items-center rounded-md border border-ap-line bg-ap-paper text-ap-muted">
+                                <ImageOffIcon className="size-5" />
+                              </span>
+                            )}
+                          </Link>
+                          <div className="min-w-0 flex-1">
                             {item.partNumber ? <p className="ap-ref text-xs text-ap-muted">REF. {item.partNumber}</p> : null}
-                            <p className="text-sm font-medium text-ap-ink">{item.name}</p>
+                            <p className="text-sm font-medium text-ap-ink">
+                              <Link to={`/producto/${encodeURIComponent(item.productId)}`} className="hover:text-ap-red hover:underline">
+                                {item.name}
+                              </Link>
+                            </p>
                             <p className="font-mono text-xs text-ap-muted tabular-nums">
                               {item.quantity} × {formatCOP(item.unitPrice)}
                             </p>

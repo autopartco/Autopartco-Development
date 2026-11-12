@@ -63,9 +63,9 @@ class BuyerOrderQueriesTest {
         assertThat(first.total()).isEqualTo(new BigDecimal("180000.00"));
         assertThat(first.items()).containsExactly(
                 new BuyerOrderResponse.Item(PRODUCT_1, "Bujía", "BJ-1", 1, new BigDecimal("20000.00"),
-                        new BigDecimal("20000.00")),
+                        new BigDecimal("20000.00"), null),
                 new BuyerOrderResponse.Item(PRODUCT_2, "Pastillas de freno", "BP-1234", 2,
-                        new BigDecimal("80000.00"), new BigDecimal("160000.00")));
+                        new BigDecimal("80000.00"), new BigDecimal("160000.00"), null));
         assertThat(order.sales().get(1).items()).extracting(BuyerOrderResponse.Item::productId)
                 .containsExactly(PRODUCT_3);
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.4.1 — 2026-11-12
+
+### Correcciones
+- «Mis pedidos»: el número y la fecha del pedido vuelven a la primera columna en escritorio.
+- El detalle del pedido muestra la miniatura de cada producto con enlace a su ficha.
+- Todos los correos usan el diseño de Autopartco (grafito, rojo de acción, datos en monoespaciada); los que llegaban solo en texto ahora tienen versión HTML.
+
 ## v2.4.0 — 2026-11-12
 
 ### Mi cuenta
