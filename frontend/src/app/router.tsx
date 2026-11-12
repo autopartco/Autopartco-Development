@@ -27,6 +27,7 @@ import {
   RatePage,
   OrderResultPage,
   OrdersPage,
+  NotificationsPage,
   PasswordRecoveryPage,
   PortalAdsCampaignFormPage,
   PortalAdsCampaignsPage,
@@ -115,6 +116,7 @@ export const router = createBrowserRouter([
           { path: 'mis-beneficios', element: <RequireSession fallback={<PageFallback />}><BenefitsPage /></RequireSession> },
           { path: 'mis-pedidos/:id', element: <RequireSession fallback={<PageFallback />}><OrderDetailPage /></RequireSession> },
           // Reseñas pendientes (GET /account/reviews/pending); el correo de invitación enlaza con ?pedido=.
+          { path: 'cuenta/notificaciones', element: <RequireSession fallback={<PageFallback />}><NotificationsPage /></RequireSession> },
           { path: 'cuenta/calificar', element: <RequireSession fallback={<PageFallback />}><RatePage /></RequireSession> },
           // Almacenes: landing y solicitud (POST /store-applications).
           { path: 'privacidad', element: <PrivacyPage /> },
