@@ -323,7 +323,7 @@ alter table notifications add column link varchar(300);
     - Notifica al dueño y a los colaboradores de la sucursal.
     - Una respuesta de otro almacén responde 404.
     - El autor ve su pregunta pendiente; otros no.
-- **T11 · frontend · Sonnet:**
+- **T11 · frontend · Sonnet ✅ (2026-11-11; campana de notificaciones nueva; huecos de T5 cerrados):**
   - Archivos: la sección «Preguntas» en la ficha de producto; `/portal/:storeId/preguntas` con un contador en la navegación y una tarjeta en el panel; las notificaciones con enlace; el admin de preguntas.
   - Aceptación: build y lint en verde, el flujo completo se maneja con teclado y sin scroll horizontal a 360 px.
 
