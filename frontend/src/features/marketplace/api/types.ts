@@ -104,6 +104,10 @@ export interface Product {
   sponsored?: boolean
   /** Token firmado del anuncio para registrar impresión y clic. */
   adImpressionToken?: string
+  /** Promedio de reseñas del producto (un decimal); `undefined` sin reseñas. Nunca se muestra «0,0». */
+  rating?: number
+  /** Reseñas visibles del producto. */
+  reviewCount?: number
 }
 
 /** Por qué se sugiere: pedidos reales, mismo vehículo o misma categoría. */
@@ -139,7 +143,7 @@ export interface ProductQuery {
   pageSize: number
 }
 
-export type SearchSort = 'relevance' | 'price_asc' | 'price_desc' | 'nearest' | 'newest' | 'rating' | 'name'
+export type SearchSort = 'relevance' | 'price_asc' | 'price_desc' | 'nearest' | 'newest' | 'rating' | 'product_rating' | 'name'
 
 /** Consulta del motor de búsqueda (`GET /marketplace/search`). `page` va desde 1. */
 export interface SearchQuery {
@@ -160,7 +164,10 @@ export interface SearchQuery {
   lat?: number
   lng?: number
   radiusKm?: number
+  /** Calificación mínima de la tienda (1–5). */
   minRating?: number
+  /** Calificación mínima del producto (1–5). */
+  minProductRating?: number
   universal: boolean
   sort: SearchSort
   page: number
@@ -345,27 +352,77 @@ export interface StoreProfile {
   featuredProductIds: string[]
 }
 
-export interface StoreReview {
+/** Reseñas de un producto o de un almacén (mismas formas; solo cambian los códigos de categoría). */
+export interface ReviewTarget {
+  type: 'product' | 'store'
+  id: string
+}
+
+/** Código de categoría del servidor (`ProductAspect` / `StoreAspect`); el texto vive en `lib/review-labels`. */
+export type ReviewAspectCode = string
+
+export interface ReviewAspectSummary {
+  aspect: ReviewAspectCode
+  /** Promedio con un decimal. */
+  average: number
+  count: number
+}
+
+/** Resumen público de reseñas visibles. `average` es `undefined` sin reseñas. */
+export interface ReviewSummary {
+  average?: number
+  count: number
+  /** Reseñas por estrella: índice 0 = 1 estrella … índice 4 = 5 estrellas. */
+  distribution: [number, number, number, number, number]
+  aspects: ReviewAspectSummary[]
+  /** Categorías destacadas (insignias); el servidor ya aplicó el mínimo y el umbral. */
+  highlights: ReviewAspectCode[]
+}
+
+export interface ReviewReply {
+  text: string
+  repliedAt: string
+}
+
+export interface Review {
   id: string
   rating: number
   comment?: string
+  aspects: Record<ReviewAspectCode, number>
   /** «Ana P.»: nombre + inicial del apellido. */
-  authorName: string
+  author: string
+  verified: boolean
   createdAt: string
+  updatedAt: string
+  reply?: ReviewReply
 }
 
-export interface StoreReviewPage {
-  items: StoreReview[]
+export interface ReviewPage {
+  items: Review[]
   page: number
   totalPages: number
   total: number
 }
 
-export interface StoreReviewInput {
-  orderId: string
-  rating: number
-  comment?: string
+export type ReviewSort = 'recent' | 'highest' | 'lowest'
+
+export interface ReviewListQuery {
+  page: number
+  sort: ReviewSort
+  /** Solo reseñas de esta calificación (1–5). */
+  stars?: number
+  withComment: boolean
 }
+
+/** Qué puede hacer la persona con sesión con un producto (`GET /products/{id}/reviews/eligibility`). */
+export interface ProductReviewEligibility {
+  eligibleOrderIds: string[]
+  existingReviewId?: string
+  editableUntil?: string
+}
+
+/** Igual que el del producto (`GET /stores/{id}/reviews/eligibility`): la reseña vigente es la del pedido entregado más reciente. */
+export type StoreReviewEligibility = ProductReviewEligibility
 
 /** Punto del área elegida para el inicio; sin él el servidor devuelve datos de todo el país. */
 export interface HomeQuery {
@@ -427,12 +484,14 @@ export interface MarketplaceService {
   getStoreProfile(storeId: string): Promise<StoreProfile>
   /** Sucursales activas del almacén publicado; 404 (`isNotFoundError`) si no está publicado. */
   listStoreBranches(storeId: string): Promise<StoreBranch[]>
-  /** Páginas desde 1. */
-  listStoreReviews(storeId: string, page: number): Promise<StoreReviewPage>
+  /** `GET /marketplace/{products|stores}/{id}/reviews/summary` (público). */
+  getReviewSummary(target: ReviewTarget): Promise<ReviewSummary>
+  /** `GET /marketplace/{products|stores}/{id}/reviews` (público). Páginas desde 1. */
+  listReviews(target: ReviewTarget, query: ReviewListQuery): Promise<ReviewPage>
+  /** Con sesión: pedidos con los que puede calificar el producto, o su reseña existente. Sin sesión, nada elegible. */
+  getProductReviewEligibility(productId: string): Promise<ProductReviewEligibility>
   /** Pedidos entregados del comprador con sesión que aún no tienen reseña; vacío sin sesión. */
-  getReviewEligibility(storeId: string): Promise<string[]>
-  /** Exige sesión. 409 `REVIEW_NOT_ALLOWED` o `REVIEW_ALREADY_EXISTS`. */
-  createStoreReview(storeId: string, input: StoreReviewInput): Promise<StoreReview>
+  getReviewEligibility(storeId: string): Promise<StoreReviewEligibility>
 }
 
 export class MarketplaceError extends Error {

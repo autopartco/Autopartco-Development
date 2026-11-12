@@ -18,7 +18,9 @@ import type {
   PublicBranchDto,
   StorePublicProfileDto,
   StoreResponseDto,
-  StoreReviewResponseDto,
+  ProductReviewEligibilityDto,
+  ReviewResponseDto,
+  ReviewSummaryDto,
   VehicleNameOptionDto,
   VehicleVersionOptionDto,
 } from '../dto'
@@ -32,13 +34,15 @@ import {
   type Product,
   type ProductImage,
   type ProductQuery,
+  type Review,
+  type ReviewSummary,
+  type ReviewTarget,
   type SearchSuggestions,
   type SuggestionKind,
   type OpeningHours,
   type ServiceCategory,
   type StoreBranch,
   type StoreProfile,
-  type StoreReview,
   type StoreSummary,
 } from '../types'
 
@@ -103,8 +107,34 @@ function toBranch(dto: PublicBranchDto): StoreBranch {
   }
 }
 
-function toReview(dto: StoreReviewResponseDto): StoreReview {
-  return { id: dto.id, rating: dto.rating, comment: dto.comment ?? undefined, authorName: dto.authorName, createdAt: dto.createdAt }
+function toReview(dto: ReviewResponseDto): Review {
+  return {
+    id: dto.id,
+    rating: dto.rating,
+    comment: dto.comment ?? undefined,
+    aspects: dto.aspects ?? {},
+    author: dto.author,
+    verified: dto.verified,
+    createdAt: dto.createdAt,
+    updatedAt: dto.updatedAt,
+    reply: dto.reply ?? undefined,
+  }
+}
+
+function toReviewSummary(dto: ReviewSummaryDto): ReviewSummary {
+  const stars = (n: number) => dto.distribution?.[String(n)] ?? 0
+  return {
+    average: dto.average ?? undefined,
+    count: dto.count,
+    distribution: [stars(1), stars(2), stars(3), stars(4), stars(5)],
+    aspects: dto.aspects ?? [],
+    highlights: dto.highlights ?? [],
+  }
+}
+
+/** Base de las rutas de reseñas de un producto o un almacén. */
+function reviewsBase(target: ReviewTarget): string {
+  return `/marketplace/${target.type === 'product' ? 'products' : 'stores'}/${encodeURIComponent(target.id)}/reviews`
 }
 
 /** `FrequentlyBoughtController`: `GET /marketplace/products/{id}/frequently-bought` (público, hasta 6). */
@@ -270,6 +300,9 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
               quantity: dto.quantity,
               branchName: dto.branchName ?? undefined,
             },
+      // Solo con reseñas: sin ellas no hay calificación que mostrar.
+      rating: dto.rating != null && (dto.reviewCount ?? 0) > 0 ? dto.rating : undefined,
+      reviewCount: dto.reviewCount != null && dto.reviewCount > 0 ? dto.reviewCount : undefined,
       universal: dto.universal === true,
       vehicleRules: dto.universal ? [] : (dto.vehicleRules ?? []),
       specifications: Object.entries(dto.attributes ?? {})
@@ -347,6 +380,7 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
         if (query.radiusKm !== undefined) params.set('radiusKm', String(query.radiusKm))
       }
       if (query.minRating !== undefined) params.set('minRating', String(query.minRating))
+      if (query.minProductRating !== undefined) params.set('minProductRating', String(query.minProductRating))
       if (query.universal) params.set('universal', 'true')
       params.set('sort', query.sort)
       params.set('page', String(Math.max(0, query.page - 1)))
@@ -530,23 +564,38 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
       return branches.map(toBranch)
     },
 
-    async listStoreReviews(storeId, page) {
-      const dto = await get<PageResponseDto<StoreReviewResponseDto>>(`${PATHS.storeReviews(storeId)}?page=${page}&size=10`)
+    async getReviewSummary(target) {
+      return toReviewSummary(await get<ReviewSummaryDto>(`${reviewsBase(target)}/summary`))
+    },
+
+    async listReviews(target, query) {
+      const params = new URLSearchParams({ page: String(query.page), size: '10', sort: query.sort })
+      if (query.stars !== undefined) params.set('stars', String(query.stars))
+      if (query.withComment) params.set('withComment', 'true')
+      const dto = await get<PageResponseDto<ReviewResponseDto>>(`${reviewsBase(target)}?${params}`)
       return { items: dto.items.map(toReview), page: dto.page, totalPages: dto.totalPages, total: dto.total }
+    },
+
+    async getProductReviewEligibility(productId) {
+      const token = await bearer()
+      if (!token) return { eligibleOrderIds: [] }
+      const dto = await apiRequest<ProductReviewEligibilityDto>(`${reviewsBase({ type: 'product', id: productId })}/eligibility`, { token })
+      return {
+        eligibleOrderIds: dto.eligibleOrderIds ?? [],
+        existingReviewId: dto.existingReviewId ?? undefined,
+        editableUntil: dto.editableUntil ?? undefined,
+      }
     },
 
     async getReviewEligibility(storeId) {
       const token = await bearer()
-      if (!token) return []
-      const dto = await apiRequest<{ eligibleOrderIds: string[] }>(`${PATHS.storeReviews(storeId)}/eligibility`, { token })
-      return dto.eligibleOrderIds
-    },
-
-    async createStoreReview(storeId, input) {
-      const token = await bearer()
-      if (!token) throw new MarketplaceError('Inicia sesión para calificar la tienda.', { status: 401 })
-      const dto = await apiRequest<StoreReviewResponseDto>(PATHS.storeReviews(storeId), { method: 'POST', body: input, token })
-      return toReview(dto)
+      if (!token) return { eligibleOrderIds: [] }
+      const dto = await apiRequest<ProductReviewEligibilityDto>(`${PATHS.storeReviews(storeId)}/eligibility`, { token })
+      return {
+        eligibleOrderIds: dto.eligibleOrderIds ?? [],
+        existingReviewId: dto.existingReviewId ?? undefined,
+        editableUntil: dto.editableUntil ?? undefined,
+      }
     },
   }
 }

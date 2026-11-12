@@ -115,6 +115,20 @@ class SearchIndexerTest {
     }
 
     @Test
+    void upsertIndexesStoreAndProductRatingsWithoutDeletedOrHiddenReviews() {
+        String sql = SearchIndexer.UPSERT_SQL.replaceAll("\\s+", " ");
+        assertThat(sql)
+                .contains("store_rating, product_rating, product_review_count,",
+                        "rt.rating, pr.rating, coalesce(pr.total, 0),",
+                        "from store_reviews r where r.store_id = b.store_id and r.deleted_at is null"
+                                + " and r.hidden_at is null",
+                        "from product_reviews r where r.product_id = p.id and r.deleted_at is null"
+                                + " and r.hidden_at is null",
+                        "product_rating = excluded.product_rating",
+                        "product_review_count = excluded.product_review_count");
+    }
+
+    @Test
     void upsertBuildsTheWeightedDocumentAndVehicleArraysInSql() {
         assertThat(SearchIndexer.UPSERT_SQL)
                 .contains("on conflict (listing_key) do update set",

@@ -1,34 +1,27 @@
-import { useEffect, useId, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useId, useState, type ReactNode } from 'react'
 import { Link, useLocation, useParams, useSearchParams } from 'react-router'
-import { StarIcon } from 'lucide-react'
-import { toast } from 'sonner'
 import { Breadcrumbs, Container } from '@/components/common/page-header'
-import { FieldShell, FormAlert } from '@/components/common/form-fields'
 import { EmptyState, ErrorState } from '@/components/common/states'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useSession } from '@/features/auth/hooks'
+import { ReviewDialog } from '@/features/reviews/components/review-dialog'
 import { useStoreDistances } from '@/features/location/hooks'
 import { pluralize } from '@/lib/format'
-import { invalidateAsync } from '@/lib/use-async'
 import { cn } from '@/lib/utils'
 import { trackView } from '@/lib/visibility'
-import { getMarketplaceService } from '../api/marketplace-service'
-import { isNotFoundError, type StoreBranch, type StoreProfile, type StoreReview } from '../api/types'
+import { isNotFoundError, type StoreBranch, type StoreProfile } from '../api/types'
 import { ProductCard, ProductGrid, ProductGridSkeleton } from '../components/product-card'
 import { ResultsPagination } from '../components/results-pagination'
 import { BranchesPanel } from '../components/store/branches-panel'
 import { ServicesList } from '../components/store/services-list'
-import { Stars } from '../components/store/stars'
+import { ReviewsSection } from '../components/reviews/reviews-section'
 import { StoreFacts } from '../components/store/store-facts'
 import { StoreHeader } from '../components/store/store-header'
-import { useProductSearch, useReviewEligibility, useStoreBranches, useStoreProfile, useStoreReviews } from '../hooks'
+import { useProductSearch, useReviewEligibility, useStoreBranches, useStoreProfile } from '../hooks'
 import { storePath, storeProductsPath } from '../lib/paths'
 import { PAGE_SIZE, parseProductQuery, QUERY_PARAMS } from '../lib/product-query'
 import { NotFoundContent } from './not-found-page'
-
-const dateFormatter = new Intl.DateTimeFormat('es-CO', { dateStyle: 'long' })
-const ratingFormatter = new Intl.NumberFormat('es-CO', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 
 /** Hasta 6 sedes se filtran con botones; con más, un selector (no desborda en 360 px). */
 const MAX_BRANCH_CHIPS = 6
@@ -169,192 +162,58 @@ function StoreProducts({ store, branches }: { store: StoreProfile; branches: Sto
   )
 }
 
-function ReviewForm({ storeId, orderIds }: { storeId: string; orderIds: string[] }) {
-  const formId = useId()
-  const [orderId, setOrderId] = useState(orderIds[0] ?? '')
-  const [rating, setRating] = useState(0)
-  const [comment, setComment] = useState('')
-  const [error, setError] = useState<string>()
-  const [pending, setPending] = useState(false)
-
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    if (rating < 1) {
-      setError('Elige de 1 a 5 estrellas.')
-      return
-    }
-    setError(undefined)
-    setPending(true)
-    try {
-      const service = await getMarketplaceService()
-      await service.createStoreReview(storeId, { orderId, rating, comment: comment.trim() || undefined })
-      toast.success('Gracias por calificar la tienda')
-      invalidateAsync(`store-reviews:${storeId}`)
-      invalidateAsync(`store-profile:${storeId}`)
-      invalidateAsync(`store-review-eligibility:${storeId}`)
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'No pudimos guardar tu reseña. Inténtalo de nuevo.')
-    } finally {
-      setPending(false)
-    }
-  }
-
+/** Invitación a calificar al almacén: abre el diálogo de reseña con los pedidos entregados sin calificar. */
+function RateStoreAction({ store, orderIds }: { store: StoreProfile; orderIds: string[] }) {
+  const [open, setOpen] = useState(false)
   return (
-    <form onSubmit={submit} className="flex flex-col gap-4 border-y border-ap-graphite py-5" aria-labelledby={`${formId}-titulo`}>
-      <div className="flex flex-col gap-1">
-        <h3 id={`${formId}-titulo`} className="text-block-title text-ap-ink">
-          Califica tu compra
-        </h3>
-        <p className="text-sm text-ap-muted">Solo pueden calificar quienes recibieron un pedido de esta tienda.</p>
-      </div>
-      {error ? <FormAlert title={error} /> : null}
-      {orderIds.length > 1 ? (
-        <FieldShell id={`${formId}-pedido`} label="Pedido">
-          {(describedBy) => (
-            <select
-              id={`${formId}-pedido`}
-              value={orderId}
-              aria-describedby={describedBy}
-              onChange={(event) => setOrderId(event.target.value)}
-              className="h-11 w-full max-w-xs rounded-md border border-input bg-ap-white px-3 text-base text-ap-ink sm:text-sm"
-            >
-              {orderIds.map((id) => (
-                <option key={id} value={id}>
-                  Pedido {id.slice(0, 8).toUpperCase()}
-                </option>
-              ))}
-            </select>
-          )}
-        </FieldShell>
-      ) : null}
-      <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1.5 text-sm font-semibold text-ap-ink">Calificación</legend>
-        <div className="flex flex-wrap gap-1">
-          {[1, 2, 3, 4, 5].map((value) => (
-            <label
-              key={value}
-              className={cn(
-                'inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-md border px-3 text-sm font-medium transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-ap-red',
-                rating === value ? 'border-ap-graphite bg-ap-paper text-ap-ink' : 'border-input bg-ap-white text-ap-muted hover:border-ap-graphite',
-              )}
-            >
-              <input type="radio" name={`${formId}-rating`} value={value} checked={rating === value} onChange={() => setRating(value)} className="sr-only" />
-              <StarIcon aria-hidden className={cn('size-4', rating >= value ? 'fill-ap-graphite text-ap-graphite' : 'text-ap-line-strong')} />
-              {value}
-            </label>
-          ))}
-        </div>
-      </fieldset>
-      <FieldShell id={`${formId}-comentario`} label="Comentario" optional hint={`${comment.length} de 1000 caracteres.`}>
-        {(describedBy) => (
-          <textarea
-            id={`${formId}-comentario`}
-            value={comment}
-            maxLength={1000}
-            rows={3}
-            aria-describedby={describedBy}
-            onChange={(event) => setComment(event.target.value)}
-            placeholder="Ej.: entregaron a tiempo y la referencia era la correcta."
-            className="w-full rounded-md border border-input bg-ap-white px-3 py-2 text-base text-ap-ink placeholder:text-ap-muted hover:border-ap-graphite focus-visible:border-ap-graphite sm:text-sm"
-          />
-        )}
-      </FieldShell>
-      <Button type="submit" className="w-fit" disabled={pending}>
-        {pending ? 'Publicando…' : 'Publicar reseña'}
+    <div className="flex flex-col items-start gap-2 rounded-xl border border-ap-line-strong bg-ap-white p-4 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm text-ap-ink">Recibiste un pedido de esta tienda. Cuéntanos cómo te fue; tu opinión ayuda a otros compradores.</p>
+      <Button className="shrink-0" onClick={() => setOpen(true)}>
+        Califica a {store.name}
       </Button>
-    </form>
+      {open ? (
+        <ReviewDialog
+          open
+          onOpenChange={setOpen}
+          target={{ type: 'store', id: store.id }}
+          targetName={store.name}
+          orders={orderIds.map((id) => ({ id, label: `Pedido ${id.slice(0, 8).toUpperCase()}` }))}
+        />
+      ) : null}
+    </div>
   )
 }
 
-function ReviewRow({ review }: { review: StoreReview }) {
-  return (
-    <li className="flex flex-col gap-2 py-4">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <Stars value={review.rating} />
-        <span className="text-sm font-semibold text-ap-ink">{review.authorName}</span>
-        <time dateTime={review.createdAt} className="text-sm text-ap-muted">
-          {dateFormatter.format(new Date(review.createdAt))}
-        </time>
-      </div>
-      {review.comment ? <p className="max-w-prose whitespace-pre-line text-sm text-ap-ink">{review.comment}</p> : null}
-    </li>
-  )
-}
-
+/**
+ * «Lo que dicen sus clientes»: resumen, categorías, insignias y lista, más la invitación a calificar para quien
+ * recibió un pedido del almacén.
+ */
 function StoreReviews({ store }: { store: StoreProfile }) {
-  const [page, setPage] = useState(1)
-  const reviews = useStoreReviews(store.id, page)
   const session = useSession()
   const location = useLocation()
   const eligibility = useReviewEligibility(store.id, session?.user.email)
-  const eligibleOrders = eligibility.data ?? []
+  const eligibleOrders = eligibility.data?.eligibleOrderIds ?? []
 
   return (
-    <section id="resenas" aria-labelledby="resenas-titulo" className="flex scroll-mt-24 flex-col gap-5">
-      <div className="flex flex-col gap-1">
-        <p className="ap-index">Tienda / Reseñas</p>
-        <h2 id="resenas-titulo" className="text-section text-ap-ink">
-          Reseñas de compradores
-        </h2>
-        {/*
-          TODO(reseñas): aquí irán el resumen de calificación (promedio, distribución por estrellas) y las insignias
-          de la tienda; este bloque solo muestra el promedio y el total que ya entrega el perfil. La lógica de
-          reseñas llega en otra tarea: no añadir aquí cálculos ni estado nuevos.
-        */}
-        {store.ratingAverage !== undefined && store.ratingCount > 0 ? (
-          <p className="flex flex-wrap items-center gap-2 text-sm text-ap-muted">
-            <Stars value={store.ratingAverage} />
-            <span className="font-semibold text-ap-ink tabular-nums">{ratingFormatter.format(store.ratingAverage)} de 5</span>
-            <span>· {pluralize(store.ratingCount, 'reseña', 'reseñas')} de pedidos entregados</span>
+    <ReviewsSection
+      target={{ type: 'store', id: store.id }}
+      id="resenas"
+      index="Tienda / Opiniones"
+      title="Lo que dicen sus clientes"
+      storeName={store.name}
+      emptyText="Las opiniones las publican compradores que ya recibieron un pedido de esta tienda, para que otros compren con confianza."
+      emptyExtra={
+        !session ? (
+          <p className="text-sm text-ap-muted">
+            ¿Ya le compraste?{' '}
+            <Link to="/ingresar" state={{ from: location }} className="font-semibold text-ap-red underline-offset-4 hover:underline">
+              Ingresa para calificarla
+            </Link>
           </p>
-        ) : null}
-      </div>
-
-      {eligibleOrders.length > 0 ? <ReviewForm key={eligibleOrders.join(',')} storeId={store.id} orderIds={eligibleOrders} /> : null}
-
-      {reviews.status === 'error' ? (
-        <ErrorState title="No pudimos cargar las reseñas" onRetry={reviews.retry} />
-      ) : !reviews.data ? (
-        <div className="flex flex-col gap-3" aria-hidden>
-          <Skeleton className="h-4 w-48" />
-          <Skeleton className="h-4 w-3/4" />
-        </div>
-      ) : reviews.data.items.length === 0 ? (
-        <div className="flex flex-col gap-2 border-y border-ap-line py-5 text-sm text-ap-muted">
-          <p className="text-base font-semibold text-ap-ink">Sé el primero en opinar después de tu compra</p>
-          <p>Las reseñas las publican compradores que ya recibieron un pedido de esta tienda, para que otros compren con confianza.</p>
-          {!session ? (
-            <p>
-              ¿Ya le compraste?{' '}
-              <Link to="/ingresar" state={{ from: location }} className="font-semibold text-ap-red underline-offset-4 hover:underline">
-                Ingresa para calificarla
-              </Link>
-            </p>
-          ) : null}
-        </div>
-      ) : (
-        <>
-          <ul className={cn('flex flex-col divide-y divide-ap-line border-y border-ap-line', reviews.isStale && 'opacity-60')}>
-            {reviews.data.items.map((review) => (
-              <ReviewRow key={review.id} review={review} />
-            ))}
-          </ul>
-          {reviews.data.totalPages > 1 ? (
-            <nav aria-label="Páginas de reseñas" className="flex items-center gap-2">
-              <Button variant="outline" disabled={page <= 1} onClick={() => setPage((current) => current - 1)}>
-                Anteriores
-              </Button>
-              <span className="text-sm text-ap-muted tabular-nums" aria-live="polite">
-                Página {reviews.data.page} de {reviews.data.totalPages}
-              </span>
-              <Button variant="outline" disabled={page >= reviews.data.totalPages} onClick={() => setPage((current) => current + 1)}>
-                Siguientes
-              </Button>
-            </nav>
-          ) : null}
-        </>
-      )}
-    </section>
+        ) : null
+      }
+      action={eligibleOrders.length > 0 ? <RateStoreAction store={store} orderIds={eligibleOrders} /> : null}
+    />
   )
 }
 

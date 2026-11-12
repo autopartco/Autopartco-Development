@@ -6,11 +6,15 @@ import { SmartImage } from '@/components/common/smart-image'
 import { ErrorState } from '@/components/common/states'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useSession } from '@/features/auth/hooks'
+import { ReviewDialog } from '@/features/reviews/components/review-dialog'
+import { ProductQuestions } from '@/features/questions/components/product-questions'
+import { useAnsweredQuestionCount } from '@/features/questions/hooks'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AddToCart } from '@/features/cart/components/add-to-cart'
 import { useDistanceOrigin, useStoreDistances } from '@/features/location/hooks'
 import { formatKm } from '@/features/location/lib/geo'
-import { formatCOP } from '@/lib/format'
+import { formatCOP, pluralize } from '@/lib/format'
 import { trackView } from '@/lib/visibility'
 import { cn } from '@/lib/utils'
 import { isNotFoundError, type Product } from '../api/types'
@@ -18,7 +22,11 @@ import { FrequentlyBought } from '../components/frequently-bought'
 import { ProductCard, ProductGrid } from '../components/product-card'
 import { AvailabilityLabel, BrandName, Price, RECOMMENDED_EXPLANATION, RecommendedMark, UniversalTag } from '../components/product-meta'
 import { SponsoredListing } from '../components/ads/sponsored-listing'
-import { useAds, useProduct, useRelatedProducts } from '../hooks'
+import { ReviewHighlights } from '../components/reviews/review-highlights'
+import { ReviewsSection } from '../components/reviews/reviews-section'
+import { StarRating } from '../components/reviews/star-rating'
+import { useAds, useProduct, useProductReviewEligibility, useRelatedProducts, useReviewSummary } from '../hooks'
+import { formatRating } from '../lib/review-labels'
 import { ProductWhatsapp } from '../components/store/product-whatsapp'
 import { ShareButton } from '../components/share-button'
 import { categoryPath, productPath, storePath, storeProductsPath } from '../lib/paths'
@@ -272,6 +280,68 @@ function Specifications({ product }: { product: Product }) {
   )
 }
 
+/** Bajo el título: estrellas, promedio, enlace a las opiniones e insignias. Sin opiniones no se dibuja nada. */
+function ProductRatingLine({ productId }: { productId: string }) {
+  const summary = useReviewSummary({ type: 'product', id: productId }).data
+  if (!summary || summary.average === undefined || summary.count <= 0) return null
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ap-muted">
+        <StarRating value={summary.average} />
+        <span className="font-semibold text-ap-ink tabular-nums">{formatRating(summary.average)}</span>
+        <a href="#opiniones" className="inline-flex min-h-6 items-center underline-offset-4 hover:text-ap-red hover:underline">
+          {pluralize(summary.count, 'opinión', 'opiniones')}
+        </a>
+      </p>
+      <ReviewHighlights kind="product" highlights={summary.highlights} />
+    </div>
+  )
+}
+
+/** «N preguntas respondidas» junto al título, con enlace a la sección. Sin respondidas no se dibuja nada. */
+function AnsweredQuestionsLink({ productId }: { productId: string }) {
+  const session = useSession()
+  const answered = useAnsweredQuestionCount(productId, session?.user.email)
+  if (!answered) return null
+  return (
+    <p className="text-sm text-ap-muted">
+      <a href="#preguntas" className="inline-flex min-h-6 items-center underline-offset-4 hover:text-ap-red hover:underline">
+        {pluralize(answered, 'pregunta respondida', 'preguntas respondidas')}
+      </a>
+    </p>
+  )
+}
+
+/** «Califica este producto» solo si el servidor dice que la persona con sesión compró y recibió el repuesto. */
+function RateProductAction({ productId, productName }: { productId: string; productName: string }) {
+  const session = useSession()
+  const eligibility = useProductReviewEligibility(productId, session?.user.email).data
+  const [open, setOpen] = useState(false)
+  const orderIds = eligibility?.eligibleOrderIds ?? []
+  const existingId = eligibility?.existingReviewId
+  if (orderIds.length === 0 && !existingId) return null
+  return (
+    <div className="flex flex-col items-start gap-2 rounded-xl border border-ap-line-strong bg-ap-white p-4 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm text-ap-ink">
+        {existingId ? 'Ya opinaste sobre este repuesto. Puedes editar tu reseña cuando quieras.' : 'Recibiste este repuesto. Tu opinión ayuda a otros compradores a elegir mejor.'}
+      </p>
+      <Button className="shrink-0" onClick={() => setOpen(true)}>
+        {existingId ? 'Editar mi reseña' : 'Califica este producto'}
+      </Button>
+      {open ? (
+        <ReviewDialog
+          open
+          onOpenChange={setOpen}
+          target={{ type: 'product', id: productId }}
+          targetName={productName}
+          orders={orderIds.map((id) => ({ id, label: `Pedido ${id.slice(0, 8).toUpperCase()}` }))}
+          existing={existingId ? { id: existingId, editableUntil: eligibility?.editableUntil } : undefined}
+        />
+      ) : null}
+    </div>
+  )
+}
+
 function ProductDetail({ product }: { product: Product }) {
   const related = useRelatedProducts(product)
   // Hasta 4 anuncios PRODUCT_RELATED; sin anuncios no se muestra nada.
@@ -308,6 +378,8 @@ function ProductDetail({ product }: { product: Product }) {
                 <ShareButton path={productPath(product.id)} title={product.name} storeId={storeId} productId={product.id} />
               ) : null}
             </div>
+            <ProductRatingLine productId={product.id} />
+            <AnsweredQuestionsLink productId={product.id} />
             {product.partNumber ? (
               <p className="flex flex-wrap items-center gap-x-2">
                 <span className="ap-ref text-sm text-ap-ink">REF. {product.partNumber}</span>
@@ -339,6 +411,22 @@ function ProductDetail({ product }: { product: Product }) {
 
       <div className="mt-12 sm:mt-16">
         <FrequentlyBought productId={product.id} />
+      </div>
+
+      <div className="mt-12 border-t border-ap-graphite pt-8 sm:mt-16">
+        <ReviewsSection
+          target={{ type: 'product', id: product.id }}
+          id="opiniones"
+          index="Producto / Opiniones"
+          title="Opiniones de compradores"
+          storeName={product.store?.name}
+          emptyText="Aquí aparecen las opiniones de quienes ya recibieron este repuesto, para que comprar sea más fácil y seguro."
+          action={<RateProductAction productId={product.id} productName={product.name} />}
+        />
+      </div>
+
+      <div className="mt-12 border-t border-ap-graphite pt-8 sm:mt-16">
+        <ProductQuestions productId={product.id} productName={product.name} storeName={product.store?.name} />
       </div>
 
       {ads.length + (related.data?.length ?? 0) > 0 ? (

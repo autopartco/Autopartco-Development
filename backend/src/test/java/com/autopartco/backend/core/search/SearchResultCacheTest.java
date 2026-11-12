@@ -53,6 +53,20 @@ class SearchResultCacheTest {
     }
 
     @Test
+    void minProductRatingAndProductRatingSortAreDifferentEntries() {
+        get(SearchQuery.builder().q("bujia").build(), BuyerContext.anonymous());
+        get(SearchQuery.builder().q("bujia").minProductRating(4).build(), BuyerContext.anonymous());
+        get(SearchQuery.builder().q("bujia").minRating(4).build(), BuyerContext.anonymous());
+        get(SearchQuery.builder().q("bujia").sort(SearchSort.PRODUCT_RATING).build(), BuyerContext.anonymous());
+        assertThat(loads).hasValue(4);
+
+        get(SearchQuery.builder().q("bujia").minProductRating(4).build(), BuyerContext.anonymous());
+        assertThat(loads).hasValue(4);
+        SearchQuery query = SearchQuery.builder().minProductRating(4).build();
+        assertThat(SearchResultCache.normalized(null, criteria(query), query)).contains("prating=4&");
+    }
+
+    @Test
     void interpretedAndExplicitVehicleDoNotShareAnEntry() {
         SearchDictionary.Make suzuki = new SearchDictionary.Make(UUID.randomUUID(), "Suzuki");
         ParsedQuery parsed = new ParsedQuery("bomba suzuki", List.of("bomba"), "bomba:*", null, suzuki, null, null,

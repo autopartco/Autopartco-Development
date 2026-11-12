@@ -1,5 +1,28 @@
 # Changelog
 
+## v2.1.0 — 2026-11-11
+
+### Reseñas y calificaciones
+- Reseñas de producto y de almacén con calificación por categorías e insignias.
+- Calificar desde el pedido; invitación por correo y lista de reseñas pendientes.
+- Respuesta del vendedor, edición de la reseña y moderación desde el admin.
+- Calificaciones visibles en tarjetas, ficha de producto, perfil de tienda y búsqueda.
+
+### Preguntas de producto
+- Preguntas y respuestas en la ficha, con gestión en el portal y el admin.
+- Avisos con enlace al responder; un aviso por respuesta.
+- Filtro de datos de contacto que no rechaza referencias OEM ni años.
+
+### Perfil de tienda
+- Perfil nuevo con calificaciones, reseñas y preguntas.
+
+### Despliegue
+- El backend se despliega en el VPS de Hostinger (`api.autopartco.co`) al promover a `main`.
+
+### Correcciones
+- Las reseñas borradas no evaden la moderación.
+- Cupo de reseñas tras validar y enlaces internos seguros.
+
 ## v2.0.0 — 2026-11-11
 
 ### Búsqueda

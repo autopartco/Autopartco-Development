@@ -48,6 +48,9 @@ export interface ProductResponseDto {
   universal: boolean | null
   vehicleRules: VehicleRuleResponseDto[] | null
   images: ProductImageResponseDto[] | null
+  /** Promedio de reseñas (un decimal); `null` sin reseñas. */
+  rating?: number | null
+  reviewCount?: number | null
 }
 
 /** core/catalog/ProductOptionsResponse.java */
@@ -152,13 +155,33 @@ export interface PublicBranchDto {
   serviceIds: string[] | null
 }
 
-/** `marketplace/reviews/StoreReviewResponse`. */
-export interface StoreReviewResponseDto {
+/** `marketplace/reviews/ReviewSummary`. `distribution` trae siempre las claves "1"…"5". */
+export interface ReviewSummaryDto {
+  average: number | null
+  count: number
+  distribution: Record<string, number>
+  aspects: { aspect: string; average: number; count: number }[]
+  highlights: string[]
+}
+
+/** `marketplace/reviews/ProductReviewResponse` y `StoreReviewResponse` (esta añade `authorName`, igual a `author`). */
+export interface ReviewResponseDto {
   id: string
   rating: number
   comment: string | null
-  authorName: string
+  aspects: Record<string, number> | null
+  author: string
+  verified: boolean
   createdAt: string
+  updatedAt: string
+  reply: { text: string; repliedAt: string } | null
+}
+
+/** `marketplace/reviews/ProductReviewEligibility`. */
+export interface ProductReviewEligibilityDto {
+  eligibleOrderIds: string[]
+  existingReviewId: string | null
+  editableUntil: string | null
 }
 
 /** `marketplace/catalog/SearchResponse.Item`: el producto al mismo nivel, más distancia y datos del anuncio. */

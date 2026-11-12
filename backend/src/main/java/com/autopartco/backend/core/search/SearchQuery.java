@@ -38,6 +38,7 @@ public record SearchQuery(
         BigDecimal lng,
         Integer radiusKm,
         Integer minRating,
+        Integer minProductRating,
         Boolean universal,
         SearchSort sort,
         Integer page,
@@ -118,6 +119,10 @@ public record SearchQuery(
         }
         if (minRating != null && (minRating < 1 || minRating > 5)) {
             throw new BadRequestException("SEARCH_RATING_INVALID", "La calificación mínima debe estar entre 1 y 5.");
+        }
+        if (minProductRating != null && (minProductRating < 1 || minProductRating > 5)) {
+            throw new BadRequestException("SEARCH_RATING_INVALID",
+                    "La calificación mínima del producto debe estar entre 1 y 5.");
         }
         if (year != null && (year < MIN_YEAR || year > Year.now().getValue() + 1)) {
             throw new BadRequestException("SEARCH_YEAR_INVALID", "El año del vehículo no es válido.");

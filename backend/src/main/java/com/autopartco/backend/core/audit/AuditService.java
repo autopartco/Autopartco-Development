@@ -40,6 +40,11 @@ public class AuditService {
         repository.save(auditLogMapper.toEvent(accountId, action, entityType, entityId, metadata));
     }
 
+    /** Si ya hay un registro con esa acción sobre esa entidad (marca idempotente de envíos y procesos únicos). */
+    public boolean exists(String action, String entityType, UUID entityId) {
+        return repository.existsByActionAndEntityTypeAndEntity(action, entityType, entityId);
+    }
+
     public void recordAccountUnlocked(UUID accountId, String email, String state) {
         repository.save(auditLogMapper.toAccountUnlocked(accountId, email, state));
     }

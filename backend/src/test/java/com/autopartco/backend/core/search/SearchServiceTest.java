@@ -178,6 +178,59 @@ class SearchServiceTest {
         assertThat(statement.params()).containsEntry("reference", "BKR6E-11").doesNotContainKey("tsq");
     }
 
+    @Test
+    void productRatingFilterAndSortUseTheIndexColumns() {
+        SearchSql.Statement statement = SearchSql.page(criteria(SearchQuery.builder()
+                .minProductRating(4).sort(SearchSort.PRODUCT_RATING).build()), 24, 0);
+
+        assertThat(statement.sql()).contains("sl.product_rating >= :minProductRating",
+                "sl.product_rating, sl.product_review_count",
+                "order by product_rating desc nulls last, product_review_count desc, score desc, product_id");
+        assertThat(statement.params()).containsEntry("minProductRating", 4);
+        assertThat(SearchSql.count(criteria(SearchQuery.builder().minProductRating(3).build())).sql())
+                .contains("sl.product_rating >= :minProductRating");
+        assertThat(SearchSort.fromParameter("product_rating")).isEqualTo(SearchSort.PRODUCT_RATING);
+    }
+
+    @Test
+    void invalidMinProductRatingIsBadRequest() {
+        assertCode(SearchQuery.builder().minProductRating(0).build(), "SEARCH_RATING_INVALID");
+        assertCode(SearchQuery.builder().minProductRating(6).build(), "SEARCH_RATING_INVALID");
+    }
+
+    @Test
+    void hitsCarryTheProductRatingFromTheIndex() {
+        UUID product = UUID.randomUUID();
+        UUID branch = UUID.randomUUID();
+        jdbc.rows(sql -> sql.contains("limit :limit"), call -> {
+            Map<String, Object> row = row(product, branch, null, 1);
+            row.put("product_rating", new BigDecimal("4.7"));
+            row.put("product_review_count", 128);
+            return List.of(row);
+        });
+        when(listingQueries.publishedListingsByKeys(anyList(), any())).thenReturn(List.of(listing(product, branch)));
+
+        SearchResult result = service.search(SearchQuery.builder().facets(false).build(), null);
+
+        ProductResponse hit = result.items().getFirst().listing();
+        assertThat(hit.rating()).isEqualByComparingTo("4.7");
+        assertThat(hit.reviewCount()).isEqualTo(128);
+    }
+
+    @Test
+    void hitsWithoutReviewsHaveNoRating() {
+        UUID product = UUID.randomUUID();
+        UUID branch = UUID.randomUUID();
+        jdbc.rows(sql -> sql.contains("limit :limit"), call -> List.of(row(product, branch, null, 1)));
+        when(listingQueries.publishedListingsByKeys(anyList(), any())).thenReturn(List.of(listing(product, branch)));
+
+        ProductResponse hit = service.search(SearchQuery.builder().facets(false).build(), null).items().getFirst()
+                .listing();
+
+        assertThat(hit.rating()).isNull();
+        assertThat(hit.reviewCount()).isZero();
+    }
+
     // --- Flujo ---------------------------------------------------------------------------------------------------
 
     @Test

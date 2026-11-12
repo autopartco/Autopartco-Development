@@ -23,8 +23,9 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Mantiene {@code search_listings}: una fila por listado publicado. Qué está publicado y a qué precio lo decide
  * {@link ListingQueries#publishedListingsOfProducts} (misma definición que el catálogo; precio general con las
- * promociones {@code ALL} vigentes); el resto del documento (texto ponderado, vehículos, ubicación, calificación) se
- * arma en SQL con un upsert ({@code INSERT … ON CONFLICT (listing_key) DO UPDATE}).
+ * promociones {@code ALL} vigentes); el resto del documento (texto ponderado, vehículos, ubicación, calificaciones del
+ * almacén y del producto, sin reseñas borradas ni ocultas) se arma en SQL con un upsert
+ * ({@code INSERT … ON CONFLICT (listing_key) DO UPDATE}).
  *
  * <p>Trabaja por lotes de {@value #BATCH_PRODUCTS} productos, cada uno en su transacción: inserta o actualiza los
  * listados publicados del lote y borra los de esos productos que ya no lo están. {@link #reindexAll()} recorre todos
@@ -41,8 +42,8 @@ public class SearchIndexer {
     static final String UPSERT_SQL = """
             insert into search_listings (listing_key, product_id, branch_id, store_id, category_id, category_path,
                 manufacturer_id, name, price, stock, has_promotion, city_code, department_code, latitude, longitude,
-                store_rating, universal, vehicle_make_ids, vehicle_model_ids, vehicle_version_ids, year_from, year_to,
-                document, search_text, published_at, updated_at)
+                store_rating, product_rating, product_review_count, universal, vehicle_make_ids, vehicle_model_ids,
+                vehicle_version_ids, year_from, year_to, document, search_text, published_at, updated_at)
             select k.product_id::text || ':' || k.branch_id::text,
                    k.product_id, k.branch_id, b.store_id, p.category_id,
                    case when p.category_id is null then '{}'::uuid[] else array[p.category_id] end,
@@ -50,7 +51,7 @@ public class SearchIndexer {
                    l.municipality_code, gm.department_code,
                    case when l.latitude is not null and l.longitude is not null then l.latitude::double precision end,
                    case when l.latitude is not null and l.longitude is not null then l.longitude::double precision end,
-                   rt.rating, p.is_universal,
+                   rt.rating, pr.rating, coalesce(pr.total, 0), p.is_universal,
                    coalesce(v.make_ids, '{}'::uuid[]), coalesce(v.model_ids, '{}'::uuid[]),
                    coalesce(v.version_ids, '{}'::uuid[]), v.year_from, v.year_to,
                    setweight(to_tsvector('public.spanish_unaccent'::regconfig,
@@ -73,8 +74,13 @@ public class SearchIndexer {
             left join lateral (
                 select round(avg(r.rating)::numeric, 1) as rating
                 from store_reviews r
-                where r.store_id = b.store_id and r.deleted_at is null
+                where r.store_id = b.store_id and r.deleted_at is null and r.hidden_at is null
             ) rt on true
+            left join lateral (
+                select round(avg(r.rating)::numeric, 1) as rating, count(*)::int as total
+                from product_reviews r
+                where r.product_id = p.id and r.deleted_at is null and r.hidden_at is null
+            ) pr on true
             left join lateral (
                 select array_agg(distinct r.make_id) as make_ids,
                        array_agg(distinct coalesce(r.model_id, r.make_id)) as model_ids,
@@ -97,7 +103,9 @@ public class SearchIndexer {
                 name = excluded.name, price = excluded.price, stock = excluded.stock,
                 has_promotion = excluded.has_promotion, city_code = excluded.city_code,
                 department_code = excluded.department_code, latitude = excluded.latitude,
-                longitude = excluded.longitude, store_rating = excluded.store_rating, universal = excluded.universal,
+                longitude = excluded.longitude, store_rating = excluded.store_rating,
+                product_rating = excluded.product_rating, product_review_count = excluded.product_review_count,
+                universal = excluded.universal,
                 vehicle_make_ids = excluded.vehicle_make_ids, vehicle_model_ids = excluded.vehicle_model_ids,
                 vehicle_version_ids = excluded.vehicle_version_ids, year_from = excluded.year_from,
                 year_to = excluded.year_to, document = excluded.document, search_text = excluded.search_text,

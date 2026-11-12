@@ -62,6 +62,25 @@ public interface CollaboratorRepository extends JpaRepository<Collaborator, UUID
             @Param("storeId") UUID storeId
     );
 
+    /**
+     * Sucursales (no borradas) del almacén asignadas a la persona en {@code branches_collaborators}, si es colaboradora
+     * activa del almacén.
+     */
+    @Query(value = """
+            SELECT DISTINCT link.branch_id
+            FROM branches_collaborators link
+            JOIN collaborators collaborator ON collaborator.id = link.collaborator_id
+                                           AND collaborator.deleted_at IS NULL
+            JOIN states state ON state.id = collaborator.state AND state.code = 'ACTIVE'
+            JOIN branches branch ON branch.id = link.branch_id
+                                AND branch.deleted_at IS NULL
+                                AND branch.store_id = :storeId
+            WHERE collaborator.person_id = :personId
+              AND collaborator.collab_store_id = :storeId
+              AND link.deleted_at IS NULL
+            """, nativeQuery = true)
+    List<UUID> findAssignedBranchIds(@Param("personId") UUID personId, @Param("storeId") UUID storeId);
+
     @Query("""
             SELECT CASE WHEN COUNT(permission) > 0 THEN true ELSE false END
             FROM Collaborator collaborator

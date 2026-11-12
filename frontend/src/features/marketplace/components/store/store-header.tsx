@@ -4,15 +4,17 @@ import { Container } from '@/components/common/page-header'
 import { initials, pluralize } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import type { StoreBranch, StoreContact, StoreProfile } from '../../api/types'
+import { useReviewSummary } from '../../hooks'
 import { storePath } from '../../lib/paths'
+import { formatRating } from '../../lib/review-labels'
 import { ShareButton } from '../share-button'
 import { FacebookIcon, InstagramIcon, TikTokIcon } from './brand-icons'
 import { DirectionsMenu } from './directions-menu'
-import { Stars } from './stars'
+import { ReviewHighlights } from '../reviews/review-highlights'
+import { StarRating } from '../reviews/star-rating'
 import { WhatsappButton, type WhatsappTarget } from './whatsapp-button'
 
 const monthFormatter = new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric' })
-const ratingFormatter = new Intl.NumberFormat('es-CO', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
 
 /** `YYYY-MM-DD` como fecha local (sin desplazar el día por la zona horaria). */
 function localDate(value: string): Date {
@@ -107,6 +109,8 @@ interface StoreHeaderProps {
  */
 export function StoreHeader({ store, branches, crumbs }: StoreHeaderProps) {
   const path = storePath(store.id)
+  // Insignias del almacén; si el resumen falla o no hay opiniones, simplemente no se muestran.
+  const highlights = useReviewSummary({ type: 'store', id: store.id }).data?.highlights ?? []
   const social = socialLinks(store.contact)
 
   const whatsappTargets: WhatsappTarget[] = store.whatsappEnabled
@@ -152,18 +156,19 @@ export function StoreHeader({ store, branches, crumbs }: StoreHeaderProps) {
             <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-ap-muted">
               {store.ratingAverage !== undefined && store.ratingCount > 0 ? (
                 <>
-                  <Stars value={store.ratingAverage} />
-                  <span className="font-semibold text-ap-ink tabular-nums">{ratingFormatter.format(store.ratingAverage)}</span>
-                  <a href="#resenas" className="underline-offset-4 hover:text-ap-red hover:underline">
-                    {pluralize(store.ratingCount, 'reseña', 'reseñas')}
+                  <StarRating value={store.ratingAverage} />
+                  <span className="font-semibold text-ap-ink tabular-nums">{formatRating(store.ratingAverage)}</span>
+                  <a href="#resenas" className="inline-flex min-h-6 items-center underline-offset-4 hover:text-ap-red hover:underline">
+                    {pluralize(store.ratingCount, 'opinión', 'opiniones')}
                   </a>
                 </>
               ) : (
-                <a href="#resenas" className="underline-offset-4 hover:text-ap-red hover:underline">
-                  Aún sin reseñas
+                <a href="#resenas" className="inline-flex min-h-6 items-center underline-offset-4 hover:text-ap-red hover:underline">
+                  Aún sin opiniones
                 </a>
               )}
             </p>
+            {highlights.length > 0 ? <ReviewHighlights kind="store" highlights={highlights} /> : null}
           </div>
         </div>
 

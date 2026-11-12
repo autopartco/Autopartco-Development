@@ -1,9 +1,14 @@
 package com.autopartco.backend.marketplace.reviews;
 
+import java.time.Clock;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
@@ -18,37 +23,67 @@ import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.shared.events.ListingsChanged;
 import com.autopartco.backend.shared.web.PageResponse;
 
-import lombok.AllArgsConstructor;
-
 /**
  * Reseñas de almacenes publicados. Solo puede calificar quien compró: pedido propio con una venta entregada
- * ({@code DELIVERED}) en una sucursal del almacén; una reseña por pedido y almacén.
+ * ({@code DELIVERED}) en una sucursal del almacén; una reseña por pedido y almacén. El autor edita durante 30 días y
+ * borra cuando quiera. Las ocultas no cuentan en promedios, insignias ni listados públicos. Cada escritura publica
+ * {@link ListingsChanged} del almacén (reindexa {@code store_rating} y vacía {@code store:profile} tras el commit).
  */
 @Service
-@AllArgsConstructor
 public class StoreReviewService {
-    static final int DEFAULT_SIZE = 10;
-    static final int MAX_SIZE = 50;
-    /** Más allá no hay reseñas reales; evita desbordar el desplazamiento con páginas absurdas. */
-    static final int MAX_PAGE = 10_000;
+    private static final ReviewKind KIND = ReviewKind.STORE;
 
     private final StoreReviewQueries queries;
+    private final ReviewQueries reviews;
     private final PublishedStores publishedStores;
     private final AccountLookup accountLookup;
     private final StoreAccess storeAccess;
     private final ApplicationEventPublisher events;
+    private final ReviewWriteLimiter limiter;
+    private final Clock clock;
 
-    /** Páginas desde 1, como {@link PageResponse}. */
-    @Transactional(readOnly = true)
-    public PageResponse<StoreReviewResponse> list(UUID storeId, Integer page, Integer size) {
-        publishedStores.requirePublished(storeId);
-        int p = page == null ? 1 : Math.min(MAX_PAGE, Math.max(1, page));
-        int s = size == null ? DEFAULT_SIZE : Math.min(MAX_SIZE, Math.max(1, size));
-        StoreRating rating = queries.rating(storeId);
-        return PageResponse.of(queries.list(storeId, s, (p - 1) * s), p, s, rating.count());
+    @Autowired
+    public StoreReviewService(StoreReviewQueries queries, ReviewQueries reviews, PublishedStores publishedStores,
+            AccountLookup accountLookup, StoreAccess storeAccess, ApplicationEventPublisher events,
+            ReviewWriteLimiter limiter) {
+        this(queries, reviews, publishedStores, accountLookup, storeAccess, events, limiter, Clock.systemUTC());
     }
 
-    /** Sin comprobar publicación: lo usa el perfil público, que ya la comprobó. */
+    StoreReviewService(StoreReviewQueries queries, ReviewQueries reviews, PublishedStores publishedStores,
+            AccountLookup accountLookup, StoreAccess storeAccess, ApplicationEventPublisher events,
+            ReviewWriteLimiter limiter, Clock clock) {
+        this.queries = queries;
+        this.reviews = reviews;
+        this.publishedStores = publishedStores;
+        this.accountLookup = accountLookup;
+        this.storeAccess = storeAccess;
+        this.events = events;
+        this.limiter = limiter;
+        this.clock = clock;
+    }
+
+    /** Listado público con filtros ({@link ReviewListQuery}); páginas desde 1. */
+    @Transactional(readOnly = true)
+    public PageResponse<StoreReviewResponse> list(UUID storeId, Integer page, Integer size, String sort,
+            Integer stars, Boolean withComment) {
+        publishedStores.requirePublished(storeId);
+        ReviewListQuery query = ReviewListQuery.of(page, size, sort, stars, withComment);
+        List<ReviewQueries.ReviewRow> rows = reviews.list(KIND, storeId, query);
+        Map<UUID, Map<String, Integer>> aspects = reviews.aspectsOf(KIND, ReviewQueries.ids(rows));
+        List<StoreReviewResponse> items = rows.stream()
+                .map(row -> StoreReviewResponse.of(row, aspects.getOrDefault(row.id(), Map.of())))
+                .toList();
+        return PageResponse.of(items, query.page(), query.size(), reviews.count(KIND, storeId, query));
+    }
+
+    /** Promedio, distribución, categorías e insignias de las reseñas visibles del almacén publicado. */
+    @Transactional(readOnly = true)
+    public ReviewSummary summary(UUID storeId) {
+        publishedStores.requirePublished(storeId);
+        return reviews.summary(KIND, storeId);
+    }
+
+    /** Sin comprobar publicación: lo usa el perfil público, que ya la comprobó. Sin reseñas ocultas. */
     @Transactional(readOnly = true)
     public StoreRating rating(UUID storeId) {
         return queries.rating(storeId);
@@ -59,15 +94,38 @@ public class StoreReviewService {
         publishedStores.requirePublished(storeId);
         AccountRef account = account(email);
         if (storeAccess.isMember(account.personId(), storeId)) {
-            return new ReviewEligibility(List.of());
+            return ReviewEligibility.none();
         }
-        return new ReviewEligibility(queries.eligibleOrders(storeId, account.personId()));
+        Optional<StoreReviewQueries.Reviewed> latest = queries.latestReviewed(storeId, account.personId());
+        return new ReviewEligibility(queries.eligibleOrders(storeId, account.personId()),
+                latest.map(StoreReviewQueries.Reviewed::id).orElse(null),
+                latest.map(reviewed -> ReviewRules.editableUntil(reviewed.createdAt())).orElse(null));
     }
 
+    /**
+     * Reseña propia vigente (aunque esté oculta) con sus categorías, para precargar el formulario: la del pedido
+     * indicado o, sin pedido, la del pedido entregado más reciente. 404 {@code REVIEW_NOT_FOUND} si no hay.
+     */
+    @Transactional(readOnly = true)
+    public StoreReviewResponse mine(UUID storeId, String email, UUID orderId) {
+        AccountRef account = account(email);
+        UUID reviewId = (orderId == null
+                ? queries.latestReviewed(storeId, account.personId()).map(StoreReviewQueries.Reviewed::id)
+                : queries.reviewOfOrder(storeId, account.personId(), orderId))
+                .orElseThrow(() -> new NotFoundException("REVIEW_NOT_FOUND", "No se encontró la reseña."));
+        return load(reviewId);
+    }
+
+    /**
+     * 409 {@code REVIEW_ALREADY_EXISTS} con una reseña vigente del pedido; 409 {@code REVIEW_MODERATED} si la persona
+     * borró la reseña oculta de ese pedido. Una borrada sin ocultar se reutiliza (el índice único no es parcial).
+     */
     @Transactional
     public StoreReviewResponse create(UUID storeId, String email, StoreReviewRequest request) {
         publishedStores.requirePublished(storeId);
         AccountRef account = account(email);
+        String comment = ReviewRules.comment(request.comment());
+        Map<String, Integer> aspects = ReviewRules.aspects(KIND, request.aspects());
         UUID owner = queries.orderOwner(request.orderId()).orElse(null);
         if (owner == null || !owner.equals(account.personId())) {
             throw new NotFoundException("ORDER_NOT_FOUND", "No se encontró el pedido.");
@@ -80,37 +138,73 @@ public class StoreReviewService {
             throw new ConflictException("REVIEW_NOT_ALLOWED",
                     "Podrás calificar este almacén cuando recibas tu pedido.");
         }
-        String comment = request.comment() == null || request.comment().isBlank() ? null : request.comment().trim();
-        StoreReviewQueries.Inserted inserted;
+        Optional<UUID> reusable = ReviewRules.reusable(
+                queries.deleted(storeId, account.personId(), request.orderId()));
+        limiter.acquire(account.accountId());
+        UUID reviewId;
         try {
-            inserted = queries.insert(storeId, account.personId(), request.orderId(), request.rating(), comment);
+            if (reusable.isPresent()) {
+                reviewId = reusable.get();
+                if (!reviews.restore(KIND, reviewId, request.orderId(), request.rating(), comment)) {
+                    throw alreadyExists();
+                }
+            } else {
+                reviewId = queries.insert(storeId, account.personId(), request.orderId(), request.rating(), comment);
+            }
         } catch (DuplicateKeyException duplicate) {
-            throw new ConflictException("REVIEW_ALREADY_EXISTS", "Ya calificaste este almacén por este pedido.");
+            throw alreadyExists();
         }
-        // La calificación del almacén forma parte del índice de búsqueda (filtro y orden por calificación).
+        if (reusable.isPresent() || !aspects.isEmpty()) {
+            reviews.replaceAspects(KIND, reviewId, aspects);
+        }
+        // La calificación del almacén forma parte del índice de búsqueda y del perfil público cacheado.
         events.publishEvent(ListingsChanged.ofStore(storeId));
-        String[] names = splitName(account);
-        return new StoreReviewResponse(inserted.id(), request.rating(), comment, authorName(names[0], names[1]),
-                inserted.createdAt());
+        return load(reviewId);
+    }
+
+    /** Solo el autor y dentro de los 30 días (409 {@code REVIEW_EDIT_WINDOW_CLOSED}); ajena o inexistente: 404. */
+    @Transactional
+    public StoreReviewResponse update(UUID storeId, UUID reviewId, String email, ReviewUpdateRequest request) {
+        AccountRef account = account(email);
+        ReviewQueries.OwnedReview review = ReviewRules.requireOwn(reviews.owned(KIND, reviewId), storeId,
+                account.personId());
+        ReviewRules.requireEditable(review, OffsetDateTime.now(clock));
+        String comment = ReviewRules.comment(request.comment());
+        Map<String, Integer> aspects = ReviewRules.aspects(KIND, request.aspects());
+        limiter.acquire(account.accountId());
+        reviews.update(KIND, reviewId, request.rating(), comment);
+        reviews.replaceAspects(KIND, reviewId, aspects);
+        events.publishEvent(ListingsChanged.ofStore(storeId));
+        return load(reviewId);
+    }
+
+    /** Borrado lógico por el autor (sin ventana). Ajena o inexistente: 404 {@code REVIEW_NOT_FOUND}. */
+    @Transactional
+    public void delete(UUID storeId, UUID reviewId, String email) {
+        AccountRef account = account(email);
+        ReviewRules.requireOwn(reviews.owned(KIND, reviewId), storeId, account.personId());
+        limiter.acquire(account.accountId());
+        reviews.softDelete(KIND, reviewId);
+        events.publishEvent(ListingsChanged.ofStore(storeId));
+    }
+
+    private static ConflictException alreadyExists() {
+        return new ConflictException("REVIEW_ALREADY_EXISTS", "Ya calificaste este almacén por este pedido.");
+    }
+
+    private StoreReviewResponse load(UUID reviewId) {
+        ReviewQueries.ReviewRow row = reviews.row(KIND, reviewId)
+                .orElseThrow(() -> new NotFoundException("REVIEW_NOT_FOUND", "No se encontró la reseña."));
+        return StoreReviewResponse.of(row, reviews.aspectsOf(KIND, reviewId));
     }
 
     /** «Ana María» + «Pérez Gómez» → «Ana P.». Sin apellido, solo el primer nombre. */
-    static String authorName(String name, String surname) {
+    public static String authorName(String name, String surname) {
         String first = name == null || name.isBlank() ? "Comprador" : name.trim().split("\\s+")[0];
         if (surname == null || surname.isBlank()) {
             return first;
         }
         return first + " " + surname.trim().substring(0, 1).toUpperCase(Locale.ROOT) + ".";
-    }
-
-    private static String[] splitName(AccountRef account) {
-        String given = account.givenName();
-        String full = account.fullName() == null ? "" : account.fullName().trim();
-        if (given != null && !given.isBlank() && full.startsWith(given.trim())) {
-            return new String[] {given, full.substring(given.trim().length()).trim()};
-        }
-        String[] parts = full.split("\\s+", 2);
-        return new String[] {parts[0], parts.length > 1 ? parts[1] : null};
     }
 
     private AccountRef account(String email) {

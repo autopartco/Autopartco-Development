@@ -33,6 +33,7 @@ record SearchCriteria(
         Double lng,
         Integer radiusKm,
         Integer minRating,
+        Integer minProductRating,
         Boolean universal,
         SearchSort sort,
         Hints hints
@@ -93,6 +94,7 @@ record SearchCriteria(
                 query.lng() == null ? null : query.lng().doubleValue(),
                 query.radiusKm(),
                 query.minRating(),
+                query.minProductRating(),
                 query.universal(),
                 query.sortOrDefault(),
                 hints);
@@ -102,14 +104,14 @@ record SearchCriteria(
     SearchCriteria fuzzy(String text) {
         return new SearchCriteria(null, null, text, List.of(), categoryId, manufacturerIds, makeId, modelId,
                 versionId, year, priceMin, priceMax, inStock, onSale, storeId, branchId, cityCode, departmentCode, lat,
-                lng, radiusKm, minRating, universal, sort, hints);
+                lng, radiusKm, minRating, minProductRating, universal, sort, hints);
     }
 
     /** Misma búsqueda con cualquiera de los grupos {@code terms} (OR) en lugar de todos; conserva la referencia. */
     SearchCriteria anyWord(List<String> terms) {
         return new SearchCriteria(null, reference, null, terms, categoryId, manufacturerIds, makeId, modelId,
                 versionId, year, priceMin, priceMax, inStock, onSale, storeId, branchId, cityCode, departmentCode, lat,
-                lng, radiusKm, minRating, universal, sort, hints);
+                lng, radiusKm, minRating, minProductRating, universal, sort, hints);
     }
 
     boolean hasLocation() {

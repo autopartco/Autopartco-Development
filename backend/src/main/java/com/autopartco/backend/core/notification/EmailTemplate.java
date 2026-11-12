@@ -37,6 +37,49 @@ final class EmailTemplate {
         return "<p style=\"margin:16px 0 0;font-size:13px;line-height:19px;color:#6b6b6b;\">" + html + "</p>";
     }
 
+    /** Correo «¿Cómo te fue con tu pedido?»: invitación a calificar un pedido entregado. */
+    static String reviewInvitation(String givenName, long orderNumber, String reviewLink) {
+        return layout("¿Cómo te fue con tu pedido?",
+                paragraph("Hola " + escape(givenName) + ",")
+                        + paragraph("Tu pedido #" + orderNumber + " fue entregado. Cuéntanos qué tal estuvo el "
+                                + "almacén y los repuestos que recibiste.")
+                        + button("Calificar mi pedido", reviewLink)
+                        + paragraph("Tu opinión ayuda a otros compradores a elegir mejor y a los almacenes a mejorar.")
+                        + note("Calificar toma un minuto y es opcional. Si no quieres hacerlo, puedes ignorar este correo."));
+    }
+
+    /** Cita (pregunta o respuesta); se escapa aquí. */
+    static String quote(String text) {
+        return "<p style=\"margin:0 0 16px;padding:12px 16px;border-left:4px solid " + BRAND_COLOR
+                + ";background:#F2F5FA;font-size:15px;line-height:22px;color:#222222;\">" + escape(text) + "</p>";
+    }
+
+    /** Correo al almacén: pregunta nueva sobre uno de sus productos, con enlace al portal. */
+    static String questionAsked(String storeName, String productName, String question, String portalLink) {
+        return layout("Nueva pregunta sobre " + productName,
+                paragraph("Un comprador preguntó por <strong>" + escape(productName) + "</strong> en "
+                        + escape(storeName) + ":")
+                        + quote(question)
+                        + button("Responder en el portal", portalLink)
+                        + paragraph("Responder rápido ayuda a cerrar la venta y queda visible para otros compradores.")
+                        + note("Recibes este correo porque tu almacén tiene activos los avisos de preguntas. Puedes "
+                                + "cambiarlo en Configuración &gt; Notificaciones."));
+    }
+
+    /** Correo al comprador: el almacén respondió su pregunta. */
+    static String questionAnswered(String givenName, String storeName, String productName, String question,
+            String answer, String productLink) {
+        return layout("Respondieron tu pregunta",
+                paragraph("Hola " + escape(givenName) + ",")
+                        + paragraph(escape(storeName) + " respondió tu pregunta sobre <strong>"
+                                + escape(productName) + "</strong>.")
+                        + quote(question)
+                        + quote(answer)
+                        + button("Ver la respuesta", productLink)
+                        + note("Recibes este correo porque tienes activos los avisos de respuestas de almacenes. "
+                                + "Puedes cambiarlo en tu cuenta, en Configuración."));
+    }
+
     /** Envuelve el cuerpo ya construido con cabecera y pie de marca. */
     static String layout(String title, String bodyHtml) {
         return "<!DOCTYPE html><html lang=\"es\"><head><meta charset=\"UTF-8\">"

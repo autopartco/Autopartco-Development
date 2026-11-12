@@ -69,7 +69,7 @@ final class SearchSql {
         String sql = """
                 with matched as (
                     select sl.listing_key, sl.product_id, sl.branch_id, sl.name, sl.price, sl.stock, sl.store_rating,
-                           sl.published_at,
+                           sl.product_rating, sl.product_review_count, sl.published_at,
                            %s as distance_km,
                            %s as text_rank,
                            %s as hint_boost
@@ -85,7 +85,8 @@ final class SearchSql {
                                * (1 + 0.1 * coalesce(store_rating, 0) / 5)%s as score
                     from best
                 )
-                select listing_key, product_id, branch_id, distance_km, count(*) over () as total
+                select listing_key, product_id, branch_id, distance_km, product_rating, product_review_count,
+                       count(*) over () as total
                 from scored
                 order by %s
                 limit :limit offset :offset
@@ -235,6 +236,7 @@ final class SearchSql {
             case NEAREST -> "distance_km asc nulls last, product_id";
             case NEWEST -> "published_at desc, product_id";
             case RATING -> "store_rating desc nulls last, score desc, product_id";
+            case PRODUCT_RATING -> "product_rating desc nulls last, product_review_count desc, score desc, product_id";
             case NAME -> "name asc, product_id";
         };
     }
@@ -310,6 +312,10 @@ final class SearchSql {
         if (c.minRating() != null) {
             where.add("sl.store_rating >= :minRating");
             params.put("minRating", c.minRating());
+        }
+        if (c.minProductRating() != null) {
+            where.add("sl.product_rating >= :minProductRating");
+            params.put("minProductRating", c.minProductRating());
         }
         if (c.universal() != null) {
             where.add("sl.universal = :universal");

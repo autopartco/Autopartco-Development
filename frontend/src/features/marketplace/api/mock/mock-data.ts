@@ -5,6 +5,7 @@
  */
 import { PLACEHOLDER_IMAGES } from '@/lib/images'
 import type { AvailabilityStatus, Brand, Category, Product, StoreSummary, VehicleRule } from '../types'
+import { mockProductRating } from './mock-reviews'
 
 export const MOCK_CATEGORIES: Category[] = [
   { id: 'cat-frenos', slug: 'frenos', name: 'Frenos', description: 'Pastillas, discos, bandas y líquido de frenos.' },
@@ -261,6 +262,7 @@ export const MOCK_PRODUCTS: Product[] = SEEDS.map((seed, index) => {
     brand: brand ? { ...brand, approved: brand.approved ?? true } : undefined,
     store: storeById.get(storeId),
     availability: { status: availabilityStatus(seed.stock), quantity: seed.stock, branchName: BRANCHES[storeId] },
+    ...mockProductRating(id),
     universal: fits.length === 0,
     vehicleRules: fits,
     specifications: [
