@@ -4,7 +4,6 @@ import { DiscardChangesDialog } from '@/components/common/discard-changes-dialog
 import { FormAlert, TextField } from '@/components/common/form-fields'
 import { UnsavedChangesDialog } from '@/components/common/unsaved-changes-dialog'
 import { Button } from '@/components/ui/button'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { ApiError } from '@/lib/api'
 import { useAsync } from '@/lib/use-async'
@@ -16,26 +15,24 @@ import { getStaffService } from '../api/staff-service'
 import { usePortal } from '../context'
 import { actionErrorMessage } from '../lib/errors'
 import { EMAIL_PATTERN, focusById } from '../lib/forms'
-import { PERMISSION_LABEL } from '../lib/labels'
+import type { StaffRoleCode } from '../api/types'
 import { QueryError } from './query-boundary'
+import { RolePicker } from './role-picker'
 
 interface InviteValues {
   email: string
-  roleName: string
-  permissionCodes: string[]
+  roleCode: StaffRoleCode | undefined
 }
 
 function validate(values: InviteValues): FieldErrors {
   const errors: FieldErrors = {}
   if (!values.email.trim()) errors.email = 'Escribe el correo de la persona.'
   else if (!EMAIL_PATTERN.test(values.email.trim())) errors.email = 'El correo debe tener un formato válido, por ejemplo nombre@correo.com.'
-  if (!values.roleName.trim()) errors.roleName = 'Escribe el nombre del rol, por ejemplo “Vendedor”.'
-  else if (values.roleName.trim().length > 100) errors.roleName = 'Máximo 100 caracteres.'
-  if (values.permissionCodes.length === 0) errors.permissionCodes = 'Elige al menos un permiso.'
+  if (!values.roleCode) errors.roleCode = 'Elige el rol que tendrá en el almacén.'
   return errors
 }
 
-const FIELD_IDS: Record<string, string> = { email: 'invitar-email', roleName: 'invitar-rol', permissionCodes: 'invitar-permisos' }
+const FIELD_IDS: Record<string, string> = { email: 'invitar-email', roleCode: 'invitar-rol' }
 
 interface InviteFormProps {
   /** Cierra sin preguntar (tras enviar). */
@@ -47,11 +44,11 @@ interface InviteFormProps {
 
 function InviteForm({ onDone, onCancel, onDirtyChange }: InviteFormProps) {
   const { storeId, promptUpgrade, invalidateStore } = usePortal()
-  // Lectura de apoyo: los permisos disponibles se consultan al abrir.
-  const options = useAsync(`portal:${storeId}:permission-options`, async () => (await getStaffService()).permissionOptions(storeId))
-  const draft = useDraftForm<InviteValues>({ initial: { email: '', roleName: '', permissionCodes: [] }, validate })
-  const { email, roleName, permissionCodes: codes } = draft.values
-  const submit = useSubmitOnce(async (input: { email: string; roleName: string; permissionCodes: string[] }) => (await getStaffService()).invite(storeId, input))
+  // Lectura de apoyo: los roles disponibles se consultan al abrir.
+  const roles = useAsync(`portal:${storeId}:staff-roles`, async () => (await getStaffService()).roles(storeId))
+  const draft = useDraftForm<InviteValues>({ initial: { email: '', roleCode: undefined }, validate })
+  const { email, roleCode } = draft.values
+  const submit = useSubmitOnce(async (input: { email: string; roleCode: StaffRoleCode }) => (await getStaffService()).invite(storeId, input))
   const pending = submit.pending
   const blocker = useUnsavedChanges(draft.isDirty && !pending)
   const [formError, setFormError] = useState<string>()
@@ -73,7 +70,8 @@ function InviteForm({ onDone, onCancel, onDirtyChange }: InviteFormProps) {
       return
     }
     // ÚNICA escritura: la invitación se crea al pulsar «Enviar invitación».
-    const result = await submit.run({ email: email.trim(), roleName: roleName.trim(), permissionCodes: codes })
+    if (!roleCode) return
+    const result = await submit.run({ email: email.trim(), roleCode })
     if (result.status === 'ok') {
       draft.markSaved()
       onDirtyChange(false)
@@ -97,38 +95,18 @@ function InviteForm({ onDone, onCancel, onDirtyChange }: InviteFormProps) {
     <form noValidate onSubmit={(event) => void handleSubmit(event)} className="flex flex-col gap-4" aria-busy={pending || undefined}>
       <DialogHeader>
         <DialogTitle>Invitar a una persona</DialogTitle>
-        <DialogDescription>Le enviaremos un correo con un enlace para unirse al equipo. Vence en 7 días.</DialogDescription>
+        <DialogDescription>Le enviaremos un correo con un enlace para unirse al equipo. Vence en 7 días y podrás cambiarle el rol cuando quieras.</DialogDescription>
       </DialogHeader>
       {formError ? <FormAlert ref={alertRef} title="No se envió la invitación">{formError}</FormAlert> : null}
       <TextField id="invitar-email" type="email" label="Correo" value={email} onChange={(event) => draft.set('email', event.target.value)} onBlur={() => draft.touch('email')} error={shown('email')} autoComplete="off" inputMode="email" maxLength={100} required />
-      <TextField id="invitar-rol" label="Nombre del rol" value={roleName} onChange={(event) => draft.set('roleName', event.target.value)} onBlur={() => draft.touch('roleName')} error={shown('roleName')} autoComplete="off" maxLength={100} required hint="Cómo se llamará su cargo en el almacén. Ej.: Vendedor, Bodeguero." />
-
-      {options.status === 'error' ? (
-        <QueryError error={options.error} what="los permisos disponibles" onRetry={options.retry} />
+      {roles.status === 'error' ? (
+        <QueryError error={roles.error} what="los roles disponibles" onRetry={roles.retry} />
+      ) : roles.data === undefined ? (
+        <p className="text-sm text-ap-muted" role="status">
+          Cargando roles…
+        </p>
       ) : (
-        <fieldset id="invitar-permisos" tabIndex={-1} className="flex flex-col gap-1 outline-none" aria-describedby={shown('permissionCodes') ? 'invitar-permisos-error' : undefined}>
-          <legend className="mb-1.5 text-sm font-semibold">Permisos</legend>
-          {options.data === undefined ? (
-            <p className="text-sm text-ap-muted" role="status">
-              Cargando permisos…
-            </p>
-          ) : (
-            options.data.map((option) => (
-              <label key={option.code} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-md px-1 text-sm hover:bg-ap-paper">
-                <Checkbox
-                  checked={codes.includes(option.code)}
-                  onCheckedChange={(checked) => draft.set('permissionCodes', checked === true ? [...codes, option.code] : codes.filter((code) => code !== option.code))}
-                />
-                <span>{option.description || PERMISSION_LABEL[option.code as keyof typeof PERMISSION_LABEL] || option.code}</span>
-              </label>
-            ))
-          )}
-          {shown('permissionCodes') ? (
-            <p id="invitar-permisos-error" className="mt-1 text-sm font-medium text-ap-danger">
-              {shown('permissionCodes')}
-            </p>
-          ) : null}
-        </fieldset>
+        <RolePicker id="invitar-rol" roles={roles.data} value={roleCode} onChange={(code) => draft.set('roleCode', code)} disabled={pending} error={shown('roleCode')} />
       )}
 
       <DialogFooter>
@@ -144,7 +122,7 @@ function InviteForm({ onDone, onCancel, onDirtyChange }: InviteFormProps) {
   )
 }
 
-/** Invitación de un colaborador. Los límites de plan (`USERS`, `CUSTOM_ROLES`) abren el diálogo de mejora. */
+/** Invitación de un colaborador con un rol predefinido. El límite de usuarios del plan abre el diálogo de mejora. */
 export function InviteDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const guard = useCloseGuard(() => onOpenChange(false))
   return (

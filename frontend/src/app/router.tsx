@@ -73,6 +73,7 @@ import {
   SearchPage,
   SellerRegisterPage,
   SellerSetupPage,
+  StaffInvitationPage,
   SellPage,
   StorePage,
   StoresPage,
@@ -143,6 +144,8 @@ export const router = createBrowserRouter([
           { path: 'vender/registro', element: <SellerRegisterPage /> },
           // Enlace del correo de aprobación (sin token): la página exige sesión y redirige a /ingresar si no hay.
           { path: 'seller/setup', element: <SellerSetupPage /> },
+          // Enlace del correo de invitación al equipo (StaffInvitationMailer): público, con `?token=`.
+          { path: 'seller/invitation', element: <StaffInvitationPage /> },
           // Cuentas (core/identity/web/AuthController).
           { path: 'ingresar', element: <LoginPage /> },
           // Solo invitados: con sesión activa se redirige al inicio.

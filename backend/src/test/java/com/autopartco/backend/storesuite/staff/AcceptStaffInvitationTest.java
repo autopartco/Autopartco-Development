@@ -52,7 +52,8 @@ class AcceptStaffInvitationTest {
             "Repuestos Ana",
             "nuevo@example.com",
             UUID.randomUUID(),
-            "Vendedor",
+            "SALES",
+            "Ventas y pedidos",
             List.of("STORE_READ"),
             LocalDateTime.now().plusDays(1),
             LocalDateTime.now()
@@ -106,7 +107,7 @@ class AcceptStaffInvitationTest {
                 invitation.storeId(),
                 "Repuestos Ana",
                 "nuevo@example.com",
-                "Vendedor"
+                "Ventas y pedidos"
         ), accepted);
     }
 

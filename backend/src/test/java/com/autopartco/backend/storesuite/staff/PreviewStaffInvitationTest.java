@@ -21,7 +21,6 @@ import com.autopartco.backend.core.identity.AccountLookup;
 import com.autopartco.backend.core.organization.StaffInvitations;
 import com.autopartco.backend.core.organization.internal.StaffInvitation;
 import com.autopartco.backend.core.organization.internal.StaffInvitationRepository;
-import com.autopartco.backend.core.organization.internal.StorePermissionRepository;
 import com.autopartco.backend.core.organization.internal.StoreRepository;
 import com.autopartco.backend.core.organization.internal.StoreRoleRepository;
 import com.autopartco.backend.shared.error.BadRequestException;
@@ -35,8 +34,6 @@ class PreviewStaffInvitationTest {
     @Mock
     private StoreRoleRepository roleRepository;
     @Mock
-    private StorePermissionRepository permissionRepository;
-    @Mock
     private AccountLookup accountLookup;
 
     private PreviewStaffInvitation previewStaffInvitation;
@@ -46,8 +43,7 @@ class PreviewStaffInvitationTest {
         StaffInvitations staffInvitations = new StaffInvitations(
                 invitationRepository,
                 storeRepository,
-                roleRepository,
-                permissionRepository
+                roleRepository
         );
         previewStaffInvitation = new PreviewStaffInvitation(staffInvitations, accountLookup);
     }

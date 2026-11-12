@@ -425,7 +425,9 @@ function buildStoreA(): MockStore {
     orders,
     branches: [branchA],
     members: [
-      { id: 'm-1', name: 'Marta', surname: 'Quintero', email: 'marta@repuestoslala30.co', status: 'ACTIVE', roleNames: ['Propietario'], permissionCodes: ALL_PERMISSIONS },
+      { id: 'm-1', name: 'Marta', surname: 'Quintero', email: 'marta@repuestoslala30.co', status: 'ACTIVE', roleNames: ['Propietario'], permissionCodes: ALL_PERMISSIONS, roleCode: 'OWNER', owner: true },
+      { id: 'm-2', name: 'Julián', surname: 'Ortiz', email: 'julian@repuestoslala30.co', status: 'ACTIVE', roleNames: ['Ventas y pedidos'], permissionCodes: ['BRANCH_READ', 'ORDER_READ', 'ORDER_UPDATE', 'PRODUCT_READ', 'PROMOTION_READ', 'SHIPMENT_UPDATE', 'STORE_READ'], roleCode: 'SALES', owner: false },
+      { id: 'm-3', name: 'Sandra', surname: 'Bedoya', email: 'sandra@repuestoslala30.co', status: 'INACTIVE', roleNames: ['Inventario y productos'], permissionCodes: ['BRANCH_READ', 'INVENTORY_ADJUST', 'PRODUCT_READ', 'PRODUCT_UPDATE', 'STORE_READ'], roleCode: 'INVENTORY', owner: false },
     ],
     invitations: [],
   }
@@ -464,8 +466,8 @@ function buildStoreB(): MockStore {
     orders: [],
     branches: [branchRow],
     members: [
-      { id: 'm-9', name: 'Ricardo', surname: 'Herrera', email: 'ricardo@frenosnorte.co', status: 'ACTIVE', roleNames: ['Propietario'], permissionCodes: ALL_PERMISSIONS },
-      { id: 'm-10', name: 'Paola', surname: 'Duque', email: 'paola@frenosnorte.co', status: 'ACTIVE', roleNames: ['Administrador'], permissionCodes: ['STORE_READ', 'PRODUCT_READ'] },
+      { id: 'm-9', name: 'Ricardo', surname: 'Herrera', email: 'ricardo@frenosnorte.co', status: 'ACTIVE', roleNames: ['Propietario'], permissionCodes: ALL_PERMISSIONS, roleCode: 'OWNER', owner: true },
+      { id: 'm-10', name: 'Paola', surname: 'Duque', email: 'paola@frenosnorte.co', status: 'ACTIVE', roleNames: ['Administrador'], permissionCodes: ['STORE_READ', 'PRODUCT_READ'], roleCode: null, owner: false },
     ],
     invitations: [],
   }
@@ -573,7 +575,7 @@ export function usageOf(store: MockStore): Record<'branches' | 'products' | 'use
   return {
     branches: { used: store.branches.filter((row) => row.state === 'ACTIVE').length, limit: store.plan.maxBranches },
     products: { used: productIds.size, limit: store.plan.maxProducts },
-    users: { used: store.members.length + pendingInvites, limit: store.plan.maxUsers },
+    users: { used: store.members.filter((member) => member.status === 'ACTIVE').length + pendingInvites, limit: store.plan.maxUsers },
   }
 }
 

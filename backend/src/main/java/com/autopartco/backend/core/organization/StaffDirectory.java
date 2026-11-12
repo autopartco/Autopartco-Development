@@ -1,11 +1,9 @@
 package com.autopartco.backend.core.organization;
 
+import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -13,11 +11,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.autopartco.backend.core.organization.internal.Collaborator;
 import com.autopartco.backend.core.organization.internal.CollaboratorRepository;
-import com.autopartco.backend.core.organization.internal.StorePermission;
-import com.autopartco.backend.core.organization.internal.StorePermissionRepository;
 import com.autopartco.backend.core.organization.internal.StoreRepository;
 import com.autopartco.backend.core.organization.internal.StoreRoleRepository;
-import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
 import com.autopartco.backend.shared.persistence.State;
@@ -27,42 +22,16 @@ import com.autopartco.backend.shared.persistence.StateRepository;
 import lombok.AllArgsConstructor;
 
 /**
- * Directorio de colaboradores de un almacén: miembros, permisos asignables a invitados, alta de colaborador y
- * conteo de activos. No resuelve permisos de usuario: lo hacen los casos de uso con {@link StoreAccess}.
+ * Directorio de colaboradores de un almacén: miembros, alta, cambio de rol, activación y conteo de activos. No
+ * resuelve permisos de usuario: lo hacen los casos de uso con {@link StoreAccess}.
  * {@link #listMembers} es un read model (§4.2.5) sobre {@code collaborators}, {@code persons},
  * {@code accounts}, {@code roles*}, {@code permissions} y {@code states}.
  */
 @Service
 @AllArgsConstructor
 public class StaffDirectory {
-    private static final Set<String> ASSIGNABLE_PERMISSIONS = Set.of(
-            StorePermissionCodes.STORE_READ,
-            StorePermissionCodes.BRANCH_READ,
-            StorePermissionCodes.BRANCH_CREATE,
-            StorePermissionCodes.BRANCH_UPDATE,
-            StorePermissionCodes.BRANCH_DELETE,
-            StorePermissionCodes.PRODUCT_READ,
-            StorePermissionCodes.PRODUCT_CREATE,
-            StorePermissionCodes.PRODUCT_UPDATE,
-            StorePermissionCodes.PRODUCT_PUBLISH,
-            StorePermissionCodes.PRODUCT_DELETE,
-            StorePermissionCodes.PRODUCT_IMAGE_MANAGE,
-            StorePermissionCodes.INVENTORY_ADJUST,
-            StorePermissionCodes.INVENTORY_TRANSFER,
-            StorePermissionCodes.PROMOTION_READ,
-            StorePermissionCodes.PROMOTION_CREATE,
-            StorePermissionCodes.PROMOTION_UPDATE,
-            StorePermissionCodes.PROMOTION_DELETE,
-            StorePermissionCodes.ORDER_READ,
-            StorePermissionCodes.ORDER_UPDATE,
-            StorePermissionCodes.SHIPMENT_UPDATE,
-            StorePermissionCodes.ANALYTICS_READ,
-            StorePermissionCodes.ALERT_MANAGE
-    );
-
     private final JdbcTemplate jdbcTemplate;
     private final CollaboratorRepository collaboratorRepository;
-    private final StorePermissionRepository permissionRepository;
     private final StoreRepository storeRepository;
     private final StoreRoleRepository roleRepository;
     private final StateRepository stateRepository;
@@ -81,6 +50,7 @@ public class StaffDirectory {
                        account.email,
                        state.code AS status,
                        COALESCE(string_agg(DISTINCT role.name, ',' ORDER BY role.name), '') AS role_names,
+                       COALESCE(string_agg(DISTINCT role.code, ',' ORDER BY role.code), '') AS role_codes,
                        COALESCE(string_agg(DISTINCT permission.code, ',' ORDER BY permission.code), '') AS permissions
                 FROM collaborators collaborator
                 JOIN persons person ON person.id = collaborator.person_id
@@ -103,14 +73,15 @@ public class StaffDirectory {
                   AND account.deleted_at IS NULL
                 GROUP BY collaborator.id, person.name, person.surname, account.email, state.code
                 ORDER BY person.name, person.surname, account.email
-                """, (result, row) -> new StaffMember(
+                """, (result, row) -> StaffMember.of(
                 result.getObject("id", UUID.class),
                 result.getString("name"),
                 result.getString("surname"),
                 result.getString("email"),
                 result.getString("status"),
                 splitCodes(result.getString("role_names")),
-                splitCodes(result.getString("permissions"))
+                splitCodes(result.getString("permissions")),
+                splitCodes(result.getString("role_codes"))
         ), storeId);
     }
 
@@ -139,41 +110,6 @@ public class StaffDirectory {
                 """, String.class, storeId, permissionCode);
     }
 
-    /** Permisos que se pueden asignar a un colaborador invitado, ordenados por código. */
-    @Transactional(readOnly = true)
-    public List<PermissionOption> assignablePermissions() {
-        return permissionRepository.findByCodeIn(ASSIGNABLE_PERMISSIONS).stream()
-                .sorted((first, second) -> first.getCode().compareTo(second.getCode()))
-                .map(permission -> new PermissionOption(permission.getCode(), permission.getDescription()))
-                .toList();
-    }
-
-    /**
-     * Normaliza los códigos pedidos (recorte y mayúsculas) y exige que todos sean asignables y estén configurados.
-     *
-     * @return los códigos normalizados, ordenados y sin repetidos
-     */
-    @Transactional(readOnly = true)
-    public Set<String> requireAssignable(List<String> requestedCodes) {
-        Set<String> normalized = requestedCodes.stream()
-                .map(code -> code.trim().toUpperCase(Locale.ROOT))
-                .collect(Collectors.toCollection(TreeSet::new));
-        if (normalized.isEmpty() || !ASSIGNABLE_PERMISSIONS.containsAll(normalized)) {
-            throw new BadRequestException(
-                    "SELLER_COLLABORATOR_PERMISSION_INVALID",
-                    "Selecciona permisos válidos para el colaborador."
-            );
-        }
-        List<StorePermission> permissions = permissionRepository.findByCodeIn(normalized);
-        if (permissions.size() != normalized.size()) {
-            throw new BadRequestException(
-                    "SELLER_COLLABORATOR_PERMISSION_NOT_CONFIGURED",
-                    "Uno o más permisos no están configurados en el sistema."
-            );
-        }
-        return normalized;
-    }
-
     @Transactional(readOnly = true)
     public boolean isMember(UUID personId, UUID storeId) {
         return collaboratorRepository.existsInStore(personId, storeId);
@@ -199,6 +135,59 @@ public class StaffDirectory {
                 .state(findState(StateCodes.ACTIVE))
                 .roles(Set.of(roleRepository.getReferenceById(roleId)))
                 .build());
+    }
+
+    /**
+     * Colaborador del almacén que la persona {@code actorPersonId} puede administrar: no es el propietario ni la
+     * propia persona.
+     *
+     * @throws NotFoundException {@code SELLER_COLLABORATOR_NOT_FOUND} si no pertenece al almacén
+     * @throws ConflictException {@code SELLER_COLLABORATOR_OWNER} o {@code SELLER_COLLABORATOR_SELF}
+     */
+    private Collaborator requireManageable(UUID storeId, UUID memberId, UUID actorPersonId) {
+        Collaborator collaborator = collaboratorRepository.findByIdAndStore_Id(memberId, storeId)
+                .orElseThrow(() -> new NotFoundException(
+                        "SELLER_COLLABORATOR_NOT_FOUND",
+                        "No se encontró el colaborador en este almacén."
+                ));
+        if (collaborator.getRoles().stream().anyMatch(role -> StaffRoles.OWNER.equals(role.getCode()))) {
+            throw new ConflictException(
+                    "SELLER_COLLABORATOR_OWNER",
+                    "No se puede cambiar el rol ni el acceso del propietario del almacén."
+            );
+        }
+        if (collaborator.getPersonId().equals(actorPersonId)) {
+            throw new ConflictException(
+                    "SELLER_COLLABORATOR_SELF",
+                    "No puedes cambiar tu propio rol ni tu acceso; pídeselo al propietario."
+            );
+        }
+        return collaborator;
+    }
+
+    /** Reemplaza los roles del colaborador por el rol indicado (ya creado con {@link StaffRoles#ensure}). */
+    @Transactional
+    public void changeRole(UUID storeId, UUID memberId, UUID actorPersonId, UUID roleId) {
+        Collaborator collaborator = requireManageable(storeId, memberId, actorPersonId);
+        collaborator.setRoles(new HashSet<>(Set.of(roleRepository.getReferenceById(roleId))));
+        collaboratorRepository.save(collaborator);
+    }
+
+    /**
+     * Activa o desactiva al colaborador. Desactivado conserva su rol, pero pierde todo acceso al almacén.
+     *
+     * @return {@code true} si el estado cambió
+     */
+    @Transactional
+    public boolean setActive(UUID storeId, UUID memberId, UUID actorPersonId, boolean active) {
+        Collaborator collaborator = requireManageable(storeId, memberId, actorPersonId);
+        String target = active ? StateCodes.ACTIVE : StateCodes.INACTIVE;
+        if (target.equals(collaborator.getState().getCode())) {
+            return false;
+        }
+        collaborator.setState(findState(target));
+        collaboratorRepository.save(collaborator);
+        return true;
     }
 
     private List<String> splitCodes(String value) {

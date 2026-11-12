@@ -29,7 +29,6 @@ import com.autopartco.backend.core.organization.internal.StaffInvitation;
 import com.autopartco.backend.core.organization.internal.StaffInvitationRepository;
 import com.autopartco.backend.core.organization.internal.Store;
 import com.autopartco.backend.core.organization.internal.StorePermission;
-import com.autopartco.backend.core.organization.internal.StorePermissionRepository;
 import com.autopartco.backend.core.organization.internal.StoreRepository;
 import com.autopartco.backend.core.organization.internal.StoreRole;
 import com.autopartco.backend.core.organization.internal.StoreRoleRepository;
@@ -43,8 +42,6 @@ class StaffInvitationsTest {
     private StoreRepository storeRepository;
     @Mock
     private StoreRoleRepository roleRepository;
-    @Mock
-    private StorePermissionRepository permissionRepository;
 
     @InjectMocks
     private StaffInvitations staffInvitations;
@@ -54,9 +51,10 @@ class StaffInvitationsTest {
     @Test
     void createStoresOnlyTheSha256OfTheReturnedTokenAndExpiresInSevenDays() throws Exception {
         StorePermission read = StorePermission.builder().code(StorePermissionCodes.STORE_READ).build();
+        StoreRole role = StoreRole.builder().id(UUID.randomUUID()).code("VIEWER").name("Solo lectura")
+                .permissions(Set.of(read)).build();
         when(storeRepository.getReferenceById(store.getId())).thenReturn(store);
-        when(permissionRepository.findByCodeIn(Set.of(StorePermissionCodes.STORE_READ))).thenReturn(List.of(read));
-        when(roleRepository.save(any(StoreRole.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(roleRepository.getReferenceById(role.getId())).thenReturn(role);
         when(invitationRepository.save(any(StaffInvitation.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         LocalDateTime before = LocalDateTime.now();
@@ -64,8 +62,7 @@ class StaffInvitationsTest {
                 store.getId(),
                 UUID.randomUUID(),
                 "nuevo@example.com",
-                " Vendedor ",
-                Set.of(StorePermissionCodes.STORE_READ)
+                role.getId()
         );
 
         var captor = ArgumentCaptor.forClass(StaffInvitation.class);
@@ -74,7 +71,8 @@ class StaffInvitationsTest {
         assertEquals(43, issued.rawToken().length());
         assertEquals(sha256(issued.rawToken()), saved.getTokenHash());
         assertNotEquals(issued.rawToken(), saved.getTokenHash());
-        assertEquals("Vendedor", issued.invitation().roleName());
+        assertEquals("VIEWER", issued.invitation().roleCode());
+        assertEquals("Solo lectura", issued.invitation().roleName());
         assertEquals(List.of(StorePermissionCodes.STORE_READ), issued.invitation().permissionCodes());
         assertEquals(before.plusDays(7).toLocalDate(), saved.getExpiresAt().toLocalDate());
     }

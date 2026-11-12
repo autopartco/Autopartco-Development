@@ -5,10 +5,12 @@ import java.util.List;
 import java.util.UUID;
 
 import com.autopartco.backend.core.organization.StaffInvitationView;
+import com.autopartco.backend.core.organization.StaffRoles;
 
 public record StaffInvitationResponse(
         UUID id,
         String email,
+        String roleCode,
         String roleName,
         List<String> permissionCodes,
         LocalDateTime expiresAt,
@@ -19,6 +21,7 @@ public record StaffInvitationResponse(
         return new StaffInvitationResponse(
                 invitation.id(),
                 invitation.email(),
+                StaffRoles.find(invitation.roleCode()).map(StaffRoles.Definition::code).orElse(null),
                 invitation.roleName(),
                 invitation.permissionCodes(),
                 invitation.expiresAt(),
