@@ -18,5 +18,6 @@ export function createMockReviewsService(): ReviewsService {
     create: unavailable,
     update: unavailable,
     discard: unavailable,
+    mine: unavailable,
   }
 }

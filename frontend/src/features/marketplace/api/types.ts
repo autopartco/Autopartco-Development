@@ -421,6 +421,9 @@ export interface ProductReviewEligibility {
   editableUntil?: string
 }
 
+/** Igual que el del producto (`GET /stores/{id}/reviews/eligibility`): la reseña vigente es la del pedido entregado más reciente. */
+export type StoreReviewEligibility = ProductReviewEligibility
+
 /** Punto del área elegida para el inicio; sin él el servidor devuelve datos de todo el país. */
 export interface HomeQuery {
   lat?: number
@@ -488,7 +491,7 @@ export interface MarketplaceService {
   /** Con sesión: pedidos con los que puede calificar el producto, o su reseña existente. Sin sesión, nada elegible. */
   getProductReviewEligibility(productId: string): Promise<ProductReviewEligibility>
   /** Pedidos entregados del comprador con sesión que aún no tienen reseña; vacío sin sesión. */
-  getReviewEligibility(storeId: string): Promise<string[]>
+  getReviewEligibility(storeId: string): Promise<StoreReviewEligibility>
 }
 
 export class MarketplaceError extends Error {

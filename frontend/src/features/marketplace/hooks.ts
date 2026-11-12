@@ -14,6 +14,7 @@ import type {
   ReviewTarget,
   SearchQuery,
   SearchSuggestions,
+  StoreReviewEligibility,
 } from './api/types'
 import { parseProductQuery, productQueryKey, toSearchParams as toProductSearchParams } from './lib/product-query'
 import { parseSearchState, searchQueryKey, toSearchParams, type SearchState } from './lib/search-query'
@@ -179,7 +180,9 @@ export function useProductReviewEligibility(productId: string, sessionKey: strin
 /** Pedidos con los que el comprador puede calificar; la clave incluye la sesión para no reutilizar la de otro usuario. */
 export function useReviewEligibility(storeId: string, sessionKey: string | undefined) {
   return useMarketplace(`store-review-eligibility:${storeId}:${sessionKey ?? 'anon'}`, (service) =>
-    sessionKey ? service.getReviewEligibility(storeId).catch(() => []) : Promise.resolve([]),
+    sessionKey
+      ? service.getReviewEligibility(storeId).catch((): StoreReviewEligibility => ({ eligibleOrderIds: [] }))
+      : Promise.resolve<StoreReviewEligibility>({ eligibleOrderIds: [] }),
   )
 }
 

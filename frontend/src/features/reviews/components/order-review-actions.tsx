@@ -16,7 +16,7 @@ interface StoreReviewActionProps {
 
 /**
  * «Calificar almacén» en una venta entregada. El servidor dice si el pedido aún se puede calificar; si ya tiene
- * reseña lo indica con texto (la API no expone el id de la reseña del almacén, por eso aquí no se edita).
+ * reseña (`reviewId` de los pendientes), ofrece «Editar mi reseña».
  */
 export function StoreReviewAction({ orderId, orderNumber, storeId, storeName }: StoreReviewActionProps) {
   const session = useSession()
@@ -24,8 +24,34 @@ export function StoreReviewAction({ orderId, orderNumber, storeId, storeName }: 
   const pending = usePendingReviews()
   const [open, setOpen] = useState(false)
 
-  const eligible = (eligibility.data ?? []).includes(orderId)
-  const reviewed = pending.data?.some((item) => item.orderId === orderId && item.store.id === storeId && item.store.reviewed) ?? false
+  const eligible = (eligibility.data?.eligibleOrderIds ?? []).includes(orderId)
+  const pendingItem = pending.data?.find((item) => item.orderId === orderId && item.store.id === storeId)
+  const reviewed = pendingItem?.store.reviewed ?? false
+  const reviewId = pendingItem?.store.reviewId ?? undefined
+  // La fecha límite del servidor vale para la reseña más reciente; si es la de este pedido, se usa.
+  const editableUntil = reviewId && eligibility.data?.existingReviewId === reviewId ? eligibility.data.editableUntil : undefined
+
+  if (reviewed && reviewId) {
+    const closed = editWindowClosed(editableUntil)
+    return (
+      <>
+        <Button variant="outline" className="h-11 px-4" aria-label={`${closed ? 'Ver mi reseña de' : 'Editar mi reseña de'} ${storeName}`} onClick={() => setOpen(true)}>
+          <PencilIcon aria-hidden />
+          {closed ? 'Mi reseña del almacén' : 'Editar mi reseña'}
+        </Button>
+        {open ? (
+          <ReviewDialog
+            open
+            onOpenChange={setOpen}
+            target={{ type: 'store', id: storeId }}
+            targetName={storeName}
+            orders={[{ id: orderId, label: `Pedido #${orderNumber}` }]}
+            existing={{ id: reviewId, editableUntil }}
+          />
+        ) : null}
+      </>
+    )
+  }
 
   if (eligible) {
     return (

@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useSession } from '@/features/auth/hooks'
 import { ReviewDialog } from '@/features/reviews/components/review-dialog'
+import { ProductQuestions } from '@/features/questions/components/product-questions'
+import { useAnsweredQuestionCount } from '@/features/questions/hooks'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { AddToCart } from '@/features/cart/components/add-to-cart'
 import { useDistanceOrigin, useStoreDistances } from '@/features/location/hooks'
@@ -296,6 +298,20 @@ function ProductRatingLine({ productId }: { productId: string }) {
   )
 }
 
+/** «N preguntas respondidas» junto al título, con enlace a la sección. Sin respondidas no se dibuja nada. */
+function AnsweredQuestionsLink({ productId }: { productId: string }) {
+  const session = useSession()
+  const answered = useAnsweredQuestionCount(productId, session?.user.email)
+  if (!answered) return null
+  return (
+    <p className="text-sm text-ap-muted">
+      <a href="#preguntas" className="inline-flex min-h-6 items-center underline-offset-4 hover:text-ap-red hover:underline">
+        {pluralize(answered, 'pregunta respondida', 'preguntas respondidas')}
+      </a>
+    </p>
+  )
+}
+
 /** «Califica este producto» solo si el servidor dice que la persona con sesión compró y recibió el repuesto. */
 function RateProductAction({ productId, productName }: { productId: string; productName: string }) {
   const session = useSession()
@@ -363,6 +379,7 @@ function ProductDetail({ product }: { product: Product }) {
               ) : null}
             </div>
             <ProductRatingLine productId={product.id} />
+            <AnsweredQuestionsLink productId={product.id} />
             {product.partNumber ? (
               <p className="flex flex-wrap items-center gap-x-2">
                 <span className="ap-ref text-sm text-ap-ink">REF. {product.partNumber}</span>
@@ -406,6 +423,10 @@ function ProductDetail({ product }: { product: Product }) {
           emptyText="Aquí aparecen las opiniones de quienes ya recibieron este repuesto, para que comprar sea más fácil y seguro."
           action={<RateProductAction productId={product.id} productName={product.name} />}
         />
+      </div>
+
+      <div className="mt-12 border-t border-ap-graphite pt-8 sm:mt-16">
+        <ProductQuestions productId={product.id} productName={product.name} storeName={product.store?.name} />
       </div>
 
       {ads.length + (related.data?.length ?? 0) > 0 ? (

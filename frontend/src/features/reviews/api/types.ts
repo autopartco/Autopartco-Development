@@ -10,7 +10,8 @@ export interface PendingReview {
   orderId: string
   orderNumber: number
   deliveredAt: string
-  store: { id: string; name: string; reviewed: boolean }
+  /** `reviewId`: reseña vigente del almacén en este pedido, para editarla. */
+  store: { id: string; name: string; reviewed: boolean; reviewId?: string | null }
   products: PendingProduct[]
 }
 
@@ -20,6 +21,8 @@ export interface PendingProduct {
   /** Miniatura de la imagen principal. */
   image: string | null
   reviewed: boolean
+  /** Reseña vigente del producto, para editarla. */
+  reviewId?: string | null
 }
 
 /** Lo que el comprador escribe. `aspects`: código de categoría → 1–5, solo las que puntuó. */
@@ -39,4 +42,6 @@ export interface ReviewsService {
   update(target: ReviewTarget, reviewId: string, draft: ReviewDraft): Promise<Review>
   /** Quita la propia reseña (sin ventana de tiempo). */
   discard(target: ReviewTarget, reviewId: string): Promise<void>
+  /** Reseña propia para precargar el formulario: `GET .../reviews/mine` (en el almacén, con `?orderId=`). 404 `REVIEW_NOT_FOUND`. */
+  mine(target: ReviewTarget, orderId?: string): Promise<Review>
 }

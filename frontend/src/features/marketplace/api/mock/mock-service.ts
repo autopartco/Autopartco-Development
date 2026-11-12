@@ -343,7 +343,7 @@ export function createMockMarketplaceService(): MarketplaceService {
     },
 
     async getReviewEligibility() {
-      return []
+      return { eligibleOrderIds: [] }
     },
   }
 }

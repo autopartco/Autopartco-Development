@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
-import { PartyPopperIcon, StarIcon, StoreIcon } from 'lucide-react'
+import { PartyPopperIcon, PencilIcon, StarIcon, StoreIcon } from 'lucide-react'
 import { Container, PageIntro } from '@/components/common/page-header'
 import { SmartImage } from '@/components/common/smart-image'
 import { EmptyState, ErrorState } from '@/components/common/states'
@@ -13,7 +13,9 @@ import type { PendingReview } from '../api/types'
 import { usePendingReviews } from '../hooks'
 
 /** Qué se está calificando en el diálogo. */
-type Active = { order: PendingReview; type: 'store' } | { order: PendingReview; type: 'product'; productId: string; name: string }
+type Active =
+  | { order: PendingReview; type: 'store'; reviewId?: string }
+  | { order: PendingReview; type: 'product'; productId: string; name: string; reviewId?: string }
 
 const dateFormatter = new Intl.DateTimeFormat('es-CO', { dateStyle: 'long' })
 
@@ -26,6 +28,7 @@ function matchesOrder(order: PendingReview, wanted: string | null): boolean {
 function OrderBlock({ order, highlighted, onRate }: { order: PendingReview; highlighted: boolean; onRate: (active: Active) => void }) {
   const ref = useRef<HTMLElement>(null)
   const pendingProducts = order.products.filter((product) => !product.reviewed)
+  const reviewedProducts = order.products.filter((product) => product.reviewed && product.reviewId)
   const headingId = `pedido-${order.orderId}-${order.store.id}`
 
   useEffect(() => {
@@ -47,7 +50,17 @@ function OrderBlock({ order, highlighted, onRate }: { order: PendingReview; high
         </h2>
       </header>
 
-      {order.store.reviewed ? null : (
+      {order.store.reviewed ? (
+        order.store.reviewId ? (
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-ap-muted">Ya calificaste el almacén. Puedes ajustar tu reseña mientras siga abierta la edición.</p>
+            <Button variant="outline" className="h-11 shrink-0 px-4" aria-label={`Editar mi reseña de ${order.store.name}`} onClick={() => onRate({ order, type: 'store', reviewId: order.store.reviewId ?? undefined })}>
+              <PencilIcon aria-hidden />
+              Editar mi reseña
+            </Button>
+          </div>
+        ) : null
+      ) : (
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex min-w-0 items-start gap-2.5">
             <StoreIcon aria-hidden className="mt-0.5 size-5 shrink-0 text-ap-muted" />
@@ -78,6 +91,28 @@ function OrderBlock({ order, highlighted, onRate }: { order: PendingReview; high
                   onClick={() => onRate({ order, type: 'product', productId: product.productId, name: product.name })}
                 >
                   Calificar
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {reviewedProducts.length > 0 ? (
+        <div className="flex flex-col gap-1 border-t border-ap-line pt-4">
+          <h3 className="text-sm font-semibold text-ap-ink">Productos que ya calificaste</h3>
+          <ul className="flex flex-col divide-y divide-ap-line">
+            {reviewedProducts.map((product) => (
+              <li key={product.productId} className="flex items-center gap-3 py-3">
+                <SmartImage src={product.image ?? ''} alt="" width={56} height={56} frameClassName="size-14 shrink-0 rounded-md border border-ap-line" />
+                <p className="min-w-0 flex-1 text-sm font-medium break-words text-ap-ink">{product.name}</p>
+                <Button
+                  variant="outline"
+                  className="h-11 shrink-0 px-3"
+                  aria-label={`Editar mi reseña de ${product.name}`}
+                  onClick={() => onRate({ order, type: 'product', productId: product.productId, name: product.name, reviewId: product.reviewId ?? undefined })}
+                >
+                  Editar mi reseña
                 </Button>
               </li>
             ))}
@@ -177,6 +212,7 @@ export default function RatePage() {
           target={active.type === 'store' ? { type: 'store', id: active.order.store.id } : { type: 'product', id: active.productId }}
           targetName={active.type === 'store' ? active.order.store.name : active.name}
           orders={[{ id: active.order.orderId, label: `Pedido #${active.order.orderNumber}` }]}
+          existing={active.reviewId ? { id: active.reviewId } : undefined}
           onDone={done}
         />
       ) : null}

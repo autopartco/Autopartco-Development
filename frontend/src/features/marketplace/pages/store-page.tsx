@@ -192,7 +192,7 @@ function StoreReviews({ store }: { store: StoreProfile }) {
   const session = useSession()
   const location = useLocation()
   const eligibility = useReviewEligibility(store.id, session?.user.email)
-  const eligibleOrders = eligibility.data ?? []
+  const eligibleOrders = eligibility.data?.eligibleOrderIds ?? []
 
   return (
     <ReviewsSection

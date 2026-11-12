@@ -37,6 +37,8 @@ export const RatePage = lazy(() => import('@/features/reviews/pages/rate-page'))
 // Reseñas en el portal del almacén y en la moderación del admin.
 export const PortalReviewsPage = lazy(() => import('@/features/portal/pages/reviews-page'))
 export const AdminReviewsPage = lazy(() => import('@/features/admin/pages/reviews-page'))
+export const PortalQuestionsPage = lazy(() => import('@/features/portal/pages/questions-page'))
+export const AdminQuestionsPage = lazy(() => import('@/features/admin/pages/questions-page'))
 
 // Portal del almacén (SaaS vendedores): cada pantalla se descarga al visitarla.
 export const PortalRoot = lazy(() => import('@/features/portal/layout/portal-root').then((module) => ({ default: module.PortalRoot })))

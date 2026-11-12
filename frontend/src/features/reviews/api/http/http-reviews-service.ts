@@ -45,6 +45,11 @@ export function createHttpReviewsService(): ReviewsService {
       const token = await requireAccessToken()
       return toReview(await apiRequest<ReviewResponseDto>(`${reviewsBase(target)}/${id(reviewId)}`, { method: 'PUT', body: payload(draft), token }))
     },
+    async mine(target, orderId) {
+      const token = await requireAccessToken()
+      const query = target.type === 'store' && orderId ? `?orderId=${id(orderId)}` : ''
+      return toReview(await apiRequest<ReviewResponseDto>(`${reviewsBase(target)}/mine${query}`, { token }))
+    },
     async discard(target, reviewId) {
       const token = await requireAccessToken()
       await apiRequest<void>(`${reviewsBase(target)}/${id(reviewId)}`, { method: 'DELETE', token })

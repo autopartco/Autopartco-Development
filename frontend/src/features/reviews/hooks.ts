@@ -13,6 +13,7 @@ export function usePendingReviews() {
 export function invalidateReviews(): void {
   invalidateAsync(PENDING_KEY)
   invalidateAsync('reviews:')
+  invalidateAsync('review-mine:')
   invalidateAsync('review-summary:')
   invalidateAsync('product-review-eligibility:')
   invalidateAsync('store-review-eligibility:')

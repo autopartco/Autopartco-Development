@@ -589,9 +589,13 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
 
     async getReviewEligibility(storeId) {
       const token = await bearer()
-      if (!token) return []
-      const dto = await apiRequest<{ eligibleOrderIds: string[] }>(`${PATHS.storeReviews(storeId)}/eligibility`, { token })
-      return dto.eligibleOrderIds
+      if (!token) return { eligibleOrderIds: [] }
+      const dto = await apiRequest<ProductReviewEligibilityDto>(`${PATHS.storeReviews(storeId)}/eligibility`, { token })
+      return {
+        eligibleOrderIds: dto.eligibleOrderIds ?? [],
+        existingReviewId: dto.existingReviewId ?? undefined,
+        editableUntil: dto.editableUntil ?? undefined,
+      }
     },
   }
 }

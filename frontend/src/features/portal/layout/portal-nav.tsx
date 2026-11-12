@@ -2,12 +2,12 @@ import { NavLink } from 'react-router'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 import { usePortal } from '../context'
+import { usePortalQuestionPending } from '../lib/questions'
 import { usePortalReviewSummary } from '../lib/reviews'
 import { PORTAL_SECTION_GROUPS } from '../lib/sections'
 
-/** Contador de reseñas sin responder junto a «Reseñas»; sin pendientes (o si falla la consulta) no se dibuja. */
-function UnansweredReviewsCount() {
-  const unanswered = usePortalReviewSummary().data?.unanswered ?? 0
+/** Contador de pendientes junto a «Reseñas» o «Preguntas»; sin pendientes (o si falla la consulta) no se dibuja. */
+function UnansweredBadge({ unanswered }: { unanswered: number }) {
   if (unanswered <= 0) return null
   return (
     <span className="ml-auto inline-flex min-w-6 items-center justify-center rounded-full bg-ap-red-on-dark px-1.5 text-xs font-semibold text-ap-graphite tabular-nums">
@@ -15,6 +15,14 @@ function UnansweredReviewsCount() {
       <span className="sr-only">{unanswered === 1 ? ', 1 sin responder' : `, ${unanswered} sin responder`}</span>
     </span>
   )
+}
+
+function UnansweredReviewsCount() {
+  return <UnansweredBadge unanswered={usePortalReviewSummary().data?.unanswered ?? 0} />
+}
+
+function UnansweredQuestionsCount() {
+  return <UnansweredBadge unanswered={usePortalQuestionPending().data ?? 0} />
 }
 
 /**
@@ -64,6 +72,7 @@ export function PortalNav({ onNavigate }: { onNavigate?: () => void }) {
                     <item.icon className="size-4 shrink-0" aria-hidden />
                     {item.label}
                     {item.to === 'resenas' ? <UnansweredReviewsCount /> : null}
+                    {item.to === 'preguntas' ? <UnansweredQuestionsCount /> : null}
                   </NavLink>
                 </li>
               ))}

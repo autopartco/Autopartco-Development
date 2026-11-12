@@ -7,7 +7,9 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { TextAreaField, SelectField } from '@/features/portal/components/form-controls'
 import type { ReviewTarget } from '@/features/marketplace/api/types'
 import { aspectCodes, aspectCopy } from '@/features/marketplace/lib/review-labels'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useMediaQuery } from '@/lib/use-media-query'
+import { useAsync } from '@/lib/use-async'
 import { useSubmitOnce } from '@/lib/use-submit-once'
 import { getReviewsService } from '../api/reviews-service'
 import type { ReviewDraft } from '../api/types'
@@ -26,7 +28,7 @@ export interface ExistingReview {
   id: string
   /** Fin de la ventana de 30 días para editar (`ProductReviewEligibility.editableUntil`). */
   editableUntil?: string
-  /** Lo que ya escribió, si se conoce; si no, el formulario empieza vacío y al guardar reemplaza la reseña. */
+  /** Lo que ya escribió, si se conoce; si no, el diálogo lo carga con `GET …/reviews/mine`. */
   initial?: ReviewDraft
 }
 
@@ -75,7 +77,7 @@ export function ReviewDialog(props: ReviewDialogProps) {
   const title = existing ? `${copy.edit} ${targetName}` : `${copy.create} ${targetName}`
   const description = 'Solo califican quienes recibieron su pedido. Tu nombre se muestra como «Ana P.»; nunca tu correo.'
 
-  const body = <ReviewForm key={`${target.type}:${target.id}:${existing?.id ?? 'nueva'}`} {...props} onClose={() => onOpenChange(false)} />
+  const body = <ReviewBody key={`${target.type}:${target.id}:${existing?.id ?? 'nueva'}`} {...props} onClose={() => onOpenChange(false)} />
 
   return wide ? (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -97,6 +99,57 @@ export function ReviewDialog(props: ReviewDialogProps) {
         {body}
       </SheetContent>
     </Sheet>
+  )
+}
+
+const EDIT_WINDOW_MS = 30 * 24 * 60 * 60 * 1000
+
+/**
+ * Al editar, precarga la reseña propia desde el servidor (`GET …/reviews/mine`; en el almacén, la del pedido).
+ * Si el llamador ya trae `existing.initial`, lo usa tal cual.
+ */
+function ReviewBody(props: ReviewDialogProps & { onClose: () => void }) {
+  const { existing, target, orders, onClose } = props
+  const orderId = target.type === 'store' ? orders?.[0]?.id : undefined
+  const needsLoad = Boolean(existing) && !existing?.initial
+  const mine = useAsync(`review-mine:${needsLoad ? '' : 'none:'}${target.type}:${target.id}:${orderId ?? ''}`, async () =>
+    needsLoad ? (await getReviewsService()).mine(target, orderId) : undefined,
+  )
+
+  if (!existing || !needsLoad) return <ReviewForm {...props} />
+  if (mine.status === 'error') {
+    return (
+      <div className="flex flex-col gap-4">
+        <FormAlert title={reviewErrorMessage(mine.error, 'No pudimos cargar tu reseña. Inténtalo de nuevo.')} />
+        <div className="flex flex-wrap gap-2">
+          <Button type="button" className="h-11 px-4" onClick={mine.retry}>
+            Reintentar
+          </Button>
+          <Button type="button" variant="outline" className="h-11 px-4" onClick={onClose}>
+            Cerrar
+          </Button>
+        </div>
+      </div>
+    )
+  }
+  if (!mine.data || mine.isStale) {
+    // Sin datos todavía (o llegando los de otra clave): se muestra la carga.
+    return (
+      <div className="flex flex-col gap-3" role="status">
+        <span className="sr-only">Cargando tu reseña</span>
+        <Skeleton aria-hidden className="h-10 w-48" />
+        <Skeleton aria-hidden className="h-32 w-full" />
+      </div>
+    )
+  }
+  const review = mine.data
+  const created = new Date(review.createdAt).getTime()
+  const editableUntil = existing.editableUntil ?? (Number.isNaN(created) ? undefined : new Date(created + EDIT_WINDOW_MS).toISOString())
+  return (
+    <ReviewForm
+      {...props}
+      existing={{ ...existing, editableUntil, initial: { rating: review.rating, comment: review.comment, aspects: review.aspects } }}
+    />
   )
 }
 
@@ -264,10 +317,6 @@ function ReviewForm({ target, targetName, orders = [], existing, onDone, onClose
             }
           />
         </>
-      ) : null}
-
-      {existing && !existing.initial && !readOnly ? (
-        <p className="text-xs text-ap-muted">Al guardar, esta calificación reemplaza la que publicaste antes.</p>
       ) : null}
 
       {confirmingDiscard ? (

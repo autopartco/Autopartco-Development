@@ -10,6 +10,7 @@ import type { Dashboard, StorePermission } from '../api/types'
 import { ListSkeleton } from '../components/list-skeleton'
 import { PageHeader } from '../components/page-header'
 import { QueryBoundary } from '../components/query-boundary'
+import { QuestionsCard } from '../components/questions-card'
 import { ReviewsCard } from '../components/reviews-card'
 import { StatusBadge } from '../components/status-badge'
 import { UsageMeter } from '../components/usage-meter'
@@ -275,6 +276,7 @@ function DashboardView({ data }: { data: Dashboard }) {
         <aside aria-label="Contexto del almacén" className="flex flex-col gap-6">
           <MonthSales data={data} />
           {can('STORE_READ') ? <ReviewsCard /> : null}
+          {can('STORE_READ') ? <QuestionsCard /> : null}
           <PlanStatus data={data} />
         </aside>
       </div>
