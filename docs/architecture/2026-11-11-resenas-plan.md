@@ -250,7 +250,7 @@ alter table search_listings add column product_rating numeric(2,1), add column p
   - el filtro «sin responder» funciona;
   - el admin oculta con motivo.
 
-### T7: QA del diff
+### T7: QA del diff ✅ (2026-11-11; 0 altos; M1 reseñas borradas y ocultas, M2 contacto en preguntas, B1–B3 y error 500 al volver a crear la reseña de almacén, corregidos)
 - **Modelo:** Opus · **Agente:** qa-seguridad
 - **Contexto:** solo el diff de T2–T6. Revisar:
   - IDOR en reseñas, respuestas y pendientes;

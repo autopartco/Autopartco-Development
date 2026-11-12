@@ -10,6 +10,7 @@ const MESSAGES: Record<string, string> = {
   REVIEW_ASPECT_INVALID: 'Una de las categorías no es válida. Recarga la página e inténtalo de nuevo.',
   REVIEW_RATE_LIMITED: 'Has enviado muchas reseñas en poco tiempo. Espera un rato e inténtalo de nuevo.',
   REVIEW_NOT_FOUND: 'No encontramos esa reseña. Puede que ya la hayas borrado.',
+  REVIEW_MODERATED: 'Esta reseña fue retirada por moderación y no se puede publicar de nuevo.',
   ORDER_NOT_FOUND: 'No encontramos ese pedido en tu cuenta.',
 }
 
