@@ -148,7 +148,7 @@ public class SocialLoginService {
             // Mismo desafío que el login con contraseña: la sesión se abre en POST /auth/login/two-factor.
             return twoFactorLoginService.startChallenge(account);
         }
-        loginAttemptService.record(account, true, ipAddress);
+        loginAttemptService.recordSuccessful(account, ipAddress);
         Map<String, Object> metadata = new LinkedHashMap<>();
         metadata.put("provider", provider.code());
         if (ipAddress != null) {
