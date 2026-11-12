@@ -10,10 +10,12 @@ interface AccountFieldsProps {
   prefix: string
   errors: FieldErrors
   emailLabel?: string
+  /** Correo fijo (p. ej. el de una invitación): se muestra en solo lectura y se envía igual. */
+  fixedEmail?: string
 }
 
 /** Datos personales y de acceso. Dos columnas desde sm. */
-export function AccountFields({ prefix, errors, emailLabel = 'Correo' }: AccountFieldsProps) {
+export function AccountFields({ prefix, errors, emailLabel = 'Correo', fixedEmail }: AccountFieldsProps) {
   const id = (field: string) => `${prefix}${field}`
   return (
     <div className="grid gap-5 sm:grid-cols-2">
@@ -69,6 +71,7 @@ export function AccountFields({ prefix, errors, emailLabel = 'Correo' }: Account
         maxLength={100}
         required
         error={errors.email}
+        {...(fixedEmail === undefined ? {} : { defaultValue: fixedEmail, readOnly: true })}
       />
       <PasswordField
         id={id('password')}

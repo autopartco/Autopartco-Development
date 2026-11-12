@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -11,24 +12,25 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.autopartco.backend.core.audit.AuditService;
 import com.autopartco.backend.core.identity.AccountLookup;
 import com.autopartco.backend.core.identity.AccountRef;
-import com.autopartco.backend.core.organization.PermissionOption;
 import com.autopartco.backend.shared.web.ApiPaths;
 
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 
-/** Equipo del almacén: colaboradores, permisos asignables e invitaciones (con permiso de almacén). */
+/** Equipo del almacén: colaboradores, roles predefinidos e invitaciones (con permiso de almacén). */
 @RestController
 @RequestMapping(ApiPaths.STORES + "/{storeId}/staff")
 @AllArgsConstructor
 public class StaffController {
     private final ListStaff listStaff;
-    private final ListAssignablePermissions listAssignablePermissions;
+    private final ListStaffRoles listStaffRoles;
+    private final ManageStaffMember manageStaffMember;
     private final InviteStaffMember inviteStaffMember;
     private final ResendStaffInvitation resendStaffInvitation;
     private final RevokeStaffInvitation revokeStaffInvitation;
@@ -40,9 +42,39 @@ public class StaffController {
         return listStaff.execute(storeId, authentication.getName());
     }
 
-    @GetMapping("/permission-options")
-    public List<PermissionOption> permissionOptions(@PathVariable UUID storeId, Authentication authentication) {
-        return listAssignablePermissions.execute(storeId, authentication.getName());
+    @GetMapping("/roles")
+    public List<StaffRoleResponse> roles(@PathVariable UUID storeId, Authentication authentication) {
+        return listStaffRoles.execute(storeId, authentication.getName());
+    }
+
+    @PatchMapping("/members/{memberId}/role")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void changeRole(
+            @PathVariable UUID storeId,
+            @PathVariable UUID memberId,
+            @Valid @RequestBody StaffRoleRequest request,
+            Authentication authentication
+    ) {
+        manageStaffMember.changeRole(storeId, memberId, authentication.getName(), request.roleCode());
+        audit(authentication, "STAFF_ROLE_CHANGED", "COLLABORATOR", memberId, Map.of(
+                "storeId", storeId.toString(),
+                "role", request.roleCode()));
+    }
+
+    @PatchMapping("/members/{memberId}/deactivate")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deactivate(@PathVariable UUID storeId, @PathVariable UUID memberId, Authentication authentication) {
+        if (manageStaffMember.setActive(storeId, memberId, authentication.getName(), false)) {
+            audit(authentication, "STAFF_DEACTIVATED", "COLLABORATOR", memberId, Map.of("storeId", storeId.toString()));
+        }
+    }
+
+    @PatchMapping("/members/{memberId}/reactivate")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void reactivate(@PathVariable UUID storeId, @PathVariable UUID memberId, Authentication authentication) {
+        if (manageStaffMember.setActive(storeId, memberId, authentication.getName(), true)) {
+            audit(authentication, "STAFF_REACTIVATED", "COLLABORATOR", memberId, Map.of("storeId", storeId.toString()));
+        }
     }
 
     @PostMapping("/invitations")
@@ -52,10 +84,10 @@ public class StaffController {
             Authentication authentication
     ) {
         StaffInvitationResponse invitation = inviteStaffMember.execute(storeId, authentication.getName(), request);
-        audit(authentication, "STAFF_INVITED", invitation.id(), Map.of(
+        audit(authentication, "STAFF_INVITED", "STAFF_INVITATION", invitation.id(), Map.of(
                 "storeId", storeId.toString(),
                 "invitedEmail", invitation.email(),
-                "role", invitation.roleName() == null ? "" : invitation.roleName()));
+                "role", invitation.roleCode() == null ? "" : invitation.roleCode()));
         return invitation;
     }
 
@@ -69,17 +101,24 @@ public class StaffController {
     }
 
     @PatchMapping("/invitations/{invitationId}/revoke")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void revoke(
             @PathVariable UUID storeId,
             @PathVariable UUID invitationId,
             Authentication authentication
     ) {
         revokeStaffInvitation.execute(storeId, invitationId, authentication.getName());
-        audit(authentication, "STAFF_INVITATION_REVOKED", invitationId, Map.of("storeId", storeId.toString()));
+        audit(authentication, "STAFF_INVITATION_REVOKED", "STAFF_INVITATION", invitationId, Map.of("storeId", storeId.toString()));
     }
 
-    private void audit(Authentication authentication, String action, UUID invitationId, Map<String, Object> metadata) {
+    private void audit(
+            Authentication authentication,
+            String action,
+            String entity,
+            UUID entityId,
+            Map<String, Object> metadata
+    ) {
         UUID actorId = accountLookup.findByEmail(authentication.getName()).map(AccountRef::accountId).orElse(null);
-        auditService.record(actorId, action, "STAFF_INVITATION", invitationId, metadata);
+        auditService.record(actorId, action, entity, entityId, metadata);
     }
 }

@@ -18,7 +18,9 @@ public record StaffResponse(
             String email,
             String status,
             List<String> roleNames,
-            List<String> permissionCodes
+            List<String> permissionCodes,
+            String roleCode,
+            boolean owner
     ) {
         static Member from(StaffMember member) {
             return new Member(
@@ -28,7 +30,9 @@ public record StaffResponse(
                     member.email(),
                     member.status(),
                     member.roleNames(),
-                    member.permissionCodes()
+                    member.permissionCodes(),
+                    member.roleCode(),
+                    member.owner()
             );
         }
     }
@@ -45,6 +49,7 @@ public record StaffResponse(
             UUID storeId,
             String storeName,
             String email,
+            String roleCode,
             String roleName,
             List<String> permissionCodes,
             boolean accountCreationRequired,
