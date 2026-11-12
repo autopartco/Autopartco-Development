@@ -316,7 +316,7 @@ alter table notifications add column link varchar(300);
 
 **Tareas:**
 - **T9 · database · Haiku ✅ (2026-11-11, migración `product_questions_and_notification_link`; índices extra por almacén, persona y `answered_by`; `notifications.link` solo rutas internas `/…`):** el SQL de arriba en Supabase. **Requiere autorización.** Aceptación: tablas creadas y advisors sin alertas nuevas.
-- **T10 · backend · Sonnet:**
+- **T10 · backend · Sonnet ✅ (2026-11-11; teléfono = celular 3xx o fijo 60x de 10 dígitos, no referencias OEM; `/reviews/mine` y `reviewId` en pendientes):**
   - Archivos: `marketplace/questions/*`, `storesuite/questions/*`, `operations/questions/*`, puertos en `core.reviews` o en un `core.questions` nuevo, `NotificationService` (destinatarios y `link`), plantillas de correo, el ajuste `notifications.questions` en `SettingsSchemas`, `WebSecurityConfig`.
   - Aceptación: `-Dtest=ProductQuestionServiceTest,QuestionNotificationTest,StoreQuestionsPortalTest,AdminQuestionsTest,ModularityTests,WebSecurityConfigTest` en verde.
     - Una pregunta con teléfono responde 400.

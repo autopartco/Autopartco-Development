@@ -108,7 +108,10 @@ class ProductQuestionServiceTest {
     @ValueSource(strings = {
             "¿Sirve para un Mazda 3 del 2015?",
             "¿El precio de 1.250.000 incluye la instalación?",
-            "¿Viene con la referencia 04465 original?"
+            "¿Viene con la referencia 04465 original?",
+            "¿Es equivalente a la OEM 04465-33450?",
+            "¿Sirve para Mazda 3 2015 2016 y 2017?",
+            "¿Cruza con la referencia 8200 123 456?"
     })
     void ordinaryQuestionsAreAccepted(String text) {
         assertThat(QuestionRules.question(text)).isEqualTo(text);

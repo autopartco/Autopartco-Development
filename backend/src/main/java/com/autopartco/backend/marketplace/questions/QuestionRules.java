@@ -25,8 +25,12 @@ final class QuestionRules {
     /** Indicativo de Colombia ({@code +57}). */
     static final Pattern COUNTRY_CODE = Pattern.compile("\\+\\s*57");
 
-    /** Siete o más dígitos seguidos, que pueden ir separados por un espacio o un guion ({@code 300 123 4567}). */
-    static final Pattern PHONE = Pattern.compile("(?<!\\d)\\d(?:[ \\t-]?\\d){6,}");
+    /**
+     * Número colombiano de 10 dígitos: celular ({@code 3xx}) o fijo ({@code 60x}), con espacios, puntos o guiones
+     * opcionales ({@code 300 123 4567}, {@code 601-234-5678}). No se rechazan dígitos sueltos: en repuestos son comunes
+     * las referencias OEM ({@code 04465-33450}) y los años («Mazda 3 2015 2016»).
+     */
+    static final Pattern PHONE = Pattern.compile("(?<![\\d.-])(?:3\\d{2}|60\\d)[ \\t.-]?\\d{3}[ \\t.-]?\\d{4}(?![\\d])");
 
     private QuestionRules() {
     }
