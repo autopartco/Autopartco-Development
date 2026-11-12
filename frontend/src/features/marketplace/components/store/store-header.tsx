@@ -130,7 +130,8 @@ export function StoreHeader({ store, branches, crumbs }: StoreHeaderProps) {
       <Banner store={store} />
       <Container>
         <div className="flex flex-col gap-4 sm:flex-row sm:gap-6">
-          <div className="-mt-12 sm:-mt-16">
+          {/* `relative z-10`: el banner es `relative` y, sin esto, se pinta encima de la mitad superior del logo. */}
+          <div className="relative z-10 -mt-12 self-start sm:-mt-16">
             <Logo store={store} />
           </div>
           <div className="flex min-w-0 flex-1 flex-col gap-1.5 sm:pt-3">
