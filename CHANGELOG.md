@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.2.1 — 2026-11-11
+
+### Notificaciones
+- Menú de la campana compacto: 6 recientes, contador real, «Marcar todo como leído» y «Limpiar leídas».
+- Las notificaciones con destino lo indican; las demás no parecen enlaces.
+- Nueva página «Notificaciones» con bandeja, historial, archivado individual y paginación.
+
 ## v2.2.0 — 2026-11-11
 
 ### Notificaciones
