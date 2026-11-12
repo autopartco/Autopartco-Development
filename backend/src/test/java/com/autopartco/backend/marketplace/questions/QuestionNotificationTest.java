@@ -24,6 +24,7 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import com.autopartco.backend.core.notification.EmailService;
+import com.autopartco.backend.core.notification.NotificationKind;
 import com.autopartco.backend.core.notification.NotificationService;
 import com.autopartco.backend.core.settings.AccountSettings;
 import com.autopartco.backend.core.settings.SettingsQueries;
@@ -83,9 +84,9 @@ class QuestionNotificationTest {
         notifier.asked(questionId);
 
         String path = "/portal/" + storeId + "/preguntas?pregunta=" + questionId;
-        verify(notifications).notify(owner, "Nueva pregunta sobre Filtro de aceite", "¿Sirve para un Mazda 3 2015?",
+        verify(notifications).notify(owner, NotificationKind.QUESTION, "Nueva pregunta sobre Filtro de aceite", "¿Sirve para un Mazda 3 2015?",
                 path);
-        verify(notifications).notify(branchStaff, "Nueva pregunta sobre Filtro de aceite",
+        verify(notifications).notify(branchStaff, NotificationKind.QUESTION, "Nueva pregunta sobre Filtro de aceite",
                 "¿Sirve para un Mazda 3 2015?", path);
         verify(emailService).sendQuestionAsked("ventas@almacen.co", "Repuestos A", "Filtro de aceite",
                 "¿Sirve para un Mazda 3 2015?", "https://autopartco.co" + path);
@@ -110,7 +111,7 @@ class QuestionNotificationTest {
 
         notifier.asked(questionId);
 
-        verify(notifications).notify(eq(owner), anyString(), anyString(), anyString());
+        verify(notifications).notify(eq(owner), any(NotificationKind.class), anyString(), anyString(), anyString());
         verifyNoInteractions(emailService);
     }
 
@@ -119,14 +120,14 @@ class QuestionNotificationTest {
         when(queries.find(questionId)).thenReturn(Optional.of(row(null, null)));
         when(queries.storeRecipients(storeId, productId, authorPerson)).thenReturn(List.of(owner, branchStaff));
         doThrow(new IllegalStateException("db")).when(notifications)
-                .notify(eq(owner), anyString(), anyString(), anyString());
+                .notify(eq(owner), any(NotificationKind.class), anyString(), anyString(), anyString());
         when(settingsQueries.storeSettings(storeId)).thenReturn(settings(true, List.of("a@x.co", "b@x.co")));
         doThrow(new IllegalStateException("smtp")).when(emailService)
                 .sendQuestionAsked(eq("a@x.co"), any(), any(), any(), any());
 
         notifier.asked(questionId);
 
-        verify(notifications).notify(eq(branchStaff), anyString(), anyString(), anyString());
+        verify(notifications).notify(eq(branchStaff), any(NotificationKind.class), anyString(), anyString(), anyString());
         verify(emailService).sendQuestionAsked(eq("b@x.co"), any(), any(), any(), any());
     }
 
@@ -161,7 +162,7 @@ class QuestionNotificationTest {
         notifier.answered(questionId);
 
         String path = "/producto/" + productId + "?pregunta=" + questionId + "#preguntas";
-        verify(notifications).notify(authorAccount, "Respondieron tu pregunta",
+        verify(notifications).notify(authorAccount, NotificationKind.ANSWER, "Respondieron tu pregunta",
                 "Repuestos A respondió tu pregunta sobre Filtro de aceite.", path);
         verify(emailService).sendQuestionAnswered("ana@correo.co", "Ana", "Repuestos A", "Filtro de aceite",
                 "¿Sirve para un Mazda 3 2015?", "Sí, sirve.", "https://autopartco.co" + path);
@@ -180,7 +181,7 @@ class QuestionNotificationTest {
         notifier.answered(questionId);
         notifier.answered(questionId);
 
-        verify(notifications).notify(eq(authorAccount), anyString(), anyString(), eq(path));
+        verify(notifications).notify(eq(authorAccount), any(NotificationKind.class), anyString(), anyString(), eq(path));
         verify(emailService).sendQuestionAnswered(any(), any(), any(), any(), any(), any(), any());
     }
 
@@ -193,7 +194,7 @@ class QuestionNotificationTest {
 
         notifier.answered(questionId);
 
-        verify(notifications).notify(eq(authorAccount), anyString(), anyString(), anyString());
+        verify(notifications).notify(eq(authorAccount), any(NotificationKind.class), anyString(), anyString(), anyString());
         verify(emailService, never()).sendQuestionAnswered(any(), any(), any(), any(), any(), any(), any());
     }
 
