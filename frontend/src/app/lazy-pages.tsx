@@ -19,6 +19,7 @@ export const PasswordRecoveryPage = lazy(() => import('@/features/auth/pages/pas
 export const VerifyEmailPage = lazy(() => import('@/features/auth/pages/verify-email-page'))
 export const SellerRegisterPage = lazy(() => import('@/features/seller/pages/seller-register-page'))
 export const SellerSetupPage = lazy(() => import('@/features/seller/pages/seller-setup-page'))
+export const StaffInvitationPage = lazy(() => import('@/features/seller/pages/staff-invitation-page'))
 
 // Carrito, pago y confirmación del pedido.
 export const CartPage = lazy(() => import('@/features/cart/pages/cart-page'))

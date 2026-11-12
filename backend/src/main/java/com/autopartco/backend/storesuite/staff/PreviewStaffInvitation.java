@@ -24,6 +24,7 @@ public class PreviewStaffInvitation {
                 invitation.storeId(),
                 invitation.storeName(),
                 invitation.email(),
+                invitation.roleCode(),
                 invitation.roleName(),
                 invitation.permissionCodes(),
                 !accountExists,

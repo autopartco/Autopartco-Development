@@ -11,8 +11,9 @@ import com.autopartco.backend.core.organization.StaffInvitations;
 import lombok.AllArgsConstructor;
 
 /**
- * Derechos de plan para el equipo: exige roles personalizados y cupo de usuarios contando los colaboradores
- * activos más las invitaciones vigentes y las que se van a reservar. Se llama con el almacén ya bloqueado.
+ * Cupo de usuarios del plan para el equipo: cuenta los colaboradores activos más las invitaciones vigentes y las que
+ * se van a reservar. Se llama con el almacén ya bloqueado. Los roles son predefinidos, así que no exige
+ * {@code CUSTOM_ROLES}.
  */
 @Component
 @AllArgsConstructor
@@ -22,7 +23,6 @@ class StaffSeats {
 
     void reserve(UUID storeId, long invitationsToReserve) {
         long pendingInvitations = staffInvitations.countPending(storeId);
-        planEntitlements.requireCapability(storeId, "CUSTOM_ROLES");
         planEntitlements.requireCapacity(storeId, Capacity.USERS, pendingInvitations + invitationsToReserve);
     }
 }

@@ -11,6 +11,7 @@ public record StaffInvitationView(
         String storeName,
         String email,
         UUID roleId,
+        String roleCode,
         String roleName,
         List<String> permissionCodes,
         LocalDateTime expiresAt,

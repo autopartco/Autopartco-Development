@@ -1,9 +1,7 @@
 package com.autopartco.backend.core.organization;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -13,7 +11,6 @@ import com.autopartco.backend.core.organization.internal.StaffInvitation;
 import com.autopartco.backend.core.organization.internal.StaffInvitationRepository;
 import com.autopartco.backend.core.organization.internal.Store;
 import com.autopartco.backend.core.organization.internal.StorePermission;
-import com.autopartco.backend.core.organization.internal.StorePermissionRepository;
 import com.autopartco.backend.core.organization.internal.StoreRepository;
 import com.autopartco.backend.core.organization.internal.StoreRole;
 import com.autopartco.backend.core.organization.internal.StoreRoleRepository;
@@ -37,7 +34,6 @@ public class StaffInvitations {
     private final StaffInvitationRepository invitationRepository;
     private final StoreRepository storeRepository;
     private final StoreRoleRepository roleRepository;
-    private final StorePermissionRepository permissionRepository;
 
     /** Invitación recién creada o renovada junto con su token en claro (solo para el enlace del correo). */
     public record Issued(StaffInvitationView invitation, String rawToken) {
@@ -77,31 +73,18 @@ public class StaffInvitations {
     }
 
     /**
-     * Crea un rol propio del almacén con los permisos indicados y una invitación válida por 7 días. El llamador
-     * ya bloqueó el almacén y validó los permisos con {@link StaffDirectory#requireAssignable}.
+     * Crea una invitación válida por 7 días para el rol indicado (ya creado con {@link StaffRoles#ensure}). El
+     * llamador ya bloqueó el almacén.
      */
     @Transactional
-    public Issued create(
-            UUID storeId,
-            UUID invitedByAccountId,
-            String normalizedEmail,
-            String roleName,
-            Set<String> permissionCodes
-    ) {
+    public Issued create(UUID storeId, UUID invitedByAccountId, String normalizedEmail, UUID roleId) {
         Store store = storeRepository.getReferenceById(storeId);
-        List<StorePermission> permissions = permissionRepository.findByCodeIn(permissionCodes);
         String rawToken = TokenHashing.newToken();
         LocalDateTime expiresAt = LocalDateTime.now().plusDays(INVITATION_VALID_DAYS);
-        StoreRole role = roleRepository.save(StoreRole.builder()
-                .store(store)
-                .code("INVITED_" + UUID.randomUUID().toString().replace("-", ""))
-                .name(roleName.trim())
-                .permissions(new HashSet<>(permissions))
-                .build());
         StaffInvitation invitation = invitationRepository.save(StaffInvitation.builder()
                 .store(store)
                 .invitedByAccountId(invitedByAccountId)
-                .role(role)
+                .role(roleRepository.getReferenceById(roleId))
                 .email(normalizedEmail)
                 .tokenHash(TokenHashing.sha256Hex(rawToken))
                 .expiresAt(expiresAt)
@@ -226,6 +209,7 @@ public class StaffInvitations {
                 store.getBusinessName(),
                 invitation.getEmail(),
                 role.getId(),
+                role.getCode(),
                 role.getName(),
                 permissionCodes(role),
                 invitation.getExpiresAt(),

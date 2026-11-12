@@ -564,19 +564,27 @@ export interface BranchInput {
 
 // ----------------------------------------------------------------- equipo
 
+/** Roles predefinidos (`core/organization/StaffRoles`). `OWNER` no se puede asignar. */
+export type StaffRoleCode = 'OWNER' | 'ADMIN' | 'SALES' | 'INVENTORY' | 'VIEWER'
+
 export interface StaffMember {
   id: string
   name: string
   surname: string
   email: string
+  /** `ACTIVE` o `INACTIVE`. */
   status: string
   roleNames: string[]
   permissionCodes: string[]
+  /** Rol predefinido; `null` si tiene un rol heredado a medida. */
+  roleCode: StaffRoleCode | null
+  owner: boolean
 }
 
 export interface StaffInvitation {
   id: string
   email: string
+  roleCode: StaffRoleCode | null
   roleName: string
   permissionCodes: string[]
   expiresAt: string
@@ -591,16 +599,48 @@ export interface Staff {
   invitations: StaffInvitation[]
 }
 
-export interface PermissionOption {
-  code: string
+/** `GET /stores/{id}/staff/roles` (`StaffRoleResponse`). */
+export interface StaffRole {
+  code: StaffRoleCode
+  name: string
   description: string
+  permissionCodes: string[]
 }
 
 /** `StaffInviteRequest`. */
 export interface StaffInviteInput {
   email: string
+  roleCode: StaffRoleCode
+}
+
+/** `GET /staff-invitations/preview` (`StaffResponse.InvitationPreview`). */
+export interface StaffInvitationPreview {
+  storeId: string
+  storeName: string
+  email: string
+  roleCode: StaffRoleCode | null
   roleName: string
   permissionCodes: string[]
+  accountCreationRequired: boolean
+  expiresAt: string
+}
+
+/** `InvitationAcceptRequest.AccountDetails`: solo si el correo aún no tiene cuenta. */
+export interface StaffInvitationAccount {
+  name: string
+  surname: string
+  identification: string
+  dateBirth: string
+  numberPhone: string
+  password: string
+}
+
+/** `StaffResponse.Accepted`. */
+export interface StaffInvitationAccepted {
+  storeId: string
+  storeName: string
+  email: string
+  roleName: string
 }
 
 // ------------------------------------------------------------ ventas (analítica)
