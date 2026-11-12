@@ -9,6 +9,16 @@ export const DATA_SOURCE: 'mock' | 'http' = import.meta.env.VITE_MARKETPLACE_DAT
 export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '/api/v1').replace(/\/+$/, '')
 
 /**
+ * Convierte una ruta de la API que viene en una respuesta (p. ej. `/api/v1/marketplace/stores/{id}/brand/logo?v=…`)
+ * en una URL que el navegador pueda cargar: con la API en otro dominio, la ruta relativa apuntaría al frontend.
+ */
+export function apiAssetUrl(path: string | null | undefined): string | null {
+  if (!path) return null
+  if (/^(https?:|data:|blob:)/.test(path)) return path
+  return /^https?:\/\//.test(API_BASE_URL) ? new URL(path, API_BASE_URL).toString() : path
+}
+
+/**
  * Error de la API. El backend responde `{ error: { code, message, details } }`
  * (`shared/error/GlobalExceptionHandler`); en `VALIDATION_ERROR`, `details` es un
  * mapa campo -> mensaje (p. ej. `email` o, en multipart, `account.email`).

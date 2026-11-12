@@ -38,4 +38,14 @@ class SecurityMailListener {
             log.error("Could not send login alert ({})", exception.getClass().getSimpleName());
         }
     }
+
+    @Async(IdentityAsyncConfig.VERIFICATION_MAIL_EXECUTOR)
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    void on(SecurityNoticeRequested event) {
+        try {
+            emailService.sendSecurityNotice(event.email(), event.fullName(), event.title(), event.message());
+        } catch (RuntimeException exception) {
+            log.error("Could not send security notice ({})", exception.getClass().getSimpleName());
+        }
+    }
 }

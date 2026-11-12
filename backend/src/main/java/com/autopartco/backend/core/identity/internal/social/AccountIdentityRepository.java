@@ -13,4 +13,6 @@ public interface AccountIdentityRepository extends JpaRepository<AccountIdentity
     long countByProvider(String provider);
 
     boolean existsByAccount_Id(UUID accountId);
+
+    java.util.List<AccountIdentity> findByAccount_Id(UUID accountId);
 }

@@ -27,6 +27,7 @@ public class EmailVerificationTokenService {
     public static final String PURPOSE_PASSWORD_RECOVERY = "PASSWORD_RECOVERY";
     public static final String PURPOSE_TWO_FACTOR_LOGIN = "TWO_FACTOR_LOGIN";
     public static final String PURPOSE_TWO_FACTOR_SETUP = "TWO_FACTOR_SETUP";
+    public static final String PURPOSE_EMAIL_CHANGE = "EMAIL_CHANGE";
 
     private static final Duration MAX_CODE_VALIDITY = Duration.ofMinutes(30);
 
