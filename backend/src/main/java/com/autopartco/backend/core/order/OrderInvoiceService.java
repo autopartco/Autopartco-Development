@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.autopartco.backend.shared.error.BadRequestException;
@@ -59,7 +61,7 @@ public class OrderInvoiceService {
                     INSERT INTO order_invoices (sale_id, storage_path, file_name, content_type, size_bytes, uploaded_by)
                     VALUES (?, ?, ?, ?, ?, ?)
                     """, saleId, path, fileName, PDF, content.length, uploadedBy);
-            previous.forEach(this::deleteQuietly);
+            afterCommit(() -> previous.forEach(this::deleteQuietly));
         } catch (RuntimeException failure) {
             deleteQuietly(path);
             throw failure;
@@ -76,7 +78,7 @@ public class OrderInvoiceService {
         if (removed.isEmpty()) {
             throw notFound();
         }
-        removed.forEach(this::deleteQuietly);
+        afterCommit(() -> removed.forEach(this::deleteQuietly));
     }
 
     /** Descarga para el almacén dueño de la venta. */
@@ -166,6 +168,20 @@ public class OrderInvoiceService {
             name = name + ".pdf";
         }
         return name.length() > 200 ? name.substring(0, 196) + ".pdf" : name;
+    }
+
+    /** Borra archivos solo si la transacción se confirma (si se revierte, la factura vigente sigue intacta). */
+    private static void afterCommit(Runnable action) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            action.run();
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                action.run();
+            }
+        });
     }
 
     private void deleteQuietly(String path) {

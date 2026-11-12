@@ -33,6 +33,8 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class MyOrdersController {
     private static final String ORDERS = ApiPaths.ME + "/orders";
+    static final String RECEIPT_CSP =
+            "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
 
     private final BuyerOrderQueries buyerOrderQueries;
     private final OrderInvoiceService orderInvoiceService;
@@ -60,6 +62,9 @@ public class MyOrdersController {
                 .contentType(new MediaType(MediaType.TEXT_HTML, StandardCharsets.UTF_8))
                 .cacheControl(CacheControl.noStore())
                 .header("X-Content-Type-Options", "nosniff")
+                // En el dominio de la API: sin scripts, recursos externos, formularios ni marcos. El frontend lo abre
+                // como blob en su propio origen, donde el botón de imprimir sí funciona.
+                .header("Content-Security-Policy", RECEIPT_CSP)
                 .body(OrderReceiptRenderer.render(order));
     }
 
