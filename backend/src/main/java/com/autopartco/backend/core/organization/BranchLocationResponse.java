@@ -12,6 +12,7 @@ public record BranchLocationResponse(
         String country,
         String postalCode,
         BigDecimal latitude,
-        BigDecimal longitude
+        BigDecimal longitude,
+        boolean approximate
 ) {
 }

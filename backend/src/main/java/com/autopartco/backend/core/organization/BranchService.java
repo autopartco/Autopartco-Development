@@ -60,7 +60,7 @@ public class BranchService {
         }
 
         State active = findState(StateCodes.ACTIVE);
-        Location location = locationRepository.save(toLocation(request.location()));
+        Location location = locationRepository.save(toLocation(request.location(), null));
         Branch branch = Branch.builder()
                 .store(store)
                 .name(name)
@@ -88,7 +88,7 @@ public class BranchService {
             branch.setNumberPhone(request.numberPhone().trim());
         }
         if (request.location() != null) {
-            branch.setLocation(locationRepository.save(toLocation(request.location())));
+            branch.setLocation(locationRepository.save(toLocation(request.location(), branch.getLocation())));
         }
         if (request.whatsapp() != null) {
             branch.setWhatsapp(clean(request.whatsapp()));
@@ -153,22 +153,60 @@ public class BranchService {
                 ));
     }
 
-    private Location toLocation(BranchLocationRequest request) {
+    static final String APPROXIMATE = "approximate";
+
+    /**
+     * Toda sede necesita un punto para el mapa público. Si la petición no trae coordenadas se conservan las de
+     * {@code previous} solo cuando la dirección no cambió (formularios que no editan el punto); si no, 400
+     * {@code BRANCH_COORDINATES_REQUIRED}.
+     */
+    private Location toLocation(BranchLocationRequest request, Location previous) {
         requireColombianPoint(request.latitude(), request.longitude());
+        String addressLine = request.addressLine().trim();
+        String city = request.city().trim();
+        String department = request.department().trim();
+        BigDecimal latitude = request.latitude();
+        BigDecimal longitude = request.longitude();
+        boolean approximate = Boolean.TRUE.equals(request.approximate());
+        if (latitude == null) {
+            if (previous == null || previous.getLatitude() == null || previous.getLongitude() == null
+                    || !sameAddress(previous, addressLine, city, department)) {
+                throw new BadRequestException("BRANCH_COORDINATES_REQUIRED",
+                        "Marca la ubicación de la sucursal en el mapa.");
+            }
+            latitude = previous.getLatitude();
+            longitude = previous.getLongitude();
+            approximate = isApproximate(previous);
+        }
         return Location.builder()
-                .addressLine(request.addressLine().trim())
+                .addressLine(addressLine)
                 .addressComplement(clean(request.addressComplement()))
-                .city(request.city().trim())
-                .department(request.department().trim())
+                .city(city)
+                .department(department)
                 .country(request.country() == null || request.country().isBlank()
                         ? "Colombia"
                         : request.country().trim())
                 .postalCode(clean(request.postalCode()))
-                .latitude(request.latitude())
-                .longitude(request.longitude())
+                .latitude(latitude)
+                .longitude(longitude)
                 .provider("INTERNAL")
-                .metadata(Map.of())
+                .metadata(approximate ? Map.of(APPROXIMATE, true) : Map.of())
                 .build();
+    }
+
+    private static boolean sameAddress(Location previous, String addressLine, String city, String department) {
+        return addressLine.equalsIgnoreCase(trimmed(previous.getAddressLine()))
+                && city.equalsIgnoreCase(trimmed(previous.getCity()))
+                && department.equalsIgnoreCase(trimmed(previous.getDepartment()));
+    }
+
+    private static String trimmed(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    /** Punto marcado como aproximado en {@code locations.metadata}. */
+    static boolean isApproximate(Location location) {
+        return location.getMetadata() != null && Boolean.TRUE.equals(location.getMetadata().get(APPROXIMATE));
     }
 
     /** Ambas coordenadas o ninguna, dentro de Colombia. */
@@ -200,7 +238,8 @@ public class BranchService {
                 location.getCountry(),
                 location.getPostalCode(),
                 location.getLatitude(),
-                location.getLongitude()
+                location.getLongitude(),
+                isApproximate(location)
         );
         return new BranchResponse(
                 branch.getId(),

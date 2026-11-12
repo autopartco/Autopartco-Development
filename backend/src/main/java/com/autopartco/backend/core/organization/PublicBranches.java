@@ -65,6 +65,7 @@ public class PublicBranches {
                 location.getDepartment(),
                 location.getLatitude(),
                 location.getLongitude(),
+                BranchService.isApproximate(location),
                 phone(branch.getNumberPhone()),
                 branch.getWhatsapp(),
                 branch.getOpeningHours(),
@@ -102,6 +103,8 @@ public class PublicBranches {
             String department,
             BigDecimal latitude,
             BigDecimal longitude,
+            /** El punto es el centro de la ciudad o del barrio, no la puerta del almacén. */
+            boolean approximate,
             String phone,
             String whatsapp,
             Map<String, Object> openingHours,
@@ -109,7 +112,7 @@ public class PublicBranches {
             List<UUID> serviceIds
     ) {
         public PublicBranch withWhatsapp(String value) {
-            return new PublicBranch(id, name, address, city, department, latitude, longitude, phone, value,
+            return new PublicBranch(id, name, address, city, department, latitude, longitude, approximate, phone, value,
                     openingHours, openNow, serviceIds);
         }
     }

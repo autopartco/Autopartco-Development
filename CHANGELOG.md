@@ -1,5 +1,12 @@
 # Changelog
 
+## v2.1.3 — 2026-11-11
+
+### Sedes en el mapa
+- Al crear o editar una sucursal se marca su ubicación con un pin ajustable; es obligatoria.
+- Editar una sucursal ya no borra sus coordenadas.
+- Las sedes con ubicación aproximada lo indican en el perfil del almacén.
+
 ## v2.1.2 — 2026-11-11
 
 ### Correcciones

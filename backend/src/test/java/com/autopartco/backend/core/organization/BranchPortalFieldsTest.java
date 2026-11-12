@@ -59,7 +59,7 @@ class BranchPortalFieldsTest {
 
     private BranchLocationRequest point(String latitude, String longitude) {
         return new BranchLocationRequest("Cra 7 # 10-20", null, "Bogotá", "Bogotá D.C.", null, null,
-                latitude == null ? null : new BigDecimal(latitude), longitude == null ? null : new BigDecimal(longitude));
+                latitude == null ? null : new BigDecimal(latitude), longitude == null ? null : new BigDecimal(longitude), null);
     }
 
     private BranchResponse update(BranchUpdateRequest request) {
@@ -155,7 +155,40 @@ class BranchPortalFieldsTest {
         assertThatThrownBy(() -> update(new BranchUpdateRequest(null, null, point("4.7", null), null, null)))
                 .isInstanceOfSatisfying(BadRequestException.class,
                         error -> assertThat(error.getCode()).isEqualTo("LOCATION_INCOMPLETE"));
-        assertThat(update(new BranchUpdateRequest(null, null, point(null, null), null, null)).location().latitude())
-                .isNull();
+    }
+
+    @Test
+    void withoutCoordinatesAChangedAddressIsRejected() {
+        assertThatThrownBy(() -> update(new BranchUpdateRequest(null, null, point(null, null), null, null)))
+                .isInstanceOfSatisfying(BadRequestException.class,
+                        error -> assertThat(error.getCode()).isEqualTo("BRANCH_COORDINATES_REQUIRED"));
+        verify(locationRepository, never()).save(any());
+    }
+
+    @Test
+    void withoutCoordinatesTheSameAddressKeepsThePreviousPoint() {
+        branch.setLocation(Location.builder().addressLine("Cra 7 # 10-20").city("Bogotá").department("Bogotá D.C.")
+                .country("Colombia").latitude(new BigDecimal("4.6")).longitude(new BigDecimal("-74.08"))
+                .metadata(Map.of(BranchService.APPROXIMATE, true)).build());
+
+        BranchResponse response = update(new BranchUpdateRequest(null, null,
+                new BranchLocationRequest(" cra 7 # 10-20 ", "Local 2", "Bogotá", "Bogotá D.C.", null, null, null, null,
+                        null), null, null));
+
+        assertThat(response.location().latitude()).isEqualByComparingTo("4.6");
+        assertThat(response.location().longitude()).isEqualByComparingTo("-74.08");
+        assertThat(response.location().approximate()).isTrue();
+        assertThat(response.location().addressComplement()).isEqualTo("Local 2");
+    }
+
+    @Test
+    void approximatePointIsSavedAndExactByDefault() {
+        BranchResponse approximate = update(new BranchUpdateRequest(null, null,
+                new BranchLocationRequest("Cra 7 # 10-20", null, "Bogotá", "Bogotá D.C.", null, null,
+                        new BigDecimal("4.711"), new BigDecimal("-74.0721"), true), null, null));
+        assertThat(approximate.location().approximate()).isTrue();
+
+        assertThat(update(new BranchUpdateRequest(null, null, point("4.711", "-74.0721"), null, null))
+                .location().approximate()).isFalse();
     }
 }
