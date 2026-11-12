@@ -15,7 +15,7 @@ class OrderReceiptRendererTest {
     @Test
     void rendersTheOrderAndEscapesUserText() {
         BuyerOrderResponse.Item item = new BuyerOrderResponse.Item(UUID.randomUUID(), "Filtro <script>alert(1)</script>",
-                "OEM-1&2", 2, new BigDecimal("45000.00"), new BigDecimal("90000.00"));
+                "OEM-1&2", 2, new BigDecimal("45000.00"), new BigDecimal("90000.00"), null);
         BuyerOrderResponse.Sale sale = new BuyerOrderResponse.Sale(UUID.randomUUID(), UUID.randomUUID(),
                 "Repuestos \"El Cruce\"", UUID.randomUUID(), "Sede Norte", "DELIVERED", new BigDecimal("90000.00"),
                 new BigDecimal("8000.00"), new BigDecimal("98000.00"), List.of(item), null, null);

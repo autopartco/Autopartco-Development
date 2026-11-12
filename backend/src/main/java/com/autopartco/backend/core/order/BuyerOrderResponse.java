@@ -75,7 +75,9 @@ public record BuyerOrderResponse(
             String partNumber,
             int quantity,
             BigDecimal unitPrice,
-            BigDecimal lineTotal
+            BigDecimal lineTotal,
+            /** Miniatura de la imagen principal del producto; {@code null} si no tiene. */
+            String imageUrl
     ) {
     }
 }
