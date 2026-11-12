@@ -8,6 +8,7 @@ import type {
   MarketplaceCapabilities,
   MarketplaceService,
   Product,
+  ProductReviewEligibility,
   ProductQuery,
   ReviewListQuery,
   ReviewTarget,
@@ -170,8 +171,8 @@ export function useReviews(target: ReviewTarget, query: ReviewListQuery) {
 export function useProductReviewEligibility(productId: string, sessionKey: string | undefined) {
   return useMarketplace(`product-review-eligibility:${productId}:${sessionKey ?? 'anon'}`, (service) =>
     sessionKey
-      ? service.getProductReviewEligibility(productId).catch(() => ({ eligibleOrderIds: [] }))
-      : Promise.resolve({ eligibleOrderIds: [] }),
+      ? service.getProductReviewEligibility(productId).catch((): ProductReviewEligibility => ({ eligibleOrderIds: [] }))
+      : Promise.resolve<ProductReviewEligibility>({ eligibleOrderIds: [] }),
   )
 }
 

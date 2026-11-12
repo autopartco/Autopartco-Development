@@ -421,12 +421,6 @@ export interface ProductReviewEligibility {
   editableUntil?: string
 }
 
-export interface StoreReviewInput {
-  orderId: string
-  rating: number
-  comment?: string
-}
-
 /** Punto del área elegida para el inicio; sin él el servidor devuelve datos de todo el país. */
 export interface HomeQuery {
   lat?: number
@@ -495,8 +489,6 @@ export interface MarketplaceService {
   getProductReviewEligibility(productId: string): Promise<ProductReviewEligibility>
   /** Pedidos entregados del comprador con sesión que aún no tienen reseña; vacío sin sesión. */
   getReviewEligibility(storeId: string): Promise<string[]>
-  /** Exige sesión. 409 `REVIEW_NOT_ALLOWED` o `REVIEW_ALREADY_EXISTS`. */
-  createStoreReview(storeId: string, input: StoreReviewInput): Promise<Review>
 }
 
 export class MarketplaceError extends Error {

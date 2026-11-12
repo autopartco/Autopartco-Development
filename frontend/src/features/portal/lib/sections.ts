@@ -10,6 +10,7 @@ import {
   MegaphoneIcon,
   MapPinIcon,
   PackageIcon,
+  StarIcon,
   TagIcon,
   UsersIcon,
   WarehouseIcon,
@@ -18,7 +19,7 @@ import {
 import type { StorePermission } from '../api/types'
 
 /** Secciones del portal (segmento de ruta tras `/portal/:storeId/`). */
-export const PORTAL_SECTIONS = ['inicio', 'ventas', 'productos', 'inventario', 'inteligencia', 'pedidos', 'promociones', 'publicidad', 'alertas', 'sucursales', 'equipo', 'tienda', 'plan'] as const
+export const PORTAL_SECTIONS = ['inicio', 'ventas', 'productos', 'inventario', 'inteligencia', 'pedidos', 'promociones', 'publicidad', 'alertas', 'resenas', 'sucursales', 'equipo', 'tienda', 'plan'] as const
 
 /** Sección actual a partir de la URL, para conservarla al cambiar de tienda. */
 export function sectionOf(pathname: string): string {
@@ -58,6 +59,7 @@ export const PORTAL_SECTION_GROUPS: PortalSectionGroup[] = [
       { to: 'promociones', label: 'Promociones', icon: TagIcon, permission: 'PROMOTION_READ', keywords: 'descuentos ofertas audiencia resultados' },
       { to: 'publicidad', label: 'Publicidad', icon: MegaphoneIcon, permission: 'STORE_READ', keywords: 'anuncios campanas patrocinado destacados' },
       { to: 'alertas', label: 'Alertas', icon: BellIcon, permission: 'STORE_READ', keywords: 'avisos notificaciones agotado caida ventas preferencias' },
+      { to: 'resenas', label: 'Reseñas', icon: StarIcon, permission: 'STORE_READ', keywords: 'opiniones calificaciones estrellas responder comentarios clientes' },
     ],
   },
   {

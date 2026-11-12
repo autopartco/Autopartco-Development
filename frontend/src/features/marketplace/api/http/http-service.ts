@@ -593,12 +593,5 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
       const dto = await apiRequest<{ eligibleOrderIds: string[] }>(`${PATHS.storeReviews(storeId)}/eligibility`, { token })
       return dto.eligibleOrderIds
     },
-
-    async createStoreReview(storeId, input) {
-      const token = await bearer()
-      if (!token) throw new MarketplaceError('Inicia sesión para calificar la tienda.', { status: 401 })
-      const dto = await apiRequest<ReviewResponseDto>(PATHS.storeReviews(storeId), { method: 'POST', body: input, token })
-      return toReview(dto)
-    },
   }
 }

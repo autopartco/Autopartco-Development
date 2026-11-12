@@ -7,6 +7,7 @@ import {
   LayoutDashboardIcon,
   MegaphoneIcon,
   ScrollTextIcon,
+  StarIcon,
   SearchIcon,
   TagsIcon,
   UsersIcon,
@@ -44,6 +45,7 @@ export const ADMIN_SECTION_GROUPS: AdminSectionGroup[] = [
       { to: 'promociones', label: 'Promociones', icon: BadgePercentIcon, description: 'Descuentos para todo el marketplace.' },
       { to: 'publicidad', label: 'Publicidad', icon: MegaphoneIcon, description: 'Campañas de anuncios y tarifas por ubicación.' },
       { to: 'catalogo', label: 'Catálogo', icon: TagsIcon, description: 'Categorías y fabricantes oficiales.' },
+      { to: 'resenas', label: 'Reseñas', icon: StarIcon, description: 'Moderación de opiniones de compradores.' },
     ],
   },
   {
