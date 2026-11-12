@@ -10,7 +10,6 @@ import { getAdminApplicationService } from '../api/admin-service'
 import type { ApplicationDocument, StoreApplication } from '../api/types'
 import { reloadPendingApplications } from '../hooks'
 import { APPLICATION_STATUS, DOCUMENT_TYPE_LABEL, formatBytes, LEGAL_TYPE_LABEL } from '../lib/labels'
-import { RelationsView } from './relations-view'
 import { ReviewDialog } from './review-dialog'
 
 function Fact({ label, mono, children }: { label: string; mono?: boolean; children: ReactNode }) {
@@ -199,12 +198,6 @@ export function ApplicationSheet({ application, onClose }: ApplicationSheetProps
                 )}
               </section>
 
-              <section aria-labelledby="rel-title" className="flex flex-col gap-3">
-                <h3 id="rel-title" className="text-base font-semibold text-ap-ink">
-                  Relaciones
-                </h3>
-                <RelationsView key={current.applicationId} application={current} />
-              </section>
             </div>
 
             {pending ? (

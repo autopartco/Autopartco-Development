@@ -28,6 +28,12 @@ import {
   OrderResultPage,
   OrdersPage,
   NotificationsPage,
+  AccountOverviewPage,
+  AccountProfilePage,
+  AccountSecurityPage,
+  AccountAddressesPage,
+  AccountPreferencesPage,
+  AccountPrivacyPage,
   PasswordRecoveryPage,
   PortalAdsCampaignFormPage,
   PortalAdsCampaignsPage,
@@ -73,6 +79,7 @@ import {
   VerifyEmailPage,
 } from './lazy-pages'
 import { RequireSession } from '@/features/auth/components/require-session'
+import { AccountLayout } from '@/features/account/account-layout'
 import { GuestOnly } from '@/features/auth/components/guest-only'
 import { RequirePermission } from '@/features/portal/components/require-permission'
 import { LegacyRedirect } from './legacy-redirect'
@@ -116,6 +123,18 @@ export const router = createBrowserRouter([
           { path: 'mis-beneficios', element: <RequireSession fallback={<PageFallback />}><BenefitsPage /></RequireSession> },
           { path: 'mis-pedidos/:id', element: <RequireSession fallback={<PageFallback />}><OrderDetailPage /></RequireSession> },
           // Reseñas pendientes (GET /account/reviews/pending); el correo de invitación enlaza con ?pedido=.
+          {
+            path: 'cuenta',
+            element: <RequireSession fallback={<PageFallback />}><AccountLayout /></RequireSession>,
+            children: [
+              { index: true, element: <AccountOverviewPage /> },
+              { path: 'perfil', element: <AccountProfilePage /> },
+              { path: 'seguridad', element: <AccountSecurityPage /> },
+              { path: 'direcciones', element: <AccountAddressesPage /> },
+              { path: 'preferencias', element: <AccountPreferencesPage /> },
+              { path: 'privacidad', element: <AccountPrivacyPage /> },
+            ],
+          },
           { path: 'cuenta/notificaciones', element: <RequireSession fallback={<PageFallback />}><NotificationsPage /></RequireSession> },
           { path: 'cuenta/calificar', element: <RequireSession fallback={<PageFallback />}><RatePage /></RequireSession> },
           // Almacenes: landing y solicitud (POST /store-applications).

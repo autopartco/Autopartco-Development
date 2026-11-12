@@ -33,12 +33,23 @@ class ReviewInvitationTest {
     private final EmailService emailService = mock(EmailService.class);
     private final AppProperties appProperties = new AppProperties("https://api.autopartco.co",
             "https://autopartco.co/", null, null, null);
+    private final com.autopartco.backend.core.notification.NotificationService notifications =
+            mock(com.autopartco.backend.core.notification.NotificationService.class);
+    private final com.autopartco.backend.core.settings.SettingsQueries settings =
+            mock(com.autopartco.backend.core.settings.SettingsQueries.class);
     private final ReviewInvitationService service = spy(new ReviewInvitationService(null, auditService, emailService,
-            appProperties));
+            appProperties, notifications, settings));
+
+    private void reminders(boolean enabled) {
+        when(settings.accountSettings(accountId)).thenReturn(new com.autopartco.backend.core.settings.AccountSettings(
+                null, new com.autopartco.backend.core.settings.AccountSettings.Notifications(true, true, true, false, enabled),
+                null));
+    }
     private final UUID orderId = UUID.randomUUID();
     private final UUID accountId = UUID.randomUUID();
 
     private void deliveredOrder() {
+        reminders(true);
         doReturn(Optional.of(new ReviewInvitationService.Recipient(accountId, "ana@correo.co", "Ana María", 1042)))
                 .when(service).recipient(orderId);
     }
@@ -106,5 +117,32 @@ class ReviewInvitationTest {
     @Test
     void recipientQueryRequiresADeliveredSale() {
         assertThat(ReviewInvitationService.RECIPIENT_SQL).contains("st.code = 'DELIVERED'").contains("LIMIT 1");
+    }
+
+    @Test
+    void alsoLeavesAnInAppNotificationThatOpensTheRatingPage() {
+        deliveredOrder();
+
+        service.invite(orderId);
+
+        verify(notifications).notify(eq(accountId),
+                eq(com.autopartco.backend.core.notification.NotificationKind.REVIEW_REQUEST),
+                org.mockito.ArgumentMatchers.contains("#1042"), org.mockito.ArgumentMatchers.anyString(),
+                eq("/cuenta/calificar?pedido=" + orderId));
+    }
+
+    @Test
+    void whoTurnedOffRemindersGetsNoEmailButStillTheInAppNoticeAndTheMark() {
+        deliveredOrder();
+        reminders(false);
+
+        assertThat(service.invite(orderId)).isTrue();
+
+        verify(emailService, org.mockito.Mockito.never()).sendReviewInvitation(
+                org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyLong(),
+                org.mockito.ArgumentMatchers.any());
+        verify(notifications).notify(eq(accountId), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyString(),
+                org.mockito.ArgumentMatchers.anyString(), org.mockito.ArgumentMatchers.anyString());
+        verify(auditService).record(eq(accountId), eq("REVIEW_INVITATION_SENT"), eq("ORDER"), eq(orderId), anyMap());
     }
 }

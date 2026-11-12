@@ -12,7 +12,9 @@ public record AccountSettings(Security security, Notifications notifications, Pr
     public record TwoFactor(boolean enabled, String method) {
     }
 
-    public record Notifications(boolean orderUpdates, boolean priceAlerts, boolean storeReplies, boolean marketing) {
+    /** {@code reviewReminders}: correos que invitan y recuerdan calificar lo recibido. */
+    public record Notifications(boolean orderUpdates, boolean priceAlerts, boolean storeReplies, boolean marketing,
+            boolean reviewReminders) {
     }
 
     /** {@code theme}: {@code system} | {@code light} | {@code dark}; {@code defaultCityCode}: DIVIPOLA (5 dígitos). */

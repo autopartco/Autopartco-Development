@@ -1,5 +1,8 @@
 import {
+  BellIcon,
   ClipboardListIcon,
+  StarIcon,
+  UserRoundIcon,
   CreditCardIcon,
   FileClockIcon,
   GiftIcon,
@@ -20,7 +23,8 @@ import {
  *
  * El tipo de cuenta sale del claim `roles` del token y SOLO decide qué se muestra:
  * cada pantalla y cada petición las autoriza el servidor. Solo se enlazan rutas que
- * existen en `app/router.tsx` (hoy no hay "Mi perfil" ni "Mis pedidos" del cliente).
+ * existen en `app/router.tsx`. Todas las cuentas comparten el grupo «Mi cuenta» (perfil, pedidos, por calificar,
+ * notificaciones); después van las opciones propias del rol.
  */
 export type AccountKind = 'store' | 'customer' | 'admin' | 'unknown'
 
@@ -65,7 +69,12 @@ interface MenuOptions {
   root?: boolean
 }
 
+const MY_ACCOUNT: AccountMenuLink = { key: 'mi-cuenta', label: 'Mi cuenta', to: '/cuenta', icon: UserRoundIcon }
 const MY_ORDERS: AccountMenuLink = { key: 'mis-pedidos', label: 'Mis pedidos', to: '/mis-pedidos', icon: PackageIcon }
+const TO_RATE: AccountMenuLink = { key: 'por-calificar', label: 'Por calificar', to: '/cuenta/calificar', icon: StarIcon }
+const NOTIFICATIONS: AccountMenuLink = { key: 'notificaciones', label: 'Notificaciones', to: '/cuenta/notificaciones', icon: BellIcon }
+/** Igual para cualquier cuenta: un almacén o un administrador también compra y administra su cuenta. */
+const COMMON: AccountMenuLink[] = [MY_ACCOUNT, MY_ORDERS, TO_RATE, NOTIFICATIONS]
 const MY_BENEFITS: AccountMenuLink = { key: 'mis-beneficios', label: 'Tus beneficios', to: '/mis-beneficios', icon: GiftIcon }
 const CART: AccountMenuLink = { key: 'carrito', label: 'Carrito', to: '/carrito', icon: ShoppingCartIcon }
 const MARKETPLACE: AccountMenuLink = { key: 'marketplace', label: 'Ir al marketplace', to: '/buscar', icon: ShoppingBagIcon }
@@ -85,7 +94,7 @@ function storeSections(storeId: string): AccountMenuLink[] {
  * lo añade al final porque su comportamiento depende del área.
  */
 export function accountMenuGroups({ kind, area, storeId, can, sellerApplicationTo, sellerSetupTo, root }: MenuOptions): AccountMenuLink[][] {
-  const groups: AccountMenuLink[][] = []
+  const groups: AccountMenuLink[][] = [COMMON]
 
   if (kind === 'store') {
     const sections = storeId ? storeSections(storeId).filter((item) => !can || !item.permission || can(item.permission)) : []
@@ -103,10 +112,9 @@ export function accountMenuGroups({ kind, area, storeId, can, sellerApplicationT
       seller.push({ key: 'solicitud-almacen', label: 'Ver mi solicitud de almacén', to: sellerApplicationTo, icon: FileClockIcon })
     }
     if (seller.length > 0) groups.push(seller)
-    groups.push(area === 'portal' ? [MARKETPLACE, MY_ORDERS, MY_BENEFITS, CART] : [MY_ORDERS, MY_BENEFITS, CART])
+    groups.push(area === 'portal' ? [MARKETPLACE, MY_BENEFITS, CART] : [MY_BENEFITS, CART])
   } else {
     if (root) groups.push([{ key: 'administracion', label: 'Administración', to: '/admin', icon: ShieldCheckIcon }])
-    // Admin u otro rol sin menú propio: solo la salida del portal.
     if (area === 'portal') groups.push([MARKETPLACE])
   }
 

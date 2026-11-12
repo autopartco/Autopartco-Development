@@ -1,5 +1,21 @@
 # Changelog
 
+## v2.4.0 — 2026-11-12
+
+### Mi cuenta
+- Nueva sección «Mi cuenta», igual para clientes, almacenes y administradores: datos personales, seguridad, direcciones, preferencias y privacidad.
+- Cambiar contraseña (cierra las demás sesiones) y correo (con código al correo nuevo); verificación en dos pasos, sesiones abiertas e ingreso con Google.
+- Descargar mis datos y solicitar la eliminación de la cuenta.
+- El menú de cuenta comparte «Mi cuenta», «Mis pedidos», «Por calificar» y «Notificaciones» en todos los roles.
+
+### Calificaciones
+- Al entregarse un pedido llega una notificación para calificarlo; recordatorios por correo a los 3 y 10 días mientras falte calificar (se pueden desactivar).
+
+### Correcciones
+- El logo y el banner del almacén se ven en el portal.
+- La barra de desplazamiento del menú lateral del portal y del admin usa el tono oscuro.
+- Se quitó el diagrama «Relaciones» del panel de solicitudes.
+
 ## v2.3.0 — 2026-11-11
 
 ### Pedidos

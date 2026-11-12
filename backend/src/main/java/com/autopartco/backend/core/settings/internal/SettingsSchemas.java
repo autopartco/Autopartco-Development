@@ -33,6 +33,7 @@ public final class SettingsSchemas {
             .leaf("notifications.priceAlerts", true, bool())
             .leaf("notifications.storeReplies", true, bool())
             .leaf("notifications.marketing", false, bool())
+            .leaf("notifications.reviewReminders", true, bool())
             .leaf("preferences.theme", "system", oneOf("system", "light", "dark"))
             .leaf("preferences.defaultCityCode", null, optionalMatching(DIVIPOLA_CITY,
                     "El código de ciudad debe ser un código DIVIPOLA de 5 dígitos."))
@@ -81,7 +82,8 @@ public final class SettingsSchemas {
                         flag(notifications, "orderUpdates"),
                         flag(notifications, "priceAlerts"),
                         flag(notifications, "storeReplies"),
-                        flag(notifications, "marketing")),
+                        flag(notifications, "marketing"),
+                        flag(notifications, "reviewReminders")),
                 new AccountSettings.Preferences(
                         (String) preferences.get("theme"),
                         (String) preferences.get("defaultCityCode"))

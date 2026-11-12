@@ -69,7 +69,7 @@ class QuestionNotificationTest {
 
     private AccountSettings account(boolean storeReplies) {
         return new AccountSettings(new AccountSettings.Security(new AccountSettings.TwoFactor(false, "EMAIL"), true),
-                new AccountSettings.Notifications(true, true, storeReplies, false),
+                new AccountSettings.Notifications(true, true, storeReplies, false, true),
                 new AccountSettings.Preferences("system", null));
     }
 

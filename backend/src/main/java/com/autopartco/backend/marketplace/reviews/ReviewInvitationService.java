@@ -10,6 +10,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 
 import com.autopartco.backend.core.audit.AuditService;
 import com.autopartco.backend.core.notification.EmailService;
+import com.autopartco.backend.core.notification.NotificationKind;
+import com.autopartco.backend.core.notification.NotificationService;
+import com.autopartco.backend.core.settings.SettingsQueries;
 import com.autopartco.backend.shared.config.AppProperties;
 
 import lombok.AllArgsConstructor;
@@ -48,6 +51,8 @@ public class ReviewInvitationService {
     private final AuditService auditService;
     private final EmailService emailService;
     private final AppProperties appProperties;
+    private final NotificationService notificationService;
+    private final SettingsQueries settingsQueries;
 
     /** Envía la invitación si el pedido está entregado y aún no se envió. Devuelve si la envió. */
     public boolean invite(UUID orderId) {
@@ -59,7 +64,16 @@ public class ReviewInvitationService {
             return false;
         }
         Recipient to = recipient.get();
-        emailService.sendReviewInvitation(to.email(), firstName(to.givenName()), to.orderNumber(), link(orderId));
+        // Aviso in-app siempre (lleva a calificar); el correo, solo si la persona no desactivó los recordatorios.
+        try {
+            notificationService.notify(to.accountId(), NotificationKind.REVIEW_REQUEST, "¿Qué tal tu pedido #" + to.orderNumber() + "?",
+                    "Ya lo recibiste. Califica el almacén y los repuestos: ayuda a otros compradores.", path(orderId));
+        } catch (RuntimeException failure) {
+            log.warn("Could not store review notification ({})", failure.getClass().getSimpleName());
+        }
+        if (settingsQueries.accountSettings(to.accountId()).notifications().reviewReminders()) {
+            emailService.sendReviewInvitation(to.email(), firstName(to.givenName()), to.orderNumber(), link(orderId));
+        }
         auditService.record(to.accountId(), ACTION, ENTITY_TYPE, orderId, Map.of("orderNumber", to.orderNumber()));
         return true;
     }
@@ -71,10 +85,17 @@ public class ReviewInvitationService {
                 .optional();
     }
 
+    /** Ruta interna de «Calificar» para ese pedido. */
+    static String path(UUID orderId) {
+        return "/cuenta/calificar?pedido=" + orderId;
+    }
+
     String link(UUID orderId) {
-        return UriComponentsBuilder.fromUriString(appProperties.frontendBaseUrl().replaceAll("/+$", ""))
-                .path("/cuenta/calificar")
-                .queryParam("pedido", orderId)
+        return absolute(appProperties, path(orderId));
+    }
+
+    static String absolute(AppProperties appProperties, String path) {
+        return UriComponentsBuilder.fromUriString(appProperties.frontendBaseUrl().replaceAll("/+$", "") + path)
                 .build()
                 .toUriString();
     }
