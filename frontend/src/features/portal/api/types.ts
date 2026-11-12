@@ -521,6 +521,8 @@ export interface BranchLocation {
   postalCode: string | null
   latitude: number | null
   longitude: number | null
+  /** El punto salió de la dirección y no se ajustó en el mapa. */
+  approximate?: boolean
 }
 
 /** `BranchResponse`. */
@@ -544,6 +546,10 @@ export interface BranchInput {
     department: string
     country?: string
     postalCode?: string
+    /** Obligatorias al crear; al editar, si faltan y la dirección no cambió, el servidor conserva las anteriores. */
+    latitude?: number
+    longitude?: number
+    approximate?: boolean
   }
 }
 

@@ -11,6 +11,7 @@ import { useDraftForm, type FieldErrors } from '@/lib/use-draft-form'
 import { useSubmitOnce } from '@/lib/use-submit-once'
 import { useUnsavedChanges } from '@/lib/use-unsaved-changes'
 import { useCities } from '@/features/location/hooks'
+import { PointPicker, type PickedPoint } from '@/features/location/components/point-picker'
 import { getBranchService } from '../api/branch-service'
 import type { Branch, BranchInput } from '../api/types'
 import { usePortal } from '../context'
@@ -41,6 +42,14 @@ function valuesOf(branch: Branch | undefined): Values {
   }
 }
 
+function pointOf(branch: Branch | undefined): PickedPoint | null {
+  const location = branch?.location
+  if (location?.latitude == null || location.longitude == null) return null
+  return { lat: Number(location.latitude), lng: Number(location.longitude), approximate: location.approximate ?? false }
+}
+
+const POINT_ID = fieldId('mapa')
+
 function validate(values: Values): FieldErrors {
   const errors: FieldErrors = {}
   if (!values.name.trim()) errors.name = 'Escribe el nombre de la sucursal.'
@@ -70,20 +79,25 @@ function BranchForm({ branch, onDone, onCancel, onDirtyChange }: BranchFormProps
   const cities = useCities()
   const draft = useDraftForm<Values>({ initial: valuesOf(branch), validate })
   const { values } = draft
+  const initialPoint = useState(() => pointOf(branch))[0]
+  const [point, setPoint] = useState<PickedPoint | null>(initialPoint)
+  const [pointError, setPointError] = useState<string>()
+  const pointDirty = point?.lat !== initialPoint?.lat || point?.lng !== initialPoint?.lng
+  const dirty = draft.isDirty || pointDirty
   const submit = useSubmitOnce(async (input: BranchInput) => {
     const service = await getBranchService()
     if (branch) await service.update(storeId, branch.id, input)
     else await service.create(storeId, input)
   })
   const pending = submit.pending
-  const blocker = useUnsavedChanges(draft.isDirty && !pending)
+  const blocker = useUnsavedChanges(dirty && !pending)
   const [formError, setFormError] = useState<string>()
   const alertRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    onDirtyChange(draft.isDirty && !pending)
+    onDirtyChange(dirty && !pending)
     return () => onDirtyChange(false)
-  }, [draft.isDirty, pending, onDirtyChange])
+  }, [dirty, pending, onDirtyChange])
 
   const bind = (field: Field) => ({
     id: fieldId(field),
@@ -97,8 +111,10 @@ function BranchForm({ branch, onDone, onCancel, onDirtyChange }: BranchFormProps
     event.preventDefault()
     setFormError(undefined)
     const check = draft.validateAll()
-    if (!check.valid) {
-      focusById(check.firstInvalid ? fieldId(check.firstInvalid) : undefined)
+    const missingPoint = point === null
+    setPointError(missingPoint ? 'Ubica la sucursal en el mapa.' : undefined)
+    if (!check.valid || missingPoint) {
+      focusById(check.firstInvalid ? fieldId(check.firstInvalid) : POINT_ID)
       return
     }
     const input: BranchInput = {
@@ -110,6 +126,9 @@ function BranchForm({ branch, onDone, onCancel, onDirtyChange }: BranchFormProps
         city: values.city.trim(),
         department: values.department.trim(),
         country: 'Colombia',
+        latitude: point.lat,
+        longitude: point.lng,
+        approximate: point.approximate,
       },
     }
     // ÚNICA escritura: crear/actualizar al pulsar el botón final.
@@ -131,6 +150,7 @@ function BranchForm({ branch, onDone, onCancel, onDirtyChange }: BranchFormProps
         const first = FIELDS.find((field) => mapped[field])
         if (first) requestAnimationFrame(() => focusById(fieldId(first)))
       }
+      if (error instanceof ApiError && error.code === 'BRANCH_COORDINATES_REQUIRED') setPointError(error.message)
       setFormError(actionErrorMessage(error, 'No pudimos guardar la sucursal. Inténtalo de nuevo.'))
       requestAnimationFrame(() => alertRef.current?.focus())
     }
@@ -151,6 +171,16 @@ function BranchForm({ branch, onDone, onCancel, onDirtyChange }: BranchFormProps
         </datalist>
         <TextField {...bind('city')} label="Ciudad" list="sucursal-ciudades" autoComplete="off" required />
         <TextField {...bind('department')} label="Departamento" autoComplete="off" required />
+        <PointPicker
+          id={POINT_ID}
+          value={point}
+          onChange={(next) => {
+            setPoint(next)
+            setPointError(undefined)
+          }}
+          address={{ line: values.addressLine, city: values.city, department: values.department }}
+          error={pointError}
+        />
       </div>
       <div className="flex flex-col-reverse gap-2 border-t border-border p-4 sm:flex-row sm:justify-end">
         <Button type="button" variant="outline" className="h-11 px-5" onClick={onCancel} disabled={pending}>
