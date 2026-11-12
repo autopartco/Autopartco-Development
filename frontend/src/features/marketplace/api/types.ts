@@ -317,6 +317,8 @@ export interface StoreBranch {
   department?: string
   /** Sin ambas coordenadas la sede solo aparece en la lista, no en el mapa. */
   point?: { lat: number; lng: number }
+  /** El punto es aproximado (centro de la ciudad o del barrio): la dirección escrita es la referencia. */
+  approximate?: boolean
   phone?: string
   /** Ya resuelto por el servidor (cae al del almacén; ausente si el almacén desactivó WhatsApp). */
   whatsapp?: string

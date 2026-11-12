@@ -167,3 +167,27 @@ export async function reverseInColombia(point: GeoPoint): Promise<{ label: strin
   const label = first && city && city.toLowerCase() !== first.toLowerCase() ? `${first}, ${city}` : (first ?? city)
   return { label: label || props.state?.trim() || 'Colombia' }
 }
+
+/**
+ * Punto de partida para ubicar una dirección (sedes de almacén): primero la dirección completa (calle o lugar) y, si
+ * no aparece, la ciudad. Siempre es aproximado: quien edita ajusta el pin. `null` si nada cae en Colombia.
+ */
+export async function geocodeAddress(address: string, city: string, department: string, signal?: AbortSignal): Promise<GeoPoint | null> {
+  const { south, west, north, east } = COLOMBIA_BOUNDS
+  const query = [address, city, department].map((part) => part.trim()).filter(Boolean).join(', ')
+  if (query.length >= MIN_CHARS) {
+    const params = new URLSearchParams({ q: query, limit: '5', bbox: `${west},${south},${east},${north}` })
+    const response = await fetch(`${PHOTON_URL}/api/?${params}`, { signal, headers: { Accept: 'application/json' } })
+    if (response.ok) {
+      const features = ((await response.json()) as { features?: PhotonFeature[] }).features ?? []
+      const wantedCity = normalize(city)
+      const match =
+        features.find((feature) => feature.properties?.countrycode === 'CO' && wantedCity && normalize(feature.properties?.city ?? '').includes(wantedCity)) ??
+        features.find((feature) => feature.properties?.countrycode === 'CO')
+      const coords = match?.geometry?.coordinates
+      if (coords && isFiniteNumber(coords[0]) && isFiniteNumber(coords[1])) return { lat: coords[1], lng: coords[0] }
+    }
+  }
+  const [place] = await searchPlaces([city, department].filter(Boolean).join(', '), signal)
+  return place ? place.area.center : null
+}

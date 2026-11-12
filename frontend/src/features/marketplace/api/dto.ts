@@ -148,6 +148,8 @@ export interface PublicBranchDto {
   department: string | null
   latitude: number | null
   longitude: number | null
+  /** El punto es el centro de la ciudad o del barrio, no la puerta del almacén. */
+  approximate?: boolean
   phone: string | null
   whatsapp: string | null
   openingHours: Record<string, unknown> | null

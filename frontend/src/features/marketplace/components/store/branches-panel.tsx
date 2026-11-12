@@ -73,6 +73,9 @@ function BranchRow({ storeId, storeName, storePath, branch, active, whatsappMess
           <span className="min-w-0 break-words">{place}</span>
         </p>
       ) : null}
+      {branch.point && branch.approximate ? (
+        <p className="text-xs text-ap-muted">Ubicación aproximada en el mapa: guíate por la dirección.</p>
+      ) : null}
       <BranchHours branch={branch} />
       <div className="flex flex-wrap gap-2 pt-1">
         {whatsappEnabled && branch.whatsapp ? (

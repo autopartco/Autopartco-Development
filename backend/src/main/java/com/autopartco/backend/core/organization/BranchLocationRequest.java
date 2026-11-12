@@ -35,6 +35,9 @@ public record BranchLocationRequest(
 
         @DecimalMin("-180.0")
         @DecimalMax("180.0")
-        BigDecimal longitude
+        BigDecimal longitude,
+
+        /** El punto es aproximado (centro de la ciudad o del barrio), no la puerta del almacén. Nulo = exacto. */
+        Boolean approximate
 ) {
 }

@@ -99,6 +99,7 @@ function toBranch(dto: PublicBranchDto): StoreBranch {
     city: dto.city ?? undefined,
     department: dto.department ?? undefined,
     point: hasPoint ? { lat: Number(dto.latitude), lng: Number(dto.longitude) } : undefined,
+    approximate: hasPoint && dto.approximate === true,
     phone: dto.phone ?? undefined,
     whatsapp: dto.whatsapp ?? undefined,
     openingHours: toOpeningHours(dto.openingHours),

@@ -36,8 +36,9 @@ export function createMockBranchService(): BranchService {
           department: input.location.department,
           country: input.location.country ?? 'Colombia',
           postalCode: input.location.postalCode ?? null,
-          latitude: null,
-          longitude: null,
+          latitude: input.location.latitude ?? null,
+          longitude: input.location.longitude ?? null,
+          approximate: input.location.approximate ?? false,
         },
       }
       store.branches.push(branch)
@@ -60,6 +61,10 @@ export function createMockBranchService(): BranchService {
           city: input.location.city,
           department: input.location.department,
           postalCode: input.location.postalCode ?? null,
+          // Como el servidor: sin coordenadas se conservan las anteriores.
+          ...(input.location.latitude !== undefined && input.location.longitude !== undefined
+            ? { latitude: input.location.latitude, longitude: input.location.longitude, approximate: input.location.approximate ?? false }
+            : {}),
         }
       }
       for (const row of store.products.filter((product) => product.branchId === branchId)) row.branchName = branch.name
