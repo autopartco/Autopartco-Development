@@ -227,7 +227,7 @@ alter table search_listings add column product_rating numeric(2,1), add column p
   - estrellas con `aria-label` («4,7 de 5»);
   - sin scroll horizontal a 360 px.
 
-### T5: Calificar desde el pedido
+### T5: Calificar desde el pedido ✅ (2026-11-11; editar la reseña de almacén y precargar el formulario quedan para T10)
 - **Modelo:** Sonnet · **Agente:** frontend
 - **Archivos:**
   - `ReviewDialog` (estrellas accesibles, categorías, comentario);
@@ -240,7 +240,7 @@ alter table search_listings add column product_rating numeric(2,1), add column p
   - los errores `REVIEW_*` se muestran con texto claro;
   - después de calificar desaparece de los pendientes.
 
-### T6: Reseñas en el portal y el admin
+### T6: Reseñas en el portal y el admin ✅ (2026-11-11)
 - **Modelo:** Sonnet · **Agente:** frontend
 - **Archivos:** `features/portal/pages/reviews-page.tsx`, la tarjeta del panel, la navegación y `features/admin/pages/reviews-page.tsx`.
 - **Contexto:** contratos de portal y admin. Depende de T3.
