@@ -67,6 +67,8 @@ interface MenuOptions {
   sellerSetupTo?: string
   /** Cuenta ROOT: ofrece el servicio de administración (`/admin`). El servidor sigue decidiendo. */
   root?: boolean
+  /** Cliente con almacén activo (solicitud propia o colaborador invitado): ofrece el portal. */
+  hasStore?: boolean
 }
 
 const MY_ACCOUNT: AccountMenuLink = { key: 'mi-cuenta', label: 'Mi cuenta', to: '/cuenta', icon: UserRoundIcon }
@@ -93,17 +95,27 @@ function storeSections(storeId: string): AccountMenuLink[] {
  * Grupos de enlaces (se separan con una línea). "Cerrar sesión" no va aquí: cada menú
  * lo añade al final porque su comportamiento depende del área.
  */
-export function accountMenuGroups({ kind, area, storeId, can, sellerApplicationTo, sellerSetupTo, root }: MenuOptions): AccountMenuLink[][] {
+export function accountMenuGroups({
+  kind,
+  area,
+  storeId,
+  can,
+  sellerApplicationTo,
+  sellerSetupTo,
+  root,
+  hasStore,
+}: MenuOptions): AccountMenuLink[][] {
   const groups: AccountMenuLink[][] = [COMMON]
+  const storeGroup = (): AccountMenuLink[] => [
+    { key: 'almacenes', label: area === 'portal' ? 'Mis almacenes' : 'Ir al portal del almacén', to: '/portal', icon: StoreIcon },
+    ...(storeId ? storeSections(storeId).filter((item) => !can || !item.permission || can(item.permission)) : []),
+  ]
 
   if (kind === 'store') {
-    const sections = storeId ? storeSections(storeId).filter((item) => !can || !item.permission || can(item.permission)) : []
-    groups.push([
-      { key: 'almacenes', label: area === 'portal' ? 'Mis almacenes' : 'Ir al portal del almacén', to: '/portal', icon: StoreIcon },
-      ...sections,
-    ])
+    groups.push(storeGroup())
     groups.push(area === 'portal' ? [MARKETPLACE, CART] : [CART])
   } else if (kind === 'customer') {
+    if (hasStore) groups.push(storeGroup())
     const seller: AccountMenuLink[] = []
     if (sellerSetupTo) {
       seller.push({ key: 'configuracion-almacen', label: 'Terminar configuración', to: sellerSetupTo, icon: SettingsIcon })

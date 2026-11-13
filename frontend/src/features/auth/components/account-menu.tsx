@@ -46,6 +46,7 @@ function groupsFor(
     sellerApplicationTo: seller?.state === 'review' ? seller.to : undefined,
     sellerSetupTo: seller?.application?.status === 'CONFIGURATION_PENDING' ? SELLER_SETUP_PATH : undefined,
     root: session.roles.includes('ROLE_ROOT'),
+    hasStore: seller?.state === 'manage',
     kind: accountKindOf(session.roles),
     area,
     storeId: storeId ?? lastPortalStore(),
