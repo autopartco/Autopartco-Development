@@ -16,6 +16,8 @@ export interface Profile {
   identification: string
   dateBirth: string
   numberPhone: string
+  /** `false`: cuenta creada con Google que aún no tiene contraseña; la crea con el enlace de recuperación. */
+  passwordSet: boolean
 }
 
 export type ProfileUpdate = Partial<Pick<Profile, 'name' | 'surname' | 'identification' | 'dateBirth' | 'numberPhone'>>
@@ -81,7 +83,7 @@ async function call<T>(path: string, options: Omit<RequestOptions, 'token'> = {}
 // ------------------------------------------------------------------ simulado
 
 const mock = {
-  profile: { accountId: 'acc-1', personId: 'per-1', email: 'cliente@ejemplo.co', name: 'Ana', surname: 'Pérez', identification: '1020304050', dateBirth: '1992-04-18', numberPhone: '3001234567' } as Profile,
+  profile: { accountId: 'acc-1', personId: 'per-1', email: 'cliente@ejemplo.co', name: 'Ana', surname: 'Pérez', identification: '1020304050', dateBirth: '1992-04-18', numberPhone: '3001234567', passwordSet: true } as Profile,
   settings: {
     security: { twoFactor: { enabled: false, method: 'EMAIL' }, loginAlerts: true },
     notifications: { orderUpdates: true, priceAlerts: true, storeReplies: true, marketing: false, reviewReminders: true },
