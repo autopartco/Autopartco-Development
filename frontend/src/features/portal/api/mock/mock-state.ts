@@ -552,6 +552,8 @@ export function storesForSession(): MockStore[] {
   // `cliente...` y `admin...` simulan cuentas sin rol de almacén (ver mock-auth-service).
   if (email.startsWith('sinalmacen') || email.startsWith('cliente') || email.startsWith('admin')) return []
   if (email.startsWith('uno')) return [stores.get(STORE_A) as MockStore]
+  // `colaborador...`: cliente invitado a dos almacenes; en el del Norte su rol no incluye publicidad ni reportes.
+  if (email.startsWith('colaborador')) return [stores.get(STORE_B) as MockStore, stores.get(STORE_A) as MockStore]
   return [...stores.values()]
 }
 

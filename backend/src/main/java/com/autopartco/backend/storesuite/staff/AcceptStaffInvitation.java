@@ -24,6 +24,7 @@ import lombok.AllArgsConstructor;
 @Service
 @AllArgsConstructor
 public class AcceptStaffInvitation {
+    private static final String CUSTOMER_TYPE = "CUSTOMER";
 
     private final StaffInvitations staffInvitations;
     private final StaffSeats staffSeats;
@@ -49,6 +50,10 @@ public class AcceptStaffInvitation {
         }
         if (!StateCodes.ACTIVE.equals(account.stateCode())) {
             accountProvisioning.activate(account.accountId());
+        }
+        // Un cliente que entra a un equipo pasa a cuenta de almacén (sigue pudiendo comprar); ADMIN y ROOT no cambian.
+        if (CUSTOMER_TYPE.equals(account.accountTypeCode())) {
+            accountProvisioning.promoteToStoreManager(account.accountId());
         }
         staffDirectory.addCollaborator(invitation.storeId(), account.personId(), invitation.roleId());
 
