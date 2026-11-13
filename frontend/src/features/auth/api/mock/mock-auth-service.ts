@@ -149,6 +149,11 @@ export function createMockAuthService(): AuthService {
       return { email: 'cliente@ejemplo.co', message: 'Correo verificado correctamente.' }
     },
 
+    async resendVerification() {
+      await simulateLatency()
+      return { message: 'Si la cuenta existe y no está verificada, te enviamos un correo.', retryAfterSeconds: 60 }
+    },
+
     async requestPasswordRecovery() {
       await simulateLatency()
       return 'Si el correo está registrado, recibirás instrucciones para recuperar tu contraseña.'

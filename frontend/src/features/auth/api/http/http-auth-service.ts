@@ -20,6 +20,7 @@ const PATHS = {
   refresh: '/auth/refresh',
   logout: '/auth/logout',
   register: '/auth/register',
+  resendVerification: '/auth/verify-email/resend',
   verifyEmail: (token: string) => `/auth/verify-email?token=${encodeURIComponent(token)}`,
   recoveryRequest: '/auth/password-recovery/request',
   recoveryReset: '/auth/password-recovery/reset',
@@ -183,6 +184,10 @@ export function createHttpAuthService(): AuthService {
       // `VerifyEmailResponse`: accountId, email, state, message.
       const dto = await apiRequest<{ email: string; message: string }>(PATHS.verifyEmail(token))
       return { email: dto.email, message: dto.message }
+    },
+
+    async resendVerification(email) {
+      return apiRequest<{ message: string; retryAfterSeconds: number }>(PATHS.resendVerification, { body: { email: email.trim() } })
     },
 
     async requestPasswordRecovery(email) {
