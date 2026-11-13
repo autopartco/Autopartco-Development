@@ -29,6 +29,11 @@ public class AccountConfigurations {
     public static final String METHOD = "method";
     public static final String LOGIN_ALERTS = "loginAlerts";
     public static final String EMAIL_METHOD = "EMAIL";
+    /**
+     * Clave de primer nivel, fuera del esquema de {@code core.settings} (que conserva lo que no conoce): {@code false} en
+     * cuentas creadas con Google, cuya contraseña es aleatoria y nadie conoce. Ausente = la persona definió su contraseña.
+     */
+    public static final String PASSWORD_SET = "passwordSet";
 
     private final AccountRepository accountRepository;
 
@@ -72,6 +77,18 @@ public class AccountConfigurations {
     /** {@code security.twoFactor.enabled}; por defecto {@code false}. */
     public static boolean twoFactorEnabled(Map<String, Object> configuration) {
         return section(section(configuration, SECURITY), TWO_FACTOR).get(ENABLED) instanceof Boolean enabled && enabled;
+    }
+
+    /** ¿La persona conoce su contraseña? Solo es {@code false} si {@link #PASSWORD_SET} lo dice explícitamente. */
+    public static boolean passwordSet(Map<String, Object> configuration) {
+        return configuration == null || !Boolean.FALSE.equals(configuration.get(PASSWORD_SET));
+    }
+
+    /** Copia de {@code configuration} sin la marca de contraseña desconocida. */
+    public static Map<String, Object> withPasswordSet(Map<String, Object> configuration) {
+        Map<String, Object> result = copy(configuration);
+        result.remove(PASSWORD_SET);
+        return result;
     }
 
     /** {@code security.loginAlerts}; por defecto {@code true}. */

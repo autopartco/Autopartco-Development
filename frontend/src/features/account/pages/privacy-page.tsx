@@ -10,7 +10,7 @@ import { ApiError } from '@/lib/api'
 import { saveBlob } from '@/lib/download'
 import { invalidateAsync, useAsync } from '@/lib/use-async'
 import { AccountSection } from '../account-layout'
-import { cancelDeletion, exportData, getDeletionRequest, listIdentities, requestDeletion } from '../api'
+import { cancelDeletion, exportData, getDeletionRequest, getProfile, requestDeletion } from '../api'
 
 function message(error: unknown, fallback: string): string {
   return error instanceof ApiError ? error.message : fallback
@@ -40,11 +40,12 @@ function ExportSection() {
 
 function DeletionSection() {
   const request = useAsync('portal:account:deletion', getDeletionRequest)
-  const identities = useAsync('portal:account:identities', listIdentities)
+  const profile = useAsync('portal:account:profile', getProfile)
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string>()
-  const social = (identities.data?.length ?? 0) > 0
+  // Cuentas de Google sin contraseña: basta la sesión (la solicitud se puede cancelar y se avisa por correo).
+  const passwordSet = profile.data?.passwordSet !== false
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -99,7 +100,7 @@ function DeletionSection() {
       ) : open ? (
         <form noValidate onSubmit={(event) => void submit(event)} className="grid max-w-md gap-4">
           {error ? <FormAlert title="No se envió la solicitud">{error}</FormAlert> : null}
-          <PasswordField id="baja-password" name="password" label="Confirma tu contraseña" autoComplete="current-password" hint={social ? 'Si ingresas con Google y no tienes contraseña, créala con «¿Olvidaste tu contraseña?».' : undefined} />
+          {passwordSet ? <PasswordField id="baja-password" name="password" label="Confirma tu contraseña" autoComplete="current-password" /> : null}
           <label htmlFor="baja-reason" className="flex flex-col gap-1.5 text-sm font-medium text-ap-ink">
             Motivo (opcional)
             <textarea id="baja-reason" name="reason" maxLength={500} rows={3} className="rounded-md border border-input bg-ap-white px-3 py-2 text-base font-normal outline-none focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm" />

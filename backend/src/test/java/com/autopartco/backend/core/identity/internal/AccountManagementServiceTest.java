@@ -24,6 +24,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.autopartco.backend.core.audit.AuditService;
+import com.autopartco.backend.core.identity.AccountConfigurations;
 import com.autopartco.backend.core.identity.internal.social.AccountIdentityRepository;
 import com.autopartco.backend.core.notification.NotificationKind;
 import com.autopartco.backend.core.notification.NotificationService;
@@ -127,11 +128,38 @@ class AccountManagementServiceTest {
     }
 
     @Test
-    void requestingDeletionAlwaysRequiresThePassword() {
+    void requestingDeletionRequiresThePasswordWhenTheAccountHasOne() {
         when(identities.existsByAccount_Id(account.getId())).thenReturn(true);
 
         assertThatThrownBy(() -> service.requestDeletion(EMAIL, null, null))
                 .isInstanceOfSatisfying(BadRequestException.class, error -> assertThat(error.getCode()).isEqualTo("INVALID_PASSWORD"));
+    }
+
+    @Test
+    void googleAccountsWithoutAPasswordMustCreateOneBeforeChangingPasswordOrEmail() {
+        account.setConfiguration(Map.of(AccountConfigurations.PASSWORD_SET, false));
+        when(encoder.matches(anyString(), eq("hash"))).thenReturn(true);
+
+        assertThatThrownBy(() -> service.changePassword(EMAIL, "lo-que-sea", "Nueva#456", null))
+                .isInstanceOfSatisfying(ConflictException.class, error -> assertThat(error.getCode()).isEqualTo("PASSWORD_NOT_SET"));
+        assertThatThrownBy(() -> service.requestEmailChange(EMAIL, "nuevo@correo.co", "lo-que-sea"))
+                .isInstanceOfSatisfying(ConflictException.class, error -> assertThat(error.getCode()).isEqualTo("PASSWORD_NOT_SET"));
+        assertThatThrownBy(() -> service.unlink(EMAIL, "google", "lo-que-sea"))
+                .isInstanceOfSatisfying(ConflictException.class, error -> assertThat(error.getCode()).isEqualTo("LAST_SIGN_IN_METHOD"));
+        verify(accounts, never()).save(any());
+        verify(identities, never()).deleteAll(any());
+    }
+
+    @Test
+    void googleAccountsWithoutAPasswordCanRequestDeletionAndAreWarned() {
+        account.setConfiguration(Map.of(AccountConfigurations.PASSWORD_SET, false));
+
+        service.requestDeletion(EMAIL, null, "ya no la uso");
+
+        verify(jdbc).update(anyString(), eq(account.getId()), eq("ya no la uso"));
+        verify(events).publishEvent(any(SecurityNoticeRequested.class));
+        verify(notifications).notify(eq(account.getId()), eq(NotificationKind.ACCOUNT_SECURITY), anyString(), anyString(),
+                eq("/cuenta/privacidad"));
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.autopartco.backend.core.identity.internal.social;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -24,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.autopartco.backend.core.identity.AccountConfigurations;
 import com.autopartco.backend.core.audit.AuditService;
 import com.autopartco.backend.core.identity.LoginResponse;
 import com.autopartco.backend.core.identity.internal.Account;
@@ -199,6 +201,8 @@ class SocialLoginServiceTest {
         verify(accountRepository).save(account.capture());
         assertEquals("nuevo@example.com", account.getValue().getEmail());
         assertEquals("encoded-random", account.getValue().getPassword());
+        // Contraseña aleatoria que nadie conoce: la cuenta queda marcada para pedir que la cree.
+        assertFalse(AccountConfigurations.passwordSet(account.getValue().getConfiguration()));
         assertSame(active, account.getValue().getState());
         verify(identityRepository).save(any(AccountIdentity.class));
         verify(auditService).record(any(), eq("USER_REGISTERED_SOCIAL"), eq("ACCOUNT"), any(), any());

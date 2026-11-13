@@ -9,6 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.autopartco.backend.core.identity.AccountConfigurations;
 import com.autopartco.backend.core.identity.web.PasswordRecoveryRequest;
 import com.autopartco.backend.core.identity.web.PasswordRecoveryResponse;
 import com.autopartco.backend.core.identity.web.PasswordResetRequest;
@@ -41,6 +42,7 @@ public class PasswordRecoveryService {
         AccountToken token = tokenService.findValidPasswordRecoveryToken(request.token());
         Account account = token.getAccount();
         account.setPassword(passwordEncoder.encode(request.password()));
+        account.setConfiguration(AccountConfigurations.withPasswordSet(account.getConfiguration()));
         token.setUsed(true);
         tokenService.save(token);
         accountSessionService.revokeAll(account.getId());
