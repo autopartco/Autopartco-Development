@@ -1,6 +1,6 @@
 import { ApiError, simulateLatency } from '@/lib/api'
 import { getSession } from '../../session-store'
-import type { AuthService, Session } from '../types'
+import { TwoFactorRequiredError, type AuthService, type Session } from '../types'
 
 /**
  * Cuentas simuladas para desarrollar la UI sin backend. No hay usuarios reales:
@@ -79,6 +79,8 @@ function expired(): never {
 }
 
 export function createMockAuthService(): AuthService {
+  // Correo del ingreso que espera el código 2FA (simulado).
+  let pendingTwoFactor: string | undefined
   return {
     simulated: true,
 
@@ -94,6 +96,11 @@ export function createMockAuthService(): AuthService {
       const clean = email.trim().toLowerCase()
       if (clean.startsWith('error')) {
         throw new ApiError('Las credenciales no son válidas.', { status: 401, code: 'UNAUTHORIZED' })
+      }
+      // Correos que empiezan por «2fa» simulan una cuenta con verificación en dos pasos (código 123456).
+      if (clean.startsWith('2fa')) {
+        pendingTwoFactor = clean
+        throw new TwoFactorRequiredError({ challengeId: 'mock-challenge', expiresAt: new Date(Date.now() + 10 * 60_000).toISOString() })
       }
       const session: Session = { user: { name: nameFromEmail(clean), email: clean }, roles: mockRolesFor(clean), simulated: true }
       try {
@@ -124,6 +131,27 @@ export function createMockAuthService(): AuthService {
       return session
     },
 
+    async verifyTwoFactor(_challengeId, code) {
+      await simulateLatency()
+      if (code.trim() !== '123456' || !pendingTwoFactor) {
+        throw new ApiError('El código no es válido o expiró.', { status: 400, code: 'INVALID_TWO_FACTOR_CODE' })
+      }
+      const email = pendingTwoFactor
+      pendingTwoFactor = undefined
+      const session: Session = { user: { name: nameFromEmail(email), email }, roles: mockRolesFor(email), simulated: true }
+      try {
+        window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(session.user))
+      } catch {
+        // Sin almacenamiento disponible la sesión simulada dura hasta recargar.
+      }
+      return session
+    },
+
+    async resendTwoFactor() {
+      await simulateLatency()
+      return { challengeId: 'mock-challenge', expiresAt: new Date(Date.now() + 10 * 60_000).toISOString(), retryAfterSeconds: 60 }
+    },
+
     async logout() {
       await simulateLatency(250)
       try {
@@ -147,6 +175,11 @@ export function createMockAuthService(): AuthService {
       await simulateLatency()
       if (token === 'vencido') expired()
       return { email: 'cliente@ejemplo.co', message: 'Correo verificado correctamente.' }
+    },
+
+    async resendVerification() {
+      await simulateLatency()
+      return { message: 'Si la cuenta existe y no está verificada, te enviamos un correo.', retryAfterSeconds: 60 }
     },
 
     async requestPasswordRecovery() {

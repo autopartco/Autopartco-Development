@@ -10,7 +10,10 @@ import { SELLER_SETUP_PATH } from '@/features/seller/hooks'
 import { getAuthService } from '../api/auth-service'
 import { accountKindOf } from '../lib/account-menu-items'
 import { AuthShell, SimulatedNotice } from '../components/auth-shell'
+import { ResendVerification } from '../components/resend-verification'
 import { SocialLogin } from '../components/social-login'
+import { TwoFactorStep } from '../components/two-factor-step'
+import { TwoFactorRequiredError, type Session, type TwoFactorChallenge } from '../api/types'
 import { useSession } from '../hooks'
 import { compact, emailError, type FieldErrors } from '../lib/validation'
 import { safeReturnPath } from '../lib/return-path'
@@ -44,10 +47,16 @@ export default function LoginPage() {
   const returnTo = safeReturnPath(searchParams.get('next') ?? (location.state as { from?: unknown } | null)?.from)
   const hasNext = searchParams.has('next') && returnTo !== '/'
   const [errors, setErrors] = useState<FieldErrors>({})
-  const [formError, setFormError] = useState<{ title: string; credentials?: boolean }>()
+  const [formError, setFormError] = useState<{ title: string; credentials?: boolean; unverifiedEmail?: string }>()
   const login = useSubmitOnce(async (credentials: { email: string; password: string }) => (await getAuthService()).login(credentials))
   const submitting = login.pending
   const alertRef = useRef<HTMLDivElement>(null)
+  const [challenge, setChallenge] = useState<TwoFactorChallenge>()
+
+  async function enter(opened: Session) {
+    setSession(opened)
+    navigate(await destinationAfterLogin(opened.roles, returnTo), { replace: true })
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -67,14 +76,21 @@ export default function LoginPage() {
     // ÚNICA escritura: el ingreso ocurre al pulsar «Ingresar»; el candado evita el doble envío.
     const result = await login.run({ email, password })
     if (result.status === 'ok') {
-      setSession(result.value)
-      navigate(await destinationAfterLogin(result.value.roles, returnTo), { replace: true })
+      await enter(result.value)
     } else if (result.status === 'error') {
       const error = result.error
+      if (error instanceof TwoFactorRequiredError) {
+        setFormError(undefined)
+        setChallenge(error.challenge)
+        return
+      }
       // El backend responde lo mismo si la contraseña no coincide, si la cuenta no está
       // verificada o si está bloqueada (no revela cuál): el mensaje cubre los tres casos.
       if (error instanceof ApiError && error.code === 'UNAUTHORIZED') {
         setFormError({ title: 'No pudimos ingresar con ese correo y esa contraseña.', credentials: true })
+      } else if (error instanceof ApiError && error.code === 'EMAIL_NOT_VERIFIED') {
+        // Solo llega con la contraseña correcta: se puede ofrecer el reenvío al correo escrito.
+        setFormError({ title: error.message, unverifiedEmail: email })
       } else {
         setFormError({ title: error instanceof ApiError ? error.message : 'No pudimos ingresar. Inténtalo de nuevo.' })
         if (error instanceof ApiError) setErrors(error.fieldErrors)
@@ -103,13 +119,11 @@ export default function LoginPage() {
       }
     >
       <title>Ingresar | Autopartco</title>
-      <SocialLogin
-        mode="login"
-        onSession={async (social) => {
-          setSession(social)
-          navigate(await destinationAfterLogin(social.roles, returnTo), { replace: true })
-        }}
-      />
+      {challenge ? (
+        <TwoFactorStep challenge={challenge} onSession={enter} onCancel={() => setChallenge(undefined)} />
+      ) : (
+      <>
+      <SocialLogin mode="login" onSession={enter} />
       <form noValidate onSubmit={handleSubmit} className="flex flex-col gap-5" aria-busy={submitting || undefined}>
         {formError ? (
           <FormAlert ref={alertRef} title={formError.title}>
@@ -119,6 +133,12 @@ export default function LoginPage() {
                 <li>Si acabas de crear la cuenta, primero abre el enlace que te enviamos al correo.</li>
                 <li>Tras varios intentos fallidos la cuenta se bloquea un rato por seguridad.</li>
               </ul>
+            ) : null}
+            {formError.unverifiedEmail ? (
+              <div className="mt-2 flex flex-col gap-2">
+                <p>Abre el enlace que te enviamos al registrarte. Si venció o no lo encuentras, pide uno nuevo.</p>
+                <ResendVerification email={formError.unverifiedEmail} />
+              </div>
             ) : null}
           </FormAlert>
         ) : null}
@@ -161,6 +181,8 @@ export default function LoginPage() {
         </p>
         <SimulatedNotice />
       </form>
+      </>
+      )}
     </AuthShell>
   )
 }

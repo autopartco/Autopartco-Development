@@ -1,7 +1,7 @@
 import { apiRequest } from '@/lib/api'
 import { rolesFromAccessToken } from '../../lib/jwt'
 import { getSession, setSession } from '../../session-store'
-import type { AuthService, Session } from '../types'
+import { TwoFactorRequiredError, type AuthService, type Session } from '../types'
 
 /**
  * Cuentas contra el backend real (`core/identity/web/AuthController`, `ApiPaths.BASE + "/auth"`,
@@ -16,10 +16,13 @@ import type { AuthService, Session } from '../types'
  */
 const PATHS = {
   login: '/auth/login',
+  loginTwoFactor: '/auth/login/two-factor',
+  resendTwoFactor: '/auth/login/two-factor/resend',
   social: (provider: string) => `/auth/social/${encodeURIComponent(provider)}`,
   refresh: '/auth/refresh',
   logout: '/auth/logout',
   register: '/auth/register',
+  resendVerification: '/auth/verify-email/resend',
   verifyEmail: (token: string) => `/auth/verify-email?token=${encodeURIComponent(token)}`,
   recoveryRequest: '/auth/password-recovery/request',
   recoveryReset: '/auth/password-recovery/reset',
@@ -31,6 +34,10 @@ interface LoginResponseDto {
   accessToken: string
   tokenType: string
   expiresIn: number
+  /** Con 2FA activa no hay tokens: llega el desafío y la sesión se abre con `/auth/login/two-factor`. */
+  twoFactorRequired?: boolean
+  challengeId?: string | null
+  expiresAt?: string | null
 }
 
 /** `RegisterResponse` (core/identity). */
@@ -70,6 +77,14 @@ function toUser(profile: ProfileResponseDto): Session['user'] {
 
 export function createHttpAuthService(): AuthService {
   let tokens: Tokens | undefined
+
+  /** Respuesta de ingreso: con 2FA lanza el desafío; si no, guarda los tokens. */
+  function keepOrChallenge(dto: LoginResponseDto) {
+    if (dto.twoFactorRequired && dto.challengeId) {
+      throw new TwoFactorRequiredError({ challengeId: dto.challengeId, expiresAt: dto.expiresAt ?? null })
+    }
+    keep(dto)
+  }
 
   function keep(dto: LoginResponseDto) {
     // Renueva 30 s antes de que venza para no fallar en mitad de una petición.
@@ -133,7 +148,7 @@ export function createHttpAuthService(): AuthService {
     getAccessToken: accessToken,
 
     async login({ email, password }) {
-      keep(await apiRequest<LoginResponseDto>(PATHS.login, {
+      keepOrChallenge(await apiRequest<LoginResponseDto>(PATHS.login, {
         body: { email: email.trim(), password },
         credentials: 'include',
       }))
@@ -147,7 +162,7 @@ export function createHttpAuthService(): AuthService {
     },
 
     async socialLogin(provider, token, registration) {
-      keep(await apiRequest<LoginResponseDto>(PATHS.social(provider), {
+      keepOrChallenge(await apiRequest<LoginResponseDto>(PATHS.social(provider), {
         body: { token, registration },
         credentials: 'include',
       }))
@@ -157,6 +172,27 @@ export function createHttpAuthService(): AuthService {
       } catch {
         return { user: { name: 'Cliente', email: '' }, roles: currentRoles(), simulated: false }
       }
+    },
+
+    async verifyTwoFactor(challengeId, code) {
+      keep(await apiRequest<LoginResponseDto>(PATHS.loginTwoFactor, {
+        body: { challengeId, code: code.trim() },
+        credentials: 'include',
+      }))
+      try {
+        const profile = await apiRequest<ProfileResponseDto>(PATHS.profile, { token: tokens?.access })
+        return { user: toUser(profile), roles: currentRoles(), simulated: false }
+      } catch {
+        return { user: { name: 'Cliente', email: '' }, roles: currentRoles(), simulated: false }
+      }
+    },
+
+    async resendTwoFactor(challengeId) {
+      const dto = await apiRequest<{ challengeId: string; expiresAt: string | null; retryAfterSeconds: number }>(
+        PATHS.resendTwoFactor,
+        { body: { challengeId } },
+      )
+      return { challengeId: dto.challengeId, expiresAt: dto.expiresAt, retryAfterSeconds: dto.retryAfterSeconds }
     },
 
     async logout() {
@@ -183,6 +219,10 @@ export function createHttpAuthService(): AuthService {
       // `VerifyEmailResponse`: accountId, email, state, message.
       const dto = await apiRequest<{ email: string; message: string }>(PATHS.verifyEmail(token))
       return { email: dto.email, message: dto.message }
+    },
+
+    async resendVerification(email) {
+      return apiRequest<{ message: string; retryAfterSeconds: number }>(PATHS.resendVerification, { body: { email: email.trim() } })
     },
 
     async requestPasswordRecovery(email) {

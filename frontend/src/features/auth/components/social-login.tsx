@@ -5,7 +5,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { ApiError, DATA_SOURCE } from '@/lib/api'
 import { useSubmitOnce } from '@/lib/use-submit-once'
 import { getAuthService } from '../api/auth-service'
-import type { Session, SocialPrefill, SocialProvider, SocialRegistration } from '../api/types'
+import { TwoFactorRequiredError, type Session, type SocialPrefill, type SocialProvider, type SocialRegistration, type TwoFactorChallenge } from '../api/types'
+import { TwoFactorStep } from './two-factor-step'
 import { FACEBOOK_APP_ID, GOOGLE_CLIENT_ID, facebookAccessToken, preloadFacebook, renderGoogleButton } from '../lib/social-sdk'
 
 const SIMULATED = DATA_SOURCE !== 'http'
@@ -74,6 +75,8 @@ export function SocialLogin({ mode, onSession }: SocialLoginProps) {
   const [regErrors, setRegErrors] = useState<Partial<Record<RegField, string>>>({})
   const [regError, setRegError] = useState<string>()
   const alertRef = useRef<HTMLDivElement>(null)
+  // Cuenta con 2FA: el ingreso social también pide el código del correo.
+  const [challenge, setChallenge] = useState<TwoFactorChallenge>()
   const exchange = useSubmitOnce(async (provider: SocialProvider, token: string, registration?: SocialRegistration) =>
     (await getAuthService()).socialLogin(provider, token, registration),
   )
@@ -92,6 +95,10 @@ export function SocialLogin({ mode, onSession }: SocialLoginProps) {
     }
     if (result.status !== 'error') return
     const failure = result.error
+    if (failure instanceof TwoFactorRequiredError) {
+      setChallenge(failure.challenge)
+      return
+    }
     if (failure instanceof ApiError && failure.code === 'SOCIAL_REGISTRATION_REQUIRED') {
       setRegErrors({})
       setRegError(undefined)
@@ -145,6 +152,11 @@ export function SocialLogin({ mode, onSession }: SocialLoginProps) {
       await onSession(result.value)
     } else if (result.status === 'error') {
       const failure = result.error
+      if (failure instanceof TwoFactorRequiredError) {
+        setPendingSignup(undefined)
+        setChallenge(failure.challenge)
+        return
+      }
       if (failure instanceof ApiError) {
         setRegErrors(failure.fieldErrors as Partial<Record<RegField, string>>)
         setRegError(failure.code === 'IDENTIFICATION_ALREADY_EXISTS' ? 'Ese documento ya está registrado en otra cuenta.' : failure.message)
@@ -171,6 +183,25 @@ export function SocialLogin({ mode, onSession }: SocialLoginProps) {
       <div className="flex items-center gap-3 text-sm text-ap-muted" aria-hidden>
         <span className="h-px flex-1 bg-ap-line" />o con tu correo<span className="h-px flex-1 bg-ap-line" />
       </div>
+
+      <Dialog open={challenge !== undefined} onOpenChange={(open) => !open && setChallenge(undefined)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="sr-only">Verificación en dos pasos</DialogTitle>
+            <DialogDescription className="sr-only">Escribe el código que enviamos a tu correo.</DialogDescription>
+          </DialogHeader>
+          {challenge ? (
+            <TwoFactorStep
+              challenge={challenge}
+              onCancel={() => setChallenge(undefined)}
+              onSession={async (opened) => {
+                setChallenge(undefined)
+                await onSession(opened)
+              }}
+            />
+          ) : null}
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={pendingSignup !== undefined} onOpenChange={(open) => !open && !busy && setPendingSignup(undefined)}>
         <DialogContent className="sm:max-w-lg">
