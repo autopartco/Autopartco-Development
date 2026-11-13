@@ -21,6 +21,27 @@ export interface Session {
   simulated: boolean
 }
 
+/** Desafío de verificación en dos pasos: hay que enviar el código que llegó al correo (`POST /auth/login/two-factor`). */
+export interface TwoFactorChallenge {
+  challengeId: string
+  /** ISO; vencimiento del código. */
+  expiresAt: string | null
+}
+
+/**
+ * `login` y `socialLogin` lanzan este error cuando la cuenta tiene la verificación en dos pasos activa: no hay sesión
+ * hasta validar el código con `verifyTwoFactor`.
+ */
+export class TwoFactorRequiredError extends Error {
+  readonly challenge: TwoFactorChallenge
+
+  constructor(challenge: TwoFactorChallenge) {
+    super('Escribe el código que enviamos a tu correo.')
+    this.name = 'TwoFactorRequiredError'
+    this.challenge = challenge
+  }
+}
+
 export interface LoginInput {
   email: string
   password: string
@@ -88,6 +109,10 @@ export interface AuthService {
    * no la cuenta; `retryAfterSeconds` es la espera antes de volver a pedirlo (el backend limita a 5 por hora).
    */
   resendVerification(email: string): Promise<{ message: string; retryAfterSeconds: number }>
+  /** Valida el código 2FA del desafío y abre la sesión. */
+  verifyTwoFactor(challengeId: string, code: string): Promise<Session>
+  /** Pide otro código 2FA: devuelve un desafío nuevo (el anterior deja de servir) y la espera para volver a pedirlo. */
+  resendTwoFactor(challengeId: string): Promise<TwoFactorChallenge & { retryAfterSeconds: number }>
   /** Devuelve el mensaje del servidor (es el mismo exista o no la cuenta). */
   requestPasswordRecovery(email: string): Promise<string>
   resetPassword(token: string, password: string): Promise<string>
