@@ -3,6 +3,7 @@ package com.autopartco.backend.core.audit.internal;
 import java.util.Map;
 import java.util.UUID;
 
+import org.hibernate.annotations.Immutable;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.SQLDelete;
 import org.hibernate.annotations.SQLRestriction;
@@ -20,7 +21,13 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
+/**
+ * Registro de auditoría. La tabla solo admite INSERT (trigger {@code forbid_update_delete}): {@link Immutable} evita que
+ * Hibernate emita UPDATE cuando el chequeo de cambios ve distinto el JSON de {@code metadata} (p. ej. un {@code Long}
+ * que vuelve como {@code Integer} en la copia).
+ */
 @Entity
+@Immutable
 @Table(name = "audit_logs")
 @SQLDelete(sql = "UPDATE audit_logs SET deleted_at = now() WHERE id = ?")
 @SQLRestriction("deleted_at IS NULL")
