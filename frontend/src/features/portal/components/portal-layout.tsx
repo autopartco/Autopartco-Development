@@ -1,6 +1,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState, type RefObject } from 'react'
-import { Outlet, useLocation, useParams } from 'react-router'
-import { MenuIcon, XIcon } from 'lucide-react'
+import { Link, Outlet, useLocation, useParams } from 'react-router'
+import { MenuIcon, ShieldAlertIcon, XIcon } from 'lucide-react'
+import { EmptyState } from '@/components/common/states'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { ApiError } from '@/lib/api'
@@ -134,8 +135,8 @@ function PortalShell({ storeId }: { storeId: string }) {
   const store = stores.data?.find((candidate) => candidate.storeId === storeId)
   // Atajo del menú de cuenta en el marketplace: enlaza las secciones del último almacén abierto.
   useEffect(() => {
-    if (store?.applicationStatus === 'ACTIVE') rememberPortalStore(storeId)
-  }, [store, storeId])
+    if (store?.applicationStatus === 'ACTIVE' && permissions.data) rememberPortalStore(storeId, permissions.data)
+  }, [store, storeId, permissions.data])
   const permissionSet = useMemo(() => new Set<string>(permissions.data ?? []), [permissions.data])
   // Un pago devuelve la suscripción nueva: se muestra esa hasta que la recarga del servidor la reemplaza.
   const subscription = applied && applied.base === subscriptionQuery.data ? applied.value : subscriptionQuery.data
@@ -213,7 +214,19 @@ function PortalShell({ storeId }: { storeId: string }) {
   const plansPath = `/portal/${encodeURIComponent(storeId)}/plan`
 
   let content
-  if (accessError !== undefined) {
+  if (missingFromList && permissions.status !== 'error') {
+    content = (
+      <EmptyState
+        icon={<ShieldAlertIcon />}
+        title="No perteneces a este almacén"
+        description="Tu cuenta no es parte del equipo de este almacén. Elige otro desde el selector o vuelve a tus almacenes."
+      >
+        <Button className="h-11 px-5" nativeButton={false} render={<Link to="/portal" />}>
+          Ver mis almacenes
+        </Button>
+      </EmptyState>
+    )
+  } else if (accessError !== undefined) {
     content = <QueryError error={accessError} what="el portal de este almacén" onRetry={permissions.status === 'error' ? permissions.retry : undefined} />
   } else if (inactive && store) {
     content = <StoreInactiveNotice status={store.applicationStatus} name={store.businessName} />

@@ -42,6 +42,10 @@ function groupsFor(
   { area = 'marketplace', storeId, can }: AccountMenuContext,
   seller?: SellerCta,
 ) {
+  // Fuera del portal se usan los permisos recordados del último almacén abierto.
+  const last = lastPortalStore()
+  const id = storeId ?? last?.storeId
+  const allowed = can ?? (last && last.storeId === id ? (permission: string) => last.permissions.includes(permission) : undefined)
   return accountMenuGroups({
     sellerApplicationTo: seller?.state === 'review' ? seller.to : undefined,
     sellerSetupTo: seller?.application?.status === 'CONFIGURATION_PENDING' ? SELLER_SETUP_PATH : undefined,
@@ -49,8 +53,8 @@ function groupsFor(
     hasStore: seller?.state === 'manage',
     kind: accountKindOf(session.roles),
     area,
-    storeId: storeId ?? lastPortalStore(),
-    can,
+    storeId: id,
+    can: allowed,
   })
 }
 
