@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,13 +19,15 @@ import com.autopartco.backend.core.organization.internal.StoreRepository;
 import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
+import com.autopartco.backend.shared.events.ServicesChanged;
 
 import lombok.AllArgsConstructor;
 
 /**
  * Servicios que presta un almacén (instalación, alineación, diagnóstico…), siempre acotados por {@code storeId}: un
  * servicio de otro almacén es {@code SERVICE_NOT_FOUND}. No resuelve permisos: lo hacen los casos de uso de
- * {@code storesuite.services}.
+ * {@code storesuite.services}. Cada alta, edición o baja publica {@link ServicesChanged}: la búsqueda de servicios se
+ * reindexa tras el commit.
  */
 @Service
 @AllArgsConstructor
@@ -34,6 +37,7 @@ public class StoreServices {
     private final OfferedServiceRepository serviceRepository;
     private final BranchRepository branchRepository;
     private final StoreRepository storeRepository;
+    private final ApplicationEventPublisher events;
 
     @Transactional(readOnly = true)
     public List<StoreServiceView> list(UUID storeId, boolean includeInactive) {
@@ -58,7 +62,9 @@ public class StoreServices {
         service.setStoreId(storeId);
         service.setActive(true);
         apply(service, request, branchIds);
-        return toView(serviceRepository.saveAndFlush(service));
+        OfferedService saved = serviceRepository.saveAndFlush(service);
+        events.publishEvent(ServicesChanged.of(saved.getId()));
+        return toView(saved);
     }
 
     @Transactional
@@ -77,13 +83,16 @@ public class StoreServices {
             service.setActive(request.active());
         }
         apply(service, request, branchIds);
-        return toView(serviceRepository.saveAndFlush(service));
+        OfferedService saved = serviceRepository.saveAndFlush(service);
+        events.publishEvent(ServicesChanged.of(saved.getId()));
+        return toView(saved);
     }
 
     /** Desactiva el servicio (idempotente). */
     @Transactional
     public void deactivate(UUID storeId, UUID serviceId) {
         find(storeId, serviceId).setActive(false);
+        events.publishEvent(ServicesChanged.of(serviceId));
     }
 
     /** Servicios activos para el perfil público: sucursales solo activas y orden {@code sort_order, name}. */

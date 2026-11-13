@@ -64,6 +64,15 @@ public class OfferedService {
     @Column(nullable = false)
     private boolean active = true;
 
+    @Column(name = "image_url", length = 500)
+    private String imageUrl;
+
+    @Column(name = "booking_enabled", nullable = false)
+    private boolean bookingEnabled = true;
+
+    @Column(name = "slot_minutes", nullable = false)
+    private int slotMinutes = 60;
+
     @Column(name = "sort_order", nullable = false)
     private int sortOrder;
 

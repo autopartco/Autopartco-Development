@@ -19,6 +19,7 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 import com.autopartco.backend.shared.events.ListingsChanged;
+import com.autopartco.backend.shared.events.ServicesChanged;
 
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +36,8 @@ import lombok.extern.slf4j.Slf4j;
  *   ({@code autopartco.search.bootstrap-reindex=false} lo desactiva).</li>
  *   <li>A pedido del admin ({@link #requestFullReindex()}).</li>
  * </ul>
+ * {@code search_services} (servicios) sigue las mismas reglas: {@link ServicesChanged} reindexa esos servicios; un cambio
+ * de almacén o sucursal ({@link ListingsChanged}) reindexa sus servicios; la reconstrucción completa también los cubre.
  * Un fallo se registra (sin datos personales) y no se reintenta: la reconstrucción nocturna lo corrige. Cada escritura
  * en el índice sube {@code catalogVersion} de {@code search:results} ({@link SearchResultCache}); la recarga de
  * sugerencias vacía {@code search:suggest}.
@@ -46,6 +49,7 @@ public class SearchIndexJobs {
     static final int MAX_PENDING_IDS = 5_000;
 
     private final SearchIndexer indexer;
+    private final ServiceSearchIndexer serviceIndexer;
     private final Suggestions suggestions;
     private final SearchService searchService;
     private final ScheduledExecutorService executor;
@@ -57,26 +61,52 @@ public class SearchIndexJobs {
     private Set<UUID> inventories = new HashSet<>();
     private Set<UUID> branches = new HashSet<>();
     private Set<UUID> stores = new HashSet<>();
+    private Set<UUID> services = new HashSet<>();
     private boolean everything;
     private boolean flushScheduled;
 
     @Autowired
-    public SearchIndexJobs(SearchIndexer indexer, Suggestions suggestions, SearchService searchService,
+    public SearchIndexJobs(SearchIndexer indexer, ServiceSearchIndexer serviceIndexer, Suggestions suggestions,
+            SearchService searchService,
             @Value("${autopartco.search.bootstrap-reindex:true}") boolean bootstrapEnabled) {
-        this(indexer, suggestions, searchService, bootstrapEnabled, Executors.newSingleThreadScheduledExecutor(task -> {
-            Thread thread = new Thread(task, "search-index");
-            thread.setDaemon(true);
-            return thread;
-        }));
+        this(indexer, serviceIndexer, suggestions, searchService, bootstrapEnabled,
+                Executors.newSingleThreadScheduledExecutor(task -> {
+                    Thread thread = new Thread(task, "search-index");
+                    thread.setDaemon(true);
+                    return thread;
+                }));
     }
 
-    SearchIndexJobs(SearchIndexer indexer, Suggestions suggestions, SearchService searchService,
-            boolean bootstrapEnabled, ScheduledExecutorService executor) {
+    SearchIndexJobs(SearchIndexer indexer, ServiceSearchIndexer serviceIndexer, Suggestions suggestions,
+            SearchService searchService, boolean bootstrapEnabled, ScheduledExecutorService executor) {
         this.indexer = indexer;
+        this.serviceIndexer = serviceIndexer;
         this.suggestions = suggestions;
         this.searchService = searchService;
         this.bootstrapEnabled = bootstrapEnabled;
         this.executor = executor;
+    }
+
+    /** Servicios creados, editados o desactivados: se reindexan en la misma ventana de agrupación. */
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, fallbackExecution = true)
+    public void onServicesChanged(ServicesChanged event) {
+        if (event == null || event.isEmpty()) {
+            return;
+        }
+        synchronized (lock) {
+            services.addAll(event.serviceIds());
+            if (services.size() > MAX_PENDING_IDS) {
+                everything = true;
+            }
+            if (everything) {
+                clearPending();
+            }
+            if (flushScheduled) {
+                return;
+            }
+            flushScheduled = true;
+        }
+        schedule();
     }
 
     /** Solo tras el commit (o de inmediato si se publicó fuera de una transacción). No bloquea al publicador. */
@@ -95,16 +125,25 @@ public class SearchIndexJobs {
                 everything = true;
             }
             if (everything) {
-                products.clear();
-                inventories.clear();
-                branches.clear();
-                stores.clear();
+                clearPending();
             }
             if (flushScheduled) {
                 return;
             }
             flushScheduled = true;
         }
+        schedule();
+    }
+
+    private void clearPending() {
+        products.clear();
+        inventories.clear();
+        branches.clear();
+        stores.clear();
+        services.clear();
+    }
+
+    private void schedule() {
         try {
             executor.schedule(this::flush, DEBOUNCE_MS, TimeUnit.MILLISECONDS);
         } catch (RejectedExecutionException shuttingDown) {
@@ -120,17 +159,20 @@ public class SearchIndexJobs {
         Set<UUID> inventoryIds;
         Set<UUID> branchIds;
         Set<UUID> storeIds;
+        Set<UUID> serviceIds;
         boolean all;
         synchronized (lock) {
             productIds = products;
             inventoryIds = inventories;
             branchIds = branches;
             storeIds = stores;
+            serviceIds = services;
             all = everything;
             products = new HashSet<>();
             inventories = new HashSet<>();
             branches = new HashSet<>();
             stores = new HashSet<>();
+            services = new HashSet<>();
             everything = false;
             flushScheduled = false;
         }
@@ -143,11 +185,23 @@ public class SearchIndexJobs {
             branchIds.forEach(indexer::reindexBranch);
             indexer.reindexInventory(inventoryIds);
             indexer.reindexProducts(productIds);
+            reindexServices(storeIds, branchIds, serviceIds);
         } catch (RuntimeException failure) {
             log.warn("Falló la actualización del índice de búsqueda: {}", failure.getClass().getSimpleName());
         } finally {
             // Aunque falle a medias, lo escrito invalida search:results (cambios agrupados por DEBOUNCE_MS).
             searchService.catalogChanged();
+        }
+    }
+
+    /** Servicios de los almacenes y sucursales que cambiaron, más los servicios indicados. Un fallo no frena lo demás. */
+    private void reindexServices(Set<UUID> storeIds, Set<UUID> branchIds, Set<UUID> serviceIds) {
+        try {
+            storeIds.forEach(serviceIndexer::reindexStore);
+            branchIds.forEach(serviceIndexer::reindexBranch);
+            serviceIndexer.reindexServices(serviceIds);
+        } catch (RuntimeException failure) {
+            log.warn("Falló la actualización del índice de servicios: {}", failure.getClass().getSimpleName());
         }
     }
 
@@ -172,6 +226,9 @@ public class SearchIndexJobs {
                     log.info("Índice de búsqueda vacío: reconstrucción inicial en segundo plano.");
                     fullReindex();
                     reloadSuggestions();
+                } else if (serviceIndexer.needsBootstrap()) {
+                    log.info("Índice de servicios vacío: reconstrucción inicial en segundo plano.");
+                    reindexAllServices();
                 }
             } catch (RuntimeException failure) {
                 log.warn("Falló la reconstrucción inicial del índice de búsqueda: {}",
@@ -201,6 +258,15 @@ public class SearchIndexJobs {
             log.warn("Falló la reconstrucción del índice de búsqueda: {}", failure.getClass().getSimpleName());
         } finally {
             searchService.catalogChanged();
+        }
+        reindexAllServices();
+    }
+
+    private void reindexAllServices() {
+        try {
+            serviceIndexer.reindexAll();
+        } catch (RuntimeException failure) {
+            log.warn("Falló la reconstrucción del índice de servicios: {}", failure.getClass().getSimpleName());
         }
     }
 

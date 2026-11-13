@@ -30,7 +30,9 @@ class SearchIndexJobsTest {
     private final Suggestions suggestions = mock(Suggestions.class);
     private final SearchService searchService = mock(SearchService.class);
     private final ScheduledExecutorService executor = mock(ScheduledExecutorService.class);
-    private final SearchIndexJobs jobs = new SearchIndexJobs(indexer, suggestions, searchService, true, executor);
+    private final ServiceSearchIndexer serviceIndexer = mock(ServiceSearchIndexer.class);
+    private final SearchIndexJobs jobs = new SearchIndexJobs(indexer, serviceIndexer, suggestions, searchService, true,
+            executor);
 
     private Runnable scheduledFlush() {
         ArgumentCaptor<Runnable> task = ArgumentCaptor.forClass(Runnable.class);
@@ -117,7 +119,8 @@ class SearchIndexJobsTest {
         executed().run();
         verify(indexer, never()).reindexAll();
 
-        SearchIndexJobs disabled = new SearchIndexJobs(indexer, suggestions, searchService, false, executor);
+        SearchIndexJobs disabled = new SearchIndexJobs(indexer, serviceIndexer, suggestions, searchService, false,
+                executor);
         disabled.bootstrap();
         verify(executor, times(1)).execute(any(Runnable.class));
     }

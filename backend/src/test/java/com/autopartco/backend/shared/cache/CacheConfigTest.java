@@ -47,7 +47,8 @@ class CacheConfigTest {
             assertThat(context.getBean(CacheManager.class)).isSameAs(manager);
             assertThat(manager.redisConfigured()).isFalse();
             assertThat(manager.getCacheNames()).containsExactlyInAnyOrder("catalog:options", "search:results",
-                    "search:suggest", "store:profile", "store:branches", "settings:store", "home", "ads:active");
+                    "search:suggest", "store:profile", "store:branches", "settings:store", "home", "ads:active",
+                    "service:categories");
             assertThat(manager.getCache(AppCaches.SEARCH_RESULTS).getNativeCache())
                     .isInstanceOf(com.github.benmanes.caffeine.cache.Cache.class);
 

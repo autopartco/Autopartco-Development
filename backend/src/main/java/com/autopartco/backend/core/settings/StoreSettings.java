@@ -14,8 +14,15 @@ public record StoreSettings(
         Notifications notifications,
         Security security
 ) {
-    /** {@code whatsappMessage} admite {@code {producto}} y debe contener {@code {enlace}}. */
-    public record Contact(boolean whatsappEnabled, String whatsappMessage) {
+    /**
+     * {@code whatsappMessage} admite {@code {producto}} y debe contener {@code {enlace}}; {@code whatsappServiceMessage}
+     * (mensaje para servicios) admite {@code {servicio}}, {@code {sucursal}} y debe contener {@code {enlace}}.
+     */
+    public record Contact(boolean whatsappEnabled, String whatsappMessage, String whatsappServiceMessage) {
+        /** Sin mensaje de servicios (se usa el de por defecto). */
+        public Contact(boolean whatsappEnabled, String whatsappMessage) {
+            this(whatsappEnabled, whatsappMessage, null);
+        }
     }
 
     public record Profile(boolean showBranchesMap, List<UUID> featuredProductIds, String tagline) {
