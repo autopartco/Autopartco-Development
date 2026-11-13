@@ -1,6 +1,6 @@
 import { ApiError } from '@/lib/api'
 import type { PortalService } from '../portal-service'
-import { getStore, requirePermission, simulateNetwork, storesForSession, summaryOf } from './mock-state'
+import { getStore, permissionsOf, requirePermission, simulateNetwork, storesForSession, summaryOf } from './mock-state'
 
 /** Tiendas, permisos y perfil simulados (ver `mock-state.ts` para los casos de prueba). */
 export function createMockPortalService(): PortalService {
@@ -12,7 +12,7 @@ export function createMockPortalService(): PortalService {
 
     async permissions(storeId) {
       await simulateNetwork(250)
-      return [...getStore(storeId).permissions]
+      return [...permissionsOf(getStore(storeId))]
     },
 
     async profile(storeId) {

@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { NotificationsMenu } from '@/features/notifications/notifications-menu'
-import { SELLER_SETUP_PATH, useSellerCta, type SellerCta } from '@/features/seller/hooks'
+import { SELLER_SETUP_PATH, useAccountStoreRoles, useSellerCta, type SellerCta } from '@/features/seller/hooks'
 import type { Session } from '../api/types'
 import { useSession, useSignOut } from '../hooks'
 import {
@@ -70,12 +70,19 @@ function useLeaveAndSignOut(area: AccountMenuArea) {
 }
 
 /** Nombre, correo y tipo de cuenta (Cliente, Almacén…), común a la cabecera y al menú móvil. */
-function AccountIdentity({ session }: { session: Session }) {
+function AccountIdentity({ session, storeRoles = [] }: { session: Session; storeRoles?: string[] }) {
   const kind = accountKindOf(session.roles)
   return (
     <div className="min-w-0">
       <p className="truncate font-semibold text-ap-ink">{session.user.name}</p>
       <p className="truncate text-sm text-ap-muted">{session.user.email}</p>
+      {storeRoles.length > 0 ? (
+        // Roles en almacenes, sin repetir ni nombrar el almacén: dato secundario, en tono tenue.
+        <p className="mt-0.5 text-xs leading-snug text-ap-muted">
+          <span className="sr-only">Tus roles en almacenes: </span>
+          {storeRoles.join(' · ')}
+        </p>
+      ) : null}
       <p className="mt-1.5 flex flex-wrap items-center gap-1.5">
         <span className="inline-flex h-5 items-center rounded-sm border border-ap-line bg-ap-paper px-1.5 font-mono text-xs font-medium uppercase tracking-[0.04em] text-ap-ink">
           <span className="sr-only">Tipo de cuenta: </span>
@@ -98,6 +105,7 @@ export function HeaderAccount({ className, ...context }: { className?: string } 
   const area = context.area ?? 'marketplace'
   const { leave, pending } = useLeaveAndSignOut(area)
   const seller = useSellerCta()
+  const storeRoles = useAccountStoreRoles()
 
   if (!session) {
     return (
@@ -144,7 +152,7 @@ export function HeaderAccount({ className, ...context }: { className?: string } 
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-72 max-w-[calc(100vw-1.5rem)]">
         <div className="px-3 py-2.5">
-          <AccountIdentity session={session} />
+          <AccountIdentity session={session} storeRoles={storeRoles} />
         </div>
         {groupsFor(session, context, seller).map((group) => (
           <Fragment key={group[0]?.key}>
@@ -173,11 +181,12 @@ export function MobileMenuAccount({ onNavigate }: { onNavigate: () => void }) {
   const session = useSession()
   const { leave, pending } = useLeaveAndSignOut('marketplace')
   const seller = useSellerCta()
+  const storeRoles = useAccountStoreRoles()
   if (session) {
     const links = groupsFor(session, { area: 'marketplace' }, seller).flat()
     return (
       <div className="flex flex-col gap-3">
-        <AccountIdentity session={session} />
+        <AccountIdentity session={session} storeRoles={storeRoles} />
         {links.length > 0 ? (
           <ul className="-mx-3 flex flex-col gap-1">
             {links.map((item) => (
