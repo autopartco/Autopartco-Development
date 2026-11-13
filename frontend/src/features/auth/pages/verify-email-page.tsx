@@ -7,6 +7,7 @@ import { ApiError } from '@/lib/api'
 import { getAuthService } from '../api/auth-service'
 import type { VerifyEmailResult } from '../api/types'
 import { AuthShell } from '../components/auth-shell'
+import { ResendVerification } from '../components/resend-verification'
 
 /**
  * El token es de un solo uso: se guarda la promesa por token para no consumirlo
@@ -74,12 +75,9 @@ export default function VerifyEmailPage() {
       ) : (
         <div className="flex flex-col items-start gap-4">
           <FormAlert title={current.message}>
-            <p>
-              Si ya habías verificado la cuenta, solo ingresa. Si el enlace venció, todavía no podemos reenviarlo desde
-              aquí; lo estamos habilitando.
-            </p>
+            <p>Si ya habías verificado la cuenta, solo ingresa. Si el enlace venció, escribe tu correo y te enviamos otro.</p>
           </FormAlert>
-          {/* TODO(api): no hay endpoint para reenviar el correo de verificación. */}
+          <ResendVerification />
           <Button variant="outline" nativeButton={false} render={<Link to="/ingresar" />}>
             Ir a ingresar
           </Button>

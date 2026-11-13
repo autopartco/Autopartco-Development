@@ -10,6 +10,7 @@ import { SELLER_SETUP_PATH } from '@/features/seller/hooks'
 import { getAuthService } from '../api/auth-service'
 import { accountKindOf } from '../lib/account-menu-items'
 import { AuthShell, SimulatedNotice } from '../components/auth-shell'
+import { ResendVerification } from '../components/resend-verification'
 import { SocialLogin } from '../components/social-login'
 import { useSession } from '../hooks'
 import { compact, emailError, type FieldErrors } from '../lib/validation'
@@ -44,7 +45,7 @@ export default function LoginPage() {
   const returnTo = safeReturnPath(searchParams.get('next') ?? (location.state as { from?: unknown } | null)?.from)
   const hasNext = searchParams.has('next') && returnTo !== '/'
   const [errors, setErrors] = useState<FieldErrors>({})
-  const [formError, setFormError] = useState<{ title: string; credentials?: boolean }>()
+  const [formError, setFormError] = useState<{ title: string; credentials?: boolean; unverifiedEmail?: string }>()
   const login = useSubmitOnce(async (credentials: { email: string; password: string }) => (await getAuthService()).login(credentials))
   const submitting = login.pending
   const alertRef = useRef<HTMLDivElement>(null)
@@ -75,6 +76,9 @@ export default function LoginPage() {
       // verificada o si está bloqueada (no revela cuál): el mensaje cubre los tres casos.
       if (error instanceof ApiError && error.code === 'UNAUTHORIZED') {
         setFormError({ title: 'No pudimos ingresar con ese correo y esa contraseña.', credentials: true })
+      } else if (error instanceof ApiError && error.code === 'EMAIL_NOT_VERIFIED') {
+        // Solo llega con la contraseña correcta: se puede ofrecer el reenvío al correo escrito.
+        setFormError({ title: error.message, unverifiedEmail: email })
       } else {
         setFormError({ title: error instanceof ApiError ? error.message : 'No pudimos ingresar. Inténtalo de nuevo.' })
         if (error instanceof ApiError) setErrors(error.fieldErrors)
@@ -119,6 +123,12 @@ export default function LoginPage() {
                 <li>Si acabas de crear la cuenta, primero abre el enlace que te enviamos al correo.</li>
                 <li>Tras varios intentos fallidos la cuenta se bloquea un rato por seguridad.</li>
               </ul>
+            ) : null}
+            {formError.unverifiedEmail ? (
+              <div className="mt-2 flex flex-col gap-2">
+                <p>Abre el enlace que te enviamos al registrarte. Si venció o no lo encuentras, pide uno nuevo.</p>
+                <ResendVerification email={formError.unverifiedEmail} />
+              </div>
             ) : null}
           </FormAlert>
         ) : null}

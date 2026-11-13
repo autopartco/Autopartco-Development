@@ -1,5 +1,6 @@
 import { useEffect, useRef, type ReactNode } from 'react'
 import { MailCheckIcon } from 'lucide-react'
+import { ResendVerification } from './resend-verification'
 
 function formatExpiry(value: string | undefined): string | undefined {
   if (!value) return undefined
@@ -38,10 +39,11 @@ export function CheckEmail({ email, sent, expiresAt, children }: CheckEmailProps
       ) : (
         <p className="text-ap-muted">
           No pudimos confirmar el envío del correo de verificación a <strong className="font-semibold text-ap-ink">{email}</strong>.
-          Revisa tu bandeja en unos minutos; si no llega, intenta ingresar más tarde.
+          Revisa tu bandeja en unos minutos; si no llega, pide que te lo reenviemos.
         </p>
       )}
-      <p className="text-sm text-ap-muted">¿No lo ves? Busca en correo no deseado o promociones.</p>
+      <p className="text-sm text-ap-muted">¿No lo ves? Busca en correo no deseado o promociones; si el enlace venció, pide otro.</p>
+      <ResendVerification email={email} />
       {children}
     </div>
   )

@@ -83,6 +83,11 @@ export interface AuthService {
   logout(): Promise<void>
   register(input: CustomerRegistration): Promise<RegistrationResult>
   verifyEmail(token: string): Promise<VerifyEmailResult>
+  /**
+   * `POST /auth/verify-email/resend`: nuevo enlace y código (invalida los anteriores). La respuesta es la misma exista o
+   * no la cuenta; `retryAfterSeconds` es la espera antes de volver a pedirlo (el backend limita a 5 por hora).
+   */
+  resendVerification(email: string): Promise<{ message: string; retryAfterSeconds: number }>
   /** Devuelve el mensaje del servidor (es el mismo exista o no la cuenta). */
   requestPasswordRecovery(email: string): Promise<string>
   resetPassword(token: string, password: string): Promise<string>
