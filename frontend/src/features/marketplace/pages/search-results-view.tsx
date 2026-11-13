@@ -289,11 +289,11 @@ export function SearchResultsView({ fixedCategory }: { fixedCategory?: string })
         </div>
       ) : null}
 
-      <div className="grid gap-6 lg:min-h-[calc(100svh-var(--header-h)+10rem)] lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-10">
+      <div className="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-10">
         <aside aria-labelledby="filtros-titulo" className="hidden lg:block">
           {/*
-           * Columna fija con su propio scroll (`overflow-y-auto`, no ScrollArea). `useFitStickyPanel`
-           * ajusta su alto al espacio visible: al llegar al pie se encoge en vez de quedar bajo la cabecera.
+           * Con más resultados que filtros, columna fija con scroll propio; con menos, fluye con la
+           * página y el pie llega al terminar los filtros (ver `useFitStickyPanel`).
            */}
           <div ref={filtersPanelRef} className="sticky top-[calc(var(--header-h)+1.5rem)] flex max-h-[calc(100svh-var(--header-h)-3rem)] flex-col">
             <div className="mb-4 flex min-h-11 items-center justify-between gap-2 border-b border-ap-graphite pb-1">
@@ -312,7 +312,7 @@ export function SearchResultsView({ fixedCategory }: { fixedCategory?: string })
           </div>
         </aside>
 
-        <section aria-labelledby="resultados-titulo" className="flex min-w-0 flex-col gap-4">
+        <section aria-labelledby="resultados-titulo" className="flex min-w-0 flex-col gap-4 lg:self-start">
           <h2 id="resultados-titulo" className="sr-only">
             Resultados
           </h2>
