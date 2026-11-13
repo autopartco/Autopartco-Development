@@ -10,7 +10,7 @@ import { getProductService } from '../api/product-service'
 import type { StorePermission } from '../api/types'
 import { usePortal } from '../context'
 import { fuzzyScore } from '../lib/fuzzy'
-import { PORTAL_NAV_GROUPS } from '../lib/sections'
+import { canOpenSection, PORTAL_NAV_GROUPS } from '../lib/sections'
 
 type Group = 'Acciones' | 'Secciones' | 'Productos' | 'Pedidos'
 
@@ -68,7 +68,7 @@ function usePaletteItems(): { items: PaletteItem[]; loading: boolean; failed: bo
 
     for (const group of PORTAL_NAV_GROUPS) {
       for (const section of group.items) {
-        if (can(section.permission)) {
+        if (canOpenSection(can, section)) {
           list.push({ id: `seccion-${section.to}`, group: 'Secciones', label: section.label, hint: group.label, to: section.to, icon: section.icon, search: `${section.label} ${section.keywords ?? ''}` })
         }
       }

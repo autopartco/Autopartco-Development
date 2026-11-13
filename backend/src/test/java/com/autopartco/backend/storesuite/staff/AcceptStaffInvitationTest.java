@@ -111,14 +111,42 @@ class AcceptStaffInvitationTest {
         ), accepted);
     }
 
+    @Test
+    void promotesACustomerAccountToStoreManager() {
+        AccountRef customer = account("ACTIVE");
+        when(staffInvitations.lockPendingByToken("token")).thenReturn(invitation);
+        when(accountLookup.lockByEmail("nuevo@example.com")).thenReturn(Optional.of(customer));
+
+        acceptStaffInvitation.execute(new InvitationAcceptRequest("token", null));
+
+        verify(accountProvisioning).promoteToStoreManager(customer.accountId());
+        verify(accountProvisioning, never()).activate(any());
+    }
+
+    @Test
+    void keepsTheTypeOfANonCustomerAccount() {
+        AccountRef admin = account("ACTIVE", "ADMIN");
+        when(staffInvitations.lockPendingByToken("token")).thenReturn(invitation);
+        when(accountLookup.lockByEmail("nuevo@example.com")).thenReturn(Optional.of(admin));
+
+        acceptStaffInvitation.execute(new InvitationAcceptRequest("token", null));
+
+        verify(accountProvisioning, never()).promoteToStoreManager(any());
+        verify(staffDirectory).addCollaborator(invitation.storeId(), admin.personId(), invitation.roleId());
+    }
+
     private AccountRef account(String stateCode) {
+        return account(stateCode, "CUSTOMER");
+    }
+
+    private AccountRef account(String stateCode, String accountTypeCode) {
         return new AccountRef(
                 UUID.randomUUID(),
                 UUID.randomUUID(),
                 "nuevo@example.com",
                 "Ana Pérez",
                 stateCode,
-                "CUSTOMER",
+                accountTypeCode,
                 "Ana"
         );
     }

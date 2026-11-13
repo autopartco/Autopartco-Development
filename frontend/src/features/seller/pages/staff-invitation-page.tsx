@@ -12,6 +12,7 @@ import type { FieldErrors } from '@/features/auth/lib/validation'
 import { getStaffService } from '@/features/portal/api/staff-service'
 import { invalidateAsync } from '@/lib/use-async'
 import { SELLER_CACHE_PREFIX } from '../hooks'
+import { replaceSessionAfterSetup } from '../lib/replace-session'
 import type { StaffInvitationAccepted, StaffInvitationAccount, StaffInvitationPreview } from '@/features/portal/api/types'
 import { RoleAccessSummary } from '@/features/portal/components/role-picker'
 import { formatDate } from '@/features/portal/lib/labels'
@@ -90,6 +91,14 @@ export default function StaffInvitationPage() {
       // El menú y `/portal` deben ver el almacén nuevo sin recargar la página.
       invalidateAsync(SELLER_CACHE_PREFIX)
       invalidateAsync('portal:stores')
+      // Con sesión iniciada la cuenta pudo pasar a cuenta de almacén: se renueva para recibir el rol nuevo.
+      if (session) {
+        try {
+          await replaceSessionAfterSetup()
+        } catch {
+          // La invitación ya quedó aceptada; el rol nuevo llega en la próxima renovación de la sesión.
+        }
+      }
       setAccepted(result.value)
     } else if (result.status === 'error') {
       const error = result.error

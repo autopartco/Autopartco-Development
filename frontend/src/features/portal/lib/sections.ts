@@ -33,8 +33,8 @@ export interface PortalSection {
   to: string
   label: string
   icon: ComponentType<LucideProps>
-  /** Permiso que da acceso a la sección. El servidor sigue decidiendo cada petición. */
-  permission: StorePermission
+  /** Permiso (o permisos: basta uno) que da acceso a la sección. El servidor sigue decidiendo cada petición. */
+  permission: StorePermission | readonly StorePermission[]
   /** Coincide también con las rutas hijas (p. ej. `productos/:id`). */
   end?: boolean
   /** Palabras extra para la búsqueda de la paleta de comandos. */
@@ -58,7 +58,7 @@ export const PORTAL_SECTION_GROUPS: PortalSectionGroup[] = [
       { to: 'inteligencia', label: 'Inteligencia', icon: BrainCircuitIcon, permission: 'ANALYTICS_READ', keywords: 'reportes clientes segmentos proyeccion abc analitica' },
       { to: 'pedidos', label: 'Pedidos', icon: ClipboardListIcon, permission: 'ORDER_READ', keywords: 'ventas envios' },
       { to: 'promociones', label: 'Promociones', icon: TagIcon, permission: 'PROMOTION_READ', keywords: 'descuentos ofertas audiencia resultados' },
-      { to: 'publicidad', label: 'Publicidad', icon: MegaphoneIcon, permission: 'STORE_READ', keywords: 'anuncios campanas patrocinado destacados' },
+      { to: 'publicidad', label: 'Publicidad', icon: MegaphoneIcon, permission: ['STORE_UPDATE', 'ANALYTICS_READ'], keywords: 'anuncios campanas patrocinado destacados' },
       { to: 'alertas', label: 'Alertas', icon: BellIcon, permission: 'STORE_READ', keywords: 'avisos notificaciones agotado caida ventas preferencias' },
       { to: 'resenas', label: 'Reseñas', icon: StarIcon, permission: 'STORE_READ', keywords: 'opiniones calificaciones estrellas responder comentarios clientes' },
       { to: 'preguntas', label: 'Preguntas', icon: MessageCircleQuestionIcon, permission: 'STORE_READ', keywords: 'dudas consultas compradores responder producto' },
@@ -78,11 +78,22 @@ export const PORTAL_SECTION_GROUPS: PortalSectionGroup[] = [
 /** Alias usado por la paleta de comandos. */
 export const PORTAL_NAV_GROUPS = PORTAL_SECTION_GROUPS
 
+/** `true` si la cuenta tiene alguno de los permisos de la sección. */
+export function canOpenSection(can: (permission: StorePermission) => boolean, section: Pick<PortalSection, 'permission'>): boolean {
+  const required = section.permission
+  return typeof required === 'string' ? can(required) : required.some((permission) => can(permission))
+}
+
+/** Sección del portal por su segmento de ruta. */
+export function findSection(to: string): PortalSection | undefined {
+  return PORTAL_SECTION_GROUPS.flatMap((group) => group.items).find((item) => item.to === to)
+}
+
 /** Primera sección a la que la persona tiene acceso, o `undefined` si no tiene ninguna. */
 export function firstAllowedSection(
   can: (permission: StorePermission) => boolean,
   storeId: string,
 ): string | undefined {
-  const first = PORTAL_SECTION_GROUPS.flatMap((group) => group.items).find((item) => can(item.permission))
+  const first = PORTAL_SECTION_GROUPS.flatMap((group) => group.items).find((item) => canOpenSection(can, item))
   return first ? `/portal/${encodeURIComponent(storeId)}/${first.to}` : undefined
 }

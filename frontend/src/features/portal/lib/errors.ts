@@ -19,9 +19,9 @@ export function describeError(error: unknown, what = 'esta información'): Error
     if (error.status === 403) {
       return {
         kind: 'forbidden',
-        title: 'No tienes acceso a este almacén',
+        title: 'Tu rol no permite ver esto',
         description:
-          'Tu cuenta no tiene permiso para ver esto. Pídele al propietario del almacén que revise tus permisos o cambia de almacén desde el selector.',
+          'Tu cuenta no tiene permiso para esta información en este almacén. Pídele a un administrador del almacén que revise tu rol o cambia de almacén desde el selector.',
         retryable: false,
       }
     }

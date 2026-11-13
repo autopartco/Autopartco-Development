@@ -59,7 +59,7 @@ interface MenuOptions {
   area: AccountMenuArea
   /** Almacén abierto (o el último visitado) para enlazar sus secciones; sin él, solo "Mis almacenes". */
   storeId?: string
-  /** Filtro de permisos del portal; fuera del portal no se filtra. */
+  /** Permisos de la cuenta en `storeId`; sin ellos no se enlazan secciones del almacén. */
   can?: (permission: string) => boolean
   /** Ruta de la solicitud de almacén en curso del cliente; sin ella no se muestra la opción. */
   sellerApplicationTo?: string
@@ -108,7 +108,8 @@ export function accountMenuGroups({
   const groups: AccountMenuLink[][] = [COMMON]
   const storeGroup = (): AccountMenuLink[] => [
     { key: 'almacenes', label: area === 'portal' ? 'Mis almacenes' : 'Ir al portal del almacén', to: '/portal', icon: StoreIcon },
-    ...(storeId ? storeSections(storeId).filter((item) => !can || !item.permission || can(item.permission)) : []),
+    // Sin permisos conocidos no se enlazan secciones: solo «Ir al portal».
+    ...(storeId && can ? storeSections(storeId).filter((item) => !item.permission || can(item.permission)) : []),
   ]
 
   if (kind === 'store') {
@@ -137,23 +138,36 @@ export function accountMenuGroups({
 
 const LAST_STORE_KEY = 'autopartco:portal-ultimo-almacen'
 
+/** Último almacén abierto en el portal y los permisos que la cuenta tiene en él. */
+export interface LastPortalStore {
+  storeId: string
+  permissions: string[]
+}
+
 /**
- * Recuerda el último almacén abierto en el portal para enlazar sus secciones desde el
- * marketplace. Es solo un atajo de navegación (el id no es secreto y el servidor
- * vuelve a comprobar el acceso); se borra al cerrar sesión.
+ * Recuerda el último almacén abierto en el portal (y sus permisos) para enlazar desde el
+ * marketplace solo las secciones que el rol permite. Es solo un atajo de navegación (el id no
+ * es secreto y el servidor vuelve a comprobar el acceso); se borra al cerrar sesión.
  */
-export function rememberPortalStore(storeId: string): void {
+export function rememberPortalStore(storeId: string, permissions: readonly string[]): void {
   try {
-    window.sessionStorage.setItem(LAST_STORE_KEY, storeId)
+    window.sessionStorage.setItem(LAST_STORE_KEY, JSON.stringify({ storeId, permissions }))
   } catch {
     // Sin almacenamiento: el menú solo ofrece "Ir al portal".
   }
 }
 
-export function lastPortalStore(): string | undefined {
+export function lastPortalStore(): LastPortalStore | undefined {
   try {
-    return window.sessionStorage.getItem(LAST_STORE_KEY) ?? undefined
+    const raw = window.sessionStorage.getItem(LAST_STORE_KEY)
+    if (!raw) return undefined
+    const value: unknown = JSON.parse(raw)
+    if (!value || typeof value !== 'object') return undefined
+    const { storeId, permissions } = value as Partial<LastPortalStore>
+    if (typeof storeId !== 'string' || !Array.isArray(permissions)) return undefined
+    return { storeId, permissions: permissions.filter((item): item is string => typeof item === 'string') }
   } catch {
+    // Valor antiguo (solo el id) o almacenamiento bloqueado: sin atajos.
     return undefined
   }
 }

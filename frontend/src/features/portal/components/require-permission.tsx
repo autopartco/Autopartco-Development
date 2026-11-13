@@ -4,7 +4,7 @@ import { ShieldAlertIcon } from 'lucide-react'
 import { EmptyState } from '@/components/common/states'
 import type { StorePermission } from '../api/types'
 import { usePortal } from '../context'
-import { firstAllowedSection } from '../lib/sections'
+import { canOpenSection, firstAllowedSection } from '../lib/sections'
 import { ListSkeleton } from './list-skeleton'
 
 /**
@@ -12,11 +12,18 @@ import { ListSkeleton } from './list-skeleton'
  * sección a la que sí tiene acceso. Sin ninguna, muestra un aviso en vez de redirigir en bucle.
  * Solo oculta la pantalla: el servidor sigue autorizando cada petición.
  */
-export function RequirePermission({ permission, children }: { permission: StorePermission; children: ReactNode }) {
+export function RequirePermission({
+  permission,
+  children,
+}: {
+  /** Permiso requerido; con varios basta uno. */
+  permission: StorePermission | readonly StorePermission[]
+  children: ReactNode
+}) {
   const { storeId, can, permissionsReady } = usePortal()
 
   if (!permissionsReady) return <ListSkeleton label="Cargando permisos" />
-  if (can(permission)) return <>{children}</>
+  if (canOpenSection(can, { permission })) return <>{children}</>
 
   const fallback = firstAllowedSection(can, storeId)
   if (fallback) return <Navigate to={fallback} replace />
