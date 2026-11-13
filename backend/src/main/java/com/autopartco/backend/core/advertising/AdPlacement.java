@@ -12,7 +12,9 @@ public enum AdPlacement {
     /** Cabecera de la página de categoría; 3. */
     CATEGORY_TOP(3),
     /** «También te puede servir» en el detalle de producto; 4. */
-    PRODUCT_RELATED(4);
+    PRODUCT_RELATED(4),
+    /** Almacén «Recomendado» en el mapa de cobertura del inicio; 3 almacenes por área. Campaña sin productos. */
+    MAP_FEATURED(3);
 
     private final int slots;
 

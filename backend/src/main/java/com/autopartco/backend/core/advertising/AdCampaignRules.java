@@ -18,6 +18,32 @@ public final class AdCampaignRules {
     private AdCampaignRules() {
     }
 
+    /**
+     * Productos según las ubicaciones. Solo {@link AdPlacement#MAP_FEATURED}: ninguno (se anuncia el almacén; si
+     * vienen productos, 400 {@code AD_PRODUCTS_NOT_ALLOWED}). Con otra ubicación: de 1 a {@value #MAX_PRODUCTS}
+     * (0 → 400 {@code AD_PRODUCTS_REQUIRED}; más → 400 {@code AD_TOO_MANY_PRODUCTS}).
+     */
+    public static void requireProductCount(int distinctProducts, Collection<AdPlacement> placements) {
+        if (storeOnly(placements)) {
+            if (distinctProducts > 0) {
+                throw new BadRequestException("AD_PRODUCTS_NOT_ALLOWED",
+                        "Una campaña solo del mapa anuncia el almacén, no productos.");
+            }
+            return;
+        }
+        if (distinctProducts < 1) {
+            throw new BadRequestException("AD_PRODUCTS_REQUIRED",
+                    "Elige al menos un producto para anunciar en esas ubicaciones.");
+        }
+        requireProductCount(distinctProducts);
+    }
+
+    /** {@code true} si la única ubicación es {@link AdPlacement#MAP_FEATURED} (campaña del almacén, sin productos). */
+    public static boolean storeOnly(Collection<AdPlacement> placements) {
+        return placements != null && !placements.isEmpty()
+                && placements.stream().allMatch(placement -> placement == AdPlacement.MAP_FEATURED);
+    }
+
     /** De 1 a {@value #MAX_PRODUCTS} productos distintos; si no, 400 {@code AD_TOO_MANY_PRODUCTS}. */
     public static void requireProductCount(int distinctProducts) {
         if (distinctProducts < 1 || distinctProducts > MAX_PRODUCTS) {
