@@ -18,15 +18,21 @@ function isVolatile(key: string, data: unknown): boolean {
   return Array.isArray(sponsored) && sponsored.length > 0
 }
 
+/** Invalidaciones por clave: una respuesta que llega después de invalidar su clave no se guarda. */
+const generation = new Map<string, number>()
+
 function load<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
   const pending = inflight.get(key)
   if (pending) return pending as Promise<T>
+  const startedAt = generation.get(key) ?? 0
   const promise = fetcher()
     .then((data) => {
-      if (!isVolatile(key, data)) resolved.set(key, data)
+      if ((generation.get(key) ?? 0) === startedAt && !isVolatile(key, data)) resolved.set(key, data)
       return data
     })
-    .finally(() => inflight.delete(key))
+    .finally(() => {
+      if (inflight.get(key) === promise) inflight.delete(key)
+    })
   inflight.set(key, promise)
   return promise
 }
@@ -48,6 +54,13 @@ function subscribeInvalidations(listener: () => void): () => void {
 export function invalidateAsync(prefix: string): void {
   for (const key of [...resolved.keys()]) {
     if (key.startsWith(prefix)) resolved.delete(key)
+  }
+  // Peticiones en curso (p. ej. de la sesión anterior): no se reutilizan ni se guardan al llegar.
+  for (const key of [...inflight.keys()]) {
+    if (key.startsWith(prefix)) {
+      inflight.delete(key)
+      generation.set(key, (generation.get(key) ?? 0) + 1)
+    }
   }
   invalidations += 1
   for (const listener of invalidationListeners) listener()
