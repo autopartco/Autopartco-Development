@@ -21,6 +21,7 @@ import {
   EMPTY_TARGETING,
   estimateTotal,
   formatDay,
+  isStoreOnly,
   NO_REFUND_NOTICE,
   PLACEMENT_HINT,
   PLACEMENT_LABEL,
@@ -133,13 +134,15 @@ function CampaignForm({ storeId, campaign, prices }: FormProps) {
   const total = estimateTotal(placements, prices, days)
   const activePrices = prices.filter((price) => price.active)
   const editable = !campaign || campaign.status === 'DRAFT'
+  // Solo «Mapa del inicio»: se anuncia el almacén; productos y segmentación no aplican.
+  const storeOnly = isStoreOnly(placements)
 
   function buildInput(): AdCampaignInput | undefined {
     const next: Record<string, string> = {}
     if (!name.trim()) next.name = 'Ponle un nombre a la campaña para reconocerla.'
     else if (name.trim().length > 80) next.name = 'Usa máximo 80 caracteres.'
-    if (productIds.length === 0) next.products = 'Elige al menos un producto publicado.'
-    else if (productIds.length > MAX_PRODUCTS) next.products = `Una campaña admite hasta ${MAX_PRODUCTS} productos.`
+    if (!storeOnly && productIds.length === 0) next.products = 'Elige al menos un producto publicado.'
+    else if (!storeOnly && productIds.length > MAX_PRODUCTS) next.products = `Una campaña admite hasta ${MAX_PRODUCTS} productos.`
     if (placements.length === 0) next.placements = 'Elige al menos una ubicación.'
     if (!startsOn) next.startsOn = 'Indica cuándo empieza.'
     else if (startsOn < minStart || startsOn > maxStart) next.startsOn = 'Debe empezar desde hoy y hasta dentro de 60 días.'
@@ -154,11 +157,13 @@ function CampaignForm({ storeId, campaign, prices }: FormProps) {
     }
     return {
       name: name.trim(),
-      productIds,
+      productIds: storeOnly ? [] : productIds,
       placements,
       startsOn,
       endsOn,
-      targeting: {
+      targeting: storeOnly
+        ? EMPTY_TARGETING
+        : {
         ...(campaign?.targeting ?? EMPTY_TARGETING),
         keywords: [...new Set(keywords.split(/[,\n]/).map((word) => word.trim()).filter(Boolean))],
         categoryIds,
@@ -244,6 +249,11 @@ function CampaignForm({ storeId, campaign, prices }: FormProps) {
             autoComplete="off"
             onChange={(event) => setProductFilter(event.target.value)}
           />
+          {storeOnly ? (
+            <p className="rounded-md border border-ap-line bg-ap-paper p-3 text-sm text-ap-muted">
+              Solo elegiste «Mapa del inicio»: la campaña anuncia tu almacén, no productos. Si sumas otra ubicación, elige aquí los productos.
+            </p>
+          ) : (
           <QueryBoundary result={products} what="tus productos" keepPrevious>
             {() => (
               <>
@@ -259,6 +269,7 @@ function CampaignForm({ storeId, campaign, prices }: FormProps) {
               </>
             )}
           </QueryBoundary>
+          )}
         </FormSection>
 
         <FormSection title="Ubicaciones" description="Pagas la tarifa diaria de cada ubicación por los días que dure la campaña." disabled={!editable || pending}>
@@ -326,6 +337,7 @@ function CampaignForm({ storeId, campaign, prices }: FormProps) {
           </div>
         </FormSection>
 
+        {storeOnly ? null : (
         <FormSection
           title="Segmentación"
           description="Opcional. Con segmentación, el anuncio aparece solo cuando la búsqueda, la categoría o el vehículo coinciden. Sin ella, aparece para cualquier comprador."
@@ -364,6 +376,7 @@ function CampaignForm({ storeId, campaign, prices }: FormProps) {
             )}
           </QueryBoundary>
         </FormSection>
+        )}
       </div>
 
       <aside aria-labelledby="ad-summary-title" className="flex flex-col gap-4 border-t-2 border-ap-graphite pt-4 lg:sticky lg:top-20">

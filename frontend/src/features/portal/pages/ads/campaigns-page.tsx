@@ -64,7 +64,7 @@ export default function PortalAdsCampaignsPage() {
       cell: (row) => (
         <div>
           <p className="font-semibold text-ap-ink">{row.name}</p>
-          <p className="text-xs text-ap-muted">{pluralize(row.productIds.length, 'producto', 'productos')}</p>
+          <p className="text-xs text-ap-muted">{row.productIds.length > 0 ? pluralize(row.productIds.length, 'producto', 'productos') : 'Tu almacén en el mapa'}</p>
         </div>
       ),
     },

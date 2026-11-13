@@ -17,6 +17,8 @@ import { StatusBadge } from '../../components/status-badge'
 import { usePortal } from '../../context'
 import { campaignStatusView, formatDay, formatPercent, formatShortDay, placementLabel } from '../../lib/ads'
 
+/** Fila de estadísticas del mapa del inicio: se anuncia el almacén, no un producto. */
+const STORE_ROW_LABEL = 'Tu almacén (mapa del inicio)'
 const num = (value: number) => <span className="ap-num">{formatNumber(value)}</span>
 const money = (value: number) => <span className="ap-price">{formatCOP(value)}</span>
 
@@ -42,7 +44,7 @@ const PLACEMENT_COLUMNS: DataColumn<AdStatsByPlacement>[] = [
 ]
 
 const PRODUCT_COLUMNS: DataColumn<AdStatsByProduct>[] = [
-  { id: 'product', header: 'Producto', rowHeader: true, sortValue: (row) => row.productName, cell: (row) => row.productName },
+  { id: 'product', header: 'Producto', rowHeader: true, sortValue: (row) => row.productName ?? STORE_ROW_LABEL, cell: (row) => row.productName ?? STORE_ROW_LABEL },
   { id: 'impressions', header: 'Impresiones', align: 'end', sortValue: (row) => row.impressions, cell: (row) => num(row.impressions) },
   { id: 'clicks', header: 'Clics', align: 'end', sortValue: (row) => row.clicks, cell: (row) => num(row.clicks) },
   { id: 'ctr', header: 'CTR', align: 'end', sortValue: (row) => row.ctr, cell: (row) => <span className="ap-num">{formatPercent(row.ctr)}</span> },
@@ -145,7 +147,7 @@ export default function PortalAdsCampaignStatsPage() {
                   </section>
                   <section aria-labelledby="stats-product" className="flex flex-col gap-3">
                     <h2 id="stats-product" className="text-block-title text-ap-ink">Por producto</h2>
-                    <DataTable caption="Resultados por producto" columns={PRODUCT_COLUMNS} rows={data.byProduct} getRowId={(row) => row.productId} defaultSort={{ columnId: 'impressions', direction: 'desc' }} pageSize={10} />
+                    <DataTable caption="Resultados por producto" columns={PRODUCT_COLUMNS} rows={data.byProduct} getRowId={(row) => row.productId ?? 'store'} defaultSort={{ columnId: 'impressions', direction: 'desc' }} pageSize={10} />
                   </section>
                 </>
               )}
