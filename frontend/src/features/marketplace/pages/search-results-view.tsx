@@ -287,13 +287,13 @@ export function SearchResultsView({ fixedCategory }: { fixedCategory?: string })
         </div>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-10">
+      <div className="grid gap-6 lg:min-h-[calc(100svh-var(--header-h)+10rem)] lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-10">
         <aside aria-labelledby="filtros-titulo" className="hidden lg:block">
           {/*
-           * Columna en el flujo de la página (sin `sticky` ni scroll propio): con pocos resultados
-           * una columna fija con scroll interno quedaba cortada bajo la cabecera al bajar.
+           * Columna fija con su propio scroll (`overflow-y-auto`, no ScrollArea): el alto queda
+           * acotado por `max-h` y el contenido nunca se dibuja fuera de la columna ni sobre el pie.
            */}
-          <div className="flex flex-col">
+          <div className="sticky top-[calc(var(--header-h)+1.5rem)] flex max-h-[calc(100svh-var(--header-h)-3rem)] flex-col">
             <div className="mb-4 flex min-h-11 items-center justify-between gap-2 border-b border-ap-graphite pb-1">
               <h2 id="filtros-titulo" className="ap-index text-ap-ink">
                 Filtrar resultados
@@ -304,7 +304,9 @@ export function SearchResultsView({ fixedCategory }: { fixedCategory?: string })
                 </Button>
               ) : null}
             </div>
-            <SearchFilters {...filters} />
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-3 [scrollbar-width:thin]">
+              <SearchFilters {...filters} />
+            </div>
           </div>
         </aside>
 
