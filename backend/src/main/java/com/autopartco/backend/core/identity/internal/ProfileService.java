@@ -6,6 +6,7 @@ import java.time.LocalDate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.autopartco.backend.core.identity.AccountConfigurations;
 import com.autopartco.backend.core.identity.web.ProfileResponse;
 import com.autopartco.backend.core.identity.web.ProfileUpdateRequest;
 import com.autopartco.backend.shared.error.ConflictException;
@@ -72,7 +73,8 @@ public class ProfileService {
                 person.getSurname(),
                 person.getIdentification(),
                 person.getDateBirth().toString(),
-                person.getNumberPhone()
+                person.getNumberPhone(),
+                AccountConfigurations.passwordSet(account.getConfiguration())
         );
     }
 }

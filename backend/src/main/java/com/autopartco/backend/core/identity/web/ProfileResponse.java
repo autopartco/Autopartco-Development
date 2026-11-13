@@ -10,6 +10,8 @@ public record ProfileResponse(
         String surname,
         String identification,
         String dateBirth,
-        String numberPhone
+        String numberPhone,
+        /** {@code false}: cuenta creada con Google sin contraseña definida (debe crearla con la recuperación). */
+        boolean passwordSet
 ) {
 }

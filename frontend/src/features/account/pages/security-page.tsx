@@ -6,6 +6,7 @@ import { ErrorState } from '@/components/common/states'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
+import { getAuthService } from '@/features/auth/api/auth-service'
 import { useSignOut } from '@/features/auth/hooks'
 import { ApiError } from '@/lib/api'
 import { invalidateAsync, useAsync } from '@/lib/use-async'
@@ -44,7 +45,36 @@ function formatDate(iso: string): string {
 
 // ------------------------------------------------------------------ contraseña
 
-function PasswordSection({ social }: { social: boolean }) {
+/** Cuenta creada con Google sin contraseña: se crea con el enlace de recuperación, que prueba el control del correo. */
+function CreatePasswordNotice({ email, children }: { email: string; children: string }) {
+  const [state, setState] = useState<'idle' | 'busy' | 'sent'>('idle')
+
+  async function send() {
+    setState('busy')
+    try {
+      await (await getAuthService()).requestPasswordRecovery(email)
+      setState('sent')
+    } catch (error) {
+      setState('idle')
+      toast.error(message(error, 'No pudimos enviar el enlace.'))
+    }
+  }
+
+  return (
+    <div className="flex max-w-md flex-col gap-3">
+      <FormAlert tone="info" title="Aún no tienes contraseña">
+        {state === 'sent' ? <>Te enviamos un enlace a <strong className="break-all">{email}</strong> para crearla.</> : children}
+      </FormAlert>
+      {state === 'sent' ? null : (
+        <Button className="h-11 w-fit px-5" disabled={state === 'busy'} onClick={() => void send()}>
+          {state === 'busy' ? 'Enviando…' : 'Enviarme el enlace para crearla'}
+        </Button>
+      )}
+    </div>
+  )
+}
+
+function PasswordSection({ email, passwordSet }: { email: string; passwordSet: boolean }) {
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
 
@@ -83,8 +113,11 @@ function PasswordSection({ social }: { social: boolean }) {
     <AccountSection
       id="seg-clave"
       title="Contraseña"
-      description={social ? 'Ingresas con Google. Si nunca definiste una contraseña, créala con «¿Olvidaste tu contraseña?» desde el ingreso.' : 'Al cambiarla cerramos las demás sesiones abiertas.'}
+      description={passwordSet ? 'Al cambiarla cerramos las demás sesiones abiertas.' : undefined}
     >
+      {!passwordSet ? (
+        <CreatePasswordNotice email={email}>Ingresas con Google. Crea una contraseña para poder ingresar también con tu correo.</CreatePasswordNotice>
+      ) : (
       <form noValidate onSubmit={(event) => void submit(event)} className="grid max-w-md gap-4">
         <PasswordField id="clave-current" name="current" label="Contraseña actual" autoComplete="current-password" error={errors.current} />
         <PasswordField id="clave-next" name="next" label="Nueva contraseña" autoComplete="new-password" hint="Mínimo 8 caracteres con mayúscula, minúscula, número y carácter especial." error={errors.next} />
@@ -93,13 +126,14 @@ function PasswordSection({ social }: { social: boolean }) {
           {busy ? 'Guardando…' : 'Cambiar contraseña'}
         </Button>
       </form>
+      )}
     </AccountSection>
   )
 }
 
 // ------------------------------------------------------------------ correo
 
-function EmailSection({ email, social }: { email: string; social: boolean }) {
+function EmailSection({ email, passwordSet }: { email: string; passwordSet: boolean }) {
   const { signOut } = useSignOut()
   const [step, setStep] = useState<{ newEmail: string } | null>(null)
   const [error, setError] = useState<string>()
@@ -116,7 +150,7 @@ function EmailSection({ email, social }: { email: string; social: boolean }) {
       return
     }
     if (!password) {
-      setError(social ? 'Confirma tu contraseña. Si ingresas con Google y no tienes una, créala con «¿Olvidaste tu contraseña?».' : 'Confirma tu contraseña.')
+      setError('Confirma tu contraseña.')
       return
     }
     setBusy(true)
@@ -151,7 +185,9 @@ function EmailSection({ email, social }: { email: string; social: boolean }) {
   return (
     <AccountSection id="seg-correo" title="Correo" description={<>Ingresas con <strong className="break-all text-ap-ink">{email}</strong>. Te enviaremos un código al correo nuevo; al confirmarlo deberás ingresar otra vez.</>}>
       {error ? <FormAlert title="No se completó el cambio">{error}</FormAlert> : null}
-      {step ? (
+      {!passwordSet ? (
+        <CreatePasswordNotice email={email}>Para cambiar el correo debes confirmar tu contraseña. Créala primero con un enlace a tu correo actual.</CreatePasswordNotice>
+      ) : step ? (
         <form noValidate onSubmit={(event) => void confirm(event)} className="grid max-w-md gap-4">
           <p className="text-sm text-ap-ink">
             Enviamos un código a <strong className="break-all">{step.newEmail}</strong>. Vence en 15 minutos.
@@ -169,7 +205,7 @@ function EmailSection({ email, social }: { email: string; social: boolean }) {
       ) : (
         <form noValidate onSubmit={(event) => void request(event)} className="grid max-w-md gap-4">
           <TextField id="correo-new" name="newEmail" type="email" label="Correo nuevo" autoComplete="email" maxLength={100} required />
-          <PasswordField id="correo-password" name="password" label="Tu contraseña" autoComplete="current-password" hint={social ? 'Si ingresas con Google y no tienes contraseña, créala con «¿Olvidaste tu contraseña?».' : undefined} />
+          <PasswordField id="correo-password" name="password" label="Tu contraseña" autoComplete="current-password" />
           <Button type="submit" className="h-11 w-fit px-5" disabled={busy}>
             {busy ? 'Enviando…' : 'Enviar código'}
           </Button>
@@ -346,7 +382,7 @@ function SessionsSection() {
 
 // ------------------------------------------------------------------ ingreso con Google
 
-function IdentitiesSection() {
+function IdentitiesSection({ passwordSet }: { passwordSet: boolean }) {
   const identities = useAsync('portal:account:identities', listIdentities)
   const [unlinking, setUnlinking] = useState<string | null>(null)
   const [error, setError] = useState<string>()
@@ -367,7 +403,11 @@ function IdentitiesSection() {
   }
 
   return (
-    <AccountSection id="seg-social" title="Ingreso con Google" description="Métodos de ingreso vinculados a tu cuenta.">
+    <AccountSection
+      id="seg-social"
+      title="Ingreso con Google"
+      description={passwordSet ? 'Métodos de ingreso vinculados a tu cuenta.' : 'Métodos de ingreso vinculados a tu cuenta. Para desvincular Google primero crea una contraseña: así conservas una forma de ingresar.'}
+    >
       {identities.status === 'error' ? (
         <ErrorState title="No pudimos cargar los métodos de ingreso" onRetry={identities.retry} />
       ) : !identities.data ? (
@@ -385,7 +425,7 @@ function IdentitiesSection() {
                     {identity.email ?? ''} · vinculado el {formatDate(identity.linkedAt)}
                   </p>
                 </div>
-                {unlinking === identity.provider ? null : (
+                {unlinking === identity.provider || !passwordSet ? null : (
                   <Button variant="outline" size="sm" className="h-11 sm:h-9" onClick={() => setUnlinking(identity.provider)}>
                     Desvincular
                   </Button>
@@ -432,12 +472,12 @@ export default function AccountSecurityPage() {
   const social = (identities.data?.length ?? 0) > 0
   return (
     <div className="flex flex-col">
-      <PasswordSection social={social} />
-      <EmailSection email={profile.data.email} social={social} />
+      <PasswordSection email={profile.data.email} passwordSet={profile.data.passwordSet !== false} />
+      <EmailSection email={profile.data.email} passwordSet={profile.data.passwordSet !== false} />
       <TwoFactorSection key={String(settings.data.security.twoFactor.enabled)} enabled={settings.data.security.twoFactor.enabled} social={social} />
       <LoginAlertsSection key={`alertas-${String(settings.data.security.loginAlerts)}`} enabled={settings.data.security.loginAlerts} />
       <SessionsSection />
-      <IdentitiesSection />
+      <IdentitiesSection passwordSet={profile.data.passwordSet !== false} />
     </div>
   )
 }

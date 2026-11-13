@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.autopartco.backend.core.audit.AuditService;
+import com.autopartco.backend.core.identity.AccountConfigurations;
 import com.autopartco.backend.core.identity.internal.social.AccountIdentity;
 import com.autopartco.backend.core.identity.internal.social.AccountIdentityRepository;
 import com.autopartco.backend.core.notification.NotificationKind;
@@ -66,7 +67,8 @@ public class AccountManagementService {
 
     /**
      * Cambia la contraseña. Cierra las demás sesiones ({@code currentRefreshToken}: la sesión actual se conserva; sin él,
-     * se cierran todas). Cuentas creadas con Google no conocen su contraseña: deben definirla con la recuperación.
+     * se cierran todas). Cuentas creadas con Google no conocen su contraseña: 409 {@code PASSWORD_NOT_SET}, deben
+     * definirla con la recuperación (que prueba el control del correo).
      */
     @Transactional
     public void changePassword(String email, String currentPassword, String newPassword, String currentRefreshToken) {
@@ -181,7 +183,7 @@ public class AccountManagementService {
         Account account = lock(email);
         try {
             requirePassword(account, currentPassword);
-        } catch (BadRequestException wrong) {
+        } catch (BadRequestException | ConflictException wrong) {
             throw new ConflictException("LAST_SIGN_IN_METHOD",
                     "Para desvincular confirma tu contraseña. Si no la conoces, defínela con «¿Olvidaste tu contraseña?».");
         }
@@ -262,7 +264,11 @@ public class AccountManagementService {
     @Transactional
     public DeletionRequest requestDeletion(String email, String currentPassword, String reason) {
         Account account = lock(email);
-        requirePassword(account, currentPassword);
+        // Sin contraseña conocida (cuenta de Google) basta la sesión: la solicitud la ejecuta un admin, se puede cancelar
+        // y se avisa al correo de la cuenta (Ley 1581: el derecho de supresión no puede exigir un paso imposible).
+        if (AccountConfigurations.passwordSet(account.getConfiguration())) {
+            requirePassword(account, currentPassword);
+        }
         Boolean owner = jdbcTemplate.queryForObject("""
                 SELECT EXISTS (
                     SELECT 1 FROM collaborators c
@@ -283,6 +289,9 @@ public class AccountManagementService {
         jdbcTemplate.update("INSERT INTO account_deletion_requests (account_id, reason) VALUES (?, ?)",
                 account.getId(), cleanReason);
         auditService.record(account.getId(), "ACCOUNT_DELETION_REQUESTED", "ACCOUNT", account.getId(), Map.of());
+        securityNotice(account, account.getEmail(), "Solicitaste eliminar tu cuenta",
+                "Recibimos tu solicitud para eliminar tu cuenta de Autopartco. Si no fuiste tú, cancélala en Mi cuenta → Privacidad.",
+                "/cuenta/privacidad");
         return deletionRequest(email);
     }
 
@@ -302,6 +311,10 @@ public class AccountManagementService {
     // ------------------------------------------------------------------ apoyo
 
     private void requirePassword(Account account, String password) {
+        if (!AccountConfigurations.passwordSet(account.getConfiguration())) {
+            throw new ConflictException("PASSWORD_NOT_SET",
+                    "Aún no tienes contraseña porque ingresas con Google. Créala con «¿Olvidaste tu contraseña?».");
+        }
         if (password == null || password.isBlank() || !passwordEncoder.matches(password, account.getPassword())) {
             auditService.record(account.getId(), "PASSWORD_CHECK_FAILED", "ACCOUNT", account.getId(), Map.of());
             throw new BadRequestException("INVALID_PASSWORD", "La contraseña no es correcta.");
@@ -315,8 +328,12 @@ public class AccountManagementService {
     }
 
     private void securityNotice(Account account, String to, String title, String message) {
+        securityNotice(account, to, title, message, "/cuenta/seguridad");
+    }
+
+    private void securityNotice(Account account, String to, String title, String message, String link) {
         eventPublisher.publishEvent(new SecurityNoticeRequested(to, fullName(account), title, message));
-        notificationService.notify(account.getId(), NotificationKind.ACCOUNT_SECURITY, title, message, "/cuenta/seguridad");
+        notificationService.notify(account.getId(), NotificationKind.ACCOUNT_SECURITY, title, message, link);
     }
 
     private String hash(Account account, String target, String code) {

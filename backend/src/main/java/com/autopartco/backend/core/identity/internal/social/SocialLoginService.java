@@ -4,6 +4,7 @@ import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.autopartco.backend.core.audit.AuditService;
+import com.autopartco.backend.core.identity.AccountConfigurations;
 import com.autopartco.backend.core.identity.LoginResponse;
 import com.autopartco.backend.core.identity.internal.Account;
 import com.autopartco.backend.core.identity.internal.AccountRepository;
@@ -202,7 +204,7 @@ public class SocialLoginService {
                 .password(passwordEncoder.encode(randomSecret()))
                 .accountType(type)
                 .state(active)
-                .configuration(Map.of())
+                .configuration(new HashMap<>(Map.of(AccountConfigurations.PASSWORD_SET, false)))
                 .build());
     }
 
