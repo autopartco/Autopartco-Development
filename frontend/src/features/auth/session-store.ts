@@ -1,4 +1,5 @@
 import { invalidateAsync } from '@/lib/use-async'
+import { forgetPortalStore } from './lib/account-menu-items'
 import type { Session } from './api/types'
 
 /**
@@ -15,16 +16,21 @@ export function getSession(): Session | undefined {
 }
 
 /**
- * Claves de caché del marketplace cuyo contenido depende de quién compra (precio por audiencia, beneficios):
- * se descartan al cambiar de persona para no mostrar el precio de la sesión anterior.
+ * Al cambiar de persona (cerrar sesión, ingresar o cambiar de cuenta) se descarta toda la caché en
+ * memoria: almacenes, permisos, pedidos, precios por audiencia… pertenecen a la sesión anterior. Antes
+ * solo se limpiaba el portal si su guarda seguía montada, y cerrar sesión desde el portal sale primero
+ * a `/`, así que la cuenta siguiente veía el almacén de la anterior. También se olvida el último almacén
+ * abierto (atajo del menú de cuenta).
  */
-const BUYER_CACHE_PREFIXES = ['product', 'related:', 'frequently-bought:', 'marketplace:benefits']
-
 export function setSession(next: Session | undefined): void {
-  const changed = current?.user.email !== next?.user.email
+  const previous = current
+  const changed = previous?.user.email !== next?.user.email
   current = next
   initialized = true
-  if (changed) for (const prefix of BUYER_CACHE_PREFIXES) invalidateAsync(prefix)
+  if (changed) {
+    invalidateAsync('')
+    if (previous) forgetPortalStore()
+  }
   for (const listener of listeners) listener()
 }
 

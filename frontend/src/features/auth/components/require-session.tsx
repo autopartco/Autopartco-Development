@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router'
 import { invalidateAsync } from '@/lib/use-async'
 import { useSessionState } from '../hooks'
@@ -18,7 +18,13 @@ export function RequireSession({ children, fallback }: { children: ReactNode; fa
     if (ready && !signedIn) invalidateAsync('portal:')
   }, [ready, signedIn])
 
+  // Si la sesión se cierra estando dentro (cerrar sesión desde el portal), se va al inicio sin `next`:
+  // con `next` la cuenta que ingrese después aterrizaría en el almacén de la anterior.
+  const [hadSession, setHadSession] = useState(false)
+  if (signedIn && !hadSession) setHadSession(true)
+
   if (!ready) return <>{fallback}</>
+  if (!session && hadSession) return <Navigate to="/" replace />
   if (!session) return <Navigate to={loginPathFor(`${location.pathname}${location.search}${location.hash}`)} replace />
   return <>{children}</>
 }
