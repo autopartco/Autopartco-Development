@@ -108,8 +108,8 @@ export function accountMenuGroups({
   const groups: AccountMenuLink[][] = [COMMON]
   const storeGroup = (): AccountMenuLink[] => [
     { key: 'almacenes', label: area === 'portal' ? 'Mis almacenes' : 'Ir al portal del almacén', to: '/portal', icon: StoreIcon },
-    // Sin permisos conocidos no se enlazan secciones: solo «Ir al portal».
-    ...(storeId && can ? storeSections(storeId).filter((item) => !item.permission || can(item.permission)) : []),
+    // En el portal las secciones ya están en la barra lateral; fuera, solo con permisos conocidos.
+    ...(area !== 'portal' && storeId && can ? storeSections(storeId).filter((item) => !item.permission || can(item.permission)) : []),
   ]
 
   if (kind === 'store') {
