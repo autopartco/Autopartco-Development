@@ -111,7 +111,7 @@ function MobileFilters({
           <SheetTitle className="text-block-title">Filtrar resultados</SheetTitle>
           <SheetDescription>Los resultados se actualizan al elegir cada filtro.</SheetDescription>
         </SheetHeader>
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5">
+        <div className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-5">
           <SearchFilters {...filters} />
         </div>
         <SheetFooter className="mt-0 grid shrink-0 grid-cols-2 gap-2 border-t border-ap-line px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
@@ -294,6 +294,8 @@ export function SearchResultsView({ fixedCategory }: { fixedCategory?: string })
           {/*
            * Columna fija con scroll propio. La cuadrícula mide al menos una pantalla, así el pie queda
            * al fondo aunque haya pocos resultados; al llegar al pie el panel se encoge (`useFitStickyPanel`).
+           * El contenedor con scroll es `relative`: si no, los campos ocultos (`sr-only`, absolutos) de los
+           * filtros escapan del recorte y alargan la página con un hueco blanco bajo el pie.
            */}
           <div ref={filtersPanelRef} className="sticky top-[calc(var(--header-h)+1.5rem)] flex max-h-[calc(100svh-var(--header-h)-3rem)] flex-col">
             <div className="mb-4 flex min-h-11 items-center justify-between gap-2 border-b border-ap-graphite pb-1">
@@ -306,7 +308,7 @@ export function SearchResultsView({ fixedCategory }: { fixedCategory?: string })
                 </Button>
               ) : null}
             </div>
-            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-3 [scrollbar-width:thin]">
+            <div className="relative min-h-0 flex-1 overflow-y-auto overscroll-contain pr-3 [scrollbar-width:thin]">
               <SearchFilters {...filters} />
             </div>
           </div>
