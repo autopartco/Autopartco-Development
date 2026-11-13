@@ -37,6 +37,8 @@ import lombok.extern.slf4j.Slf4j;
 public class AdTokenSigner {
     public static final long TTL_MINUTES = 30;
     static final int MAX_TOKEN_LENGTH = 400;
+    /** Marca de {@code productId} ausente (anuncio de almacén, {@link AdPlacement#MAP_FEATURED}). */
+    private static final String NO_PRODUCT = "-";
     private static final String ALGORITHM = "HmacSHA256";
     private static final String KEY_LABEL = "autopartco-ad-token-v1";
     private static final Base64.Encoder ENCODER = Base64.getUrlEncoder().withoutPadding();
@@ -63,7 +65,10 @@ public class AdTokenSigner {
         this.clock = clock;
     }
 
-    /** Token para mostrar {@code productId} de {@code campaignId} en {@code placement} hoy; vence en 30 minutos. */
+    /**
+     * Token para mostrar {@code productId} de {@code campaignId} en {@code placement} hoy; vence en 30 minutos.
+     * {@code productId} es nulo solo con {@link AdPlacement#MAP_FEATURED}.
+     */
     public String sign(UUID campaignId, UUID productId, AdPlacement placement) {
         Instant now = clock.instant();
         return sign(campaignId, productId, placement, AdText.today(clock),
@@ -71,7 +76,7 @@ public class AdTokenSigner {
     }
 
     String sign(UUID campaignId, UUID productId, AdPlacement placement, LocalDate day, Instant expiresAt) {
-        String payload = campaignId + "|" + productId + "|" + placement.name() + "|" + day + "|"
+        String payload = campaignId + "|" + (productId == null ? NO_PRODUCT : productId) + "|" + placement.name() + "|" + day + "|"
                 + expiresAt.getEpochSecond();
         byte[] payloadBytes = payload.getBytes(StandardCharsets.UTF_8);
         return ENCODER.encodeToString(payloadBytes) + "." + ENCODER.encodeToString(mac(payloadBytes));
@@ -103,7 +108,11 @@ public class AdTokenSigner {
                     || expiresAt.isAfter(now.plus(Duration.ofMinutes(TTL_MINUTES + 1)))) {
                 return Optional.empty();
             }
-            return Optional.of(new Claims(UUID.fromString(parts[0]), UUID.fromString(parts[1]), placement.get(),
+            UUID productId = NO_PRODUCT.equals(parts[1]) ? null : UUID.fromString(parts[1]);
+            if ((productId == null) != (placement.get() == AdPlacement.MAP_FEATURED)) {
+                return Optional.empty();
+            }
+            return Optional.of(new Claims(UUID.fromString(parts[0]), productId, placement.get(),
                     LocalDate.parse(parts[3]), expiresAt));
         } catch (RuntimeException malformed) {
             return Optional.empty();

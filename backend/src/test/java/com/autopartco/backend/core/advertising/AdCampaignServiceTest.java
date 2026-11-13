@@ -69,6 +69,7 @@ class AdCampaignServiceTest {
                     case HOME_FEATURED -> "25000";
                     case CATEGORY_TOP -> "12000";
                     case PRODUCT_RELATED -> "8000";
+                    case MAP_FEATURED -> "10000";
                 }, true));
             }
             return prices;
@@ -151,6 +152,27 @@ class AdCampaignServiceTest {
                 TODAY, TODAY.plusDays(1))))
                 .isInstanceOf(BadRequestException.class)
                 .extracting("code").isEqualTo("AD_TOO_MANY_PRODUCTS");
+    }
+
+    @Test
+    void mapOnlyCampaignGoesWithoutProductsAndRejectsThem() {
+        var view = campaigns.create(STORE, ACCOUNT, request(List.of(), List.of(AdPlacement.MAP_FEATURED), TODAY,
+                TODAY.plusDays(1)));
+        assertThat(view.productIds()).isEmpty();
+        assertThat(view.totalPrice()).isEqualByComparingTo("20000");
+
+        assertThatThrownBy(() -> campaigns.create(STORE, ACCOUNT, request(List.of(productA),
+                List.of(AdPlacement.MAP_FEATURED), TODAY, TODAY.plusDays(1))))
+                .isInstanceOf(BadRequestException.class)
+                .extracting("code").isEqualTo("AD_PRODUCTS_NOT_ALLOWED");
+    }
+
+    @Test
+    void mapWithAnotherPlacementRequiresProducts() {
+        assertThatThrownBy(() -> campaigns.create(STORE, ACCOUNT, request(List.of(),
+                List.of(AdPlacement.MAP_FEATURED, AdPlacement.SEARCH_TOP), TODAY, TODAY.plusDays(1))))
+                .isInstanceOf(BadRequestException.class)
+                .extracting("code").isEqualTo("AD_PRODUCTS_REQUIRED");
     }
 
     @Test

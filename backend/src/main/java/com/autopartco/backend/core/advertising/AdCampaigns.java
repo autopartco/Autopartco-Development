@@ -270,8 +270,8 @@ public class AdCampaigns {
 
     Validated validate(UUID storeId, AdCampaignRequest request) {
         List<UUID> productIds = List.copyOf(new LinkedHashSet<>(request.productIds()));
-        AdCampaignRules.requireProductCount(productIds.size());
         List<AdPlacement> placements = List.copyOf(new LinkedHashSet<>(request.placements()));
+        AdCampaignRules.requireProductCount(productIds.size(), placements);
         AdCampaignRules.requireValidDates(request.startsOn(), request.endsOn(), AdText.today(clock));
         AdTargeting targeting = AdTargeting.sanitize(request.targeting());
         BigDecimal total = AdCampaignRules.totalPrice(placements, activePrices(placements), request.startsOn(),
