@@ -37,6 +37,9 @@ export interface AccountMenuContext {
   can?: (permission: string) => boolean
 }
 
+/** Opciones compactas con ratón (36 px); en pantallas táctiles conservan 44 px (§ controles táctiles). */
+const COMPACT_ITEM = 'min-h-9 py-1 pointer-coarse:min-h-11'
+
 function groupsFor(
   session: Session,
   { area = 'marketplace', storeId, can }: AccountMenuContext,
@@ -151,14 +154,14 @@ export function HeaderAccount({ className, ...context }: { className?: string } 
         />
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-72 max-w-[calc(100vw-1.5rem)]">
-        <div className="px-3 py-2.5">
+        <div className="px-3 py-2">
           <AccountIdentity session={session} storeRoles={storeRoles} />
         </div>
         {groupsFor(session, context, seller).map((group) => (
           <Fragment key={group[0]?.key}>
             <DropdownMenuSeparator />
             {group.map((item) => (
-              <DropdownMenuItem key={item.key} className="min-h-11" render={<Link to={item.to} />}>
+              <DropdownMenuItem key={item.key} className={COMPACT_ITEM} render={<Link to={item.to} />}>
                 <item.icon aria-hidden />
                 {item.label}
               </DropdownMenuItem>
@@ -166,7 +169,7 @@ export function HeaderAccount({ className, ...context }: { className?: string } 
           </Fragment>
         ))}
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="min-h-11" disabled={pending} onClick={() => void leave()}>
+        <DropdownMenuItem className={COMPACT_ITEM} disabled={pending} onClick={() => void leave()}>
           <LogOutIcon aria-hidden />
           {pending ? 'Cerrando sesión…' : 'Cerrar sesión'}
         </DropdownMenuItem>
