@@ -1,7 +1,7 @@
 import { portalRequest, storePath } from './http/portal-http'
 
 /** Ubicaciones de anuncio (`AdPlacement`). */
-export type AdPlacement = 'SEARCH_TOP' | 'HOME_FEATURED' | 'CATEGORY_TOP' | 'PRODUCT_RELATED'
+export type AdPlacement = 'SEARCH_TOP' | 'HOME_FEATURED' | 'CATEGORY_TOP' | 'PRODUCT_RELATED' | 'MAP_FEATURED'
 
 export type AdCampaignStatus = 'DRAFT' | 'PENDING_PAYMENT' | 'SCHEDULED' | 'ACTIVE' | 'PAUSED' | 'FINISHED' | 'REJECTED' | 'CANCELLED'
 
@@ -80,8 +80,9 @@ export interface AdStatsByPlacement extends AdStatsCounters {
 }
 
 export interface AdStatsByProduct extends AdStatsCounters {
-  productId: string
-  productName: string
+  /** Nulo en las filas del mapa del inicio (`MAP_FEATURED`): anuncian el almacén, no un producto. */
+  productId: string | null
+  productName: string | null
   ctr: number
 }
 

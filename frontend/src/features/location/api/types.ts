@@ -41,7 +41,15 @@ export interface MapBranch {
   city: string
   point: GeoPoint
   distanceKm?: number
+  /** Almacén con campaña «Mapa del inicio» vigente: se muestra destacado y con la etiqueta «Patrocinado». */
+  recommended: boolean
+  /** Token firmado para registrar impresión y clic; solo en recomendados. */
+  adImpressionToken?: string
 }
+
+/** Sedes que se piden por área (sin contar los recomendados). */
+export const MAP_LIMIT_ZONE = 150
+export const MAP_LIMIT_EXACT = 100
 
 export interface PlaceSuggestion {
   /** `${osm_type}:${osm_id}` */
@@ -56,6 +64,9 @@ export interface PlaceSuggestion {
 export interface LocationService {
   readonly capabilities: LocationCapabilities
   listCities(): Promise<City[]>
-  /** exact → lat/lng y límite 5 con distancia; zone → límite 4 aleatorio, sin distancia. */
+  /**
+   * Todas (o casi todas) las sedes del área: exact → lat/lng, por distancia, hasta MAP_LIMIT_EXACT;
+   * zone → aleatorio, hasta MAP_LIMIT_ZONE. Los recomendados llegan primero y fuera del límite.
+   */
   getMapBranches(area: MapArea): Promise<MapBranch[]>
 }

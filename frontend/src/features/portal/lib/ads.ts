@@ -6,6 +6,7 @@ export const PLACEMENT_LABEL: Record<AdPlacement, string> = {
   HOME_FEATURED: 'Inicio · Destacados',
   CATEGORY_TOP: 'Cabecera de categoría',
   PRODUCT_RELATED: 'Producto · También te puede servir',
+  MAP_FEATURED: 'Mapa del inicio · Recomendado',
 }
 
 export const PLACEMENT_HINT: Record<AdPlacement, string> = {
@@ -13,9 +14,14 @@ export const PLACEMENT_HINT: Record<AdPlacement, string> = {
   HOME_FEATURED: 'Carrusel «Destacados» de la página de inicio.',
   CATEGORY_TOP: 'Cabecera de la página de la categoría.',
   PRODUCT_RELATED: 'Sección «También te puede servir» del detalle de producto.',
+  MAP_FEATURED: 'Tu almacén sale como «Recomendado» en el mapa del inicio, en las zonas donde tienes sedes con ubicación. Anuncia el almacén, no productos.',
 }
 
-export const PLACEMENT_ORDER: AdPlacement[] = ['SEARCH_TOP', 'HOME_FEATURED', 'CATEGORY_TOP', 'PRODUCT_RELATED']
+export const PLACEMENT_ORDER: AdPlacement[] = ['SEARCH_TOP', 'HOME_FEATURED', 'CATEGORY_TOP', 'PRODUCT_RELATED', 'MAP_FEATURED']
+
+/** Campaña solo del mapa del inicio: anuncia el almacén, sin productos ni segmentación. */
+export const isStoreOnly = (placements: readonly AdPlacement[]) =>
+  placements.length > 0 && placements.every((placement) => placement === 'MAP_FEATURED')
 
 export const placementLabel = (placement: string) => PLACEMENT_LABEL[placement as AdPlacement] ?? placement
 
@@ -140,6 +146,8 @@ const AD_ERROR_MESSAGE: Record<string, string> = {
   AD_PRODUCT_NOT_PUBLISHED: 'Alguno de los productos ya no está publicado. Quítalo o publícalo de nuevo.',
   AD_INVALID_DATES: 'Revisa las fechas: dura de 1 a 90 días, empieza desde hoy y hasta dentro de 60 días.',
   AD_TOO_MANY_PRODUCTS: 'Una campaña admite de 1 a 20 productos.',
+  AD_PRODUCTS_REQUIRED: 'Elige al menos un producto para las ubicaciones distintas del mapa del inicio.',
+  AD_PRODUCTS_NOT_ALLOWED: 'Una campaña solo del mapa del inicio anuncia tu almacén: quita los productos.',
   AD_PLACEMENT_UNAVAILABLE: 'Alguna de las ubicaciones elegidas no está disponible. Elige otra.',
   AD_TARGETING_INVALID: 'La segmentación no es válida. Revisa palabras clave, categorías y marcas.',
   AD_CAMPAIGN_STATUS_INVALID: 'El estado pedido no es válido para esta campaña.',

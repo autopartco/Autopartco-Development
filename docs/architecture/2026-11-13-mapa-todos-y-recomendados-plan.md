@@ -158,7 +158,8 @@ Rama `feature/mapa-recomendados` desde `develop`. Orden: 1 → 2 → 3 → 4 →
 - Tarea 1 aplicada en Supabase (`ads_map_featured_placement`): `MAP_FEATURED` en los CHECK de `ad_campaigns` (hasta 5 ubicaciones), `ad_placement_prices` y `ad_events`; tarifa inicial 10.000 COP/día (editable desde Admin → Publicidad); `ad_events.product_id` admite nulo solo con `MAP_FEATURED`; índice `idx_locations__lat_lng`.
 - Tareas 2 y 3 hechas en `feature/mapa-recomendados`. Cambios respecto a §3.2: `MapFeaturedStores.pick(candidateStoreIds)` sin `visitorKey`; `BranchMapQueries.storeIdsIn(...)`, `findForStores(...)` y `find(..., excludedStoreIds)`; códigos 400 `AD_PRODUCTS_REQUIRED` (otra ubicación sin productos) y `AD_PRODUCTS_NOT_ALLOWED` (solo mapa con productos); `AdCampaignRequest.placements` hasta 5.
 - Eventos: `POST /events/ads` acepta el `adImpressionToken` del mapa (impresión y clic) sin cambios de contrato.
-- Pendiente: tareas 4 y 5 (frontend) y 6 (QA).
+- Tareas 4 y 5 hechas en `feature/mapa-recomendados-frontend`. Cambio respecto a §3.3: los recomendados también se agrupan, pero solo entre sí (grupo grafito con estrella y número), siempre por encima; un grupo normal que caería debajo se desplaza 30 px. Agrupación propia en pantalla (radio 40 px, recalculada en `moveend`) en lugar de la fuente GeoJSON con `cluster`.
+- Pendiente: tarea 6 (QA).
 
 ## 6. Riesgos y verificación
 

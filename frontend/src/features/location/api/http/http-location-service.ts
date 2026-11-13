@@ -1,6 +1,6 @@
 import { apiRequest } from '@/lib/api'
 import { roundCoord } from '../../lib/geo'
-import type { LocationService, MapBranch } from '../types'
+import { MAP_LIMIT_EXACT, MAP_LIMIT_ZONE, type LocationService, type MapBranch } from '../types'
 
 interface MapBranchDto {
   storeId: string
@@ -12,6 +12,8 @@ interface MapBranchDto {
   latitude: number
   longitude: number
   distanceKm: number | null
+  recommended?: boolean
+  adImpressionToken?: string | null
 }
 
 /**
@@ -42,7 +44,7 @@ export function createHttpLocationService(): LocationService {
         west: String(bounds.west),
         north: String(bounds.north),
         east: String(bounds.east),
-        limit: exact ? '5' : '4',
+        limit: String(exact ? MAP_LIMIT_EXACT : MAP_LIMIT_ZONE),
       })
       if (exact) {
         params.set('lat', String(roundCoord(user.lat)))
@@ -59,6 +61,8 @@ export function createHttpLocationService(): LocationService {
           city: row.city,
           point: { lat: row.latitude, lng: row.longitude },
           distanceKm: row.distanceKm ?? undefined,
+          recommended: row.recommended === true,
+          adImpressionToken: row.recommended ? (row.adImpressionToken ?? undefined) : undefined,
         }),
       )
     },

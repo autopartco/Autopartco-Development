@@ -62,3 +62,46 @@ export const MOCK_BRANCHES: MockBranch[] = [
   { cityId: 'pereira', storeId: 'store-valle', branchName: 'Sede Dosquebradas', area: 'Dosquebradas', point: { lat: 4.835, lng: -75.675 } },
   { cityId: 'pereira', storeId: 'store-barrio-colombia', branchName: 'Sede Cuba', area: 'Cuba', point: { lat: 4.796, lng: -75.735 } },
 ]
+
+/** Almacenes con campaña «Mapa del inicio» simulada: salen como recomendados. */
+export const MOCK_RECOMMENDED_STORE_IDS: string[] = ['store-santander', 'store-eje']
+
+/** Las sedes extra son de almacenes no recomendados: los recomendados conservan solo sus sedes base. */
+const EXTRA_STORE_IDS = ['store-barrio-colombia', 'store-la13', 'store-valle', 'store-costa']
+const EXTRA_PER_CITY = 10
+
+/** Generador determinista (mulberry32): las sedes extra no cambian entre recargas. */
+function seeded(seed: number): () => number {
+  let state = seed
+  return () => {
+    state = (state + 0x6d2b79f5) | 0
+    let t = Math.imul(state ^ (state >>> 15), 1 | state)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+}
+
+/**
+ * Sedes extra alrededor de las de cada ciudad (±3 km aprox.) para probar el mapa con muchas sedes y la
+ * agrupación. Ficticias, como las anteriores.
+ */
+function extraBranches(): MockBranch[] {
+  const random = seeded(1581)
+  const extras: MockBranch[] = []
+  for (const city of MOCK_CITIES) {
+    const anchors = MOCK_BRANCHES.filter((branch) => branch.cityId === city.id)
+    for (let i = 0; i < EXTRA_PER_CITY; i++) {
+      const anchor = anchors[i % anchors.length]
+      extras.push({
+        cityId: city.id,
+        storeId: EXTRA_STORE_IDS[Math.floor(random() * EXTRA_STORE_IDS.length)],
+        branchName: `Punto ${anchor.area} ${i + 1}`,
+        area: anchor.area,
+        point: { lat: anchor.point.lat + (random() - 0.5) * 0.055, lng: anchor.point.lng + (random() - 0.5) * 0.055 },
+      })
+    }
+  }
+  return extras
+}
+
+MOCK_BRANCHES.push(...extraBranches())

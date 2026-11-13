@@ -966,9 +966,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/marketplace/package-info.java": {
-    "mtime": 1794592222.376521,
-    "seen": 1794592695.9127424,
-    "ast_hash": "1f2e0082450cc04ff3176ce6ce84386e",
+    "mtime": 1794593235.6563883,
+    "seen": 1794594431.5157115,
+    "ast_hash": "ed6ff5d4445e540dc7c7f5d358a19e87",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/operations/package-info.java": {
@@ -3246,9 +3246,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/location/api/http/http-location-service.ts": {
-    "mtime": 1794426881.1489604,
-    "seen": 1794428149.317496,
-    "ast_hash": "121b356363376d36c8b5a7529fe300ea",
+    "mtime": 1794593571.2784953,
+    "seen": 1794594431.7345333,
+    "ast_hash": "b6ce0b820c69073632579eb01620fc5c",
     "semantic_hash": ""
   },
   "frontend/src/features/location/api/location-service.ts": {
@@ -3258,21 +3258,21 @@
     "semantic_hash": ""
   },
   "frontend/src/features/location/api/mock/mock-location-service.ts": {
-    "mtime": 1794426881.1520386,
-    "seen": 1794428149.3190901,
-    "ast_hash": "c820e78922052f942f0507a6e8debeab",
+    "mtime": 1794593571.31507,
+    "seen": 1794594431.7348218,
+    "ast_hash": "e2ce145e3646ecd7473efcc32d7f76f5",
     "semantic_hash": ""
   },
   "frontend/src/features/location/api/mock/mock-locations.ts": {
-    "mtime": 1794426881.153799,
-    "seen": 1794428149.3191001,
-    "ast_hash": "5498459ee6aae2176da88e230225778c",
+    "mtime": 1794594022.1838279,
+    "seen": 1794594431.7348244,
+    "ast_hash": "0463df5b8b23c7fac95aec0a8f8961bb",
     "semantic_hash": ""
   },
   "frontend/src/features/location/api/types.ts": {
-    "mtime": 1794426881.157711,
-    "seen": 1794428149.319114,
-    "ast_hash": "a95d4d937c5f51d6c73577e56744cca1",
+    "mtime": 1794593571.174006,
+    "seen": 1794594431.7350898,
+    "ast_hash": "1c3aa7668f1efb5b92a4acd85af3e124",
     "semantic_hash": ""
   },
   "frontend/src/features/location/hooks.ts": {
@@ -8112,15 +8112,15 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/organization/BranchMapQueries.java": {
-    "mtime": 1794592222.2245739,
-    "seen": 1794592695.8012054,
-    "ast_hash": "f7d938d98158f14daaf0f34d0061a51d",
+    "mtime": 1794593235.6523414,
+    "seen": 1794594431.4536028,
+    "ast_hash": "6680eb328c61da4f6c4a3f82046dd74e",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/organization/MapBranchView.java": {
-    "mtime": 1794592196.6662347,
-    "seen": 1794592695.8025808,
-    "ast_hash": "5f7126f86372a59be59114da12ae9e18",
+    "mtime": 1794593235.654351,
+    "seen": 1794594431.454919,
+    "ast_hash": "09ecc51ea7e13a5d89599d17bb4c8704",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/search/ParsedQuery.java": {
@@ -8226,9 +8226,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/marketplace/stores/BranchMapController.java": {
-    "mtime": 1794592222.6635976,
-    "seen": 1794592695.948523,
-    "ast_hash": "59797dd728ed4ab09c06a2e6f53e936d",
+    "mtime": 1794593235.6593983,
+    "seen": 1794594431.530586,
+    "ast_hash": "fa6723248e44ffef8ecb014dc398a1e2",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/operations/searchadmin/SearchAdminController.java": {
@@ -8256,9 +8256,9 @@
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/core/organization/BranchMapQueriesTest.java": {
-    "mtime": 1794592273.6238682,
-    "seen": 1794592696.0997934,
-    "ast_hash": "5f2b36829dd24cb3a324e2b30dc9343f",
+    "mtime": 1794593235.6682887,
+    "seen": 1794594431.636945,
+    "ast_hash": "4c81c098df1589776764523143bad152",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/core/search/QueryParserTest.java": {
@@ -8298,9 +8298,9 @@
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/marketplace/stores/BranchMapControllerTest.java": {
-    "mtime": 1794592256.4524348,
-    "seen": 1794592696.1472192,
-    "ast_hash": "ee9730e20076ee326502ab710ae77c36",
+    "mtime": 1794593235.6682887,
+    "seen": 1794594431.666173,
+    "ast_hash": "f523cf360191ffe204c95e7e277a7b63",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/shared/web/SlidingWindowRateLimiterTest.java": {
@@ -8322,9 +8322,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/location/components/coverage-map.tsx": {
-    "mtime": 1794426881.1597123,
-    "seen": 1794428149.3191187,
-    "ast_hash": "150692a3c251dc979cf7b7cfe4e713e1",
+    "mtime": 1794594125.498447,
+    "seen": 1794594431.7350922,
+    "ast_hash": "f22d0b88b676c6afc82ffe5b6f32d1e3",
     "semantic_hash": ""
   },
   "frontend/src/features/location/components/location-picker.tsx": {
@@ -8370,15 +8370,15 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/AdCampaignRequest.java": {
-    "mtime": 1794592137.1478972,
-    "seen": 1794592695.614214,
-    "ast_hash": "ab5378e03dc8490f46bedb09bb5166b1",
+    "mtime": 1794593235.631375,
+    "seen": 1794594431.3530257,
+    "ast_hash": "dc35575dbb71dd1830e01a16e5536e73",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/AdCampaignRules.java": {
-    "mtime": 1794592137.1500163,
-    "seen": 1794592695.6142192,
-    "ast_hash": "73d2fc8d78e218beb233bb558916ee62",
+    "mtime": 1794593235.6369207,
+    "seen": 1794594431.3530302,
+    "ast_hash": "77bb698cee5e920a98ebb0336a5cb6e2",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/AdCampaignStatus.java": {
@@ -8394,9 +8394,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/AdCampaigns.java": {
-    "mtime": 1794592137.1520288,
-    "seen": 1794592695.6150348,
-    "ast_hash": "0aa8298356ee94da7674af6d29bdde6d",
+    "mtime": 1794593235.6383014,
+    "seen": 1794594431.353606,
+    "ast_hash": "48c8690d6b43f9e1eddbe4134b4318c0",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/AdCandidate.java": {
@@ -8418,9 +8418,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/AdCheckout.java": {
-    "mtime": 1794592137.1530447,
-    "seen": 1794592695.6162274,
-    "ast_hash": "f65459ee280008bdd774b6301e391466",
+    "mtime": 1794593235.639686,
+    "seen": 1794594431.3544765,
+    "ast_hash": "8cc157d502b5168e0a009711e454e218",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/AdCheckoutResponse.java": {
@@ -8442,9 +8442,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/AdEvents.java": {
-    "mtime": 1794592137.2140312,
-    "seen": 1794592695.617675,
-    "ast_hash": "9427d60116faf12814b267ebef2e5d6b",
+    "mtime": 1794593235.639686,
+    "seen": 1794594431.355338,
+    "ast_hash": "d3e980ebc7cedb64894cbf8902548234",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/AdFrequencyCap.java": {
@@ -8466,9 +8466,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/AdPlacement.java": {
-    "mtime": 1794592137.098395,
-    "seen": 1794592695.6206486,
-    "ast_hash": "23a29bac5811c10298bb36fd0a03f332",
+    "mtime": 1794593235.6435697,
+    "seen": 1794594431.356779,
+    "ast_hash": "99490ceef571b79d24b7d17716ceb54b",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/AdPriceUpdate.java": {
@@ -8520,9 +8520,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/AdTokenSigner.java": {
-    "mtime": 1794592137.2140312,
-    "seen": 1794592695.6276257,
-    "ast_hash": "4a3b67c0153826575f6537436ac498a9",
+    "mtime": 1794593235.6483195,
+    "seen": 1794594431.3590295,
+    "ast_hash": "e283799c94569cdf4a40a4a546a71e26",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/AdVisitors.java": {
@@ -8616,9 +8616,9 @@
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/core/advertising/AdCampaignServiceTest.java": {
-    "mtime": 1794592273.6228802,
-    "seen": 1794592696.0685863,
-    "ast_hash": "7a4a781f678ffe1a42d53f566d9acae0",
+    "mtime": 1794593235.6629088,
+    "seen": 1794594431.6099315,
+    "ast_hash": "056cc87cffd348d550631c1b8dd4343f",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/core/advertising/AdPaymentWebhookTest.java": {
@@ -8640,9 +8640,9 @@
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/core/advertising/AdTokenSignerTest.java": {
-    "mtime": 1794592299.3704455,
-    "seen": 1794592696.070096,
-    "ast_hash": "227cd5a26d073af45a973218de59d698",
+    "mtime": 1794593235.6642568,
+    "seen": 1794594431.6120014,
+    "ast_hash": "d96cc2bbe32b6aa70d09d0324de89b0e",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/AdPausedBy.java": {
@@ -8850,9 +8850,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/portal/api/ads-api.ts": {
-    "mtime": 1794426881.290488,
-    "seen": 1794428149.374932,
-    "ast_hash": "fdf40919e31acb04458e1a94678bd368",
+    "mtime": 1794593890.1283574,
+    "seen": 1794594431.76015,
+    "ast_hash": "d6e1da8ba1b5356438f1c3ea42611777",
     "semantic_hash": ""
   },
   "frontend/src/features/portal/components/ads/start-ad-checkout.ts": {
@@ -8862,27 +8862,27 @@
     "semantic_hash": ""
   },
   "frontend/src/features/portal/lib/ads.ts": {
-    "mtime": 1794426881.3393517,
-    "seen": 1794428149.4300845,
-    "ast_hash": "50d1d5020870d5218715afc4a6c98719",
+    "mtime": 1794593890.284711,
+    "seen": 1794594431.7997906,
+    "ast_hash": "6f9669b798f8156067bda28ef5576f52",
     "semantic_hash": ""
   },
   "frontend/src/features/portal/pages/ads/campaign-form-page.tsx": {
-    "mtime": 1794428203.471977,
-    "seen": 1794439692.1085777,
-    "ast_hash": "4303f4b3f0f490d0616e5fa28f35c8ed",
+    "mtime": 1794593901.0709832,
+    "seen": 1794594431.8090746,
+    "ast_hash": "012e3db4292029ffdbbd226646cd170b",
     "semantic_hash": ""
   },
   "frontend/src/features/portal/pages/ads/campaign-stats-page.tsx": {
-    "mtime": 1794426881.3479538,
-    "seen": 1794428149.4363587,
-    "ast_hash": "0c58571aa639cb2aec6ed7f9b1e01dec",
+    "mtime": 1794593908.6791234,
+    "seen": 1794594431.80908,
+    "ast_hash": "bce60cc41f64d250c1fa1677309f22e8",
     "semantic_hash": ""
   },
   "frontend/src/features/portal/pages/ads/campaigns-page.tsx": {
-    "mtime": 1794426881.3504698,
-    "seen": 1794428149.4363616,
-    "ast_hash": "d547e5a6b99646df952113f685265d04",
+    "mtime": 1794593901.2900012,
+    "seen": 1794594431.809083,
+    "ast_hash": "de858db2e4088ea9efb3d62cd00ed36c",
     "semantic_hash": ""
   },
   "frontend/src/features/portal/pages/ads/payment-result-page.tsx": {
@@ -10332,21 +10332,21 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/MapFeaturedPick.java": {
-    "mtime": 1794592160.75503,
-    "seen": 1794592695.628971,
-    "ast_hash": "ce8df2c6b8886b4d089e74d3438cb086",
+    "mtime": 1794593235.6483195,
+    "seen": 1794594431.3599424,
+    "ast_hash": "86fcce55db8e282d1310252a32bbac15",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/advertising/MapFeaturedStores.java": {
-    "mtime": 1794592160.871627,
-    "seen": 1794592695.6289759,
-    "ast_hash": "79e63420f7aad006cd9daa223e471679",
+    "mtime": 1794593235.6503313,
+    "seen": 1794594431.3599455,
+    "ast_hash": "0ec3a68471e9d531ae6c891dd9f0fbd3",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/core/advertising/MapFeaturedStoresTest.java": {
-    "mtime": 1794592299.444823,
-    "seen": 1794592696.070099,
-    "ast_hash": "159c08b37cd194bf97baf0a39714ec78",
+    "mtime": 1794593235.6662765,
+    "seen": 1794594431.6120064,
+    "ast_hash": "bbf9e4dcda8455c4965689a77940693a",
     "semantic_hash": ""
   },
   "frontend/src/features/auth/components/resend-verification.tsx": {
@@ -10362,9 +10362,9 @@
     "semantic_hash": ""
   },
   "docs/architecture/2026-11-13-mapa-todos-y-recomendados-plan.md": {
-    "mtime": 1794592501.225038,
-    "seen": 1794592696.6867101,
-    "ast_hash": "0e1fc99b0fba48f56f42f4abad1cab55",
+    "mtime": 1794594294.574362,
+    "seen": 1794594431.9307342,
+    "ast_hash": "04bfc873a07864d5afd9309d5d649d89",
     "semantic_hash": ""
   },
   "docs/architecture/2026-11-13-servicios-primer-nivel-plan.md": {

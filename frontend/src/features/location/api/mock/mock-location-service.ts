@@ -1,7 +1,7 @@
 import { getMarketplaceService } from '@/features/marketplace/api/marketplace-service'
 import { haversineKm } from '../../lib/geo'
-import type { City, LocationService, MapBranch } from '../types'
-import { MOCK_BRANCHES, MOCK_CITIES } from './mock-locations'
+import { MAP_LIMIT_EXACT, MAP_LIMIT_ZONE, type City, type LocationService, type MapBranch } from '../types'
+import { MOCK_BRANCHES, MOCK_CITIES, MOCK_RECOMMENDED_STORE_IDS } from './mock-locations'
 
 /** Fisher–Yates. */
 function shuffle<T>(items: T[]): T[] {
@@ -44,15 +44,19 @@ export function createMockLocationService(): LocationService {
           area: branch.area,
           city: MOCK_CITIES.find((item) => item.id === branch.cityId)?.name ?? '',
           point: branch.point,
+          recommended: MOCK_RECOMMENDED_STORE_IDS.includes(branch.storeId),
         })
       }
-      if (precision === 'exact' && user) {
-        return inside
-          .map((branch) => ({ ...branch, distanceKm: haversineKm(user, branch.point) }))
-          .sort((a, b) => a.distanceKm - b.distanceKm)
-          .slice(0, 5)
-      }
-      return shuffle(inside).slice(0, 4)
+      const withDistance =
+        precision === 'exact' && user ? inside.map((branch) => ({ ...branch, distanceKm: haversineKm(user, branch.point) })) : inside
+      // Igual que el backend: recomendados primero y fuera del límite; el resto por distancia o al azar.
+      const recommended = withDistance.filter((branch) => branch.recommended)
+      const rest = withDistance.filter((branch) => !branch.recommended)
+      const ordered =
+        precision === 'exact' && user
+          ? rest.sort((a, b) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0)).slice(0, MAP_LIMIT_EXACT)
+          : shuffle(rest).slice(0, MAP_LIMIT_ZONE)
+      return [...recommended, ...ordered]
     },
   }
 }
