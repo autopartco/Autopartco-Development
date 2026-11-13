@@ -26,7 +26,7 @@ public class AdEvents {
 
     static final String INSERT_SQL = """
             insert into ad_events (day, campaign_id, product_id, placement, kind, visitor_hash)
-            select :day, c.id, :productId, :placement, :kind, :visitor
+            select :day, c.id, cast(:productId as uuid), :placement, :kind, :visitor
             from ad_campaigns c
             where c.id = :campaignId
             on conflict do nothing

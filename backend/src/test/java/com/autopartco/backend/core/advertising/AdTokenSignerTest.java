@@ -40,6 +40,17 @@ class AdTokenSignerTest {
     }
 
     @Test
+    void mapTokenHasNoProductAndProductlessTokensOnlyValeForTheMap() {
+        AdTokenSigner.Claims claims = signer.verify(signer.sign(CAMPAIGN, null, AdPlacement.MAP_FEATURED))
+                .orElseThrow();
+        assertThat(claims.productId()).isNull();
+        assertThat(claims.placement()).isEqualTo(AdPlacement.MAP_FEATURED);
+
+        assertThat(signer.verify(signer.sign(CAMPAIGN, null, AdPlacement.SEARCH_TOP))).isEmpty();
+        assertThat(signer.verify(signer.sign(CAMPAIGN, PRODUCT, AdPlacement.MAP_FEATURED))).isEmpty();
+    }
+
+    @Test
     void alteredPayloadIsIgnored() {
         String token = signer.sign(CAMPAIGN, PRODUCT, AdPlacement.SEARCH_TOP);
         String signature = token.substring(token.indexOf('.') + 1);

@@ -96,9 +96,9 @@ public class AdCheckout {
         AdCampaigns.requireStatus(campaign, EnumSet.of(AdCampaignStatus.DRAFT, AdCampaignStatus.PENDING_PAYMENT));
         AdCampaignRules.requireValidDates(campaign.getStartsOn(), campaign.getEndsOn(), AdText.today(clock));
         List<UUID> productIds = List.copyOf(campaign.getProductIds());
-        AdCampaignRules.requireProductCount(productIds.size());
-        campaigns.requirePublished(storeId, productIds);
         List<AdPlacement> placements = campaign.placementList();
+        AdCampaignRules.requireProductCount(productIds.size(), placements);
+        campaigns.requirePublished(storeId, productIds);
         BigDecimal total = AdCampaignRules.totalPrice(placements, campaigns.activePrices(placements),
                 campaign.getStartsOn(), campaign.getEndsOn());
         long amountInCents = AdCampaignRules.amountInCents(total);

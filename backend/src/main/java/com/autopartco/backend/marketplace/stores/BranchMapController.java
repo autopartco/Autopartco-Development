@@ -3,7 +3,11 @@ package com.autopartco.backend.marketplace.stores;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.stream.Stream;
 
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -12,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.autopartco.backend.core.advertising.MapFeaturedPick;
+import com.autopartco.backend.core.advertising.MapFeaturedStores;
 import com.autopartco.backend.shared.web.ClientIp;
 import com.autopartco.backend.core.organization.BranchMapQueries;
 import com.autopartco.backend.core.organization.MapBranchView;
@@ -23,7 +29,11 @@ import com.autopartco.backend.shared.web.SlidingWindowRateLimiter;
 
 import jakarta.servlet.http.HttpServletRequest;
 
-/** Sedes de almacenes publicados para el mapa de cobertura (público, solo Colombia). Límite: 60 por IP y minuto. */
+/**
+ * Sedes de almacenes publicados para el mapa de cobertura (público, solo Colombia). Límite: 60 por IP y minuto.
+ * Primero las sedes de los almacenes recomendados ({@code MAP_FEATURED}, fuera de {@code limit}); luego el resto,
+ * por distancia o en orden aleatorio.
+ */
 @RestController
 @RequestMapping(ApiPaths.MARKETPLACE + "/branches")
 public class BranchMapController {
@@ -31,25 +41,28 @@ public class BranchMapController {
     static final BigDecimal MAX_LAT = ColombiaBounds.MAX_LAT;
     static final BigDecimal MIN_LNG = ColombiaBounds.MIN_LNG;
     static final BigDecimal MAX_LNG = ColombiaBounds.MAX_LNG;
-    static final int DEFAULT_LIMIT = 4;
-    static final int MAX_LIMIT = 8;
+    static final int DEFAULT_LIMIT = 100;
+    static final int MAX_LIMIT = 200;
 
     private final BranchMapQueries branchMapQueries;
+    private final MapFeaturedStores featuredStores;
     private final SlidingWindowRateLimiter rateLimiter;
 
     /** Límite en Redis si está configurado ({@link RateLimiters}); si no, en memoria. */
     @Autowired
-    public BranchMapController(BranchMapQueries branchMapQueries, RateLimiters rateLimiters) {
+    public BranchMapController(BranchMapQueries branchMapQueries, MapFeaturedStores featuredStores,
+            RateLimiters rateLimiters) {
         this.branchMapQueries = branchMapQueries;
+        this.featuredStores = featuredStores;
         this.rateLimiter = rateLimiters.create("map", "MAP_RATE_LIMITED", 60, Duration.ofMinutes(1));
     }
 
-    public BranchMapController(BranchMapQueries branchMapQueries) {
-        this(branchMapQueries, Clock.systemUTC());
+    public BranchMapController(BranchMapQueries branchMapQueries, MapFeaturedStores featuredStores) {
+        this(branchMapQueries, featuredStores, Clock.systemUTC());
     }
 
-    BranchMapController(BranchMapQueries branchMapQueries, Clock clock) {
-        this(branchMapQueries, RateLimiters.inMemory(clock));
+    BranchMapController(BranchMapQueries branchMapQueries, MapFeaturedStores featuredStores, Clock clock) {
+        this(branchMapQueries, featuredStores, RateLimiters.inMemory(clock));
     }
 
     // Los límites son opcionales a nivel de Spring para responder 400 con código propio (el handler genérico daría 500).
@@ -79,6 +92,19 @@ public class BranchMapController {
         if (clippedSouth.compareTo(clippedNorth) > 0 || clippedWest.compareTo(clippedEast) > 0) {
             throw new BadRequestException("MAP_AREA_OUTSIDE_COVERAGE", "El área está fuera de Colombia.");
         }
-        return branchMapQueries.find(clippedSouth, clippedWest, clippedNorth, clippedEast, lat, lng, limit);
+        List<MapFeaturedPick> picks = featuredStores.pick(
+                branchMapQueries.storeIdsIn(clippedSouth, clippedWest, clippedNorth, clippedEast));
+        if (picks.isEmpty()) {
+            return branchMapQueries.find(clippedSouth, clippedWest, clippedNorth, clippedEast, lat, lng, limit);
+        }
+        Map<UUID, String> tokens = new LinkedHashMap<>();
+        picks.forEach(pick -> tokens.put(pick.storeId(), pick.adImpressionToken()));
+        List<MapBranchView> recommended = branchMapQueries.findForStores(tokens.keySet(), clippedSouth, clippedWest,
+                clippedNorth, clippedEast, lat, lng).stream()
+                .map(branch -> branch.recommendedWith(tokens.get(branch.storeId())))
+                .toList();
+        List<MapBranchView> rest = branchMapQueries.find(clippedSouth, clippedWest, clippedNorth, clippedEast, lat, lng,
+                limit, tokens.keySet());
+        return Stream.concat(recommended.stream(), rest.stream()).toList();
     }
 }

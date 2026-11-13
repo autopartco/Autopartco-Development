@@ -93,14 +93,14 @@ class BranchMapQueriesTest {
     }
 
     @Test
-    void limitIsCappedAtEight() {
+    void limitIsCappedAtTwoHundred() {
         when(statement.params(anyMap()).query(any(RowMapper.class)).list()).thenReturn(List.of());
 
-        queries.find(S, W, N, E, null, null, 50);
+        queries.find(S, W, N, E, null, null, 500);
 
         ArgumentCaptor<Map> params = ArgumentCaptor.forClass(Map.class);
         verify(statement, org.mockito.Mockito.atLeastOnce()).params(params.capture());
-        assertThat((Map<String, Object>) params.getValue()).containsEntry("limit", 8);
+        assertThat((Map<String, Object>) params.getValue()).containsEntry("limit", 200);
     }
 
     @Test
@@ -129,5 +129,40 @@ class BranchMapQueriesTest {
         queries.find(S, W, N, E, null, null, 4);
         MapBranchView withoutDistance = (MapBranchView) mapper.getValue().mapRow(rs, 0);
         assertThat(withoutDistance.distanceKm()).isNull();
+    }
+
+    @Test
+    void excludedStoresAddNotInFilterAndOnlyStoresAddInFilter() {
+        when(statement.params(anyMap()).query(any(RowMapper.class)).list()).thenReturn(List.of());
+        UUID store = UUID.randomUUID();
+
+        queries.find(S, W, N, E, null, null, 100, List.of(store));
+        queries.findForStores(List.of(store), S, W, N, E, null, null);
+
+        ArgumentCaptor<String> sql = ArgumentCaptor.forClass(String.class);
+        verify(jdbcClient, org.mockito.Mockito.times(2)).sql(sql.capture());
+        assertThat(sql.getAllValues().get(0)).contains("and s.id not in (:storeIds)", "order by random()");
+        assertThat(sql.getAllValues().get(1)).contains("and s.id in (:storeIds)").doesNotContain("not in");
+        ArgumentCaptor<Map> params = ArgumentCaptor.forClass(Map.class);
+        verify(statement, org.mockito.Mockito.atLeastOnce()).params(params.capture());
+        assertThat((Map<String, Object>) params.getValue()).containsEntry("storeIds", List.of(store))
+                .containsEntry("limit", 200);
+    }
+
+    @Test
+    void findForNoStoresSkipsTheQuery() {
+        assertThat(queries.findForStores(List.of(), S, W, N, E, null, null)).isEmpty();
+        org.mockito.Mockito.verifyNoInteractions(jdbcClient);
+    }
+
+    @Test
+    void storeIdsInUsesTheSameVisibilityFilters() {
+        queries.storeIdsIn(S, W, N, E);
+
+        ArgumentCaptor<String> sql = ArgumentCaptor.forClass(String.class);
+        verify(jdbcClient).sql(sql.capture());
+        assertThat(sql.getValue()).startsWith("select distinct s.id as store_id from branches b")
+                .contains("ss.code = :activeCode", "bs.code = :activeCode", "l.latitude is not null",
+                        "l.latitude between :south and :north");
     }
 }
