@@ -529,6 +529,35 @@ export async function simulateNetwork(ms = 450): Promise<void> {
 }
 
 /** Tienda por id; un id desconocido o sin sesión se comporta como el servidor (403). */
+/** Roles predefinidos del backend (`StaffRoles`), para simular colaboradores con permisos reales. */
+const MOCK_ROLES: Record<'SALES' | 'INVENTORY', { name: string; permissions: StorePermission[] }> = {
+  SALES: {
+    name: 'Ventas y pedidos',
+    permissions: ['STORE_READ', 'BRANCH_READ', 'PRODUCT_READ', 'PROMOTION_READ', 'ORDER_READ', 'ORDER_UPDATE', 'SHIPMENT_UPDATE'],
+  },
+  INVENTORY: {
+    name: 'Inventario y productos',
+    permissions: ['STORE_READ', 'BRANCH_READ', 'PRODUCT_READ', 'PRODUCT_CREATE', 'PRODUCT_UPDATE', 'PRODUCT_PUBLISH', 'PRODUCT_DELETE', 'PRODUCT_IMAGE_MANAGE', 'INVENTORY_ADJUST', 'INVENTORY_TRANSFER'],
+  },
+}
+
+/**
+ * Rol de la sesión en un almacén cuando el correo simula un colaborador (sin rol: los permisos del almacén):
+ * - `colaborador...`: Ventas y pedidos en el almacén A, Inventario y productos en el B.
+ * - `equipo...`: Ventas y pedidos en los dos (el menú de cuenta muestra el rol una sola vez).
+ */
+function sessionRole(storeId: string): (typeof MOCK_ROLES)[keyof typeof MOCK_ROLES] | undefined {
+  const email = getSession()?.user.email ?? ''
+  if (email.startsWith('colaborador')) return MOCK_ROLES[storeId === STORE_A ? 'SALES' : 'INVENTORY']
+  if (email.startsWith('equipo')) return MOCK_ROLES.SALES
+  return undefined
+}
+
+/** Permisos de la sesión en el almacén. */
+export function permissionsOf(store: MockStore): StorePermission[] {
+  return sessionRole(store.summary.storeId)?.permissions ?? store.permissions
+}
+
 export function getStore(storeId: string): MockStore {
   if (!getSession()) throw new ApiError('Debes iniciar sesión.', { status: 401, code: 'UNAUTHORIZED' })
   const store = stores.get(storeId)
@@ -537,7 +566,7 @@ export function getStore(storeId: string): MockStore {
 }
 
 export function requirePermission(store: MockStore, code: StorePermission): void {
-  if (!store.permissions.includes(code)) {
+  if (!permissionsOf(store).includes(code)) {
     throw forbidden('Tu rol no tiene permiso para hacer esta acción.')
   }
 }
@@ -552,8 +581,8 @@ export function storesForSession(): MockStore[] {
   // `cliente...` y `admin...` simulan cuentas sin rol de almacén (ver mock-auth-service).
   if (email.startsWith('sinalmacen') || email.startsWith('cliente') || email.startsWith('admin')) return []
   if (email.startsWith('uno')) return [stores.get(STORE_A) as MockStore]
-  // `colaborador...`: cliente invitado a dos almacenes; en el del Norte su rol no incluye publicidad ni reportes.
-  if (email.startsWith('colaborador')) return [stores.get(STORE_B) as MockStore, stores.get(STORE_A) as MockStore]
+  // `colaborador...` y `equipo...`: clientes invitados a dos almacenes (ver `sessionRole`).
+  if (email.startsWith('colaborador') || email.startsWith('equipo')) return [stores.get(STORE_B) as MockStore, stores.get(STORE_A) as MockStore]
   return [...stores.values()]
 }
 
@@ -605,8 +634,10 @@ export function subscriptionOf(store: MockStore): Subscription {
 
 export function summaryOf(store: MockStore): MyStore {
   const subscription = subscriptionOf(store)
+  const role = sessionRole(store.summary.storeId)
   return {
     ...store.summary,
+    ...(role ? { isOwner: false, roleNames: [role.name] } : {}),
     subscription: store.summary.applicationStatus === 'PENDING_REVIEW' || store.summary.applicationStatus === 'REJECTED'
       ? null
       : {

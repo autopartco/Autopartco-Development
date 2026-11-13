@@ -39,6 +39,38 @@ export interface SellerCta {
 
 const IN_REVIEW: readonly MyStoreApplication['status'][] = ['PENDING_REVIEW', 'CONFIGURATION_PENDING']
 
+/**
+ * Almacenes de la cuenta (`GET /me/stores`) para clientes y cuentas de almacén; otras cuentas no
+ * consultan. La clave lleva el correo para no mezclar cuentas.
+ */
+export function useMyStores() {
+  const session = useSession()
+  const kind = session ? accountKindOf(session.roles) : undefined
+  const enabled = kind === 'customer' || kind === 'store'
+  return useAsync<MyStore[]>(`${SELLER_CACHE_PREFIX}stores:${enabled ? session?.user.email : 'none'}`, async () =>
+    enabled ? (await getPortalService()).myStores() : [],
+  )
+}
+
+/**
+ * Nombres de los roles que la cuenta cumple en sus almacenes activos, sin repetir (un mismo rol en
+ * dos almacenes aparece una vez) y sin decir en qué almacén. El propietario sin rol nombrado figura
+ * como «Propietario».
+ */
+export function useAccountStoreRoles(): string[] {
+  const stores = useMyStores()
+  const seen = new Map<string, string>()
+  for (const store of stores.data ?? []) {
+    if (store.applicationStatus !== 'ACTIVE') continue
+    const names = store.roleNames.length > 0 ? store.roleNames : store.isOwner ? ['Propietario'] : []
+    for (const name of names) {
+      const key = name.trim().toLocaleLowerCase('es')
+      if (key && !seen.has(key)) seen.set(key, name.trim())
+    }
+  }
+  return [...seen.values()]
+}
+
 export function useSellerCta(): SellerCta {
   const session = useSession()
   const kind = session ? accountKindOf(session.roles) : undefined
@@ -49,10 +81,7 @@ export function useSellerCta(): SellerCta {
     async () => (isCustomer ? (await getSellerApplicationService()).myApplications() : []),
   )
   // Un cliente también puede ser colaborador invitado de un almacén sin tener solicitud propia.
-  const stores = useAsync<MyStore[]>(
-    `${SELLER_CACHE_PREFIX}stores:${isCustomer ? session?.user.email : 'none'}`,
-    async () => (isCustomer ? (await getPortalService()).myStores() : []),
-  )
+  const stores = useMyStores()
 
   if (kind === 'store') return { state: 'manage', to: '/portal', label: 'Ir a mi almacén' }
   if (kind === 'admin' || kind === 'unknown') return { state: 'learn', to: '/vender', label: 'Vende en Autopartco' }
