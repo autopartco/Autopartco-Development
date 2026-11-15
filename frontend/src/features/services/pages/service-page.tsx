@@ -21,6 +21,7 @@ import { useService } from '../hooks'
 import { CategoryIcon } from '../components/category-icon'
 import { serviceCategoryLabel } from '../lib/categories'
 import { formatDuration } from '../lib/format'
+import { canBookOnline } from '../lib/opening-hours'
 import { SERVICES_PATH, servicePath, servicesCategoryPath } from '../lib/paths'
 
 function ServiceSkeleton() {
@@ -54,7 +55,8 @@ function ServiceDetailView({ service }: { service: ServiceDetail }) {
   }, [storeId, service.id])
 
   const categoryLabel = serviceCategoryLabel(service.category)
-  const wantsBooking = searchParams.get('agendar') === '1' && service.bookingEnabled
+  const canBook = canBookOnline(service)
+  const wantsBooking = searchParams.get('agendar') === '1' && canBook
   const store = service.store
 
   return (
@@ -103,7 +105,7 @@ function ServiceDetailView({ service }: { service: ServiceDetail }) {
             <p className="text-xs text-ap-muted">
               Precio de referencia: puede cambiar tras revisar tu vehículo. El taller confirma el valor final antes de empezar.
             </p>
-            {service.bookingEnabled ? <Badge variant="info">Agenda en línea disponible</Badge> : null}
+            {canBook ? <Badge variant="info">Agenda en línea disponible</Badge> : null}
           </div>
           <ServiceActions service={service} />
         </aside>
