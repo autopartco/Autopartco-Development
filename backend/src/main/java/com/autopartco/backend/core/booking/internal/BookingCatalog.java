@@ -205,7 +205,7 @@ public class BookingCatalog {
             return null;
         }
         try {
-            return JSON.readValue(json, HOURS);
+            return com.autopartco.backend.core.organization.OpeningHours.readable(JSON.readValue(json, HOURS));
         } catch (com.fasterxml.jackson.core.JacksonException unreadable) {
             return null;
         }

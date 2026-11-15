@@ -249,7 +249,7 @@ public class BranchService {
                 branch.getState().getCode(),
                 locationResponse,
                 branch.getWhatsapp(),
-                branch.getOpeningHours()
+                OpeningHours.readable(branch.getOpeningHours())
         );
     }
 }
