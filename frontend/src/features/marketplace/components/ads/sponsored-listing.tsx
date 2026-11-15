@@ -39,7 +39,16 @@ export function SponsoredListing({ product, variant = 'row', eager, className }:
 
   return (
     // El clic se captura en el contenedor: cualquier enlace del listado cuenta como clic del anuncio.
-    <div ref={ref} onClickCapture={handleClick} className={cn('relative', className)}>
+    <div
+      ref={ref}
+      onClickCapture={handleClick}
+      className={cn(
+        'relative',
+        // En cuadrícula la etiqueta se suma a la altura: la tarjeta toma el espacio restante en vez del 100 %.
+        variant === 'card' && 'flex h-full flex-col [&>article]:h-auto [&>article]:flex-1',
+        className,
+      )}
+    >
       <div className="pt-3">
         <SponsoredLabel />
       </div>
