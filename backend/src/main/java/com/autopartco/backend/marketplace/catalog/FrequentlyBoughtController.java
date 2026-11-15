@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.autopartco.backend.core.analytics.ProductAssociations;
-import com.autopartco.backend.core.catalog.ListingQueries;
+import com.autopartco.backend.core.catalog.ListingCache;
 import com.autopartco.backend.core.catalog.ProductImageResponse;
 import com.autopartco.backend.core.catalog.ProductResponse;
 import com.autopartco.backend.core.pricing.BuyerContext;
@@ -28,7 +28,7 @@ public class FrequentlyBoughtController {
     static final int MAX_ITEMS = 6;
 
     private final ProductAssociations productAssociations;
-    private final ListingQueries listingQueries;
+    private final ListingCache listingQueries;
     private final BuyerContexts buyerContexts;
 
     /** Producto recomendado con el precio efectivo del comprador. {@code reason}: ORDERS, COMPATIBILITY o CATEGORY. */
@@ -50,7 +50,7 @@ public class FrequentlyBoughtController {
         for (ProductAssociations.Related item : related) {
             ProductResponse listing;
             try {
-                listing = listingQueries.publishedListing(item.productId(), buyer);
+                listing = listingQueries.detail(item.productId(), buyer);
             } catch (NotFoundException unavailable) {
                 continue; // dejó de estar publicado entre la consulta y el listado
             }

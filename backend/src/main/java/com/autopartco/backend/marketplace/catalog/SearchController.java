@@ -6,6 +6,12 @@ import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.CacheControl;
@@ -61,6 +67,12 @@ public class SearchController {
     static final int SERVICE_STRIP = 4;
     /** Almacenes de la franja de la búsqueda unificada. */
     static final int STORE_STRIP = 4;
+
+    private static final ExecutorService STRIP_EXECUTOR = Executors.newFixedThreadPool(4, runnable -> {
+        Thread thread = new Thread(runnable, "search-strip");
+        thread.setDaemon(true);
+        return thread;
+    });
 
     private final SearchService searchService;
     private final Suggestions suggestions;
@@ -202,9 +214,11 @@ public class SearchController {
         CatalogTracking.recordExposures(exposureRecorder, buyer,
                 result.items().stream().map(SearchResult.Hit::listing).toList());
         SearchResponse body = SearchResponse.of(result);
+        // La franja de almacenes corre en paralelo con la de servicios; un fallo de cualquiera responde sin franja.
+        CompletableFuture<SearchResponse.Stores> storesStrip = startStores(q, cityCode);
         SearchResponse.Services services = services(q, cityCode, departmentCode, lat, lng, radiusKm, storeId);
         body = body.withServices(services, suggestedTab(interpret, interpreted, services))
-                .withStores(stores(q, cityCode));
+                .withStores(joinStores(storesStrip));
         return body.sponsored().isEmpty()
                 ? ResponseEntity.ok(body)
                 : ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(body);
@@ -235,6 +249,31 @@ public class SearchController {
      * Franja de almacenes: hasta {@value #STORE_STRIP} con el mismo texto y municipio. Solo con texto en {@code q}.
      * Un fallo nunca rompe la búsqueda de productos: responde sin franja.
      */
+    private CompletableFuture<SearchResponse.Stores> startStores(String q, String cityCode) {
+        if (storeSearchService == null || q == null || q.isBlank()) {
+            return null;
+        }
+        try {
+            return CompletableFuture.supplyAsync(() -> stores(q, cityCode), STRIP_EXECUTOR);
+        } catch (RuntimeException rejected) {
+            return CompletableFuture.completedFuture(stores(q, cityCode));
+        }
+    }
+
+    private static SearchResponse.Stores joinStores(CompletableFuture<SearchResponse.Stores> strip) {
+        if (strip == null) {
+            return null;
+        }
+        try {
+            return strip.get(10, TimeUnit.SECONDS);
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            return null;
+        } catch (ExecutionException | TimeoutException failure) {
+            return null;
+        }
+    }
+
     private SearchResponse.Stores stores(String q, String cityCode) {
         if (storeSearchService == null || q == null || q.isBlank()) {
             return null;

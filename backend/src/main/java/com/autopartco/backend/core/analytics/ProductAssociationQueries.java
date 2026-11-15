@@ -133,18 +133,28 @@ class ProductAssociationQueries {
      * confianza altos primero.
      */
     static final String RELATED_SQL = """
-            WITH %s
             SELECT a.consequent_product_id, a.source
             FROM product_associations a
-            JOIN published c ON c.id = a.consequent_product_id
             WHERE a.antecedent_product_id = :productId
               AND (a.store_id IS NULL OR a.store_id = CAST(:storeId AS uuid))
+              AND EXISTS (
+                SELECT 1
+                FROM products p
+                JOIN states ps ON ps.id = p.state_id AND ps.deleted_at IS NULL
+                JOIN manufacturers m ON m.id = p.manufacturer_id AND m.deleted_at IS NULL
+                JOIN categories c ON c.id = p.category_id AND c.deleted_at IS NULL
+                JOIN inventory i ON i.product_id = p.id AND i.deleted_at IS NULL AND i.stock > 0
+                JOIN branches b ON b.id = i.branch_id AND b.deleted_at IS NULL
+                JOIN states bs ON bs.id = b.state AND bs.deleted_at IS NULL
+                JOIN store s ON s.id = b.store_id AND s.deleted_at IS NULL
+                JOIN states ss ON ss.id = s.state AND ss.deleted_at IS NULL
+                WHERE p.id = a.consequent_product_id AND p.deleted_at IS NULL
+                  AND ps.code = 'ACTIVE' AND bs.code = 'ACTIVE' AND ss.code = 'ACTIVE')
             ORDER BY (a.store_id IS NULL),
                      CASE a.source WHEN 'ORDERS' THEN 0 WHEN 'COMPATIBILITY' THEN 1 ELSE 2 END,
                      a.lift DESC, a.confidence DESC, a.consequent_product_id
             LIMIT :limit
-            """.formatted(PUBLISHED_CTE.replace("(CAST(:storeId AS uuid) IS NULL OR p.store_id = CAST(:storeId AS uuid))",
-                    "true"));
+            """;
 
     static final String PRODUCT_STORE_SQL = """
             SELECT store_id FROM products WHERE id = :productId AND deleted_at IS NULL
