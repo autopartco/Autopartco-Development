@@ -1,10 +1,11 @@
 import { cn } from "cn"
 
+/** Esqueleto de carga: barrido sutil (`ap-skeleton`, index.css); fijo con movimiento reducido. */
 function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="skeleton"
-      className={cn("animate-pulse rounded-md bg-ap-line/60", className)}
+      className={cn("ap-skeleton rounded-md", className)}
       {...props}
     />
   )

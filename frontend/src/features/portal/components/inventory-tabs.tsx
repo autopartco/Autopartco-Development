@@ -1,5 +1,6 @@
 import { Link, NavLink } from 'react-router'
 import { cn } from '@/lib/utils'
+import { TabIndicator } from '@/components/common/tab-indicator'
 import { usePortal } from '../context'
 import { useActiveBranches } from '../hooks'
 
@@ -17,7 +18,8 @@ export function InventoryTabs() {
     ...(known && branches.length >= MIN_BRANCHES_TO_TRANSFER ? [{ to: `${base}/transferencias`, label: 'Transferencias', end: false }] : []),
   ]
   return (
-    <nav aria-label="Secciones de inventario" className="-mt-2 mb-6 flex gap-1 overflow-x-auto overflow-y-hidden border-b border-ap-line">
+    <nav aria-label="Secciones de inventario" className="relative -mt-2 mb-6 flex gap-1 overflow-x-auto overflow-y-hidden border-b border-ap-line">
+      <TabIndicator group="portal-inventory" />
       {tabs.map((tab) => (
         <NavLink
           key={tab.to}
@@ -25,8 +27,8 @@ export function InventoryTabs() {
           end={tab.end}
           className={({ isActive }) =>
             cn(
-              '-mb-px inline-flex min-h-11 items-center border-b-2 px-3 text-sm font-semibold whitespace-nowrap transition-colors',
-              isActive ? 'border-ap-red text-ap-ink' : 'border-transparent text-ap-muted hover:border-ap-line-strong hover:text-ap-ink',
+              '-mb-px inline-flex min-h-11 items-center border-b-2 px-3 text-sm font-semibold whitespace-nowrap ap-transition-colors',
+              isActive ? 'border-transparent text-ap-ink' : 'border-transparent text-ap-muted hover:border-ap-line-strong hover:text-ap-ink',
             )
           }
         >

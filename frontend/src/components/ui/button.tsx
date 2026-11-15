@@ -1,5 +1,6 @@
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
+import { LoaderCircleIcon } from "lucide-react"
 import { cn } from "cn"
 
 /**
@@ -13,7 +14,7 @@ import { cn } from "cn"
  * El foco lo dibuja la regla global `:focus-visible` (index.css).
  */
 const buttonVariants = cva(
-  "group/button inline-flex shrink-0 items-center justify-center rounded-md border border-transparent bg-clip-padding text-sm font-semibold whitespace-nowrap transition-colors duration-150 outline-none select-none disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button relative inline-flex shrink-0 items-center justify-center rounded-md border border-transparent bg-clip-padding text-sm font-semibold whitespace-nowrap ap-transition-colors outline-none select-none active:not-disabled:translate-y-px disabled:pointer-events-none disabled:opacity-50 disabled:aria-busy:opacity-75 aria-invalid:border-destructive [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
@@ -47,18 +48,39 @@ const buttonVariants = cva(
   }
 )
 
+/**
+ * `loading`: acción en curso. Deshabilita el botón, marca `aria-busy` y muestra un spinner de 16px
+ * centrado; el contenido sigue ocupando su sitio (invisible) para que el ancho y el alto no cambien.
+ */
 function Button({
   className,
   variant = "default",
   size = "default",
+  loading = false,
+  disabled,
+  children,
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants> & { loading?: boolean }) {
   return (
     <ButtonPrimitive
       data-slot="button"
       className={cn(buttonVariants({ variant, size, className }))}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
       {...props}
-    />
+    >
+      {loading ? (
+        <>
+          <span className="contents invisible">{children}</span>
+          <LoaderCircleIcon
+            className="absolute top-1/2 left-1/2 size-4 -translate-x-1/2 -translate-y-1/2 animate-spin motion-reduce:animate-none"
+            aria-hidden
+          />
+        </>
+      ) : (
+        children
+      )}
+    </ButtonPrimitive>
   )
 }
 

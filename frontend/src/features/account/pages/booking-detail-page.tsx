@@ -130,9 +130,9 @@ function BookingDetail({ booking }: { booking: Booking }) {
               {acceptError}
             </p>
           ) : null}
-          <Button className="h-11 w-full sm:w-fit" disabled={accept.pending} onClick={() => void acceptProposal()}>
+          <Button className="h-11 w-full sm:w-fit" loading={accept.pending} onClick={() => void acceptProposal()}>
             <CalendarCheckIcon aria-hidden />
-            {accept.pending ? 'Aceptando…' : 'Aceptar la nueva hora'}
+            Aceptar la nueva hora
           </Button>
         </section>
       ) : null}

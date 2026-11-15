@@ -16,7 +16,7 @@ function Progress({
       >
         <ProgressPrimitive.Indicator
           data-slot="progress-indicator"
-          className={cn("block h-full rounded-full bg-foreground transition-[width] duration-300 ease-out-snap", indicatorClassName)}
+          className={cn("block h-full rounded-full bg-foreground transition-[width] ap-dur-panel ease-ap-out", indicatorClassName)}
         />
       </ProgressPrimitive.Track>
     </ProgressPrimitive.Root>

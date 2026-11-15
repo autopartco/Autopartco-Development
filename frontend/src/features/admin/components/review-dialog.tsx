@@ -97,8 +97,8 @@ export function ReviewDialog({ application, approved, open, onOpenChange, onSubm
         ) : null}
         <AlertDialogFooter>
           <AlertDialogClose render={<Button variant="outline" className="h-11 px-4" disabled={pending} />}>Cancelar</AlertDialogClose>
-          <Button variant={approved ? 'default' : 'destructive'} className="h-11 px-4" disabled={pending} onClick={() => void submit()}>
-            {pending ? 'Guardando…' : approved ? 'Aprobar solicitud' : 'Rechazar solicitud'}
+          <Button variant={approved ? 'default' : 'destructive'} className="h-11 px-4" loading={pending} onClick={() => void submit()}>
+            {approved ? 'Aprobar solicitud' : 'Rechazar solicitud'}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

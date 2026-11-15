@@ -20,12 +20,12 @@ function AlertDialogContent({ className, children, ...props }: AlertDialogPrimit
     <AlertDialogPrimitive.Portal>
       <AlertDialogPrimitive.Backdrop
         data-slot="alert-dialog-overlay"
-        className="fixed inset-0 z-50 bg-ap-graphite/50 transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0"
+        className="fixed inset-0 z-50 bg-ap-graphite/50 ap-backdrop"
       />
       <AlertDialogPrimitive.Popup
         data-slot="alert-dialog-content"
         className={cn(
-          "fixed top-1/2 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-2xl border border-ap-line bg-popover p-5 text-sm text-popover-foreground shadow-overlay outline-none transition-opacity duration-150 data-ending-style:opacity-0 data-starting-style:opacity-0 sm:p-6",
+          "fixed top-1/2 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-2xl border border-ap-line bg-popover p-5 text-sm text-popover-foreground shadow-overlay outline-none ap-popup sm:p-6",
           className
         )}
         {...props}

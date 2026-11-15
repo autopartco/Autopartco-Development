@@ -1,8 +1,10 @@
 import { Container } from '@/components/common/page-header'
 import { Skeleton } from '@/components/ui/skeleton'
+import { useReportPageLoading } from './route-progress'
 
 /** Mientras llega el código de una ruta diferida: esqueleto sobrio con la forma de `PageIntro`. */
 export function PageFallback() {
+  useReportPageLoading()
   return (
     <Container className="py-8 sm:py-10">
       <span className="sr-only" role="status">

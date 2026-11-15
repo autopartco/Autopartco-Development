@@ -17,9 +17,11 @@ type SmartImageProps = Omit<ComponentProps<'img'>, 'width' | 'height' | 'alt'> &
  * falla, muestra un placeholder sobrio "Imagen no disponible".
  * Para fotos de ambiente o portadas, el llamador puede pasar `object-cover` en `className`.
  */
-export function SmartImage({ className, frameClassName, alt, loading = 'lazy', onError, src, ...props }: SmartImageProps) {
+export function SmartImage({ className, frameClassName, alt, loading = 'lazy', onError, onLoad, src, ...props }: SmartImageProps) {
   // El fallo se recuerda por URL: si cambia `src`, se vuelve a intentar sin efectos.
   const [failedSrc, setFailedSrc] = useState<string | null>(null)
+  // La imagen aparece con un fade al terminar de cargar; el fondo papel se ve mientras tanto.
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null)
   const url = typeof src === 'string' ? src.trim() : ''
   const unavailable = url === '' || failedSrc === url
   return (
@@ -40,7 +42,15 @@ export function SmartImage({ className, frameClassName, alt, loading = 'lazy', o
           alt={alt}
           loading={loading}
           decoding="async"
-          className={cn('size-full object-contain', className)}
+          className={cn('size-full object-contain transition-opacity ap-dur-base ease-ap-out', loadedSrc === url ? 'opacity-100' : 'opacity-0', className)}
+          ref={(img) => {
+            // Imagen ya en caché: el evento `load` pudo dispararse antes de enlazar el manejador.
+            if (img?.complete && img.naturalWidth > 0) setLoadedSrc(url)
+          }}
+          onLoad={(event) => {
+            setLoadedSrc(url)
+            onLoad?.(event)
+          }}
           onError={(event) => {
             setFailedSrc(url)
             onError?.(event)
