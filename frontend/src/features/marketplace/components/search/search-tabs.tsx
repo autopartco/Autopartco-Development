@@ -6,10 +6,11 @@ const TABS: { tab: SearchTab; label: string }[] = [
   { tab: 'all', label: 'Todo' },
   { tab: 'parts', label: 'Repuestos' },
   { tab: 'services', label: 'Servicios' },
+  { tab: 'stores', label: 'Tiendas' },
 ]
 
 /**
- * Pestañas «Todo · Repuestos · Servicios» de `/buscar?tab=`. Son enlaces reales (compartibles, con atrás/adelante);
+ * Pestañas «Todo · Repuestos · Servicios · Tiendas» de `/buscar?tab=`. Son enlaces reales (compartibles, con atrás/adelante);
  * la activa lleva la línea de acento y `aria-current`.
  */
 export function SearchTabs({ active }: { active: SearchTab }) {

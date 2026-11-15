@@ -13,6 +13,9 @@ import type {
   ProductResponseDto,
   SearchItemDto,
   SearchResponseDto,
+  StoreSearchItemDto,
+  StoreSearchResponseDto,
+  StoresStripDto,
   SuggestResponseDto,
   PageResponseDto,
   PublicBranchDto,
@@ -53,6 +56,8 @@ import {
   type ServiceCategory,
   type StoreBranch,
   type StoreProfile,
+  type StoreSearchItem,
+  type StoresStrip,
   type StoreSummary,
 } from '../types'
 
@@ -81,12 +86,32 @@ const PATHS = {
   store: (storeId: string) => `/marketplace/stores/${encodeURIComponent(storeId)}`,
   storeBranches: (storeId: string) => `/marketplace/stores/${encodeURIComponent(storeId)}/branches`,
   storeReviews: (storeId: string) => `/marketplace/stores/${encodeURIComponent(storeId)}/reviews`,
+  storeSearch: '/marketplace/stores/search',
   serviceSearch: '/marketplace/services/search',
   serviceCategories: '/marketplace/services/categories',
   service: (id: string) => `/marketplace/services/${encodeURIComponent(id)}`,
 } as const
 
 const BUSINESS_TYPES: readonly BusinessType[] = ['PARTS', 'SERVICES', 'BOTH']
+
+function toStoreSearchItem(dto: StoreSearchItemDto): StoreSearchItem {
+  return {
+    id: dto.id,
+    name: dto.name,
+    logoUrl: apiAssetUrl(dto.logoUrl) ?? undefined,
+    description: dto.description?.trim() || undefined,
+    cities: dto.cities ?? [],
+    branchCount: dto.branchCount,
+    rating: { average: dto.rating?.average ?? null, count: dto.rating?.count ?? 0 },
+    businessType: BUSINESS_TYPES.find((type) => type === dto.businessType) ?? 'PARTS',
+    publishedProducts: dto.publishedProducts ?? 0,
+    activeServices: dto.activeServices ?? 0,
+  }
+}
+
+function toStoresStrip(dto: StoresStripDto): StoresStrip {
+  return { items: dto.items.map(toStoreSearchItem), total: dto.total }
+}
 
 const WEEK_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
 
@@ -431,6 +456,7 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
           : undefined,
         services: dto.services ? toServicesStrip(dto.services) : undefined,
         suggestedTab: dto.suggestedTab === 'services' ? 'services' : undefined,
+        stores: dto.stores && dto.stores.items.length > 0 ? toStoresStrip(dto.stores) : undefined,
         facets: facets
           ? {
               categories: facets.categories,
@@ -464,6 +490,12 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
           storeName: item.storeName,
         })),
         serviceCategories: (dto.serviceCategories ?? []).filter(isServiceCategory),
+        stores: (dto.stores ?? []).map((item) => ({
+          id: item.id,
+          name: item.name,
+          logoUrl: apiAssetUrl(item.logoUrl) ?? undefined,
+          city: item.city ?? undefined,
+        })),
       }
     },
 
@@ -620,6 +652,23 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
       params.set('size', String(query.pageSize))
       params.set('facets', 'true')
       return toServiceSearchResult(await get<ServiceSearchResponseDto>(`${PATHS.serviceSearch}?${params}`, {}, undefined, signal))
+    },
+
+    async searchStores(query, signal) {
+      const params = new URLSearchParams()
+      const text = query.q.trim()
+      if (text) params.set('q', text)
+      if (query.cityCode) params.set('cityCode', query.cityCode)
+      params.set('page', String(Math.max(0, query.page - 1)))
+      params.set('size', String(query.pageSize))
+      const dto = await get<StoreSearchResponseDto>(`${PATHS.storeSearch}?${params}`, {}, undefined, signal)
+      return {
+        items: dto.items.map(toStoreSearchItem),
+        total: dto.total,
+        page: dto.page + 1,
+        pageSize: dto.size,
+        totalPages: Math.max(1, Math.ceil(dto.total / dto.size)),
+      }
     },
 
     async listServiceCategories(cityCode, signal) {

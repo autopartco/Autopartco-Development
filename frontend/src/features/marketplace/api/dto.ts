@@ -223,6 +223,7 @@ export interface SearchResponseDto {
   /** Franja de servicios y pestaña sugerida: el servidor los omite del JSON si son nulos. */
   services?: ServicesStripDto
   suggestedTab?: string
+  stores?: StoresStripDto | null
   facets: {
     categories: { id: string; name: string; count: number }[]
     manufacturers: { id: string; name: string; count: number }[]
@@ -255,6 +256,34 @@ export interface SuggestResponseDto {
   products: ProductResponseDto[]
   services?: ServiceSuggestionDto[]
   serviceCategories?: string[]
+  stores?: { id: string; name: string; logoUrl?: string | null; city?: string | null }[]
+}
+
+/** `core/search/StoreSearchItem` */
+export interface StoreSearchItemDto {
+  id: string
+  name: string
+  logoUrl?: string | null
+  description?: string | null
+  cities?: string[] | null
+  branchCount: number
+  rating?: { average: number | null; count: number } | null
+  businessType?: string | null
+  publishedProducts?: number | null
+  activeServices?: number | null
+}
+
+/** `GET /marketplace/stores/search` (página desde 0). */
+export interface StoreSearchResponseDto {
+  items: StoreSearchItemDto[]
+  page: number
+  size: number
+  total: number
+}
+
+export interface StoresStripDto {
+  items: StoreSearchItemDto[]
+  total: number
 }
 
 /** `shared/web/PageResponse` (páginas desde 1). */

@@ -232,6 +232,8 @@ export interface SearchResult {
   services?: ServicesStrip
   /** El servidor sugiere abrir la pestaña de servicios (intención clara de servicio). */
   suggestedTab?: 'services'
+  /** Franja de hasta 4 almacenes de la búsqueda unificada; solo con texto de búsqueda. */
+  stores?: StoresStrip
 }
 
 export type SuggestionKind = 'CATEGORY' | 'MANUFACTURER' | 'VEHICLE' | 'QUERY'
@@ -243,6 +245,52 @@ export interface SearchSuggestions {
   services: ServiceSuggestion[]
   /** Hasta 2 categorías de servicio que coinciden con el texto. */
   serviceCategories: ServiceCategory[]
+  /** Hasta 3 almacenes que coinciden con el texto. */
+  stores: StoreSuggestion[]
+}
+
+/** Almacén sugerido en el autocompletado (`city` puede faltar). */
+export interface StoreSuggestion {
+  id: string
+  name: string
+  logoUrl?: string
+  city?: string
+}
+
+/** Almacén de los resultados (`GET /marketplace/stores/search`); todo viene del servidor. */
+export interface StoreSearchItem {
+  id: string
+  name: string
+  logoUrl?: string
+  description?: string
+  cities: string[]
+  branchCount: number
+  /** `average` es `null` sin reseñas. */
+  rating: { average: number | null; count: number }
+  businessType: BusinessType
+  publishedProducts: number
+  activeServices: number
+}
+
+export interface StoreSearchQuery {
+  q: string
+  cityCode?: string
+  /** Desde 1 (el cliente la envía desde 0). */
+  page: number
+  pageSize: number
+}
+
+export interface StoreSearchResult {
+  items: StoreSearchItem[]
+  total: number
+  page: number
+  pageSize: number
+  totalPages: number
+}
+
+export interface StoresStrip {
+  items: StoreSearchItem[]
+  total: number
 }
 
 export interface ProductPage {
@@ -527,6 +575,8 @@ export interface MarketplaceService {
   searchServices(query: ServiceSearchQuery, signal?: AbortSignal): Promise<ServiceSearchResult>
   /** `GET /marketplace/services/categories`: categorías con servicios publicados (opcionalmente de una ciudad). */
   listServiceCategories(cityCode?: string, signal?: AbortSignal): Promise<ServiceCategoryCount[]>
+  /** `GET /marketplace/stores/search`: almacenes publicados por texto y ciudad. */
+  searchStores(query: StoreSearchQuery, signal?: AbortSignal): Promise<StoreSearchResult>
   /** `GET /marketplace/services/{id}`; 404 (`isNotFoundError`) si el servicio no es visible. */
   getService(id: string, near?: { lat: number; lng: number }, signal?: AbortSignal): Promise<ServiceDetail>
   /** Con sesión: pedidos con los que puede calificar el producto, o su reseña existente. Sin sesión, nada elegible. */

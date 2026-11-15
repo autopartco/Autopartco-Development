@@ -31,6 +31,9 @@ import com.autopartco.backend.core.search.SearchQuery;
 import com.autopartco.backend.core.search.SearchResult;
 import com.autopartco.backend.core.search.SearchService;
 import com.autopartco.backend.core.search.SearchSort;
+import com.autopartco.backend.core.search.StoreSearchQuery;
+import com.autopartco.backend.core.search.StoreSearchResult;
+import com.autopartco.backend.core.search.StoreSearchService;
 import com.autopartco.backend.core.search.Suggestions;
 import com.autopartco.backend.marketplace.benefits.BuyerContexts;
 import com.autopartco.backend.shared.error.BadRequestException;
@@ -56,6 +59,8 @@ public class SearchController {
     static final int SUGGESTIONS_PER_MINUTE = 240;
     /** Servicios de la franja de la búsqueda unificada. */
     static final int SERVICE_STRIP = 4;
+    /** Almacenes de la franja de la búsqueda unificada. */
+    static final int STORE_STRIP = 4;
 
     private final SearchService searchService;
     private final Suggestions suggestions;
@@ -64,6 +69,7 @@ public class SearchController {
     private final PromotionExposureRecorder exposureRecorder;
     private final BranchService branchService;
     private final ServiceSearchService serviceSearchService;
+    private final StoreSearchService storeSearchService;
     private final SlidingWindowRateLimiter searchLimiter;
     private final SlidingWindowRateLimiter suggestLimiter;
 
@@ -71,7 +77,8 @@ public class SearchController {
     @Autowired
     public SearchController(SearchService searchService, Suggestions suggestions, SearchLog searchLog,
             BuyerContexts buyerContexts, PromotionExposureRecorder exposureRecorder, BranchService branchService,
-            ServiceSearchService serviceSearchService, RateLimiters rateLimiters) {
+            ServiceSearchService serviceSearchService, StoreSearchService storeSearchService,
+            RateLimiters rateLimiters) {
         this.searchService = searchService;
         this.suggestions = suggestions;
         this.searchLog = searchLog;
@@ -79,6 +86,7 @@ public class SearchController {
         this.exposureRecorder = exposureRecorder;
         this.branchService = branchService;
         this.serviceSearchService = serviceSearchService;
+        this.storeSearchService = storeSearchService;
         this.searchLimiter = rateLimiters.create("search", "SEARCH_RATE_LIMITED", SEARCHES_PER_MINUTE,
                 Duration.ofMinutes(1));
         this.suggestLimiter = rateLimiters.create("suggest", "SEARCH_RATE_LIMITED", SUGGESTIONS_PER_MINUTE,
@@ -102,7 +110,14 @@ public class SearchController {
             BuyerContexts buyerContexts, PromotionExposureRecorder exposureRecorder, BranchService branchService,
             ServiceSearchService serviceSearchService, Clock clock) {
         this(searchService, suggestions, searchLog, buyerContexts, exposureRecorder, branchService,
-                serviceSearchService, RateLimiters.inMemory(clock));
+                serviceSearchService, null, clock);
+    }
+
+    SearchController(SearchService searchService, Suggestions suggestions, SearchLog searchLog,
+            BuyerContexts buyerContexts, PromotionExposureRecorder exposureRecorder, BranchService branchService,
+            ServiceSearchService serviceSearchService, StoreSearchService storeSearchService, Clock clock) {
+        this(searchService, suggestions, searchLog, buyerContexts, exposureRecorder, branchService,
+                serviceSearchService, storeSearchService, RateLimiters.inMemory(clock));
     }
 
     /**
@@ -188,7 +203,8 @@ public class SearchController {
                 result.items().stream().map(SearchResult.Hit::listing).toList());
         SearchResponse body = SearchResponse.of(result);
         SearchResponse.Services services = services(q, cityCode, departmentCode, lat, lng, radiusKm, storeId);
-        body = body.withServices(services, suggestedTab(interpret, interpreted, services));
+        body = body.withServices(services, suggestedTab(interpret, interpreted, services))
+                .withStores(stores(q, cityCode));
         return body.sponsored().isEmpty()
                 ? ResponseEntity.ok(body)
                 : ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(body);
@@ -211,6 +227,23 @@ public class SearchController {
             return new SearchResponse.Services(found.items().stream().map(ServiceCard::of).toList(), found.total());
         } catch (RuntimeException failure) {
             log.warn("Franja de servicios no disponible: {}", failure.getClass().getSimpleName());
+            return null;
+        }
+    }
+
+    /**
+     * Franja de almacenes: hasta {@value #STORE_STRIP} con el mismo texto y municipio. Solo con texto en {@code q}.
+     * Un fallo nunca rompe la búsqueda de productos: responde sin franja.
+     */
+    private SearchResponse.Stores stores(String q, String cityCode) {
+        if (storeSearchService == null || q == null || q.isBlank()) {
+            return null;
+        }
+        try {
+            StoreSearchResult found = storeSearchService.search(new StoreSearchQuery(q, cityCode, 0, STORE_STRIP));
+            return new SearchResponse.Stores(found.items(), found.total());
+        } catch (RuntimeException failure) {
+            log.warn("Franja de almacenes no disponible: {}", failure.getClass().getSimpleName());
             return null;
         }
     }

@@ -15,9 +15,11 @@ import type {
   SearchQuery,
   SearchSuggestions,
   StoreReviewEligibility,
+  StoreSearchQuery,
 } from './api/types'
 import { parseProductQuery, productQueryKey, toSearchParams as toProductSearchParams } from './lib/product-query'
 import { parseSearchState, searchQueryKey, toSearchParams, type SearchState } from './lib/search-query'
+import { parseStoreState, storeQueryKey, toStoreParams, type StoreState } from './lib/store-search-query'
 
 function useMarketplace<T>(key: string, run: (service: MarketplaceService) => Promise<T>) {
   return useAsync(key, () => getMarketplaceService().then(run))
@@ -33,6 +35,30 @@ export function useProductSearch(query: ProductQuery) {
 
 export function useListingSearch(query: SearchQuery) {
   return useMarketplace(searchQueryKey(query), (service) => service.search(query))
+}
+
+/** Almacenes por texto y ciudad (pestaña «Tiendas»). */
+export function useStoreSearch(query: StoreSearchQuery) {
+  return useMarketplace(storeQueryKey(query), (service) => service.searchStores(query))
+}
+
+/** Estado de la pestaña «Tiendas» guardado en la URL (`/buscar?tab=stores&...`). */
+export function useStoreState() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const state = parseStoreState(searchParams)
+
+  const update = useCallback(
+    (patch: Partial<StoreState>) => {
+      const paging = patch.page !== undefined
+      setSearchParams((current) => toStoreParams({ ...parseStoreState(current), page: 1, ...patch }), {
+        replace: !paging,
+        preventScrollReset: !paging,
+      })
+    },
+    [setSearchParams],
+  )
+
+  return [state, update] as const
 }
 
 /**
@@ -58,7 +84,7 @@ export function useSearchSuggestions(text: string, near: { lat: number; lng: num
             if (!controller.signal.aborted) setState({ key, data })
           },
           () => {
-            if (!controller.signal.aborted) setState({ key, data: { suggestions: [], products: [], services: [], serviceCategories: [] } })
+            if (!controller.signal.aborted) setState({ key, data: { suggestions: [], products: [], services: [], serviceCategories: [], stores: [] } })
           },
         )
     }, 250)
