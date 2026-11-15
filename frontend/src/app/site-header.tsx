@@ -84,38 +84,41 @@ function MobileMenu({ className }: { className?: string }) {
         <MenuIcon className="size-5" aria-hidden />
       </SheetTrigger>
       <SheetContent side="right" className="gap-0 p-0">
-        <SheetHeader className="border-b border-ap-line px-5 py-4 pr-16">
+        <SheetHeader className="shrink-0 border-b border-ap-line px-5 py-4 pr-16">
           <SheetTitle>Menú</SheetTitle>
           <SheetDescription className="sr-only">Secciones de Autopartco</SheetDescription>
         </SheetHeader>
-        <nav aria-label="Principal" className="flex flex-col gap-1 px-3 py-4">
-          {NAV.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) => menuLinkClass({ isActive: isSectionActive(item, pathname, isActive) })}
+        {/* Solo el cuerpo se desplaza: la cabecera y el cierre quedan visibles en pantallas bajas. */}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+          <nav aria-label="Principal" className="flex flex-col gap-1 px-3 py-4">
+            {NAV.map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) => menuLinkClass({ isActive: isSectionActive(item, pathname, isActive) })}
+                onClick={close}
+              >
+                {item.label}
+              </NavLink>
+            ))}
+          </nav>
+          <section aria-labelledby="menu-cuenta" className="mx-5 mt-2 flex flex-col gap-3 border-t border-ap-line pt-5">
+            <h2 id="menu-cuenta" className="ap-index">
+              Tu cuenta
+            </h2>
+            <MobileMenuAccount onNavigate={close} />
+          </section>
+          <div className="mx-5 mt-5 flex flex-col items-start gap-1 border-t border-ap-line pt-5">
+            <p className="ap-index">Para almacenes</p>
+            <Link
+              to={cta.state === 'loading' ? '/vender/registro' : cta.to}
               onClick={close}
+              className="inline-flex min-h-11 items-center gap-2 font-semibold text-ap-red underline-offset-4 hover:text-ap-red-hover hover:underline"
             >
-              {item.label}
-            </NavLink>
-          ))}
-        </nav>
-        <section aria-labelledby="menu-cuenta" className="mx-5 mt-2 flex flex-col gap-3 border-t border-ap-line pt-5">
-          <h2 id="menu-cuenta" className="ap-index">
-            Tu cuenta
-          </h2>
-          <MobileMenuAccount onNavigate={close} />
-        </section>
-        <div className="mx-5 mt-5 flex flex-col items-start gap-1 border-t border-ap-line pt-5">
-          <p className="ap-index">Para almacenes</p>
-          <Link
-            to={cta.state === 'loading' ? '/vender/registro' : cta.to}
-            onClick={close}
-            className="inline-flex min-h-11 items-center gap-2 font-semibold text-ap-red underline-offset-4 hover:text-ap-red-hover hover:underline"
-          >
-            <StoreIcon className="size-5" aria-hidden />
-            {cta.state === 'loading' ? 'Registra tu almacén' : cta.label}
-          </Link>
+              <StoreIcon className="size-5" aria-hidden />
+              {cta.state === 'loading' ? 'Registra tu almacén' : cta.label}
+            </Link>
+          </div>
         </div>
       </SheetContent>
     </Sheet>
