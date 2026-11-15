@@ -12,6 +12,7 @@ import { actionErrorMessage } from '../lib/errors'
 import { focusById } from '../lib/forms'
 import { formatDateTime, SHIPMENT_ACTION_LABEL, SHIPMENT_NEXT, SHIPMENT_STATUS_LABEL } from '../lib/labels'
 import { TextAreaField } from './form-controls'
+import { ConfirmDialog } from './confirm-dialog'
 import { StatusBadge } from './status-badge'
 
 /** Registro del envío: solo con el pedido en preparación (`SELLER_SHIPMENT_ORDER_NOT_PREPARING` en el servidor). */
@@ -74,6 +75,7 @@ function ShipmentUpdateForm({ order, shipmentStatus }: { order: OrderDetail; shi
   const [notes, setNotes] = useState('')
   const [busy, setBusy] = useState<string>()
   const [error, setError] = useState<string>()
+  const [confirming, setConfirming] = useState<'DISPATCHED' | 'DELIVERED'>()
   const next = SHIPMENT_NEXT[shipmentStatus]
   if (next.length === 0) return null
 
@@ -111,11 +113,26 @@ function ShipmentUpdateForm({ order, shipmentStatus }: { order: OrderDetail; shi
       />
       <div className="flex flex-wrap gap-2">
         {next.map((status) => (
-          <Button key={status} variant={status === 'DELIVERED' ? 'default' : 'outline'} className="h-11 px-4" disabled={busy !== undefined} onClick={() => void change(status)}>
+          <Button key={status} variant={status === 'DELIVERED' ? 'default' : 'outline'} className="h-11 px-4" disabled={busy !== undefined} onClick={() => (status === 'DISPATCHED' || status === 'DELIVERED' ? setConfirming(status) : void change(status))}>
             {busy === status ? 'Guardando…' : SHIPMENT_ACTION_LABEL[status]}
           </Button>
         ))}
       </div>
+      <ConfirmDialog
+        open={confirming !== undefined}
+        onOpenChange={(open) => !open && setConfirming(undefined)}
+        title={confirming === 'DELIVERED' ? `¿Marcar el pedido #${order.orderNumber} como entregado?` : `¿Marcar el pedido #${order.orderNumber} como despachado?`}
+        description={
+          confirming === 'DELIVERED'
+            ? 'Avisaremos al cliente que recibió su pedido y el envío quedará cerrado. No se puede deshacer.'
+            : 'Avisaremos al cliente que su pedido va en camino. Antes de confirmar, revisa que ya entregaste el paquete a la transportadora.'
+        }
+        confirmLabel={confirming === 'DELIVERED' ? 'Marcar como entregado' : 'Marcar como despachado'}
+        loadingText="Guardando…"
+        onConfirm={async () => {
+          if (confirming) await change(confirming)
+        }}
+      />
     </div>
   )
 }

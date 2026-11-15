@@ -19,7 +19,7 @@ import { usePortal } from '../../context'
 import { adErrorMessage, campaignStatusView, formatDay, NO_REFUND_NOTICE, placementLabel, STATUS_FILTERS, STATUS_LABEL } from '../../lib/ads'
 import { actionErrorMessage } from '../../lib/errors'
 
-type Confirm = { kind: 'delete' | 'cancel'; campaign: AdCampaign }
+type Confirm = { kind: 'delete' | 'cancel' | 'pause' | 'pay'; campaign: AdCampaign }
 
 /** `/portal/:storeId/publicidad`: campañas del almacén con su estado y las acciones que permite cada estado. */
 export default function PortalAdsCampaignsPage() {
@@ -130,11 +130,7 @@ export default function PortalAdsCampaignsPage() {
               ) : null}
               {canWrite && isDraft ? (
                 <>
-                  <DropdownMenuItem
-                    onClick={() =>
-                      void run(row, () => startAdCheckout(storeId, row), 'Te llevamos a Wompi para pagar.')
-                    }
-                  >
+                  <DropdownMenuItem onClick={() => setConfirm({ kind: 'pay', campaign: row })}>
                     <CreditCardIcon aria-hidden />
                     Pagar
                   </DropdownMenuItem>
@@ -145,7 +141,7 @@ export default function PortalAdsCampaignsPage() {
                 </>
               ) : null}
               {canWrite && row.status === 'ACTIVE' ? (
-                <DropdownMenuItem onClick={() => void run(row, () => adsApi.pause(storeId, row.id), 'Pausaste la campaña.')}>
+                <DropdownMenuItem onClick={() => setConfirm({ kind: 'pause', campaign: row })}>
                   <PauseIcon aria-hidden />
                   Pausar
                 </DropdownMenuItem>
@@ -251,17 +247,32 @@ export default function PortalAdsCampaignsPage() {
       <ConfirmDialog
         open={confirm !== undefined}
         onOpenChange={(open) => !open && setConfirm(undefined)}
-        title={confirm?.kind === 'delete' ? `¿Eliminar “${confirm.campaign.name}”?` : `¿Cancelar “${confirm?.campaign.name ?? 'la campaña'}”?`}
+        title={
+          confirm?.kind === 'delete'
+            ? `¿Eliminar “${confirm.campaign.name}”?`
+            : confirm?.kind === 'pause'
+              ? `¿Pausar “${confirm.campaign.name}”?`
+              : confirm?.kind === 'pay'
+                ? `¿Pagar “${confirm.campaign.name}” por ${formatCOP(confirm.campaign.totalPrice)}?`
+                : `¿Cancelar “${confirm?.campaign.name ?? 'la campaña'}”?`
+        }
         description={
           confirm?.kind === 'delete'
             ? 'Es un borrador sin pagar: se elimina y no se puede recuperar.'
-            : 'Dejará de mostrarse y no se puede reanudar. No hay reembolso automático de lo pagado.'
+            : confirm?.kind === 'pause'
+              ? 'Tus anuncios dejan de mostrarse mientras esté en pausa. Puedes reanudarla cuando quieras.'
+              : confirm?.kind === 'pay'
+                ? `Te llevamos a Wompi para pagar ${formatCOP(confirm.campaign.totalPrice)}. La campaña se activa cuando el pago se aprueba. ${NO_REFUND_NOTICE}`
+                : 'Dejará de mostrarse y no se puede reanudar. No hay reembolso automático de lo pagado.'
         }
-        confirmLabel={confirm?.kind === 'delete' ? 'Eliminar campaña' : 'Cancelar campaña'}
-        destructive
+        confirmLabel={confirm?.kind === 'delete' ? 'Eliminar campaña' : confirm?.kind === 'pause' ? 'Pausar campaña' : confirm?.kind === 'pay' ? 'Ir a pagar' : 'Cancelar campaña'}
+        loadingText={confirm?.kind === 'delete' ? 'Eliminando…' : confirm?.kind === 'pause' ? 'Pausando…' : confirm?.kind === 'pay' ? 'Abriendo Wompi…' : 'Cancelando…'}
+        destructive={confirm?.kind === 'delete' || confirm?.kind === 'cancel'}
         onConfirm={async () => {
           if (!confirm) return
           const { kind, campaign } = confirm
+          if (kind === 'pause') return run(campaign, () => adsApi.pause(storeId, campaign.id), 'Pausaste la campaña.')
+          if (kind === 'pay') return run(campaign, () => startAdCheckout(storeId, campaign), 'Te llevamos a Wompi para pagar.')
           if (kind === 'delete') await adsApi.remove(storeId, campaign.id)
           else await adsApi.cancel(storeId, campaign.id)
           invalidateAsync(cachePrefix)

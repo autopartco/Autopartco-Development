@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router'
 import { ShoppingCartIcon, Trash2Icon } from 'lucide-react'
 import { Container, PageIntro } from '@/components/common/page-header'
@@ -10,6 +11,7 @@ import { clearCart, removeCartLines, setCartLineQuantity, useCartLines } from '@
 import { checkoutPath } from '@/features/checkout/lib/paths'
 import { productPath } from '@/features/marketplace/lib/paths'
 import { formatCOP, pluralize } from '@/lib/format'
+import { ConfirmDialog } from '@/features/portal/components/confirm-dialog'
 import { QuantityStepper } from '../components/quantity-stepper'
 
 const CRUMBS = [{ label: 'Inicio', to: '/' }, { label: 'Carrito' }]
@@ -27,6 +29,7 @@ function groupByStore(lines: CartLine[]) {
 
 export default function CartPage() {
   const lines = useCartLines()
+  const [confirmClear, setConfirmClear] = useState(false)
   const units = lines.reduce((sum, line) => sum + line.quantity, 0)
   const total = lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0)
 
@@ -106,9 +109,19 @@ export default function CartPage() {
             </section>
           ))}
           <div>
-            <Button type="button" variant="ghost" className="px-3 text-ap-muted" onClick={clearCart}>
+            <Button type="button" variant="ghost" className="px-3 text-ap-muted" onClick={() => setConfirmClear(true)}>
               Vaciar carrito
             </Button>
+            <ConfirmDialog
+              open={confirmClear}
+              onOpenChange={setConfirmClear}
+              title="¿Vaciar el carrito?"
+              description={`Quitaremos ${pluralize(units, 'unidad', 'unidades')} de tu carrito. Tendrás que volver a agregar los repuestos si los quieres comprar.`}
+              confirmLabel="Vaciar carrito"
+              loadingText="Vaciando…"
+              destructive
+              onConfirm={async () => clearCart()}
+            />
           </div>
         </div>
 

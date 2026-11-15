@@ -962,11 +962,12 @@ function EditHeaderActions({ product, rows }: { product: ProductRow; rows: Produ
   const navigate = useNavigate()
   const { setPublished, busyId } = usePublishProduct()
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [confirmRetire, setConfirmRetire] = useState(false)
   const published = product.state === 'ACTIVE'
   return (
     <>
       {can('PRODUCT_PUBLISH') ? (
-        <Button variant={published ? 'outline' : 'default'} className="h-11 px-4" disabled={busyId === product.id} onClick={() => void setPublished(product, !published)}>
+        <Button variant={published ? 'outline' : 'default'} className="h-11 px-4" disabled={busyId === product.id} onClick={() => (published ? setConfirmRetire(true) : void setPublished(product, true))}>
           {published ? <EyeOffIcon aria-hidden /> : <EyeIcon aria-hidden />}
           {published ? 'Retirar del marketplace' : 'Publicar'}
         </Button>
@@ -977,6 +978,18 @@ function EditHeaderActions({ product, rows }: { product: ProductRow; rows: Produ
           Eliminar
         </Button>
       ) : null}
+      <ConfirmDialog
+        open={confirmRetire}
+        onOpenChange={setConfirmRetire}
+        title={`¿Retirar “${product.name}” del marketplace?`}
+        description="Los compradores dejarán de verlo y de poder comprarlo. No se borra: puedes volver a publicarlo cuando quieras."
+        confirmLabel="Retirar producto"
+        loadingText="Retirando…"
+        destructive
+        onConfirm={async () => {
+          await setPublished(product, false)
+        }}
+      />
       <ConfirmDialog
         open={confirmDelete}
         onOpenChange={setConfirmDelete}
