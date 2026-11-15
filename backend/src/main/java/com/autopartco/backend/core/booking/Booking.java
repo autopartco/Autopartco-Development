@@ -45,7 +45,8 @@ public record Booking(
             Map<String, Object> openingHours) {
     }
 
-    public record PromotionRef(UUID id) {
+    /** Promoción vigente al pedir la cita: el almacén se comprometió a ese precio aunque ya haya vencido. */
+    public record PromotionRef(UUID id, String name, String label) {
     }
 
     /** Comprador visto por el almacén; {@code phone} es nulo si la cita está cancelada. */

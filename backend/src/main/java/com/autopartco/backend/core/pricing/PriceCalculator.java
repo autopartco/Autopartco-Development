@@ -107,14 +107,19 @@ public class PriceCalculator {
 
     /** {@code -15%} o {@code -$9.000} (pesos sin decimales, separador de miles con punto). */
     static String label(PromotionRule promotion) {
-        BigDecimal value = promotion.discountValue().stripTrailingZeros();
-        if (promotion.discountType() == PromotionDiscountType.PERCENTAGE) {
+        return label(promotion.discountType(), promotion.discountValue());
+    }
+
+    /** {@code -15%} o {@code -$9.000} para un descuento. */
+    public static String label(PromotionDiscountType type, BigDecimal discountValue) {
+        BigDecimal value = discountValue.stripTrailingZeros();
+        if (type == PromotionDiscountType.PERCENTAGE) {
             return "-" + value.toPlainString().replace('.', ',') + "%";
         }
         java.text.DecimalFormatSymbols symbols = new java.text.DecimalFormatSymbols(Locale.ROOT);
         symbols.setGroupingSeparator('.');
         return "-$" + new java.text.DecimalFormat("#,##0", symbols)
-                .format(promotion.discountValue().setScale(0, RoundingMode.HALF_UP));
+                .format(discountValue.setScale(0, RoundingMode.HALF_UP));
     }
 
     private PriceQuote quote(BigDecimal originalPrice, PromotionRule promotion) {

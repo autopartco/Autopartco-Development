@@ -146,7 +146,7 @@ public class BookingService {
         ServiceBooking saved = repository.saveAndFlush(booking);
         audit(account.accountId(), "BOOKING_REQUESTED", saved, null);
         events.publishEvent(new BookingChanged(saved.getId(), null, BookingStatus.REQUESTED, null));
-        return view(saved, service, branch, null);
+        return view(saved, service, branch, null, promotionRef(saved.getPromotionId()));
     }
 
     @Transactional(readOnly = true)
@@ -388,6 +388,13 @@ public class BookingService {
         Map<UUID, ServiceInfo> services = catalog.services(serviceIds);
         Map<UUID, BranchInfo> branches = catalog.branches(branchIds);
         Map<UUID, AccountRef> buyers = portal ? accountLookup.findAllByIds(accountIds) : Map.of();
+        Set<UUID> promotionIds = new HashSet<>();
+        bookings.forEach(booking -> {
+            if (booking.getPromotionId() != null) {
+                promotionIds.add(booking.getPromotionId());
+            }
+        });
+        Map<UUID, Booking.PromotionRef> promotions = catalog.promotions(promotionIds);
         List<Booking> views = new ArrayList<>(bookings.size());
         for (ServiceBooking booking : bookings) {
             Booking.Buyer buyer = null;
@@ -397,13 +404,30 @@ public class BookingService {
                         booking.getStatus().cancelled() ? null : booking.getContactPhone());
             }
             views.add(view(booking, services.get(booking.getServiceId()), branches.get(booking.getBranchId()),
-                    buyer));
+                    buyer, booking.getPromotionId() == null ? null
+                            : promotions.getOrDefault(booking.getPromotionId(),
+                                    new Booking.PromotionRef(booking.getPromotionId(), null, null))));
         }
         return views;
     }
 
     /** {@code buyer} no nulo = vista del portal (oculta teléfono y placa en canceladas). */
     static Booking view(ServiceBooking booking, ServiceInfo service, BranchInfo branch, Booking.Buyer buyer) {
+        return view(booking, service, branch, buyer, booking.getPromotionId() == null ? null
+                : new Booking.PromotionRef(booking.getPromotionId(), null, null));
+    }
+
+    private Booking.PromotionRef promotionRef(UUID promotionId) {
+        if (promotionId == null) {
+            return null;
+        }
+        Map<UUID, Booking.PromotionRef> found = catalog.promotions(Set.of(promotionId));
+        return found == null ? new Booking.PromotionRef(promotionId, null, null)
+                : found.getOrDefault(promotionId, new Booking.PromotionRef(promotionId, null, null));
+    }
+
+    static Booking view(ServiceBooking booking, ServiceInfo service, BranchInfo branch, Booking.Buyer buyer,
+            Booking.PromotionRef promotion) {
         boolean hidePersonal = buyer != null && booking.getStatus().cancelled();
         BookingVehicle vehicle = BookingVehicle.fromJson(booking.getVehicle());
         if (vehicle != null && hidePersonal) {
@@ -426,7 +450,7 @@ public class BookingService {
                                 branch.department(), branch.latitude(), branch.longitude(), branch.phone(),
                                 branch.whatsapp(), branch.openingHours()),
                 booking.getQuotedPrice(),
-                booking.getPromotionId() == null ? null : new Booking.PromotionRef(booking.getPromotionId()),
+                promotion,
                 vehicle,
                 hidePersonal ? null : booking.getContactPhone(),
                 booking.getBuyerNote(),
