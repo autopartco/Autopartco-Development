@@ -45,6 +45,10 @@ public class Location extends BaseEntity {
     @Column(nullable = false, length = 100)
     private String country;
 
+    /** Código DIVIPOLA (5 dígitos); lo resuelve {@link LocationRepository#resolveMunicipalityCode}. */
+    @Column(name = "municipality_code", columnDefinition = "char(5)")
+    private String municipalityCode;
+
     @Column(name = "postal_code", length = 20)
     private String postalCode;
 

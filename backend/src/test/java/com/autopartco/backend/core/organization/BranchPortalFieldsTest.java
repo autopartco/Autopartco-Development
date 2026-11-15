@@ -191,4 +191,14 @@ class BranchPortalFieldsTest {
         assertThat(update(new BranchUpdateRequest(null, null, point("4.711", "-74.0721"), null, null))
                 .location().approximate()).isFalse();
     }
+
+    @Test
+    void theMunicipalityCodeIsResolvedFromCityAndDepartment() {
+        when(locationRepository.resolveMunicipalityCode("Bogotá", "Bogotá D.C.")).thenReturn("11001");
+
+        update(new BranchUpdateRequest(null, null, new BranchLocationRequest("Cra 7 # 10-20", null, " Bogotá ",
+                "Bogotá D.C.", null, null, new BigDecimal("4.711"), new BigDecimal("-74.0721"), null), null, null));
+
+        assertThat(branch.getLocation().getMunicipalityCode()).isEqualTo("11001");
+    }
 }
