@@ -16,6 +16,7 @@ import type { Booking, BookingRequestBody } from '../../api/booking-types'
 import type { ServiceDetail } from '../../api/types'
 import { refreshAvailability, refreshBuyerBookings } from '../../booking-hooks'
 import { bookingErrorMessage, normalizePhone } from '../../lib/booking'
+import { hasWeeklyHours } from '../../lib/opening-hours'
 import { BranchStep } from './branch-step'
 import { ConfirmStep } from './confirm-step'
 import { EMPTY_DRAFT, validateDraft, type BookingDraft, type DraftErrors } from '../../lib/booking-draft'
@@ -57,7 +58,7 @@ export function BookingFlow({ service }: { service: ServiceDetail }) {
   const [params, setParams] = useSearchParams()
   const location = useLocation()
   const { session, ready } = useSessionState()
-  const branches = service.branches
+  const branches = service.branches.filter((item) => hasWeeklyHours(item.openingHours))
   const single = branches.length === 1
 
   const branchId = single ? branches[0].id : branches.find((branch) => branch.id === params.get('sede'))?.id

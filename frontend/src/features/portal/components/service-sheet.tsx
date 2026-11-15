@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type ChangeEvent, type FormEvent } from 'react'
-import { ImageIcon } from 'lucide-react'
+import { Link } from 'react-router'
+import { ImageIcon, TriangleAlertIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { DiscardChangesDialog } from '@/components/common/discard-changes-dialog'
 import { FormAlert, TextField } from '@/components/common/form-fields'
@@ -10,6 +11,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '
 import { Switch } from '@/components/ui/switch'
 import type { ServiceCategory } from '@/features/marketplace/api/types'
 import { SERVICE_CATEGORY_CODES, serviceCategoryLabel } from '@/features/services/lib/categories'
+import { hasWeeklyHours } from '@/features/services/lib/opening-hours'
 import { ApiError } from '@/lib/api'
 import { useCloseGuard } from '@/lib/use-close-guard'
 import { useDraftForm, type FieldErrors } from '@/lib/use-draft-form'
@@ -182,8 +184,7 @@ interface ServiceFormProps {
 }
 
 function ServiceForm({ service: initialService, branches, branchesKnown, onDone, onCancel, onDirtyChange }: ServiceFormProps) {
-  const { storeId, invalidateStore } = usePortal()
-  // La imagen cambia el servicio (y su versión) sin pasar por el formulario: se conserva la última vista.
+  const { storeId, invalidateStore } = usePortal()  // La imagen cambia el servicio (y su versión) sin pasar por el formulario: se conserva la última vista.
   const [service, setService] = useState(initialService)
   const draft = useDraftForm<Values>({ initial: valuesOf(initialService), validate })
   const { values } = draft
@@ -306,6 +307,22 @@ function ServiceForm({ service: initialService, branches, branchesKnown, onDone,
               </p>
             </div>
           </div>
+          {values.bookingEnabled
+            ? branches
+                .filter((branch) => values.branchIds.includes(branch.id) && !hasWeeklyHours(branch.openingHours))
+                .map((branch) => (
+                  <p key={branch.id} role="status" className="flex items-start gap-2 rounded-md border border-ap-warning/40 bg-ap-warning-soft p-3 text-sm text-ap-ink">
+                    <TriangleAlertIcon className="mt-0.5 size-4 shrink-0" aria-hidden />
+                    <span>
+                      Para recibir citas, configura el horario de {branch.name} en{' '}
+                      <Link to={`/portal/${encodeURIComponent(storeId)}/sucursales`} className="font-semibold underline underline-offset-4">
+                        Sucursales
+                      </Link>
+                      .
+                    </span>
+                  </p>
+                ))
+            : null}
           {values.bookingEnabled ? (
             <SelectField
               {...bind('slotMinutes')}

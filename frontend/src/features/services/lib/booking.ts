@@ -104,7 +104,7 @@ export function bookingErrorMessage(error: unknown, fallback = 'No pudimos compl
     case 'BOOKING_LIMIT_REACHED':
       return 'Ya tienes el máximo de citas activas con este almacén. Cancela una o espera a que la atiendan para pedir otra.'
     case 'BOOKING_DISABLED':
-      return 'Este servicio ya no admite agenda en línea. Escribe por WhatsApp o visita la sede para pedir tu cita.'
+      return 'Esta sede todavía no publica su horario para agendar en línea. Escríbele por WhatsApp o visita la sede para pedir tu cita.'
     case 'BRANCH_NOT_IN_SERVICE':
       return 'Esta sede ya no presta el servicio. Elige otra sede o escribe al almacén.'
     case 'CONTACT_PHONE_REQUIRED':

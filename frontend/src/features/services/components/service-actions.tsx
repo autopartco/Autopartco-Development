@@ -6,6 +6,7 @@ import { WhatsappButton, type WhatsappTarget } from '@/features/marketplace/comp
 import { directionsLinks } from '@/features/marketplace/lib/store-links'
 import { cn } from '@/lib/utils'
 import type { ServiceDetail } from '../api/types'
+import { canBookOnline } from '../lib/opening-hours'
 import { serviceBookingPath, servicePath } from '../lib/paths'
 
 /** Sedes con número, con la más cercana (la de la tarjeta) primero. */
@@ -26,7 +27,7 @@ export function ServiceActions({ service, className }: { service: ServiceDetail;
   const targets = service.whatsappEnabled ? whatsappTargets(service) : []
   const canDirect = service.branches.some((branch) => directionsLinks(branch).length > 0)
   const canWhatsapp = !!store && targets.length > 0
-  const canBook = service.bookingEnabled
+  const canBook = canBookOnline(service)
 
   if (!store || (!canBook && !canWhatsapp && !canDirect)) {
     return (

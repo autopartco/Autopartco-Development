@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { ApiError } from '@/lib/api'
 import { useCloseGuard } from '@/lib/use-close-guard'
-import { useDraftForm, type FieldErrors } from '@/lib/use-draft-form'
+import { isEqual, useDraftForm, type FieldErrors } from '@/lib/use-draft-form'
 import { useSubmitOnce } from '@/lib/use-submit-once'
 import { useUnsavedChanges } from '@/lib/use-unsaved-changes'
 import { useCities } from '@/features/location/hooks'
@@ -17,6 +17,8 @@ import type { Branch, BranchInput } from '../api/types'
 import { usePortal } from '../context'
 import { actionErrorMessage } from '../lib/errors'
 import { focusById, PHONE_PATTERN } from '../lib/forms'
+import { firstHoursError, hoursDayId, hoursFromServer, hoursNotesId, hoursToServer, validateHours, type HoursDraft } from '../lib/opening-hours'
+import { OpeningHoursEditor } from './opening-hours-editor'
 
 const FIELDS = ['name', 'numberPhone', 'addressLine', 'addressComplement', 'city', 'department'] as const
 type Field = (typeof FIELDS)[number]
@@ -29,6 +31,7 @@ interface Values {
   addressComplement: string
   city: string
   department: string
+  hours: HoursDraft
 }
 
 function valuesOf(branch: Branch | undefined): Values {
@@ -39,6 +42,7 @@ function valuesOf(branch: Branch | undefined): Values {
     addressComplement: branch?.location?.addressComplement ?? '',
     city: branch?.location?.city ?? '',
     department: branch?.location?.department ?? '',
+    hours: hoursFromServer(branch?.openingHours),
   }
 }
 
@@ -49,6 +53,14 @@ function pointOf(branch: Branch | undefined): PickedPoint | null {
 }
 
 const POINT_ID = fieldId('mapa')
+const HOURS_PREFIX = fieldId('horario')
+
+/** Primer control con error del horario: el día con problema o las notas. */
+function hoursFocusId(hours: HoursDraft): string {
+  const errors = validateHours(hours)
+  const day = (Object.keys(errors.days) as (keyof typeof errors.days)[])[0]
+  return day ? hoursDayId(HOURS_PREFIX, day) : hoursNotesId(HOURS_PREFIX)
+}
 
 function validate(values: Values): FieldErrors {
   const errors: FieldErrors = {}
@@ -61,6 +73,8 @@ function validate(values: Values): FieldErrors {
   if (values.addressComplement.trim().length > 255) errors.addressComplement = 'No puede superar 255 caracteres.'
   if (!values.city.trim()) errors.city = 'Escribe la ciudad.'
   if (!values.department.trim()) errors.department = 'Escribe el departamento.'
+  const hoursError = firstHoursError(validateHours(values.hours))
+  if (hoursError) errors.hours = hoursError
   return errors
 }
 
@@ -79,6 +93,7 @@ function BranchForm({ branch, onDone, onCancel, onDirtyChange }: BranchFormProps
   const cities = useCities()
   const draft = useDraftForm<Values>({ initial: valuesOf(branch), validate })
   const { values } = draft
+  const initialHours = useState(() => hoursFromServer(branch?.openingHours))[0]
   const initialPoint = useState(() => pointOf(branch))[0]
   const [point, setPoint] = useState<PickedPoint | null>(initialPoint)
   const [pointError, setPointError] = useState<string>()
@@ -114,7 +129,7 @@ function BranchForm({ branch, onDone, onCancel, onDirtyChange }: BranchFormProps
     const missingPoint = point === null
     setPointError(missingPoint ? 'Ubica la sucursal en el mapa.' : undefined)
     if (!check.valid || missingPoint) {
-      focusById(check.firstInvalid ? fieldId(check.firstInvalid) : POINT_ID)
+      focusById(check.firstInvalid === 'hours' ? hoursFocusId(values.hours) : check.firstInvalid ? fieldId(check.firstInvalid) : POINT_ID)
       return
     }
     const input: BranchInput = {
@@ -130,6 +145,13 @@ function BranchForm({ branch, onDone, onCancel, onDirtyChange }: BranchFormProps
         longitude: point.lng,
         approximate: point.approximate,
       },
+    }
+    // Al crear solo se envía si hay horario; al editar, solo si cambió (`{}` lo borra).
+    const hoursBody = hoursToServer(values.hours)
+    if (!branch) {
+      if (hoursBody) input.openingHours = hoursBody
+    } else if (!isEqual(values.hours, initialHours)) {
+      input.openingHours = hoursBody ?? {}
     }
     // ÚNICA escritura: crear/actualizar al pulsar el botón final.
     const result = await submit.run(input)
@@ -149,6 +171,10 @@ function BranchForm({ branch, onDone, onCancel, onDirtyChange }: BranchFormProps
         draft.setServerErrors(mapped)
         const first = FIELDS.find((field) => mapped[field])
         if (first) requestAnimationFrame(() => focusById(fieldId(first)))
+      }
+      if (error instanceof ApiError && error.code === 'INVALID_OPENING_HOURS') {
+        draft.setServerErrors({ hours: error.message })
+        requestAnimationFrame(() => focusById(hoursDayId(HOURS_PREFIX, 'mon')))
       }
       if (error instanceof ApiError && error.code === 'BRANCH_COORDINATES_REQUIRED') setPointError(error.message)
       setFormError(actionErrorMessage(error, 'No pudimos guardar la sucursal. Inténtalo de nuevo.'))
@@ -181,6 +207,13 @@ function BranchForm({ branch, onDone, onCancel, onDirtyChange }: BranchFormProps
           address={{ line: values.addressLine, city: values.city, department: values.department }}
           error={pointError}
         />
+        <OpeningHoursEditor
+          idPrefix={HOURS_PREFIX}
+          value={values.hours}
+          onChange={(next) => draft.set('hours', next)}
+          errors={draft.submitted ? validateHours(values.hours) : undefined}
+          serverError={firstHoursError(validateHours(values.hours)) ? undefined : draft.errorFor('hours')}
+        />
       </div>
       <div className="flex flex-col-reverse gap-2 border-t border-border p-4 sm:flex-row sm:justify-end">
         <Button type="button" variant="outline" className="h-11 px-5" onClick={onCancel} disabled={pending}>
@@ -204,7 +237,7 @@ export function BranchSheet({ open, onOpenChange, branch }: { open: boolean; onO
         <SheetHeader className="p-4 pr-16">
           <SheetTitle className="text-block-title">{branch ? 'Editar sucursal' : 'Nueva sucursal'}</SheetTitle>
           <SheetDescription>
-            {branch ? 'Cambia los datos de contacto y la dirección.' : 'Una sucursal es un punto desde el que despachas pedidos.'}
+            {branch ? 'Cambia los datos de contacto, la dirección y el horario.' : 'Una sucursal es un punto desde el que despachas pedidos.'}
           </SheetDescription>
         </SheetHeader>
         {/* key: cada apertura (o cambio de sucursal) parte de un formulario limpio. */}
