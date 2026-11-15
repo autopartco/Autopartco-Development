@@ -128,6 +128,8 @@ public class PersonAddressService {
                 .addressComplement(clean(request.addressComplement()))
                 .city(request.city().trim())
                 .department(request.department().trim())
+                .municipalityCode(locationRepository.resolveMunicipalityCode(
+                        request.city().trim(), request.department().trim()))
                 .country(request.country() == null || request.country().isBlank()
                         ? "Colombia"
                         : request.country().trim())

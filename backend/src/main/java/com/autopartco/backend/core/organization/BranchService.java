@@ -183,6 +183,7 @@ public class BranchService {
                 .addressComplement(clean(request.addressComplement()))
                 .city(city)
                 .department(department)
+                .municipalityCode(locationRepository.resolveMunicipalityCode(city, department))
                 .country(request.country() == null || request.country().isBlank()
                         ? "Colombia"
                         : request.country().trim())
