@@ -311,8 +311,8 @@ export function BookingFlow({ service }: { service: ServiceDetail }) {
               <Button variant="outline" className="h-11 px-4" disabled={submit.pending} onClick={() => setExplicit('datos')}>
                 Atrás
               </Button>
-              <Button className="h-11 px-4" disabled={submit.pending} onClick={() => void send()}>
-                {submit.pending ? 'Enviando…' : 'Confirmar cita'}
+              <Button className="h-11 px-4" loading={submit.pending} loadingText="Enviando…" onClick={() => void send()}>
+                Confirmar cita
               </Button>
             </>
           ) : null}

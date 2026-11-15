@@ -83,8 +83,8 @@ export function CancelBookingDialog({ booking, open, onOpenChange, onCancelled }
         ) : null}
         <AlertDialogFooter>
           <AlertDialogClose render={<Button variant="outline" className="h-11 px-4" disabled={cancel.pending} />}>Mantener la cita</AlertDialogClose>
-          <Button variant="destructive" className="h-11 px-4" disabled={cancel.pending} onClick={() => void confirm()}>
-            {cancel.pending ? 'Cancelando…' : 'Cancelar la cita'}
+          <Button variant="destructive" className="h-11 px-4" loading={cancel.pending} loadingText="Cancelando…" onClick={() => void confirm()}>
+            Cancelar la cita
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

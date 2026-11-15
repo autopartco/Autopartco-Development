@@ -11,6 +11,7 @@ import { searchTabHref } from '../../lib/search-query'
 import { toStoreQuery } from '../../lib/store-search-query'
 import { ResultsPagination } from '../results-pagination'
 import { StoreResultRow, StoreRowSkeleton } from '../store-card'
+import { TabPanel } from '@/components/common/tab-panel'
 import { SearchTabs } from './search-tabs'
 import { errorCopy, useCityOptions } from './store-search-support'
 
@@ -100,6 +101,7 @@ export function StoresSearchView() {
         className="mb-6"
       />
       <SearchTabs active="stores" />
+      <TabPanel group="search" index={3}>
       <section aria-labelledby="resultados-tiendas-titulo" className="flex min-w-0 flex-col gap-4">
         <h2 id="resultados-tiendas-titulo" className="sr-only">
           Tiendas
@@ -155,6 +157,7 @@ export function StoresSearchView() {
         ) : null}
         {content}
       </section>
+      </TabPanel>
     </Container>
   )
 }

@@ -136,8 +136,8 @@ function AdjustForm({ target, onClose }: { target: AdjustTarget; onClose: () => 
         <Button type="button" variant="outline" className="h-11 px-4" disabled={pending} onClick={onClose}>
           Cancelar
         </Button>
-        <Button type="submit" className="h-11 px-4" disabled={pending || reasons.status === 'error'}>
-          {pending ? 'Guardando…' : 'Guardar ajuste'}
+        <Button type="submit" className="h-11 px-4" loading={pending} loadingText="Guardando…" disabled={reasons.status === 'error'}>
+          Guardar ajuste
         </Button>
       </DialogFooter>
     </form>

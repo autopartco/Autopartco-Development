@@ -262,3 +262,32 @@ export const router = createBrowserRouter([
     ],
   },
 ])
+
+/**
+ * Transición entre páginas: fundido cruzado con la View Transitions API (index.css) solo cuando cambia la ruta,
+ * no en filtros ni pestañas que solo tocan la query. Sin soporte del navegador o con movimiento reducido no hace nada.
+ */
+const navigate = router.navigate.bind(router)
+
+/**
+ * Solo el catálogo público participa: cuentas, portal, admin, checkout y el cierre de sesión quedan fuera para que la
+ * transición nunca conserve en pantalla contenido de una sesión cerrada.
+ */
+const PUBLIC_CATALOG = /^\/(?:$|buscar|categorias|categoria\/|producto\/|servicios|servicio\/|tiendas)/
+const isPublicCatalogPath = (pathname: string) => PUBLIC_CATALOG.test(pathname)
+router.navigate = ((to: unknown, opts?: { viewTransition?: boolean }) => {
+  const canAnimate =
+    typeof document.startViewTransition === 'function' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  if (typeof to === 'number' || to == null || !canAnimate || opts?.viewTransition !== undefined) {
+    return navigate(to as never, opts as never)
+  }
+  const target = typeof to === 'string' ? to : (to as { pathname?: string }).pathname
+  const from = router.state.location.pathname
+  const changes =
+    typeof target === 'string' &&
+    target.startsWith('/') &&
+    new URL(target, window.location.origin).pathname !== from &&
+    isPublicCatalogPath(from) &&
+    isPublicCatalogPath(new URL(target, window.location.origin).pathname)
+  return navigate(to as never, { ...opts, viewTransition: changes } as never)
+}) as typeof router.navigate

@@ -163,8 +163,8 @@ function PriceForm({ count, branches, onSubmit, onCancel }: Omit<BulkPriceDialog
         <Button type="button" variant="outline" className="h-11 px-4" disabled={pending} onClick={onCancel}>
           Cancelar
         </Button>
-        <Button type="submit" className="h-11 px-4" disabled={pending}>
-          {pending ? 'Aplicando…' : 'Aplicar ajuste'}
+        <Button type="submit" className="h-11 px-4" loading={pending} loadingText="Aplicando…">
+          Aplicar ajuste
         </Button>
       </DialogFooter>
     </form>

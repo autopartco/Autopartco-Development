@@ -180,8 +180,8 @@ export default function StaffInvitationPage() {
             </p>
           ) : null}
           <div>
-            <Button type="submit" disabled={accept.pending}>
-              {accept.pending ? 'Aceptando…' : current.preview.accountCreationRequired ? 'Crear cuenta y aceptar' : 'Aceptar invitación'}
+            <Button type="submit" loading={accept.pending} loadingText="Aceptando…">
+              {current.preview.accountCreationRequired ? 'Crear cuenta y aceptar' : 'Aceptar invitación'}
             </Button>
           </div>
           <UnsavedChangesDialog blocker={blocker} />

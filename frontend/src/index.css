@@ -279,7 +279,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
+    /* `.ap-live` (spinner de carga) conserva su señal de vida: pulsa en vez de girar. */
+    *:not(.ap-live), *:not(.ap-live)::before, *:not(.ap-live)::after {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
@@ -306,7 +307,7 @@
 
 /* Color y opacidad de controles: 120 ms, con la curva de salida del sistema. */
 @utility ap-transition-colors {
-    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, translate;
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, translate, scale;
     transition-duration: var(--ap-dur-fast);
     transition-timing-function: var(--ap-ease-out);
 }
@@ -347,6 +348,181 @@
 }
 @utility ap-fade-in {
     animation: ap-fade-in var(--ap-dur-base) var(--ap-ease-out) both;
+}
+
+/* Contenido de una pestaña: fundido con 8 px de desplazamiento hacia la dirección del cambio. */
+@keyframes ap-tab-from-right {
+    from { opacity: 0; transform: translateX(8px); }
+    to { opacity: 1; transform: none; }
+}
+@keyframes ap-tab-from-left {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: none; }
+}
+@utility ap-tab-from-right {
+    animation: ap-tab-from-right var(--ap-dur-panel) var(--ap-ease-out) both;
+}
+@utility ap-tab-from-left {
+    animation: ap-tab-from-left var(--ap-dur-panel) var(--ap-ease-out) both;
+}
+
+/* Spinner de carga: gira siempre; con movimiento reducido pulsa la opacidad (sigue siendo señal de vida). */
+@keyframes ap-spin {
+    to { transform: rotate(360deg); }
+}
+@keyframes ap-breathe {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+}
+@utility ap-spinner {
+    animation: ap-spin 700ms linear infinite;
+    @media (prefers-reduced-motion: reduce) {
+        animation: ap-breathe 1.2s ease-in-out infinite;
+    }
+}
+
+/* Check de éxito del botón (~600 ms visible): entra con un pequeño escalado. */
+@keyframes ap-check-in {
+    from { opacity: 0; transform: scale(0.6); }
+    to { opacity: 1; transform: scale(1); }
+}
+@utility ap-check-in {
+    animation: ap-check-in var(--ap-dur-panel) var(--ap-ease-out) both;
+}
+
+/* Brillo del botón primario: un barrido de luz al 10 % al pasar el cursor (una vez por pasada). */
+@keyframes ap-sheen {
+    from { transform: translateX(0); }
+    to { transform: translateX(200%); }
+}
+@utility ap-sheen {
+    overflow: hidden;
+    &::after {
+        content: '';
+        pointer-events: none;
+        position: absolute;
+        inset-block: 0;
+        left: -100%;
+        width: 100%;
+        background-image: linear-gradient(105deg, transparent 30%, rgb(255 255 255 / 0.1) 50%, transparent 70%);
+    }
+    @media (hover: hover) {
+        &:hover:not(:disabled)::after {
+            animation: ap-sheen 600ms var(--ap-ease-out) both;
+        }
+    }
+}
+
+/* Contador del carrito: «bump» 1 → 1,25 → 1 en 300 ms y número que entra desde abajo. */
+@keyframes ap-bump {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.25); }
+    100% { transform: scale(1); }
+}
+@keyframes ap-number-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: none; }
+}
+@utility ap-bump {
+    animation: ap-bump 300ms var(--ap-ease-out) both;
+}
+@utility ap-number-in {
+    animation: ap-number-in 300ms var(--ap-ease-out) both;
+}
+
+/*
+ * Entrada escalonada (`Reveal`, components/common/reveal.tsx): oculto hasta que un observer compartido lo marca
+ * con `data-in`; el retraso por elemento llega en `--ap-delay`. Solo opacity y translate.
+ */
+.ap-reveal {
+    opacity: 0;
+    translate: 0 10px;
+}
+/* Al imprimir no hay scroll que revele: todo visible. */
+@media print {
+    .ap-reveal {
+        opacity: 1;
+        translate: none;
+    }
+}
+.ap-reveal[data-in] {
+    opacity: 1;
+    translate: 0 0;
+    transition:
+        opacity 280ms var(--ap-ease-out) var(--ap-delay, 0ms),
+        translate 280ms var(--ap-ease-out) var(--ap-delay, 0ms);
+}
+@media (prefers-reduced-motion: reduce) {
+    .ap-reveal {
+        opacity: 1;
+        translate: none;
+    }
+}
+
+/* Hover de tarjetas (200 ms): imagen con zoom 1,04 dentro de su marco y flecha que se desplaza 3 px. */
+@utility ap-zoom-frame {
+    overflow: hidden;
+    & img {
+        transition:
+            opacity var(--ap-dur-base) var(--ap-ease-out),
+            transform var(--ap-dur-panel) var(--ap-ease-out);
+    }
+    @media (hover: hover) {
+        :where(.group):hover & img {
+            transform: scale(1.04);
+        }
+    }
+}
+@utility ap-nudge {
+    transition: translate var(--ap-dur-panel) var(--ap-ease-out), color var(--ap-dur-panel) var(--ap-ease-out);
+    @media (hover: hover) {
+        :where(.group):hover & {
+            translate: 3px 0;
+        }
+    }
+}
+
+/* Cabecera del buscador: la lupa se desplaza levemente al enfocar el campo. */
+@utility ap-search-icon {
+    transition: translate var(--ap-dur-panel) var(--ap-ease-out), color var(--ap-dur-panel) var(--ap-ease-out);
+    :where(.group\/search):focus-within & {
+        translate: 2px 0;
+    }
+}
+
+/* Sugerencias del buscador: entran con escalonado corto por grupo (`--ap-delay`). */
+@keyframes ap-suggest-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: none; }
+}
+@utility ap-suggest-in {
+    animation: ap-suggest-in var(--ap-dur-panel) var(--ap-ease-out) var(--ap-delay, 0ms) both;
+}
+
+/*
+ * Transición entre páginas (View Transitions API): fundido cruzado de 180 ms del contenido; la cabecera
+ * (`view-transition-name: site-header`) queda fija y sin animar. Sin soporte del navegador no pasa nada.
+ */
+::view-transition-old(root),
+::view-transition-new(root) {
+    animation-duration: 180ms;
+    animation-timing-function: var(--ap-ease-out);
+}
+::view-transition-group(site-header) {
+    animation: none;
+}
+::view-transition-old(site-header) {
+    display: none;
+}
+::view-transition-new(site-header) {
+    animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+        animation: none !important;
+    }
 }
 
 /* Esqueleto: barrido diagonal sutil sobre el tono línea; fijo con movimiento reducido. */

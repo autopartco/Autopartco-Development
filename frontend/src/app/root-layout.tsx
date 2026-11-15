@@ -5,6 +5,7 @@ import { SiteHeader } from './site-header'
 import { PageFallback } from './page-fallback'
 import { Toaster } from '@/components/ui/sonner'
 import { usePageviews } from '@/lib/pageview'
+import { markEntryLeft } from '@/lib/reveal'
 
 /** Mueve el foco al contenido al cambiar de ruta, para lectores de pantalla y teclado. */
 function useFocusMainOnNavigate() {
@@ -19,8 +20,19 @@ function useFocusMainOnNavigate() {
   }, [pathname])
 }
 
+/** Recuerda las entradas del historial que se dejan atrás, para no repetir las animaciones de entrada al volver. */
+function useRememberLeftEntries() {
+  const { key } = useLocation()
+  const previous = useRef(key)
+  useEffect(() => {
+    if (previous.current !== key) markEntryLeft(previous.current)
+    previous.current = key
+  }, [key])
+}
+
 export function RootLayout() {
   useFocusMainOnNavigate()
+  useRememberLeftEntries()
   usePageviews()
   return (
     // `overflow-x-clip` es una red de seguridad contra el scroll horizontal; a diferencia

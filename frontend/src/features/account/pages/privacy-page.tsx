@@ -30,7 +30,7 @@ function ExportSection() {
   }
   return (
     <AccountSection id="priv-export" title="Descargar mis datos" description="Un archivo con tu perfil, direcciones, pedidos, citas de servicio, reseñas, preguntas y preferencias.">
-      <Button variant="outline" className="h-11 w-fit" disabled={busy} onClick={() => void download()}>
+      <Button variant="outline" className="h-11 w-fit" loading={busy} onClick={() => void download()}>
         <DownloadIcon aria-hidden />
         {busy ? 'Preparando…' : 'Descargar (JSON)'}
       </Button>
@@ -93,7 +93,7 @@ function DeletionSection() {
           <FormAlert tone="info" title="Solicitud en revisión">
             La enviaste el {new Intl.DateTimeFormat('es-CO', { dateStyle: 'long' }).format(new Date(request.data!.createdAt))}. Puedes cancelarla mientras no se procese.
           </FormAlert>
-          <Button variant="outline" className="h-11 w-fit" disabled={busy} onClick={() => void cancel()}>
+          <Button variant="outline" className="h-11 w-fit" loading={busy} onClick={() => void cancel()}>
             Cancelar solicitud
           </Button>
         </div>

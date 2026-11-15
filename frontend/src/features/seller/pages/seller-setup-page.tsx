@@ -239,8 +239,8 @@ function SetupWizard({ submit }: WizardProps) {
               Siguiente
             </Button>
           ) : (
-            <Button type="submit" disabled={submitting}>
-              {submitting ? 'Activando…' : 'Activar mi almacén'}
+            <Button type="submit" loading={submitting} loadingText="Activando…">
+              Activar mi almacén
             </Button>
           )}
         </div>
@@ -284,8 +284,8 @@ function WrongAccount() {
         Esta cuenta no tiene una configuración de almacén pendiente. Si el enlace era de otra cuenta, cámbiala.
       </p>
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-        <Button disabled={pending} onClick={() => void switchAccount()}>
-          {pending ? 'Cerrando sesión…' : 'Cambiar de cuenta'}
+        <Button loading={pending} loadingText="Cerrando sesión…" onClick={() => void switchAccount()}>
+          Cambiar de cuenta
         </Button>
         <Button variant="outline" nativeButton={false} render={<Link to="/" />}>
           Ir al inicio

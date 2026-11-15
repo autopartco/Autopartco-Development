@@ -65,10 +65,11 @@ export function ConfirmDialog({ open, onOpenChange, title, description, confirmL
           <Button
             variant={destructive ? 'destructive' : 'default'}
             className="h-11 px-4"
-            disabled={pending}
+            loading={pending}
+            loadingText="Procesando…"
             onClick={() => void handleConfirm()}
           >
-            {pending ? 'Procesando…' : confirmLabel}
+            {confirmLabel}
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

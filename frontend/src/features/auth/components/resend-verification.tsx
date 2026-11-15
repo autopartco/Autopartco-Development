@@ -79,7 +79,7 @@ export function ResendVerification({ email }: ResendVerificationProps) {
   return (
     <form noValidate onSubmit={submit} className="flex w-full max-w-md flex-col gap-3">
       <TextField id="reenvio-email" name="email" type="email" label="Tu correo" autoComplete="email" maxLength={100} required />
-      <Button type="submit" variant="outline" className="h-11 w-fit" disabled={busy || wait > 0}>
+      <Button type="submit" variant="outline" className="h-11 w-fit" loading={busy} disabled={wait > 0}>
         {label}
       </Button>
       {status}

@@ -481,8 +481,8 @@ function ApplicationForm({ mode, notice }: { mode: FormMode; notice?: ReactNode 
       </Section>
 
       <div className="flex flex-col gap-4 border-t border-ap-line pt-6">
-        <Button type="submit" className="w-full sm:w-fit" disabled={submitting}>
-          {submitting ? 'Enviando solicitud…' : 'Enviar solicitud'}
+        <Button type="submit" className="w-full sm:w-fit" loading={submitting} loadingText="Enviando solicitud…">
+          Enviar solicitud
         </Button>
         {withAccount ? (
           <p className="text-sm text-ap-muted">

@@ -1,5 +1,7 @@
 import { memo, type ReactNode } from 'react'
 import { Link } from 'react-router'
+import { ArrowRightIcon } from 'lucide-react'
+import { Reveal } from '@/components/common/reveal'
 import { SmartImage } from '@/components/common/smart-image'
 import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button'
@@ -32,7 +34,7 @@ interface ProductItemProps {
 export const ProductRow = memo(function ProductRow({ product, eager = false, distanceKm }: ProductItemProps) {
   const href = productPath(product.id)
   return (
-    <article className="grid grid-cols-[5rem_minmax(0,1fr)] gap-x-4 py-5 sm:grid-cols-[7rem_minmax(0,1fr)_11.5rem] sm:gap-x-5">
+    <Reveal as="article" className="group grid grid-cols-[5rem_minmax(0,1fr)] gap-x-4 py-5 sm:grid-cols-[7rem_minmax(0,1fr)_11.5rem] sm:gap-x-5">
       <Link to={href} tabIndex={-1} aria-hidden className="row-span-1 self-start">
         <SmartImage
           src={product.images[0]?.thumbUrl ?? product.images[0]?.cardUrl}
@@ -40,7 +42,7 @@ export const ProductRow = memo(function ProductRow({ product, eager = false, dis
           width={112}
           height={112}
           loading={eager ? 'eager' : 'lazy'}
-          frameClassName="aspect-square w-full rounded-md border border-ap-line"
+          frameClassName="ap-zoom-frame aspect-square w-full rounded-md border border-ap-line transition-colors ap-dur-panel group-hover:border-ap-graphite"
           className="p-1.5"
         />
       </Link>
@@ -51,7 +53,7 @@ export const ProductRow = memo(function ProductRow({ product, eager = false, dis
           {product.brand ? <BrandName brand={product.brand} className="text-xs" /> : null}
         </p>
         <h3 className="text-base leading-snug font-semibold text-ap-ink">
-          <Link to={href} className="underline-offset-4 hover:text-ap-red hover:underline">
+          <Link to={href} className="underline-offset-4 hover:text-ap-red hover:underline group-hover:underline">
             {product.name}
           </Link>
         </h3>
@@ -79,7 +81,7 @@ export const ProductRow = memo(function ProductRow({ product, eager = false, dis
           Ver producto
         </Link>
       </div>
-    </article>
+    </Reveal>
   )
 })
 
@@ -136,14 +138,14 @@ export function ProductListSkeleton({ count }: { count: number }) {
  */
 export const ProductCard = memo(function ProductCard({ product, eager = false, distanceKm }: ProductItemProps) {
   return (
-    <article className="group relative flex h-full flex-col gap-3 border-t border-ap-line pt-4">
+    <Reveal as="article" className="group relative flex h-full flex-col gap-3 border-t border-ap-line pt-4 transition-colors ap-dur-panel hover:border-ap-graphite">
       <SmartImage
         src={product.images[0]?.cardUrl}
         alt=""
         width={400}
         height={300}
         loading={eager ? 'eager' : 'lazy'}
-        frameClassName="aspect-[4/3] rounded-md border border-ap-line"
+        frameClassName="ap-zoom-frame aspect-[4/3] rounded-md border border-ap-line transition-colors ap-dur-panel group-hover:border-ap-graphite"
         className="p-2"
       />
       <div className="flex flex-1 flex-col gap-1.5">
@@ -152,7 +154,7 @@ export const ProductCard = memo(function ProductCard({ product, eager = false, d
           <Link
             to={productPath(product.id)}
             data-stretched-link
-            className="outline-none after:absolute after:inset-0 after:rounded-md focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-[var(--focus)] group-hover:text-ap-red"
+            className="outline-none after:absolute after:inset-0 after:rounded-md focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-[var(--focus)] underline-offset-4 group-hover:text-ap-red group-hover:underline"
           >
             {product.name}
           </Link>
@@ -163,6 +165,7 @@ export const ProductCard = memo(function ProductCard({ product, eager = false, d
             <Price product={product} />
             <RatingTag rating={product.rating} reviewCount={product.reviewCount} />
             {product.discountAmount ? <Badge variant="default">Ahorra {formatCOP(product.discountAmount)}</Badge> : null}
+            <ArrowRightIcon className="ap-nudge ml-auto size-4 shrink-0 text-ap-steel group-hover:text-ap-graphite" aria-hidden />
           </div>
           {product.availability ? <AvailabilityLabel availability={product.availability} className="text-xs" /> : null}
           {product.store ? (
@@ -174,7 +177,7 @@ export const ProductCard = memo(function ProductCard({ product, eager = false, d
           ) : null}
         </div>
       </div>
-    </article>
+    </Reveal>
   )
 })
 

@@ -61,7 +61,7 @@ function ShipmentCreateForm({ order }: { order: OrderDetail }) {
         <TextField id="envio-carrier" label="Transportadora" value={carrier} onChange={(event) => setCarrier(event.target.value)} error={shown('carrier')} maxLength={100} autoComplete="off" required hint="Ej.: Servientrega, Coordinadora." />
         <TextField id="envio-tracking" label="Número de guía" value={tracking} onChange={(event) => setTracking(event.target.value)} error={shown('trackingNumber')} maxLength={100} autoComplete="off" required />
       </div>
-      <Button type="submit" className="h-11 w-fit px-5" disabled={pending}>
+      <Button type="submit" className="h-11 w-fit px-5" loading={pending}>
         <TruckIcon aria-hidden />
         {pending ? 'Registrando…' : 'Registrar envío'}
       </Button>

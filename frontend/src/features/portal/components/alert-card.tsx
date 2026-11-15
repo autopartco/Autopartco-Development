@@ -66,13 +66,13 @@ export function AlertCard({ alert, actions, onNavigate, compact }: AlertCardProp
           </Button>
         ) : null}
         {unread ? (
-          <Button variant="ghost" className="h-11 px-3" disabled={busy} aria-busy={busy || undefined} onClick={() => void actions.markRead(alert)}>
+          <Button variant="ghost" className="h-11 px-3" loading={busy} onClick={() => void actions.markRead(alert)}>
             <EyeIcon aria-hidden />
             Marcar como leída
           </Button>
         ) : null}
         {!alert.resolvedAt ? (
-          <Button variant="ghost" className="h-11 px-3" disabled={busy} aria-busy={busy || undefined} onClick={() => void actions.resolve(alert)}>
+          <Button variant="ghost" className="h-11 px-3" loading={busy} onClick={() => void actions.resolve(alert)}>
             <CheckCheckIcon aria-hidden />
             Resolver
           </Button>
