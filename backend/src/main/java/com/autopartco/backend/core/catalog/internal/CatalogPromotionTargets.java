@@ -6,7 +6,9 @@ import java.util.UUID;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.autopartco.backend.core.organization.ServiceCategory;
 import com.autopartco.backend.core.organization.StoreService;
+import com.autopartco.backend.core.organization.StoreServices;
 import com.autopartco.backend.core.pricing.PromotionTargets;
 
 import lombok.AllArgsConstructor;
@@ -19,6 +21,7 @@ public class CatalogPromotionTargets implements PromotionTargets {
     private final CategoryRepository categoryRepository;
     private final ManufacturerRepository manufacturerRepository;
     private final StoreService storeService;
+    private final StoreServices storeServices;
 
     @Override
     @Transactional(readOnly = true)
@@ -43,5 +46,16 @@ public class CatalogPromotionTargets implements PromotionTargets {
     @Transactional(readOnly = true)
     public boolean storeExists(UUID storeId) {
         return storeService.exists(storeId);
+    }
+
+    @Override
+    public Optional<UUID> findServiceStore(UUID serviceId) {
+        return storeServices.storeOf(serviceId);
+    }
+
+    @Override
+    public boolean serviceCategoryExists(String key) {
+        return key != null && java.util.Arrays.stream(ServiceCategory.values())
+                .anyMatch(category -> category.name().equals(key));
     }
 }

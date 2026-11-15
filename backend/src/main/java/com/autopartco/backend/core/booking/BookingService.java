@@ -31,6 +31,8 @@ import com.autopartco.backend.core.booking.internal.ServiceBooking;
 import com.autopartco.backend.core.booking.internal.ServiceBookingRepository;
 import com.autopartco.backend.core.identity.AccountLookup;
 import com.autopartco.backend.core.identity.AccountRef;
+import com.autopartco.backend.core.pricing.ServicePrice;
+import com.autopartco.backend.core.pricing.ServicePricing;
 import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
@@ -60,22 +62,30 @@ public class BookingService {
     private final AuditService auditService;
     private final ApplicationEventPublisher events;
     private final Clock clock;
+    /** Precio «desde» con la promoción vigente al pedir; nulo en pruebas sin promociones. */
+    private final ServicePricing pricing;
 
     @Autowired
     public BookingService(ServiceBookingRepository repository, BookingCatalog catalog, AccountLookup accountLookup,
-            AuditService auditService, ApplicationEventPublisher events) {
-        this(repository, catalog, accountLookup, auditService, events, Clock.system(BookingRules.ZONE));
+            AuditService auditService, ApplicationEventPublisher events, ServicePricing pricing) {
+        this(repository, catalog, accountLookup, auditService, events, Clock.system(BookingRules.ZONE), pricing);
     }
 
-    /** {@code clock} fija «ahora» (pruebas); la hora de las franjas siempre es la de Bogotá. */
+    /** {@code clock} fija «ahora» (pruebas); la hora de las franjas siempre es la de Bogotá. Sin promociones. */
     public BookingService(ServiceBookingRepository repository, BookingCatalog catalog, AccountLookup accountLookup,
             AuditService auditService, ApplicationEventPublisher events, Clock clock) {
+        this(repository, catalog, accountLookup, auditService, events, clock, null);
+    }
+
+    public BookingService(ServiceBookingRepository repository, BookingCatalog catalog, AccountLookup accountLookup,
+            AuditService auditService, ApplicationEventPublisher events, Clock clock, ServicePricing pricing) {
         this.repository = repository;
         this.catalog = catalog;
         this.accountLookup = accountLookup;
         this.auditService = auditService;
         this.events = events;
         this.clock = clock;
+        this.pricing = pricing;
     }
 
     // --- Comprador --------------------------------------------------------------------------------------------------
@@ -123,8 +133,15 @@ public class BookingService {
         booking.setVehicle(request.vehicle() == null ? null : request.vehicle().toJson());
         booking.setContactPhone(phone);
         booking.setBuyerNote(note);
-        // Precio «desde» al pedir: el almacén se compromete a ese valor de referencia. Promoción: cuando exista (T4).
+        // Precio «desde» y promoción vigentes al pedir: el almacén se compromete a ese valor de referencia.
         booking.setQuotedPrice(service.priceFrom());
+        if (pricing != null) {
+            ServicePrice price = pricing.current().price(service.id(), service.storeId(),
+                    service.category() == null ? null : service.category().name(),
+                    service.priceFrom());
+            booking.setQuotedPrice(price.priceFrom());
+            booking.setPromotionId(price.hasPromotion() ? price.promotion().id() : null);
+        }
         booking.setCreatedAt(now);
         ServiceBooking saved = repository.saveAndFlush(booking);
         audit(account.accountId(), "BOOKING_REQUESTED", saved, null);

@@ -47,6 +47,13 @@ public class StoreServices {
         return services.stream().map(StoreServices::toView).toList();
     }
 
+    /** Almacén dueño del servicio (activo o no); vacío si no existe. */
+    @Transactional(readOnly = true)
+    public java.util.Optional<UUID> storeOf(UUID serviceId) {
+        return serviceId == null ? java.util.Optional.empty()
+                : serviceRepository.findById(serviceId).map(OfferedService::getStoreId);
+    }
+
     @Transactional(readOnly = true)
     public StoreServiceView get(UUID storeId, UUID serviceId) {
         return toView(find(storeId, serviceId));

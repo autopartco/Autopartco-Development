@@ -10,7 +10,7 @@
 @ApplicationModule(
         displayName = "Core: Booking",
         allowedDependencies = {"shared", "core.identity", "core.organization", "core.notification", "core.settings",
-                "core.audit"})
+                "core.audit", "core.pricing"})
 package com.autopartco.backend.core.booking;
 
 import org.springframework.modulith.ApplicationModule;

@@ -18,6 +18,8 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.autopartco.backend.core.pricing.ServicePrice;
+import com.autopartco.backend.core.pricing.ServicePricing;
 import com.autopartco.backend.core.organization.OpeningHours;
 import com.autopartco.backend.core.organization.ServiceCategory;
 import com.autopartco.backend.core.organization.StoreBrand;
@@ -89,17 +91,24 @@ public class ServiceSearchService {
     private final JdbcClient jdbcClient;
     private final QueryParser parser;
     private final Clock clock;
+    /** Precio y promoción vigentes de cada tarjeta; nulo en pruebas sin promociones. */
+    private final ServicePricing pricing;
 
     @Autowired
-    public ServiceSearchService(JdbcClient jdbcClient, QueryParser parser) {
-        this(jdbcClient, parser, Clock.system(BOGOTA));
+    public ServiceSearchService(JdbcClient jdbcClient, QueryParser parser, ServicePricing pricing) {
+        this(jdbcClient, parser, Clock.system(BOGOTA), pricing);
     }
 
-    /** {@code clock} fija la hora de «abierto ahora» (la zona es la de Bogotá). */
+    /** {@code clock} fija la hora de «abierto ahora» (la zona es la de Bogotá). Sin promociones. */
     ServiceSearchService(JdbcClient jdbcClient, QueryParser parser, Clock clock) {
+        this(jdbcClient, parser, clock, null);
+    }
+
+    ServiceSearchService(JdbcClient jdbcClient, QueryParser parser, Clock clock, ServicePricing pricing) {
         this.jdbcClient = jdbcClient;
         this.parser = parser;
         this.clock = clock.withZone(BOGOTA);
+        this.pricing = pricing;
     }
 
     /** {@code GET /marketplace/services/search}: valida (mismos códigos que {@code /search}), busca y hidrata. */
@@ -284,17 +293,28 @@ public class ServiceSearchService {
                 rs.getString("branch_name"), rs.getString("city"), address,
                 rs.getObject("latitude", BigDecimal.class), rs.getObject("longitude", BigDecimal.class),
                 OpeningHours.openNow(hours(rs.getString("opening_hours")), clock));
-        return new ServiceHit(rs.getObject("service_id", UUID.class), rs.getString("name"),
+        UUID serviceId = rs.getObject("service_id", UUID.class);
+        BigDecimal priceFrom = rs.getObject("price_from", BigDecimal.class);
+        BigDecimal basePriceFrom = rs.getObject("base_price_from", BigDecimal.class);
+        boolean hasPromotion = rs.getBoolean("has_promotion");
+        ServicePrice.Applied promotion = null;
+        if (pricing != null) {
+            // Precio vigente al leer: el índice puede llevar hasta 15 min de retraso en inicio o fin de vigencia.
+            ServicePrice price = pricing.cached().price(serviceId, storeId, rs.getString("category"), basePriceFrom);
+            priceFrom = price.priceFrom();
+            hasPromotion = price.hasPromotion();
+            promotion = price.promotion();
+        }
+        return new ServiceHit(serviceId, rs.getString("name"),
                 category(rs.getString("category")), rs.getString("description"), rs.getString("image_url"),
-                rs.getObject("price_from", BigDecimal.class), rs.getObject("base_price_from", BigDecimal.class),
-                rs.getBoolean("has_promotion"), rs.getObject("duration_minutes", Integer.class),
-                rs.getBoolean("booking_enabled"), store, branch, null);
+                priceFrom, basePriceFrom, hasPromotion, rs.getObject("duration_minutes", Integer.class),
+                rs.getBoolean("booking_enabled"), store, branch, null, promotion);
     }
 
     private static ServiceHit withDistance(ServiceHit hit, double km) {
         return new ServiceHit(hit.id(), hit.name(), hit.category(), hit.description(), hit.imageUrl(), hit.priceFrom(),
                 hit.basePriceFrom(), hit.hasPromotion(), hit.durationMinutes(), hit.bookingEnabled(), hit.store(),
-                hit.branch(), BigDecimal.valueOf(km).setScale(1, RoundingMode.HALF_UP));
+                hit.branch(), BigDecimal.valueOf(km).setScale(1, RoundingMode.HALF_UP), hit.promotion());
     }
 
     private static Row row(java.sql.ResultSet rs, long total) throws java.sql.SQLException {

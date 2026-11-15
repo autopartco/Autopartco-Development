@@ -20,7 +20,8 @@ class ServiceSearchIndexerTest {
 
     private final SearchFakeJdbc jdbc = new SearchFakeJdbc();
     private final PlatformTransactionManager transactions = mock(PlatformTransactionManager.class);
-    private final ServiceSearchIndexer indexer = new ServiceSearchIndexer(jdbc.client, transactions);
+    private final ServiceSearchIndexer indexer = new ServiceSearchIndexer(jdbc.client, transactions,
+            ServiceSearchIndexerPromotionTest.pricing(java.util.List.of()));
 
     @Test
     void onlyActiveServicesOfPublishedStoresInActiveBranchesAreIndexed() {

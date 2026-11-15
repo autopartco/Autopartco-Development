@@ -2106,9 +2106,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/catalog/internal/CatalogPromotionTargets.java": {
-    "mtime": 1794592718.5441673,
-    "seen": 1794594287.6138678,
-    "ast_hash": "56c928c3b9e2af1ef9b25049a0efabbb",
+    "mtime": 1794721592.0230317,
+    "seen": 1794723060.0660198,
+    "ast_hash": "902e36e336c270ed6ef1aadeccd10a7c",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/catalog/internal/Category.java": {
@@ -2190,9 +2190,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/pricing/PriceCalculator.java": {
-    "mtime": 1794592719.1078176,
-    "seen": 1794594287.6143491,
-    "ast_hash": "f387226b0dbe9c45e77177c777138730",
+    "mtime": 1794721576.1600506,
+    "seen": 1794723060.1846907,
+    "ast_hash": "9312ea44a99b056ed10d24d3f89211f6",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/pricing/PriceQuote.java": {
@@ -2220,15 +2220,15 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/pricing/PromotionResponse.java": {
-    "mtime": 1794592719.1277187,
-    "seen": 1794594287.6143625,
-    "ast_hash": "7b0f9fb5b28f3187952f00fab3b3a3e0",
+    "mtime": 1794721541.7662182,
+    "seen": 1794723060.1865954,
+    "ast_hash": "2ee46acf7b2e94c9a581addfd21de013",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/pricing/PromotionRule.java": {
-    "mtime": 1794592719.129732,
-    "seen": 1794594287.614364,
-    "ast_hash": "7aa061cabe217560fd42de52048bc3bd",
+    "mtime": 1794721541.7821703,
+    "seen": 1794723060.1865993,
+    "ast_hash": "530dee84fd3be61c6efeb8f8b2084993",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/pricing/PromotionScope.java": {
@@ -2238,33 +2238,33 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/pricing/PromotionService.java": {
-    "mtime": 1794592719.1307418,
-    "seen": 1794594287.6143675,
-    "ast_hash": "9f327141c013a9ba874bda488563c7f3",
+    "mtime": 1794721556.8410413,
+    "seen": 1794723060.1869855,
+    "ast_hash": "35064df892ff26360ab88f4f089fc174",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/pricing/PromotionTargetType.java": {
-    "mtime": 1794592719.1307418,
-    "seen": 1794594287.6143694,
-    "ast_hash": "c6a68f2817ff60cde48892530aea53ec",
+    "mtime": 1794721541.750218,
+    "seen": 1794723060.1869886,
+    "ast_hash": "7da2fca765e9dc0907e7bb15851ed63b",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/pricing/PromotionTargets.java": {
-    "mtime": 1794592719.1307418,
-    "seen": 1794594287.6143708,
-    "ast_hash": "d16a2e3cadcd5717e18f8fac6e5c2d3d",
+    "mtime": 1794721541.7821703,
+    "seen": 1794723060.1869912,
+    "ast_hash": "251cf7937f642f498e49937a14360ded",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/pricing/PromotionUpsertRequest.java": {
-    "mtime": 1794592719.1391208,
-    "seen": 1794594287.614373,
-    "ast_hash": "d6bf8d4e86b36190486ce2ed1c386086",
+    "mtime": 1794721541.750218,
+    "seen": 1794723060.1869931,
+    "ast_hash": "50389c2acb2c646a20e708fd1a2d8804",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/pricing/internal/Promotion.java": {
-    "mtime": 1794592719.141141,
-    "seen": 1794594287.6143744,
-    "ast_hash": "9eecb1e6807fae22e302f43acb188093",
+    "mtime": 1794721541.750218,
+    "seen": 1794723060.1870031,
+    "ast_hash": "805d870fc1852a4b13e2e4fc83904b47",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/pricing/internal/PromotionRepository.java": {
@@ -8052,9 +8052,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/organization/StoreServices.java": {
-    "mtime": 1794593027.6610467,
-    "seen": 1794594287.6142569,
-    "ast_hash": "ba4a8df7c59032cd3d88bb247dff684d",
+    "mtime": 1794721591.944573,
+    "seen": 1794723060.1635113,
+    "ast_hash": "47487d65c3efcebe629609c8b4f96fa0",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/organization/internal/OfferedService.java": {
@@ -8148,9 +8148,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/search/SearchIndexJobs.java": {
-    "mtime": 1794593244.7438836,
-    "seen": 1794594287.614422,
-    "ast_hash": "a446394aedfcd37bf56ee32184fdfa81",
+    "mtime": 1794721643.0386117,
+    "seen": 1794723060.1936095,
+    "ast_hash": "6b3741077c6dac6b99ddbb5bd2d852a3",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/search/SearchIndexer.java": {
@@ -10332,15 +10332,15 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/search/ServiceHit.java": {
-    "mtime": 1794593138.8693624,
-    "seen": 1794594287.6144402,
-    "ast_hash": "1309ac45058cad1c1b066236d5ca1c34",
+    "mtime": 1794721677.269453,
+    "seen": 1794723060.196193,
+    "ast_hash": "46156bb313796e575df6b3e2763ae9e2",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/search/ServiceSearchIndexer.java": {
-    "mtime": 1794593203.1264007,
-    "seen": 1794594287.6144426,
-    "ast_hash": "b7a578051dcad95a7681920f82e558ac",
+    "mtime": 1794721635.356083,
+    "seen": 1794723060.1961963,
+    "ast_hash": "6c23801932e8e5091e1f45b218acdbd2",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/search/ServiceSearchQuery.java": {
@@ -10356,9 +10356,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/search/ServiceSearchService.java": {
-    "mtime": 1794593177.982143,
-    "seen": 1794594287.6144474,
-    "ast_hash": "75f281ba5f19f8143875c2c4d206e518",
+    "mtime": 1794721677.237457,
+    "seen": 1794723060.1968808,
+    "ast_hash": "cef1cc74bdccaa0bd5e5104721d3f5f1",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/search/ServiceSearchSql.java": {
@@ -10380,9 +10380,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/marketplace/services/ServiceCard.java": {
-    "mtime": 1794593311.1193464,
-    "seen": 1794594287.6147213,
-    "ast_hash": "2c96326e467d05b640192f8a209e56db",
+    "mtime": 1794721677.2914786,
+    "seen": 1794723060.241353,
+    "ast_hash": "8c88751f28fad39b2bafbff3df329d36",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/marketplace/services/ServiceDetail.java": {
@@ -10404,9 +10404,9 @@
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/core/search/ServiceSearchIndexerTest.java": {
-    "mtime": 1794593531.3544781,
-    "seen": 1794594287.6156886,
-    "ast_hash": "3738aa42c4cb49c48e8b54ccaaa0c7a8",
+    "mtime": 1794721855.733977,
+    "seen": 1794723060.364611,
+    "ast_hash": "09aba45b6ab4d5c1292cb0b7fa26adda",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/core/search/ServiceSearchServiceTest.java": {
@@ -10446,9 +10446,9 @@
     "semantic_hash": ""
   },
   "docs/architecture/2026-11-13-servicios-primer-nivel-plan.md": {
-    "mtime": 1794721179.077719,
-    "seen": 1794721411.6352575,
-    "ast_hash": "8650f799b427bc4d4a5941c24387d613",
+    "mtime": 1794722943.639754,
+    "seen": 1794723060.6199775,
+    "ast_hash": "a4c60873de159f59040cd38f6db825e5",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/booking/Availability.java": {
@@ -10464,9 +10464,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/booking/Booking.java": {
-    "mtime": 1794597847.116999,
-    "seen": 1794721410.8575242,
-    "ast_hash": "0ecf6cf774c6e38d799ad250fe991f2d",
+    "mtime": 1794721700.2009308,
+    "seen": 1794723060.0505085,
+    "ast_hash": "68ded609da41e66f8fd0683fe23ec4ab",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/booking/BookingDecision.java": {
@@ -10506,9 +10506,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/booking/BookingService.java": {
-    "mtime": 1794598157.2085476,
-    "seen": 1794721410.8575382,
-    "ast_hash": "52590b62b007b04a6f5e4433a01a73fe",
+    "mtime": 1794721708.0276933,
+    "seen": 1794723060.0524654,
+    "ast_hash": "eaa05fc3fad46345ad355fb687cc215e",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/booking/BookingStatus.java": {
@@ -10560,9 +10560,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/booking/package-info.java": {
-    "mtime": 1794597709.2151492,
-    "seen": 1794721410.8575535,
-    "ast_hash": "797a2a9198e25d0d75b75eb6d3c6509b",
+    "mtime": 1794721700.2009308,
+    "seen": 1794723060.0555007,
+    "ast_hash": "dd5bb8dcbb485e4d0b98ff3dc9b29b0f",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/marketplace/bookings/BuyerBookingController.java": {
@@ -10614,9 +10614,9 @@
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/core/booking/BookingServiceTest.java": {
-    "mtime": 1794598291.3869343,
-    "seen": 1794721411.2831807,
-    "ast_hash": "5222236c9578c35c026249102868d79a",
+    "mtime": 1794722567.4651077,
+    "seen": 1794723060.3372974,
+    "ast_hash": "f3ceb4c8e407e2f87ce5fde0e9c24199",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/marketplace/bookings/BuyerBookingControllerTest.java": {
@@ -10635,6 +10635,36 @@
     "mtime": 1794598383.3176692,
     "seen": 1794721411.3373213,
     "ast_hash": "5b97e592e3252f209160cd222bc92304",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/pricing/ServicePrice.java": {
+    "mtime": 1794721576.1630468,
+    "seen": 1794723060.1869967,
+    "ast_hash": "39d2e590627be30f27e225647994cfcf",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/pricing/ServicePricing.java": {
+    "mtime": 1794721855.6178916,
+    "seen": 1794723060.1870003,
+    "ast_hash": "b719ee5c63d9227e7b90780e1b81f37c",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/pricing/PriceCalculatorServiceTest.java": {
+    "mtime": 1794721902.538208,
+    "seen": 1794723060.360791,
+    "ast_hash": "fab9f4d7c6bf74fb6dd26c2a195cf9b9",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/pricing/ServicePromotionTest.java": {
+    "mtime": 1794722860.3917525,
+    "seen": 1794723060.361741,
+    "ast_hash": "8e7a888df92e0b27e8316a4a6fcd319d",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/core/search/ServiceSearchIndexerPromotionTest.java": {
+    "mtime": 1794721907.4007826,
+    "seen": 1794723060.3646052,
+    "ast_hash": "0b4228222cf8315d9c67bc46a8ae24b2",
     "semantic_hash": ""
   }
 }

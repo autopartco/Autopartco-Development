@@ -261,7 +261,18 @@ Notas de implementación:
 - **Contexto:** «Reglas de negocio → Agenda», «API del comprador», «API del portal → citas», «Configuración del almacén». Reloj inyectable, zona `America/Bogota`. Depende de T1.
 - **Aceptación:** `./mvnw -q test -Dtest=BookingRulesTest,BookingServiceTest,AvailabilityServiceTest,StoreBookingControllerTest,BuyerBookingControllerTest,BookingExpiryJobTest` en verde: hora fuera de horario/no alineada/<2 h → 400 `BOOKING_SLOT_INVALID`; 4.ª cita activa en el mismo almacén → 429; transición inválida → 409; cita ajena (comprador u otro almacén) → 404; `COMPLETED` antes de `starts_at` → 409; vencidas pasan a `EXPIRED`; notificación tras commit a almacén y comprador; teléfono del comprador oculto en canceladas.
 
-### T4 — Promociones de servicios y precio «desde»
+### T4 — Promociones de servicios y precio «desde» ✅ (2026-11-15)
+
+Notas de implementación:
+- **Código de error:** se mantiene el existente 400 `INVALID_PROMOTION_TARGET` (no `PROMOTION_TARGET_INVALID`). Una audiencia distinta de `ALL` da 400 `INVALID_PROMOTION_AUDIENCE`.
+- **API:** `PromotionUpsertRequest`/`PromotionResponse` añaden `targetKey` (categoría de servicio, normalizada en mayúsculas).
+- **Cálculo:** `PriceCalculator.servicePrice` y `ServicePricing`, con reglas vigentes y una caché de 30 s para las tarjetas. Etiqueta `-15%` o `-$9.000`. Las promociones de servicios devuelven `false` en `appliesTo` de productos.
+- **Índice:**
+  - El upsert deja el precio base. Después, en la misma transacción, `applyPromotions` escribe `price_from` con descuento y `has_promotion`.
+  - El job `SearchIndexJobs.servicePromotions` (cada 15 min) reindexa los servicios con promoción y los recién alcanzados: al vencer vuelven al precio base.
+  - Las tarjetas recalculan precio y promoción al leer.
+- **Cita:** `quoted_price` y `promotion_id` vigentes al pedir (`ServicePricing.current`).
+- **Pendiente para T5:** `promotion` y precio con descuento en `StorePublicProfile.services[]`.
 - **Modelo:** Sonnet · **Agente:** backend
 - **Archivos:** `core/pricing/{PromotionTargetType,PromotionService,PriceCalculator,PromotionTargets}.java`, `core/catalog/internal/CatalogPromotionTargets.java` (o implementación en `core/organization`), `ServiceSearchIndexer` (aplica `price_from` con promoción y `has_promotion`, reindexa al crear/vencer promoción), `StorePublicProfile`/`ServiceCard` (`promotion`), `BookingService` (`quoted_price`, `promotion_id`); tests en `core/pricing/`.
 - **Contexto:** «Reglas de negocio → Promociones de servicios». Depende de T2 y T3.

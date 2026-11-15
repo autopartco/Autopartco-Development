@@ -16,6 +16,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import com.autopartco.backend.core.organization.ServiceCategory;
+import com.autopartco.backend.core.pricing.ServicePrice;
+import com.autopartco.backend.core.pricing.ServicePricing;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,9 +30,10 @@ import lombok.extern.slf4j.Slf4j;
  *
  * <p>Trabaja por lotes de {@value #BATCH_SERVICES} servicios, cada uno en su transacción: inserta o actualiza las filas
  * visibles y borra las que ya no lo son (todas las del lote que esta transacción no tocó: {@code now()} es el de la
- * transacción). {@link #reindexAll()} recorre todos los servicios y al final borra lo que no se tocó. Por ahora
- * {@code price_from = base_price_from = store_services.price_from} y {@code has_promotion = false}: las promociones de
- * servicios llegan después.</p>
+ * transacción). {@link #reindexAll()} recorre todos los servicios y al final borra lo que no se tocó. El upsert deja
+ * {@code price_from = base_price_from = store_services.price_from}; luego, en la misma transacción, los servicios con
+ * una promoción vigente ({@link ServicePricing}) reciben {@code price_from} con descuento y {@code has_promotion}.
+ * {@link #refreshPromotions()} reindexa lo que pudo cambiar por inicio o fin de vigencia.</p>
  */
 @Slf4j
 @Service
@@ -103,12 +106,37 @@ public class ServiceSearchIndexer {
                and exists (select 1 from store_services where active)
             """;
 
+    static final String PRICE_ROWS_SQL =
+            "select id, store_id, category, price_from from store_services where active and id in ({ids})";
+    static final String APPLY_PROMOTION_SQL =
+            "update search_services set price_from = ?, has_promotion = true where service_id = ?";
+    /** Con promoción en el índice (puede haber vencido) o alcanzados por una promoción de servicio vigente. */
+    static final String PROMOTION_CANDIDATES_SQL = """
+            select service_id from search_services where has_promotion
+            union
+            select ss.id from store_services ss
+            join promotions p on p.deleted_at is null and p.enabled and p.audience = 'ALL'
+                and p.starts_at <= now() and p.ends_at > now()
+                and ((p.target_type = 'SERVICE' and p.target_id = ss.id)
+                     or (p.target_type = 'SERVICE_CATEGORY' and p.target_key = ss.category
+                         and (p.scope = 'PLATFORM' or p.store_id = ss.store_id)))
+            where ss.active
+            """;
+
     private final JdbcClient jdbcClient;
     private final TransactionTemplate transactions;
+    private final ServicePricing pricing;
 
-    public ServiceSearchIndexer(JdbcClient jdbcClient, PlatformTransactionManager transactionManager) {
+    public ServiceSearchIndexer(JdbcClient jdbcClient, PlatformTransactionManager transactionManager,
+            ServicePricing pricing) {
         this.jdbcClient = jdbcClient;
         this.transactions = new TransactionTemplate(transactionManager);
+        this.pricing = pricing;
+    }
+
+    /** Servicios cuya promoción empezó o venció (o sigue vigente): vuelven a calcular su precio. */
+    public int refreshPromotions() {
+        return reindexServices(jdbcClient.sql(PROMOTION_CANDIDATES_SQL).query(UUID.class).list());
     }
 
     /**
@@ -163,7 +191,34 @@ public class ServiceSearchIndexer {
         String placeholders = placeholders(serviceIds.size());
         int upserted = jdbcClient.sql(UPSERT_SQL.replace(IDS_PLACEHOLDER, placeholders)).params(args).update();
         jdbcClient.sql(DELETE_STALE_SQL.replace(IDS_PLACEHOLDER, placeholders)).params(args).update();
+        if (upserted > 0) {
+            applyPromotions(serviceIds, placeholders);
+        }
         return upserted;
+    }
+
+    private void applyPromotions(List<UUID> serviceIds, String placeholders) {
+        ServicePricing.Rules rules = pricing.current();
+        if (rules.isEmpty()) {
+            return;
+        }
+        List<Object> args = new ArrayList<>(serviceIds);
+        List<ServicePrice> prices = new ArrayList<>();
+        List<UUID> ids = new ArrayList<>();
+        jdbcClient.sql(PRICE_ROWS_SQL.replace(IDS_PLACEHOLDER, placeholders)).params(args).query((rs, row) -> {
+            UUID id = rs.getObject("id", UUID.class);
+            ids.add(id);
+            prices.add(rules.price(id, rs.getObject("store_id", UUID.class), rs.getString("category"),
+                    rs.getBigDecimal("price_from")));
+            return id;
+        }).list();
+        for (int i = 0; i < ids.size(); i++) {
+            ServicePrice price = prices.get(i);
+            if (price.hasPromotion()) {
+                jdbcClient.sql(APPLY_PROMOTION_SQL).params(java.util.Arrays.asList(price.priceFrom(), ids.get(i)))
+                        .update();
+            }
+        }
     }
 
     static String key(UUID serviceId, UUID branchId) {

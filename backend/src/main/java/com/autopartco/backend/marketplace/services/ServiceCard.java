@@ -10,8 +10,7 @@ import com.autopartco.backend.core.search.ServiceHit;
 /**
  * Tarjeta pública de un servicio (búsqueda, detalle, relacionados, franja de la búsqueda unificada). {@code branch} es
  * la sucursal más cercana (con ubicación) o la primera. {@code promotion}, {@code distanceKm}, {@code imageUrl},
- * {@code priceFrom} y {@code durationMinutes} pueden ser {@code null}; {@code promotion} lo será hasta que los
- * servicios tengan promociones.
+ * {@code priceFrom} y {@code durationMinutes} pueden ser {@code null}.
  */
 public record ServiceCard(
         UUID id,
@@ -49,7 +48,8 @@ public record ServiceCard(
                 hit.imageUrl(),
                 hit.priceFrom(),
                 hit.basePriceFrom(),
-                null,
+                hit.promotion() == null ? null : new Promotion(hit.promotion().id(), hit.promotion().label(),
+                        hit.promotion().endsAt()),
                 hit.durationMinutes(),
                 hit.bookingEnabled(),
                 new Store(store.id(), store.name(), store.logoUrl(), store.rating(), store.businessType()),

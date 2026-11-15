@@ -11,7 +11,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 /**
  * Cita vista por el comprador o por el almacén. Fechas con la zona de Bogotá. {@code buyer} solo se incluye en el
  * portal; en una cita cancelada, rechazada o vencida el portal no recibe {@code contactPhone}, {@code buyer.phone} ni la
- * placa. {@code promotion} es nula hasta que existan promociones de servicios.
+ * placa. {@code promotion} es la promoción vigente al pedir (nula si no había).
  */
 public record Booking(
         UUID id,

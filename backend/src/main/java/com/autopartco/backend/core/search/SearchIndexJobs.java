@@ -215,6 +215,21 @@ public class SearchIndexJobs {
         submitFull(true);
     }
 
+    /** Cada 15 min: precios de servicios cuya promoción empezó o venció (lote pequeño: solo los alcanzados). */
+    @Scheduled(cron = "0 */15 * * * *", zone = "America/Bogota")
+    public void servicePromotions() {
+        execute(() -> {
+            try {
+                if (serviceIndexer.refreshPromotions() > 0) {
+                    searchService.catalogChanged();
+                }
+            } catch (RuntimeException failure) {
+                log.warn("Falló la actualización de promociones de servicios: {}",
+                        failure.getClass().getSimpleName());
+            }
+        });
+    }
+
     @EventListener(ApplicationReadyEvent.class)
     public void bootstrap() {
         if (!bootstrapEnabled) {

@@ -97,6 +97,27 @@ class BookingServiceTest {
     // --- Solicitud ----------------------------------------------------------------------------------------------------
 
     @Test
+    void requestKeepsThePromotionalPriceInForceWhenAsking() {
+        UUID promotionId = UUID.randomUUID();
+        var calculator = new com.autopartco.backend.core.pricing.PriceCalculator(
+                mock(com.autopartco.backend.core.pricing.internal.PromotionRepository.class));
+        var pricing = mock(com.autopartco.backend.core.pricing.ServicePricing.class);
+        when(pricing.current()).thenReturn(new com.autopartco.backend.core.pricing.ServicePricing.Rules(calculator,
+                java.util.List.of(new com.autopartco.backend.core.pricing.PromotionRule(promotionId,
+                        com.autopartco.backend.core.pricing.PromotionScope.STORE, STORE, "Alineación -15",
+                        com.autopartco.backend.core.pricing.PromotionTargetType.SERVICE, SERVICE, null, null, null,
+                        com.autopartco.backend.core.pricing.PromotionDiscountType.PERCENTAGE, new BigDecimal("15"),
+                        com.autopartco.backend.core.pricing.PromotionAudience.ALL, null, null))));
+        BookingService priced = new BookingService(repository, catalog, accountLookup, auditService, events, CLOCK,
+                pricing);
+
+        Booking created = priced.request(BUYER_EMAIL, request("2026-11-17T09:00", null));
+
+        assertThat(created.quotedPrice()).isEqualByComparingTo(new BigDecimal("51000"));
+        assertThat(created.promotion().id()).isEqualTo(promotionId);
+    }
+
+    @Test
     void requestCreatesARequestedBookingWithQuotedPriceAndProfilePhone() {
         Booking created = service.request(BUYER_EMAIL, request("2026-11-17T09:00", null));
 

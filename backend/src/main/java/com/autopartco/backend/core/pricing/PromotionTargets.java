@@ -18,6 +18,12 @@ public interface PromotionTargets {
 
     boolean storeExists(UUID storeId);
 
+    /** Almacén dueño del servicio (activo o no) con ese ID. */
+    Optional<UUID> findServiceStore(UUID serviceId);
+
+    /** {@code key} es el nombre de una categoría de servicio. */
+    boolean serviceCategoryExists(String key);
+
     record TargetProduct(UUID productId, UUID storeId) {
     }
 }
