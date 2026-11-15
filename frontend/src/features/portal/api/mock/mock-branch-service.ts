@@ -40,6 +40,7 @@ export function createMockBranchService(): BranchService {
           longitude: input.location.longitude ?? null,
           approximate: input.location.approximate ?? false,
         },
+        openingHours: input.openingHours ?? null,
       }
       store.branches.push(branch)
       return structuredClone(branch)
@@ -53,6 +54,7 @@ export function createMockBranchService(): BranchService {
       if (!branch) throw notFound()
       if (input.name !== undefined) branch.name = input.name
       if (input.numberPhone !== undefined) branch.numberPhone = input.numberPhone
+      if (input.openingHours !== undefined) branch.openingHours = Object.keys(input.openingHours).length > 0 ? input.openingHours : null
       if (input.location && branch.location) {
         branch.location = {
           ...branch.location,

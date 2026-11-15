@@ -550,6 +550,8 @@ export interface Branch {
   numberPhone: string
   state: string
   location: BranchLocation | null
+  /** Horario semanal `{mon: [["08:00","18:00"]], …, notes}`; ausente o vacío = sin horario publicado. */
+  openingHours?: Record<string, unknown> | null
 }
 
 /** `BranchCreateRequest` / `BranchUpdateRequest` (en la edición, los campos son opcionales). */
@@ -568,6 +570,8 @@ export interface BranchInput {
     longitude?: number
     approximate?: boolean
   }
+  /** Al crear, omitido = sin horario. Al editar, `{}` borra el horario y omitido lo conserva. */
+  openingHours?: Record<string, unknown>
 }
 
 // ----------------------------------------------------------------- equipo

@@ -42,12 +42,25 @@ public class ServiceSearchIndexer {
     static final String IDS_PLACEHOLDER = "{ids}";
     static final String CATEGORY_TEXT_PLACEHOLDER = "{categoryText}";
 
+    /**
+     * La sede tiene horario semanal (algún día con franjas), en el formato oficial ({@code "mon": [["08:00","18:00"]]})
+     * o en el heredado ({@code "lunes": "08:00-18:00"}). Sin horario no hay franjas que agendar: el servicio se indexa
+     * sin agenda en esa sede.
+     */
+    static final String WEEKLY_HOURS_SQL = """
+            (b.opening_hours is not null and exists (
+                select 1 from jsonb_each(b.opening_hours) d(k, v)
+                where (d.k in ('mon','tue','wed','thu','fri','sat','sun')
+                       and jsonb_typeof(d.v) = 'array' and jsonb_array_length(d.v) > 0)
+                   or (d.k in ('lunes','martes','miercoles','jueves','viernes','sabado','domingo')
+                       and jsonb_typeof(d.v) = 'string' and (d.v #>> '{}') ~ '^[0-9]{2}:[0-9]{2}-[0-9]{2}:[0-9]{2}')))""";
+
     static final String UPSERT_SQL = """
             insert into search_services (service_key, service_id, branch_id, store_id, category, name, price_from,
                 base_price_from, has_promotion, booking_enabled, city_code, department_code, latitude, longitude,
                 store_rating, document, search_text, updated_at)
             select ss.id::text || ':' || sb.branch_id::text, ss.id, sb.branch_id, ss.store_id, ss.category, ss.name,
-                   ss.price_from, ss.price_from, false, ss.booking_enabled,
+                   ss.price_from, ss.price_from, false, ss.booking_enabled and {weeklyHours},
                    l.municipality_code, gm.department_code,
                    case when l.latitude is not null and l.longitude is not null then l.latitude::double precision end,
                    case when l.latitude is not null and l.longitude is not null then l.longitude::double precision end,
@@ -79,7 +92,7 @@ public class ServiceSearchIndexer {
                 city_code = excluded.city_code, department_code = excluded.department_code,
                 latitude = excluded.latitude, longitude = excluded.longitude, store_rating = excluded.store_rating,
                 document = excluded.document, search_text = excluded.search_text, updated_at = excluded.updated_at
-            """.replace(CATEGORY_TEXT_PLACEHOLDER, categoryTextSql());
+            """.replace(CATEGORY_TEXT_PLACEHOLDER, categoryTextSql()).replace("{weeklyHours}", WEEKLY_HOURS_SQL);
 
     /** Lo que esta transacción no tocó ({@code updated_at < now()}) de los servicios del lote: ya no es visible. */
     static final String DELETE_STALE_SQL =
