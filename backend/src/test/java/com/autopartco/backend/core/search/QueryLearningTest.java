@@ -139,13 +139,13 @@ class QueryLearningTest {
     }
 
     @Test
-    void winnerNeedsThreeClicksAndHalfOfTheClicksOfTheQuery() {
-        learn("pocos", Map.of(PRODUCT_A, 2));
-        learn("justo", Map.of(PRODUCT_A, 3));
+    void winnerNeedsFiveSessionsAndHalfOfTheSessionsOfTheQuery() {
+        learn("pocos", Map.of(PRODUCT_A, 4));
+        learn("justo", Map.of(PRODUCT_A, 5));
         learn("mayoria", Map.of(PRODUCT_A, 6, PRODUCT_B, 4));
-        learn("mitad", Map.of(PRODUCT_A, 4, PRODUCT_B, 2, PRODUCT_C, 2));
-        learn("repartido", Map.of(PRODUCT_A, 3, PRODUCT_B, 2, PRODUCT_C, 2));
-        learn("empate", Map.of(PRODUCT_A, 3, PRODUCT_B, 3));
+        learn("mitad", Map.of(PRODUCT_A, 5, PRODUCT_B, 3, PRODUCT_C, 2));
+        learn("repartido", Map.of(PRODUCT_A, 5, PRODUCT_B, 4, PRODUCT_C, 3));
+        learn("empate", Map.of(PRODUCT_A, 5, PRODUCT_B, 5));
 
         job.learn();
 
@@ -159,6 +159,23 @@ class QueryLearningTest {
         assertThat(learning.categoryFor(null)).isEmpty();
         // La clave se normaliza igual que marketplace_searches.query_normalized.
         assertThat(learning.categoryFor("  JUSTÓ  ")).contains(CAT_A);
+    }
+
+    @Test
+    void manyClicksFromOneSessionDoNotWinTheCategory() {
+        String session = "atacante";
+        for (int i = 0; i < 20; i++) {
+            click(search("pastillas", 4, "now()", session), PRODUCT_A, "now()");
+        }
+        UUID sinSesion = search("pastillas", 4, "now()", null);
+        for (UUID product : List.of(PRODUCT_A, PRODUCT_B, PRODUCT_C)) {
+            click(sinSesion, product, "now()");
+        }
+
+        job.learn();
+
+        assertThat(rows()).containsEntry("pastillas|" + CAT_A, List.of(1, 21));
+        assertThat(learning.categoryFor("pastillas")).isEmpty();
     }
 
     @Test
@@ -190,10 +207,16 @@ class QueryLearningTest {
         });
     }
 
+    /** Una búsqueda de una sesión propia (cada búsqueda, un votante distinto). */
     private static UUID search(String query, int results, String occurredAt) {
+        return search(query, results, occurredAt, UUID.randomUUID().toString());
+    }
+
+    private static UUID search(String query, int results, String occurredAt, String session) {
         UUID id = UUID.randomUUID();
-        jdbc.update("insert into marketplace_searches (id, occurred_at, query_text, query_normalized, results_count, "
-                + "authenticated) values (?, " + occurredAt + ", ?, ?, ?, false)", id, query, query, results);
+        jdbc.update("insert into marketplace_searches (id, occurred_at, session_hash, query_text, query_normalized, "
+                + "results_count, authenticated) values (?, " + occurredAt + ", ?, ?, ?, ?, false)", id, session, query,
+                query, results);
         return id;
     }
 

@@ -24,12 +24,14 @@ public class QueryLearningJob {
             INSERT INTO search_query_category (normalized_query, category_id, clicks, impressions, updated_at)
             SELECT k.query_normalized, k.category_id, k.clicks, coalesce(q.impressions, 0), now()
             FROM (
-                SELECT s.query_normalized, p.category_id, count(*) AS clicks
+                -- Un voto por sesión (consulta × categoría): muchos clics de una misma sesión no envenenan el orden.
+                SELECT s.query_normalized, p.category_id, count(DISTINCT s.session_hash) AS clicks
                 FROM search_clicks c
                 JOIN marketplace_searches s ON s.id = c.search_id
                 JOIN products p ON p.id = c.product_id
                 WHERE c.created_at >= now() - interval '90 days'
                   AND s.query_normalized IS NOT NULL AND p.category_id IS NOT NULL
+                  AND s.session_hash IS NOT NULL
                 GROUP BY s.query_normalized, p.category_id
             ) k
             LEFT JOIN (

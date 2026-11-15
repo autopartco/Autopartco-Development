@@ -19,14 +19,15 @@ import lombok.extern.slf4j.Slf4j;
  * {@link SearchDictionary}) y al terminar el job nocturno ({@link #reload()}). Si la carga falla se sigue con el último
  * mapa (o uno vacío): el aprendizaje nunca rompe la búsqueda.
  * <p>
- * Gana la categoría con al menos {@value #MIN_CLICKS} clics y al menos el {@code 50 %} de los clics de la consulta; si
- * dos categorías empatan en el primer puesto, no gana ninguna.
+ * {@code clicks} cuenta sesiones distintas ({@link QueryLearningJob}), no clics. Gana la categoría con al menos
+ * {@value #MIN_CLICKS} sesiones y al menos el {@code 50 %} de las de la consulta; si dos categorías empatan en el primer
+ * puesto, no gana ninguna.
  */
 @Slf4j
 @Component
 public class QueryLearning {
     static final long TTL_NANOS = 3_600_000_000_000L;
-    static final int MIN_CLICKS = 3;
+    static final int MIN_CLICKS = 5;
 
     static final String WINNERS_SQL = """
             select normalized_query, category_id
@@ -38,8 +39,8 @@ public class QueryLearning {
                 from search_query_category
                 where clicks > 0
             ) t
-            where rnk = 1 and clicks >= 3 and clicks * 2 >= total and (nxt is null or nxt < clicks)
-            """;
+            where rnk = 1 and clicks >= %d and clicks * 2 >= total and (nxt is null or nxt < clicks)
+            """.formatted(MIN_CLICKS);
 
     private final JdbcClient jdbcClient;
     private volatile Map<String, UUID> winners;
