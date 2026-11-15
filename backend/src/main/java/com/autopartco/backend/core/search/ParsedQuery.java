@@ -14,6 +14,12 @@ import com.autopartco.backend.core.organization.ServiceCategory;
  * los grupos del {@code tsquery} sin palabras vacías, para el respaldo «cualquier palabra»; {@code vehicleTsQuery}
  * ({@code marca | modelo}) y {@code modelTsQuery} buscan el vehículo reconocido en el texto del producto. Mismo
  * alfabeto que {@code tsQuery}.
+ * <p>
+ * Años: {@code yearFrom}–{@code yearTo} es lo que se pidió («2015» → 2015–2015; «2010-2015» u «08-13» → el rango).
+ * {@code year} es la única pista que admite {@link SearchCriteria.Hints}: el año medio del rango (redondeado hacia
+ * abajo), el punto que más probablemente cae dentro del rango de un producto que se solapa con el pedido (un extremo
+ * falla con los productos que solo cubren el otro lado). {@code corrections} son las palabras corregidas
+ * (ortografía, marca o modelo mal escritos), en orden; las {@code words} ya van corregidas.
  */
 public record ParsedQuery(
         String normalized,
@@ -27,10 +33,17 @@ public record ParsedQuery(
         List<String> anyTerms,
         String vehicleTsQuery,
         String modelTsQuery,
-        ServiceCategory serviceCategory
+        ServiceCategory serviceCategory,
+        Integer yearFrom,
+        Integer yearTo,
+        List<Correction> corrections
 ) {
     public static final ParsedQuery EMPTY = new ParsedQuery(null, List.of(), null, null, null, null, null, null,
             List.of(), null, null);
+
+    /** Una palabra de la consulta reemplazada por la del catálogo. */
+    public record Correction(String from, String to) {
+    }
 
     /** Sin intención de servicio. */
     public ParsedQuery(String normalized, List<String> words, String tsQuery, String reference,
@@ -40,9 +53,18 @@ public record ParsedQuery(
                 null);
     }
 
+    /** Año único (o ninguno) y sin correcciones. */
+    public ParsedQuery(String normalized, List<String> words, String tsQuery, String reference,
+            SearchDictionary.Make make, SearchDictionary.Model model, Integer year, SearchDictionary.City city,
+            List<String> anyTerms, String vehicleTsQuery, String modelTsQuery, ServiceCategory serviceCategory) {
+        this(normalized, words, tsQuery, reference, make, model, year, city, anyTerms, vehicleTsQuery, modelTsQuery,
+                serviceCategory, year, year, List.of());
+    }
+
     public ParsedQuery {
         words = words == null ? List.of() : List.copyOf(words);
         anyTerms = anyTerms == null ? List.of() : List.copyOf(anyTerms);
+        corrections = corrections == null ? List.of() : List.copyOf(corrections);
     }
 
     /** {@code grupo | grupo | …} de las palabras de contenido, o {@code null} si son menos de dos. */
@@ -80,7 +102,9 @@ public record ParsedQuery(
                 city == null ? null : city.code(),
                 city == null ? null : city.name(),
                 reference,
-                serviceCategory);
+                serviceCategory,
+                corrections,
+                SearchInterpretation.Relaxed.NONE);
         return interpretation.recognizedSomething() ? interpretation : null;
     }
 }

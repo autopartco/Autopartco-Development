@@ -119,6 +119,9 @@ public class SearchResultCache {
         add(key, "hcity", hints.cityCode());
         add(key, "hvts", hints.vehicleTsQuery());
         add(key, "hmts", hints.modelTsQuery());
+        // Categoría aprendida de los clics: cambia el orden, así que una consulta cuyo aprendizaje cambió no reutiliza
+        // la página ordenada con el aprendizaje anterior (la entrada vieja expira sola con el TTL).
+        add(key, "hcat", hints.learnedCategoryId());
         add(key, "page", query.pageOrDefault());
         add(key, "size", query.sizeOrDefault());
         add(key, "facets", query.facetsOrDefault());

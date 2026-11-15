@@ -33,8 +33,11 @@ import lombok.extern.slf4j.Slf4j;
  * Motor de búsqueda del marketplace sobre {@code search_listings} ({@link SearchSql}). La consulta SQL filtra, ordena,
  * deja un listado por producto y pagina; después solo la página se hidrata con {@link ListingQueries} (precio del
  * comprador y {@link ProductResponse}), de modo que las reglas de publicación y precio no se duplican. Lo interpretado
- * de {@code q} ordena pero no filtra ({@link SearchCriteria.Hints}). Si ningún producto tiene todas las palabras, se
- * repite con cualquiera de ellas ({@code fuzzy=false}); si tampoco, con trigramas y se marca {@code fuzzy}.
+ * de {@code q} ordena ({@link SearchCriteria.Hints}); la marca interpretada además descarta lo que es de otro
+ * vehículo. Una sola sentencia por página (con las facetas, si no hay filtros de faceta), sin cascada: la cobertura de
+ * las palabras decide qué entra ({@link SearchSql}). Solo si no devuelve nada, una única consulta por trigramas como
+ * último recurso ({@code fuzzy=true}). Si con marca interpretada ningún resultado es compatible con ella ni la menciona,
+ * {@code interpreted.relaxed = VEHICLE}.
  */
 @Slf4j
 @Service
@@ -43,6 +46,10 @@ public class SearchService {
     public static final int MAX_CATALOG_SIZE = 10_000;
     static final long READY_RECHECK_NANOS = 30_000_000_000L;
     static final String HAS_ENTRIES_SQL = "select exists (select 1 from search_listings)";
+    /** Nivel de vehículo mínimo (menciona la marca) para no marcar {@code relaxed = VEHICLE}. */
+    static final int MIN_VEHICLE_LEVEL = 2;
+    static final SearchResult.Facets EMPTY_FACETS = new SearchResult.Facets(List.of(), List.of(), List.of(),
+            new SearchResult.PriceRange(null, null), 0, 0);
 
     /** Anuncios {@code SEARCH_TOP} por página (cupo de la ubicación). */
     static final int SPONSORED_PER_PAGE = AdPlacement.SEARCH_TOP.slots();
@@ -87,6 +94,7 @@ public class SearchService {
     private final AdServer adServer;
     private final SearchResultCache resultCache;
     private HomeFacts homeFacts;
+    private QueryLearning queryLearning;
     private final AtomicBoolean ready = new AtomicBoolean();
     private final AtomicLong lastReadyCheck = new AtomicLong(Long.MIN_VALUE);
 
@@ -168,7 +176,7 @@ public class SearchService {
     private SearchResult run(SearchQuery query, BuyerContext buyer, boolean withAds, String visitorKey) {
         BuyerContext effectiveBuyer = buyer == null ? BuyerContext.anonymous() : buyer;
         ParsedQuery parsed = parser.parse(query.q(), query.interpretOrDefault());
-        SearchCriteria criteria = SearchCriteria.of(query, parsed);
+        SearchCriteria criteria = learned(SearchCriteria.of(query, parsed), query);
         int page = query.pageOrDefault();
         int size = query.sizeOrDefault();
         // Solo /search pasa por la caché (el catálogo compatible pide páginas de hasta 10 000 y ya tiene la suya).
@@ -180,28 +188,43 @@ public class SearchService {
         List<SearchResult.Sponsored> sponsored = withAds
                 ? sponsored(criteria, parsed, organic.items(), effectiveBuyer, visitorKey)
                 : List.of();
+        // El identificador de la búsqueda se genera aquí, después de la caché: dos respuestas iguales nunca lo comparten.
         return new SearchResult(organic.items(), page, size, organic.total(), organic.fuzzy(), organic.interpreted(),
-                organic.facets(), sponsored);
+                organic.facets(), sponsored, withAds ? UUID.randomUUID() : null);
+    }
+
+    /**
+     * Añade la categoría que los compradores eligen para esta consulta ({@link QueryLearning}, búsqueda en memoria:
+     * ninguna sentencia SQL). Solo ordena, y no se usa si el cliente ya filtró por categoría. Forma parte de la clave
+     * de {@link SearchResultCache} (pista {@code hcat}), así que si el aprendizaje cambia, la consulta deja de leer su
+     * entrada anterior sin esperar al TTL.
+     */
+    private SearchCriteria learned(SearchCriteria criteria, SearchQuery query) {
+        if (queryLearning == null || query.categoryId() != null) {
+            return criteria;
+        }
+        UUID category = queryLearning.categoryFor(query.q()).orElse(null);
+        return category == null ? criteria : criteria.withLearnedCategory(category);
+    }
+
+    /** Aprendizaje de los clics (opcional: sin él no hay categoría aprendida). */
+    @Autowired(required = false)
+    void setQueryLearning(QueryLearning queryLearning) {
+        this.queryLearning = queryLearning;
     }
 
     private SearchResultCache.Organic organic(SearchQuery query, ParsedQuery parsed, SearchCriteria exact, int page,
             int size, BuyerContext buyer) {
         SearchCriteria criteria = exact;
-        Page found = fetch(criteria, page, size);
+        boolean withFacets = query.facetsOrDefault();
+        Page found = fetch(criteria, page, size, withFacets);
         boolean fuzzy = false;
-        if (found.total() == 0 && criteria.tsQuery() != null && parsed.anyTsQuery() != null) {
-            // Ninguno tiene todas las palabras: cualquiera de ellas (sin palabras vacías), antes que los trigramas.
-            SearchCriteria anyWord = criteria.anyWord(parsed.anyTerms());
-            Page anyPage = fetch(anyWord, page, size);
-            if (anyPage.total() > 0) {
-                criteria = anyWord;
-                found = anyPage;
-            }
-        }
         if (found.total() == 0 && parsed.hasText() && parsed.fuzzyText() != null) {
+            // Último recurso, una sola vez: trigramas sobre el texto ya corregido, con los mismos filtros y la misma
+            // exclusión de vehículo. Cubre sinónimos que faltan («embrague», «faros») y palabras de más.
             SearchCriteria similar = criteria.fuzzy(parsed.fuzzyText());
             jdbcClient.sql(SearchSql.FUZZY_THRESHOLD_SQL).query(String.class).single();
-            Page similarPage = fetch(similar, page, size);
+            Page similarPage = fetch(similar, page, size, withFacets);
             if (similarPage.total() > 0) {
                 criteria = similar;
                 found = similarPage;
@@ -209,8 +232,16 @@ public class SearchService {
             }
         }
         List<SearchResult.Hit> items = hydrate(found.rows(), buyer);
-        SearchResult.Facets facets = query.facetsOrDefault() ? facets(criteria) : null;
+        // Sin filtros de faceta, las facetas vienen en la misma sentencia que la página ({@link SearchSql#page}).
+        SearchResult.Facets facets = !withFacets ? null
+                : found.facets() != null ? found.facets()
+                : found.total() == 0 && !criteria.hasFacetFilter() ? EMPTY_FACETS : facets(criteria);
         SearchInterpretation interpreted = query.interpretOrDefault() ? parsed.interpretation() : null;
+        // Marca interpretada (siempre hay interpretación) sin ningún resultado compatible ni que la mencione.
+        if (interpreted != null && criteria.hints().makeId() != null && !found.rows().isEmpty()
+                && found.bestLevel() < MIN_VEHICLE_LEVEL) {
+            interpreted = interpreted.withRelaxed(SearchInterpretation.Relaxed.VEHICLE);
+        }
         return new SearchResultCache.Organic(items, found.total(), fuzzy, interpreted, facets);
     }
 
@@ -357,12 +388,12 @@ public class SearchService {
     }
 
     /**
-     * Fila de la página: listado elegido, distancia (si hay ubicación), calificación del producto del índice y total
-     * de productos de la búsqueda.
+     * Fila de la página: listado elegido, distancia (si hay ubicación), calificación del producto del índice, total
+     * de productos de la búsqueda y mejor nivel de vehículo del conjunto.
      */
-    record Row(UUID productId, UUID branchId, Double distanceKm, long total, Rating rating) {
+    record Row(UUID productId, UUID branchId, Double distanceKm, long total, Rating rating, int bestLevel) {
         Row(UUID productId, UUID branchId, Double distanceKm, long total) {
-            this(productId, branchId, distanceKm, total, null);
+            this(productId, branchId, distanceKm, total, null, 0);
         }
     }
 
@@ -373,27 +404,55 @@ public class SearchService {
         }
     }
 
-    record Page(List<Row> rows, long total) {
+    /** Página, total y, si vinieron en la misma sentencia, las facetas (si no, {@code null}). */
+    record Page(List<Row> rows, long total, SearchResult.Facets facets) {
+        Page(List<Row> rows, long total) {
+            this(rows, total, null);
+        }
+
+        int bestLevel() {
+            return rows.isEmpty() ? 0 : rows.getFirst().bestLevel();
+        }
     }
 
     Page fetch(SearchCriteria criteria, int page, int size) {
-        SearchSql.Statement statement = SearchSql.page(criteria, size, (long) page * size);
+        return fetch(criteria, page, size, false);
+    }
+
+    /**
+     * Página de {@code criteria}. Con {@code withFacets} y sin filtros de faceta, la misma sentencia trae las facetas
+     * ({@link SearchSql#pageWithFacets}): filas {@code part = 0} de la página y {@code part = 1} de las facetas.
+     */
+    Page fetch(SearchCriteria criteria, int page, int size, boolean withFacets) {
+        boolean combined = withFacets && !criteria.hasFacetFilter();
+        SearchSql.Statement statement = combined
+                ? SearchSql.pageWithFacets(criteria, size, (long) page * size)
+                : SearchSql.page(criteria, size, (long) page * size);
+        FacetReader reader = combined ? new FacetReader() : null;
         List<Row> rows = jdbcClient.sql(statement.sql())
                 .params(statement.params())
                 .query((rs, rowNum) -> {
+                    if (reader != null && rs.getInt("part") == 1) {
+                        reader.accept(rs);
+                        return null;
+                    }
                     double distance = rs.getDouble("distance_km");
                     Double km = rs.wasNull() ? null : distance;
                     return new Row(rs.getObject("product_id", UUID.class), rs.getObject("branch_id", UUID.class), km,
                             rs.getLong("total"), new Rating(rs.getBigDecimal("product_rating"),
-                                    rs.getInt("product_review_count")));
+                                    rs.getInt("product_review_count")), rs.getInt("best_level"));
                 })
-                .list();
+                .list()
+                .stream()
+                .filter(java.util.Objects::nonNull)
+                .toList();
+        SearchResult.Facets facets = reader == null ? null : reader.facets();
         if (rows.isEmpty() && page > 0) {
             SearchSql.Statement count = SearchSql.count(criteria);
             Long counted = jdbcClient.sql(count.sql()).params(count.params()).query(Long.class).single();
-            return new Page(List.of(), counted == null ? 0 : counted);
+            return new Page(List.of(), counted == null ? 0 : counted, facets);
         }
-        return new Page(rows, rows.isEmpty() ? 0 : rows.getFirst().total());
+        return new Page(rows, rows.isEmpty() ? 0 : rows.getFirst().total(), facets);
     }
 
     private List<SearchResult.Hit> hydrate(List<Row> rows, BuyerContext buyer) {
@@ -422,44 +481,56 @@ public class SearchService {
 
     SearchResult.Facets facets(SearchCriteria criteria) {
         SearchSql.Statement statement = SearchSql.facets(criteria);
-        List<SearchResult.IdCount> categories = new ArrayList<>();
-        List<SearchResult.IdCount> manufacturers = new ArrayList<>();
-        List<SearchResult.CityCount> cities = new ArrayList<>();
-        BigDecimal[] price = new BigDecimal[2];
-        long[] flags = new long[2];
+        FacetReader reader = new FacetReader();
         jdbcClient.sql(statement.sql()).params(statement.params()).query((rs, rowNum) -> {
-            boolean byCategory = rs.getInt("g_category") == 0;
-            boolean byManufacturer = rs.getInt("g_manufacturer") == 0;
-            boolean byCity = rs.getInt("g_city") == 0;
-            if (byCategory) {
+            reader.accept(rs);
+            return rowNum;
+        }).list();
+        return reader.facets();
+    }
+
+    /** Acumula las filas de facetas ({@code grouping sets}): un grupo por fila, el vacío con precio y banderas. */
+    private static final class FacetReader {
+        private final List<SearchResult.IdCount> categories = new ArrayList<>();
+        private final List<SearchResult.IdCount> manufacturers = new ArrayList<>();
+        private final List<SearchResult.CityCount> cities = new ArrayList<>();
+        private BigDecimal priceMin;
+        private BigDecimal priceMax;
+        private long inStock;
+        private long onSale;
+
+        void accept(java.sql.ResultSet rs) throws java.sql.SQLException {
+            if (rs.getInt("g_category") == 0) {
                 UUID id = rs.getObject("category_id", UUID.class);
                 long count = rs.getLong("n_category");
                 if (id != null && count > 0) {
                     categories.add(new SearchResult.IdCount(id, rs.getString("category_name"), count));
                 }
-            } else if (byManufacturer) {
+            } else if (rs.getInt("g_manufacturer") == 0) {
                 UUID id = rs.getObject("manufacturer_id", UUID.class);
                 long count = rs.getLong("n_manufacturer");
                 if (id != null && count > 0) {
                     manufacturers.add(new SearchResult.IdCount(id, rs.getString("manufacturer_name"), count));
                 }
-            } else if (byCity) {
+            } else if (rs.getInt("g_city") == 0) {
                 String code = rs.getString("city_code");
                 long count = rs.getLong("n_city");
                 if (code != null && count > 0) {
                     cities.add(new SearchResult.CityCount(code.strip(), rs.getString("city_name"), count));
                 }
             } else {
-                price[0] = rs.getBigDecimal("price_min");
-                price[1] = rs.getBigDecimal("price_max");
-                flags[0] = rs.getLong("n_in_stock");
-                flags[1] = rs.getLong("n_on_sale");
+                priceMin = rs.getBigDecimal("price_min");
+                priceMax = rs.getBigDecimal("price_max");
+                inStock = rs.getLong("n_in_stock");
+                onSale = rs.getLong("n_on_sale");
             }
-            return rowNum;
-        }).list();
-        return new SearchResult.Facets(top(categories, SearchResult.IdCount::count),
-                top(manufacturers, SearchResult.IdCount::count), top(cities, SearchResult.CityCount::count),
-                new SearchResult.PriceRange(price[0], price[1]), flags[0], flags[1]);
+        }
+
+        SearchResult.Facets facets() {
+            return new SearchResult.Facets(top(categories, SearchResult.IdCount::count),
+                    top(manufacturers, SearchResult.IdCount::count), top(cities, SearchResult.CityCount::count),
+                    new SearchResult.PriceRange(priceMin, priceMax), inStock, onSale);
+        }
     }
 
     private static <T> List<T> top(List<T> values, java.util.function.ToLongFunction<T> count) {

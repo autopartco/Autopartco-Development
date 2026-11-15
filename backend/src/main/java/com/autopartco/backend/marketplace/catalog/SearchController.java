@@ -210,7 +210,7 @@ public class SearchController {
                 categoryId,
                 cityCode != null ? cityCode : interpreted == null ? null : interpreted.cityCode(),
                 (int) Math.min(Integer.MAX_VALUE, result.total()), sessionId,
-                CatalogTracking.isAuthenticated(authentication)));
+                CatalogTracking.isAuthenticated(authentication), result.searchId()));
         CatalogTracking.recordExposures(exposureRecorder, buyer,
                 result.items().stream().map(SearchResult.Hit::listing).toList());
         SearchResponse body = SearchResponse.of(result);
