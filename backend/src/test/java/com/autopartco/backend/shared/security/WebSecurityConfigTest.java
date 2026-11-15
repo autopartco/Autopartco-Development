@@ -93,6 +93,7 @@ class WebSecurityConfigTest {
                 Arguments.of(HttpMethod.POST, BASE + "/staff-invitations/accept"),
                 Arguments.of(HttpMethod.GET, BASE + "/plans"),
                 Arguments.of(HttpMethod.GET, BASE + "/marketplace/stores"),
+                Arguments.of(HttpMethod.GET, BASE + "/marketplace/stores/search"),
                 Arguments.of(HttpMethod.GET, BASE + "/marketplace/stores/" + ID + "/brand/logo"),
                 Arguments.of(HttpMethod.GET, BASE + "/marketplace/stores/" + ID + "/branches"),
                 Arguments.of(HttpMethod.GET, BASE + "/marketplace/services/search"),
