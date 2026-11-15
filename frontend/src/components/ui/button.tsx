@@ -76,15 +76,31 @@ function Button({
       aria-busy={loading || undefined}
       {...props}
     >
-      {covered ? (
+      {loadingText ? (
+        // Contenido y texto de progreso apilados en la misma celda: el botón mide lo que mida el más ancho, así
+        // «Ingresando…» con su spinner nunca se recorta ni el botón cambia de ancho al empezar la carga.
+        <span className="grid place-items-center">
+          <span
+            className={cn("col-start-1 row-start-1 inline-flex items-center justify-center gap-2", covered && "invisible")}
+          >
+            {children}
+          </span>
+          <span
+            className={cn("col-start-1 row-start-1 inline-flex items-center justify-center gap-2", !loading && "invisible")}
+            role={loading ? "status" : undefined}
+            aria-hidden={loading ? undefined : true}
+          >
+            <LoaderCircleIcon className="ap-spinner ap-live size-4 shrink-0" aria-hidden />
+            {loadingText}
+          </span>
+          {success ? (
+            <CheckIcon className="ap-check-in ap-live col-start-1 row-start-1 size-4" aria-hidden />
+          ) : null}
+        </span>
+      ) : covered ? (
         <>
           <span className="contents invisible">{children}</span>
-          {loading && loadingText ? (
-            <span className="absolute inset-0 inline-flex items-center justify-center gap-2 px-3" role="status">
-              <LoaderCircleIcon className="ap-spinner ap-live size-4 shrink-0" aria-hidden />
-              {loadingText}
-            </span>
-          ) : loading ? (
+          {loading ? (
             <LoaderCircleIcon
               className="ap-spinner ap-live absolute top-1/2 left-1/2 size-4 -translate-x-1/2 -translate-y-1/2"
               aria-hidden
