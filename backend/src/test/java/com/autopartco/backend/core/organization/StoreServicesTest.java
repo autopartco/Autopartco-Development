@@ -29,8 +29,10 @@ class StoreServicesTest {
     private final OfferedServiceRepository serviceRepository = mock(OfferedServiceRepository.class);
     private final BranchRepository branchRepository = mock(BranchRepository.class);
     private final StoreRepository storeRepository = mock(StoreRepository.class);
+    private final com.autopartco.backend.core.organization.internal.StoreFileStorage fileStorage =
+            mock(com.autopartco.backend.core.organization.internal.StoreFileStorage.class);
     private final StoreServices services = new StoreServices(serviceRepository, branchRepository, storeRepository,
-            mock(org.springframework.context.ApplicationEventPublisher.class));
+            mock(org.springframework.context.ApplicationEventPublisher.class), fileStorage);
     private final UUID storeId = UUID.randomUUID();
     private final UUID branchA = UUID.randomUUID();
     private final UUID branchB = UUID.randomUUID();

@@ -38,6 +38,7 @@ public class StoreServices {
     private final BranchRepository branchRepository;
     private final StoreRepository storeRepository;
     private final ApplicationEventPublisher events;
+    private final com.autopartco.backend.core.organization.internal.StoreFileStorage fileStorage;
 
     @Transactional(readOnly = true)
     public List<StoreServiceView> list(UUID storeId, boolean includeInactive) {
@@ -95,6 +96,39 @@ public class StoreServices {
         return toView(saved);
     }
 
+    /**
+     * Reemplaza ({@code file} no nulo) o quita la imagen del servicio. La imagen va al bucket público (como las de
+     * producto) y se guarda su URL; la anterior se borra después del commit lógico (best-effort).
+     *
+     * @return la vista con la nueva {@code imageUrl}
+     */
+    @Transactional
+    public StoreServiceView replaceImage(UUID storeId, UUID serviceId, org.springframework.web.multipart.MultipartFile file) {
+        OfferedService service = find(storeId, serviceId);
+        String previous = service.getImageUrl();
+        String uploadedPath = null;
+        if (file != null) {
+            uploadedPath = fileStorage.uploadServiceImage(storeId, serviceId, file);
+            service.setImageUrl(fileStorage.publicUrl(uploadedPath));
+        } else {
+            service.setImageUrl(null);
+        }
+        OfferedService saved;
+        try {
+            saved = serviceRepository.saveAndFlush(service);
+        } catch (RuntimeException failure) {
+            if (uploadedPath != null) {
+                fileStorage.deletePublicQuietly(uploadedPath);
+            }
+            throw failure;
+        }
+        if (previous != null) {
+            fileStorage.deletePublicUrlQuietly(previous);
+        }
+        events.publishEvent(ServicesChanged.of(serviceId));
+        return toView(saved);
+    }
+
     /** Desactiva el servicio (idempotente). */
     @Transactional
     public void deactivate(UUID storeId, UUID serviceId) {
@@ -118,8 +152,16 @@ public class StoreServices {
                         service.getDescription(),
                         service.getPriceFrom(),
                         service.getDurationMinutes(),
-                        service.getBranchIds().stream().filter(activeBranches::contains).sorted().toList()))
+                        service.getBranchIds().stream().filter(activeBranches::contains).sorted().toList(),
+                        service.getImageUrl(),
+                        service.isBookingEnabled()))
                 .toList();
+    }
+
+    /** Almacenes con servicios activos (de {@code category}, si no es nula). */
+    @Transactional(readOnly = true)
+    public Set<UUID> storesWithActiveServices(ServiceCategory category) {
+        return new HashSet<>(serviceRepository.findStoreIdsWithActiveServices(category));
     }
 
     /** Ids de servicios activos que presta cada sucursal. */
@@ -139,6 +181,12 @@ public class StoreServices {
         service.setDescription(blankToNull(request.description()));
         service.setPriceFrom(request.priceFrom());
         service.setDurationMinutes(request.durationMinutes());
+        if (request.bookingEnabled() != null) {
+            service.setBookingEnabled(request.bookingEnabled());
+        }
+        if (request.slotMinutes() != null) {
+            service.setSlotMinutes(request.slotMinutes());
+        }
         if (request.sortOrder() != null) {
             service.setSortOrder(request.sortOrder());
         }
@@ -186,6 +234,9 @@ public class StoreServices {
                 service.isActive(),
                 service.getSortOrder(),
                 service.getBranchIds().stream().sorted().toList(),
-                service.getVersion());
+                service.getVersion(),
+                service.getImageUrl(),
+                service.isBookingEnabled(),
+                service.getSlotMinutes());
     }
 }

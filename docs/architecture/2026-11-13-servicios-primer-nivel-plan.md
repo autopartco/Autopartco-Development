@@ -278,7 +278,26 @@ Notas de implementación:
 - **Contexto:** «Reglas de negocio → Promociones de servicios». Depende de T2 y T3.
 - **Aceptación:** `./mvnw -q test -Dtest=ServicePromotionTest,PriceCalculatorServiceTest,ServiceSearchIndexerPromotionTest` en verde: `SERVICE` de otro almacén → 400; `-15%` sobre 60 000 → `priceFrom` 51 000 y `basePriceFrom` 60 000; promoción `STORE`/`ALL` no altera servicios; al vencer, el índice vuelve al precio base; la cita guarda el precio vigente al pedir.
 
-### T5 — Home, tiendas, perfil, métricas y tipo de negocio
+### T5 — Home, tiendas, perfil, métricas y tipo de negocio ✅ (2026-11-15)
+
+Notas de implementación:
+- **`businessType`:** viaja en `StoreRegistrationRequest` (solicitud y alta de vendedor; por defecto `PARTS`) y en `PATCH /stores/{id}` (`StoreUpdateRequest`). Lo devuelven `StoreResponse`, `StoreProfileResponse`, `StorePublicProfile` y `PublicStoreSummary`. Cambiarlo reindexa los servicios del almacén.
+- **Checklist:** vive en el frontend (`publish-checklist.ts`). El backend expone `businessType` y `BusinessType.requiresProducts()` como referencia: `SERVICES` no exige productos.
+- **`GET /marketplace/stores?businessType=&serviceCategory=`:** `BOTH` aparece al filtrar por `PARTS` o `SERVICES`.
+- **Perfil público:** `services[]` es `StoreServiceItem`, con `basePriceFrom`, `promotion`, `imageUrl` y `bookingEnabled`. El precio con promoción se aplica al leer, fuera de la caché del perfil.
+- **Portal de servicios:**
+  - `bookingEnabled` y `slotMinutes` (30/60/90/120/180/240) en el request y la vista.
+  - `POST /stores/{storeId}/services/{id}/image` (multipart `file`, PNG/JPEG/WebP ≤ 5 MB) y `DELETE …/image`.
+  - La imagen va al bucket público de Storage (como las de producto) y guarda su URL, así que no se abre ninguna ruta pública nueva. La anterior se borra con best-effort.
+- **Home:** `services.categories/nearby/promoted` (≤ 8).
+  - Con área: cercanos en 50 km y, si no hay, sin radio.
+  - Sin área: ciudad del área o la de más servicios (`ServiceSearchService.topCity`).
+  - «En promoción» cae a todo el país si el área no tiene.
+  - Un fallo deja el bloque vacío sin romper la home. Va en la caché de 60 s.
+- **Métricas:**
+  - `SERVICE_VIEW` exige `serviceId` de un servicio activo del almacén.
+  - El reporte añade `serviceViews`, `topServices` (≤ 20, con vistas, clics y citas) y `bookings { requested, confirmed, completed, noShow }`. Las citas se cuentan por fecha de solicitud en Bogotá; `confirmed` incluye las completadas y las de no asistencia.
+- **Pruebas:** las 4 del criterio en verde, más las existentes afectadas.
 - **Modelo:** Sonnet · **Agente:** backend
 - **Archivos:** `marketplace/home/{HomeService,HomeResponse,HomeContent}.java`, `marketplace/stores/{StoreBrowseController,StorePublicProfile}.java`, `storesuite/store/UpdateStoreProfile.java` y registro de vendedor (`businessType`), checklist de perfil (no exige productos con `SERVICES`), `storesuite/services` (imagen, `bookingEnabled`, `slotMinutes`), `core/analytics/{VisibilityRecorder,VisibilityQueries,VisibilityReport}.java` (`SERVICE_VIEW`, `topServices`, `bookings`); tests.
 - **Contexto:** «API pública → home, stores», «API del portal», «Reglas → business_type». Depende de T2–T4.

@@ -12,6 +12,12 @@ public record PublicStoreService(
         String description,
         BigDecimal priceFrom,
         Integer durationMinutes,
-        List<UUID> branchIds
+        List<UUID> branchIds,
+        String imageUrl,
+        boolean bookingEnabled
 ) {
+    public PublicStoreService(UUID id, ServiceCategory category, String name, String description, BigDecimal priceFrom,
+            Integer durationMinutes, List<UUID> branchIds) {
+        this(id, category, name, description, priceFrom, durationMinutes, branchIds, null, false);
+    }
 }

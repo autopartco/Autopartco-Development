@@ -180,6 +180,17 @@ public class ServiceSearchService {
         return search(query).items();
     }
 
+    static final String TOP_CITY_SQL = """
+            select city_code from search_services where city_code is not null
+            group by city_code order by count(distinct service_id) desc, city_code limit 1
+            """;
+
+    /** Ciudad (DIVIPOLA) con más servicios publicados; vacío si no hay ninguno con ciudad. */
+    @Transactional(readOnly = true)
+    public Optional<String> topCity() {
+        return jdbcClient.sql(TOP_CITY_SQL).query(String.class).optional();
+    }
+
     /** Servicios por categoría (opcionalmente solo de una ciudad), de más a menos; solo categorías con servicios. */
     @Transactional(readOnly = true)
     public List<ServiceSearchResult.CategoryCount> categories(String cityCode) {

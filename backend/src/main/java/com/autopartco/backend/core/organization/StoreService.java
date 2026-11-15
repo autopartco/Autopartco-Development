@@ -81,6 +81,7 @@ public class StoreService {
                 .businessEmail(businessEmail)
                 .state(pendingState)
                 .configuration(Map.of())
+                .businessType(BusinessType.orDefault(request.businessType()))
                 .build();
 
         Store savedStore = storeRepository.save(store);
@@ -130,6 +131,10 @@ public class StoreService {
             store.setBusinessEmail(businessEmail);
         }
 
+        if (request.businessType() != null) {
+            store.setBusinessType(request.businessType());
+        }
+
         if (request.description() != null) {
             Map<String, Object> configuration = new HashMap<>(configurationOf(store));
             configuration.put(DESCRIPTION_KEY, request.description().trim());
@@ -160,7 +165,8 @@ public class StoreService {
                 description instanceof String text ? text : null,
                 StoreBrand.url(storeId, StoreBrand.LOGO, store.getLogoPath()),
                 StoreBrand.url(storeId, StoreBrand.BANNER, store.getBannerPath()),
-                PublishedStores.contact(configurationOf(store).get(PublishedStores.PUBLIC_PROFILE_KEY))
+                PublishedStores.contact(configurationOf(store).get(PublishedStores.PUBLIC_PROFILE_KEY)),
+                store.getBusinessType()
         );
     }
 
@@ -264,7 +270,8 @@ public class StoreService {
                 store.getBusinessName(),
                 store.getNit(),
                 store.getBusinessEmail(),
-                store.getState().getCode()
+                store.getState().getCode(),
+                store.getBusinessType()
         );
     }
 }

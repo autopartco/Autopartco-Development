@@ -14,6 +14,12 @@ import com.autopartco.backend.core.search.HomeFacts;
 import com.autopartco.backend.core.search.SearchQuery;
 import com.autopartco.backend.core.search.SearchResult;
 import com.autopartco.backend.core.search.SearchService;
+import com.autopartco.backend.core.search.ServiceHit;
+import com.autopartco.backend.core.search.ServiceSearchQuery;
+import com.autopartco.backend.core.search.ServiceSearchService;
+import com.autopartco.backend.core.search.ServiceTerms;
+import com.autopartco.backend.marketplace.services.ServiceBrowseController;
+import com.autopartco.backend.marketplace.services.ServiceCard;
 import com.autopartco.backend.core.search.SearchSort;
 import com.autopartco.backend.marketplace.catalog.SearchResponse;
 
@@ -28,26 +34,80 @@ class HomeService {
     static final int NEARBY_RADIUS_KM = 50;
     static final int POOL_SIZE = 24;
 
+    static final int SERVICES_LIMIT = 8;
+
     private final HomeFacts facts;
     private final SearchService searchService;
     private final HomeCache cache;
+    /** Nulo en pruebas sin servicios. */
+    private final ServiceSearchService serviceSearch;
 
-    HomeService(HomeFacts facts, SearchService searchService, HomeCache cache) {
+    @org.springframework.beans.factory.annotation.Autowired
+    HomeService(HomeFacts facts, SearchService searchService, HomeCache cache, ServiceSearchService serviceSearch) {
         this.facts = facts;
         this.searchService = searchService;
         this.cache = cache;
+        this.serviceSearch = serviceSearch;
+    }
+
+    HomeService(HomeFacts facts, SearchService searchService, HomeCache cache) {
+        this(facts, searchService, cache, null);
     }
 
     HomeResponse home(HomeArea area, String visitorKey) {
         HomeContent content = cache.get(area, () -> load(area));
         List<SearchResult.Sponsored> ads = searchService.featuredAds(area.cityCode(), visitorKey,
                 BuyerContext.anonymous());
+        HomeContent.Services services = content.services();
         return new HomeResponse(content.stats(), content.popularSearches(), content.categories(),
-                content.nearby().stream().map(HomeService::organic).toList(), featured(ads, content));
+                content.nearby().stream().map(HomeService::organic).toList(), featured(ads, content),
+                new HomeResponse.Services(
+                        services.categories().stream()
+                                .map(count -> new ServiceBrowseController.CategoryItem(count.category(),
+                                        ServiceTerms.label(count.category()), ServiceTerms.of(count.category()).icon(),
+                                        count.count()))
+                                .toList(),
+                        services.nearby().stream().map(ServiceCard::of).toList(),
+                        services.promoted().stream().map(ServiceCard::of).toList()));
     }
 
     private HomeContent load(HomeArea area) {
-        return new HomeContent(facts.stats(), facts.popularSearches(), facts.categories(), nearby(area), pool(area));
+        return new HomeContent(facts.stats(), facts.popularSearches(), facts.categories(), nearby(area), pool(area),
+                services(area));
+    }
+
+    /**
+     * Servicios del área. Con ubicación: los más cercanos (50 km y, si no hay, sin radio). Sin ubicación: la ciudad
+     * del área o, sin ella, la ciudad con más servicios. «En promoción» sigue el mismo criterio y cae a todo el país si
+     * el área no tiene ninguno. Un fallo deja el bloque vacío sin romper el inicio.
+     */
+    private HomeContent.Services services(HomeArea area) {
+        if (serviceSearch == null) {
+            return HomeContent.Services.EMPTY;
+        }
+        try {
+            String city = area.cityCode();
+            if (city == null && !area.located()) {
+                city = serviceSearch.topCity().orElse(null);
+            }
+            ServiceSearchQuery.ServiceSearchQueryBuilder base = ServiceSearchQuery.builder().cityCode(city)
+                    .lat(area.lat()).lng(area.lng()).page(0).size(SERVICES_LIMIT).facets(false)
+                    .sort(area.located() ? ServiceSearchQuery.Sort.NEAREST : ServiceSearchQuery.Sort.RATING);
+            List<ServiceHit> nearby = area.located()
+                    ? serviceSearch.search(base.radiusKm(NEARBY_RADIUS_KM).build()).items()
+                    : serviceSearch.search(base.build()).items();
+            if (nearby.isEmpty() && area.located()) {
+                nearby = serviceSearch.search(base.radiusKm(null).build()).items();
+            }
+            List<ServiceHit> promoted = serviceSearch.search(base.radiusKm(null).onSale(true).build()).items();
+            if (promoted.isEmpty()) {
+                promoted = serviceSearch.search(ServiceSearchQuery.builder().onSale(true).page(0)
+                        .size(SERVICES_LIMIT).facets(false).sort(ServiceSearchQuery.Sort.RATING).build()).items();
+            }
+            return new HomeContent.Services(serviceSearch.categories(city), nearby, promoted);
+        } catch (RuntimeException failure) {
+            return HomeContent.Services.EMPTY;
+        }
     }
 
     /**

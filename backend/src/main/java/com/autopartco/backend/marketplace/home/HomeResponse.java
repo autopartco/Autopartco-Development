@@ -1,5 +1,7 @@
 package com.autopartco.backend.marketplace.home;
 
+import com.autopartco.backend.marketplace.services.ServiceBrowseController;
+import com.autopartco.backend.marketplace.services.ServiceCard;
 import java.util.List;
 
 import com.autopartco.backend.core.search.HomeFacts;
@@ -15,6 +17,11 @@ public record HomeResponse(
         List<String> popularSearches,
         List<HomeFacts.CategoryCount> categories,
         List<SearchResponse.Item> nearby,
-        List<SearchResponse.Item> featured
+        List<SearchResponse.Item> featured,
+        Services services
 ) {
+    /** {@code nearby} y {@code promoted}: hasta 8 tarjetas de servicio cada uno. */
+    public record Services(List<ServiceBrowseController.CategoryItem> categories, List<ServiceCard> nearby,
+            List<ServiceCard> promoted) {
+    }
 }

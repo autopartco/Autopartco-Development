@@ -16,6 +16,12 @@ public record StoreRegistrationRequest(
         @NotBlank(message = "El correo del almacén es obligatorio.")
         @Email(message = "El correo del almacén debe tener un formato válido.")
         @Size(max = 200, message = "El correo no puede superar 200 caracteres.")
-        String businessEmail
+        String businessEmail,
+
+        /** Opcional; sin valor, {@code PARTS}. */
+        BusinessType businessType
 ) {
+    public StoreRegistrationRequest(String businessName, String nit, String businessEmail) {
+        this(businessName, nit, businessEmail, null);
+    }
 }

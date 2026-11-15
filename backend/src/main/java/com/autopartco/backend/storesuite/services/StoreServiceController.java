@@ -64,6 +64,20 @@ public class StoreServiceController {
         return manageStoreServices.update(storeId, serviceId, authentication.getName(), request);
     }
 
+    /** Imagen del servicio (multipart {@code file}: PNG, JPEG o WebP, hasta 5 MB). */
+    @PostMapping(value = "/{serviceId}/image", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+    public StoreServiceView uploadImage(@PathVariable UUID storeId, @PathVariable UUID serviceId,
+            @org.springframework.web.bind.annotation.RequestPart("file") org.springframework.web.multipart.MultipartFile file,
+            Authentication authentication) {
+        return manageStoreServices.replaceImage(storeId, serviceId, authentication.getName(), file);
+    }
+
+    @DeleteMapping("/{serviceId}/image")
+    public StoreServiceView removeImage(@PathVariable UUID storeId, @PathVariable UUID serviceId,
+            Authentication authentication) {
+        return manageStoreServices.replaceImage(storeId, serviceId, authentication.getName(), null);
+    }
+
     @DeleteMapping("/{serviceId}")
     public ResponseEntity<Void> deactivate(
             @PathVariable UUID storeId, @PathVariable UUID serviceId, Authentication authentication) {

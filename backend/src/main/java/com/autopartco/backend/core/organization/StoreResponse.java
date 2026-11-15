@@ -7,6 +7,10 @@ public record StoreResponse(
         String businessName,
         String nit,
         String businessEmail,
-        String state
+        String state,
+        BusinessType businessType
 ) {
+    public StoreResponse(UUID id, String businessName, String nit, String businessEmail, String state) {
+        this(id, businessName, nit, businessEmail, state, BusinessType.PARTS);
+    }
 }

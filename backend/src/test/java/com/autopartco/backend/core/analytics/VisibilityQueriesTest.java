@@ -52,6 +52,8 @@ class VisibilityQueriesTest {
         rows(VisibilityQueries.TOP_PRODUCTS_SQL);
         rows(VisibilityQueries.DAILY_SQL);
         rows(VisibilityQueries.BY_BRANCH_SQL);
+        rows(VisibilityQueries.TOP_SERVICES_SQL);
+        rows(VisibilityQueries.BOOKINGS_SQL);
     }
 
     @Test
