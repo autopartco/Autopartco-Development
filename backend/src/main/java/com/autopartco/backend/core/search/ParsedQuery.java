@@ -102,7 +102,9 @@ public record ParsedQuery(
                 city == null ? null : city.code(),
                 city == null ? null : city.name(),
                 reference,
-                serviceCategory);
+                serviceCategory,
+                corrections,
+                SearchInterpretation.Relaxed.NONE);
         return interpretation.recognizedSomething() ? interpretation : null;
     }
 }

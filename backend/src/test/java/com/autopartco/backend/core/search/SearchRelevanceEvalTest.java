@@ -471,6 +471,50 @@ class SearchRelevanceEvalTest {
         return found.stream().sorted().toList();
     }
 
+    // ------------------------------------------------------------------ T4: planes de la consulta única
+
+    /**
+     * {@code explain (analyze, buffers)} de la página y las facetas de tres consultas representativas (genérica, con
+     * vehículo y con referencia), en una sesión propia. Los candidatos deben salir del GIN de {@code document}; las
+     * pistas de vehículo son cruces de arreglos sobre los candidatos (sin {@code to_tsquery} de marca por fila).
+     */
+    @Test
+    void singleQueryPlansUseTheDocumentIndex() {
+        SingleConnectionDataSource session = new SingleConnectionDataSource(POSTGRES.getJdbcUrl(),
+                POSTGRES.getUsername(), POSTGRES.getPassword(), true);
+        try {
+            JdbcClient client = JdbcClient.create(session);
+            QueryParser parser = new QueryParser(new SearchDictionary(JdbcClient.create(admin)));
+            for (String q : List.of("filtro", "pastillas de freno delanteras chevrolet tracker",
+                    "bomba M89697-SAA-A14")) {
+                SearchQuery query = SearchQuery.builder().q(q).page(0).size(PAGE_SIZE).sort(SearchSort.RELEVANCE)
+                        .build();
+                SearchCriteria criteria = SearchCriteria.of(query, parser.parse(q, true));
+                for (SearchSql.Statement statement : List.of(SearchSql.pageWithFacets(criteria, PAGE_SIZE, 0),
+                        SearchSql.facets(criteria))) {
+                    String kind = statement.sql().contains("as part") ? "página y facetas" : "solo facetas";
+                    // Con 665 listados el planificador puede preferir leer la tabla entera; en producción decide el
+                    // tamaño. Primero el plan elegido y luego, sin seq scan, que el GIN de document sirve de acceso.
+                    for (boolean seqScan : List.of(true, false)) {
+                        client.sql("set enable_seqscan = " + (seqScan ? "on" : "off")).update();
+                        List<String> plan = client.sql("explain (analyze, buffers) " + statement.sql())
+                                .params(statement.params()).query(String.class).list();
+                        System.out.println("[search-eval] plan «" + q + "» (" + kind + ", seqscan "
+                                + (seqScan ? "on" : "off") + "):");
+                        plan.forEach(line -> System.out.println("[search-eval]   " + line));
+                        if (!seqScan) {
+                            assertThat(String.join("\n", plan)).as(q + " " + kind).contains("ix_sl_document")
+                                    .doesNotContain("Seq Scan on search_listings");
+                        }
+                    }
+                    assertThat(statement.sql()).as(q).doesNotContain(":vehicleTsq", ":modelTsq", "<%");
+                }
+            }
+        } finally {
+            session.destroy();
+        }
+    }
+
     // ------------------------------------------------------------------ ejecución
 
     record Run(List<UUID> ids, long statements, double millis) {
