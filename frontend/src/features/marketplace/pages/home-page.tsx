@@ -14,7 +14,7 @@ export default function HomePage() {
   const home = useHomeData()
   return (
     <>
-      <title>Autopartco | Repuestos en los almacenes más cerca de ti</title>
+      <title>Autopartco | Repuestos, servicios y talleres cerca de ti</title>
       <HomeHero home={home} />
       <QuickAccessSection home={home} />
       <ServicesSection home={home} />

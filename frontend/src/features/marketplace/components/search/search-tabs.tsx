@@ -1,5 +1,6 @@
 import { Link, useSearchParams } from 'react-router'
 import { cn } from '@/lib/utils'
+import { TabIndicator } from '@/components/common/tab-indicator'
 import { searchTabHref, type SearchTab } from '../../lib/search-query'
 
 const TABS: { tab: SearchTab; label: string }[] = [
@@ -17,7 +18,8 @@ export function SearchTabs({ active }: { active: SearchTab }) {
   const [searchParams] = useSearchParams()
   return (
     <nav aria-label="Qué buscar" className="mb-5 border-b border-ap-line">
-      <ul className="-mb-px flex gap-1 overflow-x-auto">
+      <ul className="relative -mb-px flex gap-1 overflow-x-auto">
+        <TabIndicator group="search-tabs" />
         {TABS.map(({ tab, label }) => {
           const selected = tab === active
           return (
@@ -26,8 +28,8 @@ export function SearchTabs({ active }: { active: SearchTab }) {
                 to={searchTabHref(searchParams, active, tab)}
                 aria-current={selected ? 'page' : undefined}
                 className={cn(
-                  'inline-flex min-h-11 items-center border-b-2 px-4 text-sm font-semibold whitespace-nowrap transition-colors',
-                  selected ? 'border-ap-red text-ap-ink' : 'border-transparent text-ap-muted hover:border-ap-line-strong hover:text-ap-ink',
+                  'inline-flex min-h-11 items-center border-b-2 px-4 text-sm font-semibold whitespace-nowrap ap-transition-colors',
+                  selected ? 'border-transparent text-ap-ink' : 'border-transparent text-ap-muted hover:border-ap-line-strong hover:text-ap-ink',
                 )}
               >
                 {label}

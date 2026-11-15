@@ -29,7 +29,7 @@ function ExportSection() {
     }
   }
   return (
-    <AccountSection id="priv-export" title="Descargar mis datos" description="Un archivo con tu perfil, direcciones, pedidos, reseñas, preguntas y preferencias.">
+    <AccountSection id="priv-export" title="Descargar mis datos" description="Un archivo con tu perfil, direcciones, pedidos, citas de servicio, reseñas, preguntas y preferencias.">
       <Button variant="outline" className="h-11 w-fit" disabled={busy} onClick={() => void download()}>
         <DownloadIcon aria-hidden />
         {busy ? 'Preparando…' : 'Descargar (JSON)'}
@@ -106,8 +106,8 @@ function DeletionSection() {
             <textarea id="baja-reason" name="reason" maxLength={500} rows={3} className="rounded-md border border-input bg-ap-white px-3 py-2 text-base font-normal outline-none focus-visible:ring-3 focus-visible:ring-ring/50 md:text-sm" />
           </label>
           <div className="flex flex-wrap gap-2">
-            <Button type="submit" variant="destructive" className="h-11 px-5" disabled={busy}>
-              {busy ? 'Enviando…' : 'Solicitar eliminación'}
+            <Button type="submit" variant="destructive" className="h-11 px-5" loading={busy}>
+              Solicitar eliminación
             </Button>
             <Button type="button" variant="ghost" className="h-11" onClick={() => setOpen(false)}>
               Cancelar

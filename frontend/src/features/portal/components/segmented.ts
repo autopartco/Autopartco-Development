@@ -9,7 +9,7 @@ export const SEGMENT_GROUP_CLASS = 'inline-flex w-fit max-w-full flex-wrap round
 
 export function segmentClass(active: boolean, className?: string): string {
   return cn(
-    'inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 border-l border-ap-line-strong px-4 text-sm font-semibold whitespace-nowrap transition-colors duration-150 first:rounded-l-[5px] first:border-l-0 last:rounded-r-[5px]',
+    'inline-flex min-h-11 shrink-0 items-center justify-center gap-1.5 border-l border-ap-line-strong px-4 text-sm font-semibold whitespace-nowrap ap-transition-colors first:rounded-l-[5px] first:border-l-0 last:rounded-r-[5px]',
     active ? 'bg-ap-graphite text-ap-white' : 'bg-ap-white text-ap-ink hover:bg-ap-paper',
     className,
   )

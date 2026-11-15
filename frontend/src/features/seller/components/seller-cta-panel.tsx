@@ -5,15 +5,15 @@ import { formatDate } from '@/features/portal/lib/labels'
 import { useSellerCta, type SellerState } from '../hooks'
 
 const BENEFITS = [
-  'Publica tu inventario ante conductores y talleres de tu ciudad.',
+  'Muestra tus repuestos y servicios a conductores y talleres de tu ciudad.',
   'Empiezas con una prueba gratuita; eliges plan después de la aprobación.',
-  'Tú fijas precios y existencias; nosotros revisamos cada almacén antes de publicarlo.',
+  'Tú fijas precios y horarios; recibes citas y mensajes por WhatsApp.',
 ] as const
 
 const COPY: Record<Exclude<SellerState, 'loading'>, { title: string; body: string }> = {
   register: {
     title: 'Registra tu almacén en Autopartco',
-    body: 'Vende repuestos a quienes ya los buscan cerca de tu local. Solicitar el registro toma pocos minutos.',
+    body: 'Vende repuestos y ofrece servicios a quienes ya te buscan cerca de tu local. Registrarte toma pocos minutos.',
   },
   review: {
     title: 'Tu solicitud de almacén está en curso',
@@ -21,7 +21,7 @@ const COPY: Record<Exclude<SellerState, 'loading'>, { title: string; body: strin
   },
   manage: {
     title: 'Administra tu almacén',
-    body: 'Gestiona productos, pedidos y tu plan desde el portal del almacén.',
+    body: 'Gestiona productos, servicios, citas, pedidos y tu plan desde el portal del almacén.',
   },
   learn: {
     title: '¿Tienes un almacén?',

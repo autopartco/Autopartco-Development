@@ -531,7 +531,7 @@ function PublicApplication() {
       title="Registra tu almacén"
       description={
         <>
-          <p>Crea tu cuenta de vendedor y envía los documentos. Revisamos cada solicitud antes de publicar tu almacén.</p>
+          <p>Crea tu cuenta y envía los documentos. Vende repuestos, ofrece servicios o haz las dos cosas. Revisamos cada solicitud antes de publicar tu almacén.</p>
           <p className="mt-2 text-sm">
             ¿Ya tienes cuenta en Autopartco?{' '}
             <Link to={LOGIN_FOR_SELLER} className={LINK_CLASS}>

@@ -4,6 +4,7 @@ import { ArrowUpRightIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
+import { TabIndicator } from '@/components/common/tab-indicator'
 import type { AsyncResult } from '@/lib/use-async'
 import { usePortal } from '../context'
 import { useActiveBranches } from '../hooks'
@@ -32,7 +33,8 @@ export function IntelligenceTabs() {
     // Pestañas subrayadas en una fila; en móvil la fila se desplaza en horizontal (sin píldoras). La activa lleva
     // la línea de acento roja (§3.5).
     <nav aria-label="Secciones de inteligencia" className="-mt-2 mb-6 overflow-x-auto overflow-y-hidden border-b border-ap-line">
-      <ul className="flex w-max gap-1">
+      <ul className="relative flex w-max gap-1">
+        <TabIndicator group="portal-intelligence" />
         {tabs.map((tab) => (
           <li key={tab.to}>
             <NavLink
@@ -40,8 +42,8 @@ export function IntelligenceTabs() {
               end={tab.end}
               className={({ isActive }) =>
                 cn(
-                  '-mb-px inline-flex min-h-11 items-center border-b-2 px-3 text-sm font-semibold whitespace-nowrap transition-colors duration-150',
-                  isActive ? 'border-ap-red text-ap-ink' : 'border-transparent text-ap-muted hover:border-ap-line-strong hover:text-ap-ink',
+                  '-mb-px inline-flex min-h-11 items-center border-b-2 px-3 text-sm font-semibold whitespace-nowrap ap-transition-colors',
+                  isActive ? 'border-transparent text-ap-ink' : 'border-transparent text-ap-muted hover:border-ap-line-strong hover:text-ap-ink',
                 )
               }
             >

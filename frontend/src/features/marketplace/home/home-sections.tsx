@@ -59,7 +59,7 @@ function homeErrorCopy(error: unknown): { title: string; description?: string } 
   if (code === 'HOME_POINT_OUTSIDE_COVERAGE' || code === 'HOME_POINT_INCOMPLETE' || code === 'HOME_CITY_INVALID') {
     return {
       title: 'Aún no llegamos a esa zona',
-      description: 'Elige otra ciudad arriba o busca tu repuesto por nombre.',
+      description: 'Elige otra ciudad arriba o busca lo que necesitas por nombre.',
     }
   }
   return { title: 'No pudimos cargar esta sección. Intenta de nuevo' }
@@ -91,7 +91,7 @@ function CategoriesIndex({ home }: { home: Home }) {
     return (
       <EmptyState
         title="Muy pronto verás las categorías aquí"
-        description="Mientras tanto, escribe el repuesto que necesitas en el buscador."
+        description="Mientras tanto, escribe lo que necesitas en el buscador."
       />
     )
   }
@@ -298,12 +298,12 @@ export function AboutSection({ home }: { home: Home }) {
           <div className="flex flex-col gap-2">
             <p className="ap-index">Plataforma / Colombia</p>
             <h2 id="que-es-titulo" className="text-section text-ap-ink">
-              Tu repuesto, sin dar vueltas
+              Tu carro resuelto, sin dar vueltas
             </h2>
           </div>
           <p className="max-w-prose text-ap-muted">
-            Reunimos los almacenes de repuestos de Colombia en un solo lugar. Compara precios, mira qué hay disponible y
-            elige el más cercano.
+            Reunimos almacenes y talleres de Colombia en un solo lugar. Compra repuestos, agenda servicios, compara
+            precios y escríbeles por WhatsApp al más cercano.
           </p>
           <PlatformFigures home={home} />
         </div>
@@ -328,10 +328,10 @@ export function AboutSection({ home }: { home: Home }) {
 /* ------------------------------------------------------------------ */
 
 const SELLER_BENEFITS = [
-  'Consigue más clientes: conductores y talleres de tu ciudad ven tus repuestos.',
+  'Consigue más clientes: conductores y talleres de tu ciudad ven tus repuestos y servicios.',
   'Empieza gratis y elige tu plan cuando estés listo.',
-  'Vende en línea: recibe pedidos y pagos, y maneja tu inventario desde un solo lugar.',
-  'Destaca tus productos con anuncios y revisa las estadísticas de tus ventas.',
+  'Recibe pedidos y citas, y maneja todo desde un solo lugar.',
+  'Recibe mensajes por WhatsApp, destaca lo que ofreces y mira cuánta gente te visita.',
 ] as const
 
 export function SellersSection({ home }: { home: Home }) {
@@ -341,9 +341,9 @@ export function SellersSection({ home }: { home: Home }) {
       <Container className="grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-14">
         <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">
-            <p className="ap-index">Para vendedores / Almacenes de repuestos</p>
+            <p className="ap-index">Para vendedores / Almacenes y talleres</p>
             <h2 id="vendedores-titulo" className="text-section text-ap-ink">
-              Vende tus repuestos a quienes ya los buscan
+              Vende tus repuestos y servicios a quienes ya los buscan
             </h2>
             {stats && stats.stores > 0 ? (
               <p className="text-ap-muted">

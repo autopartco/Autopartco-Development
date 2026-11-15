@@ -122,8 +122,8 @@ function PasswordSection({ email, passwordSet }: { email: string; passwordSet: b
         <PasswordField id="clave-current" name="current" label="Contraseña actual" autoComplete="current-password" error={errors.current} />
         <PasswordField id="clave-next" name="next" label="Nueva contraseña" autoComplete="new-password" hint="Mínimo 8 caracteres con mayúscula, minúscula, número y carácter especial." error={errors.next} />
         <PasswordField id="clave-repeat" name="repeat" label="Repite la nueva contraseña" autoComplete="new-password" error={errors.repeat} />
-        <Button type="submit" className="h-11 w-fit px-5" disabled={busy}>
-          {busy ? 'Guardando…' : 'Cambiar contraseña'}
+        <Button type="submit" className="h-11 w-fit px-5" loading={busy}>
+          Cambiar contraseña
         </Button>
       </form>
       )}

@@ -76,8 +76,8 @@ export default function SellPage() {
         title="Vende en Autopartco"
         description={
           <p>
-            Muestra tu inventario a los conductores y talleres que buscan repuestos cerca de tu almacén. Cada almacén
-            se revisa antes de publicar.
+            Vende repuestos, ofrece tus servicios o haz las dos cosas. Recibe citas, mensajes por WhatsApp y mira
+            cuánta gente visita tu perfil. Cada almacén se revisa antes de publicar.
           </p>
         }
         className="max-w-3xl"

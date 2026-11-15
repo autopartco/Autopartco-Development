@@ -41,7 +41,7 @@ export function ServiceCategories({ categories, failed, onRetry, selected, label
     return (
       <EmptyState
         title="Aún no hay servicios publicados"
-        description="Cuando los talleres publiquen sus servicios, verás aquí las categorías. Mientras tanto, busca el repuesto que necesitas."
+        description="Cuando los talleres publiquen sus servicios, verás aquí las categorías. Mientras tanto, busca lo que necesitas en el buscador."
         className={className}
       >
         <Link to="/buscar" className="inline-flex min-h-11 items-center text-sm font-semibold text-ap-red underline-offset-4 hover:underline">
