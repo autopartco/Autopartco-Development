@@ -31,4 +31,27 @@ class ClientIpTest {
         request.addHeader("CF-Connecting-IP", "evil<script>");
         assertThat(ClientIp.of(request)).isEqualTo("10.0.0.5");
     }
+
+    @Test
+    void stripsBracketsAndPortFromIpv6RemoteAddr() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRemoteAddr("[2800:e2:1680:1e6:707d:971e:111b:fbf6]");
+        assertThat(ClientIp.of(request)).isEqualTo("2800:e2:1680:1e6:707d:971e:111b:fbf6");
+        request.setRemoteAddr("[::1]:8081");
+        assertThat(ClientIp.of(request)).isEqualTo("::1");
+    }
+
+    @Test
+    void stripsBracketsFromCloudflareHeader() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("CF-Connecting-IP", "[2800:e2:1a00::1]");
+        assertThat(ClientIp.of(request)).isEqualTo("2800:e2:1a00::1");
+    }
+
+    @Test
+    void usesPlaceholderWhenNoValidIp() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRemoteAddr("unknown");
+        assertThat(ClientIp.of(request)).isEqualTo(ClientIp.UNKNOWN);
+    }
 }
