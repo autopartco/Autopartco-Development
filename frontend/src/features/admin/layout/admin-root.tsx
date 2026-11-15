@@ -90,9 +90,9 @@ function AdminNav({ onNavigate }: { onNavigate?: () => void }) {
 
 function SidebarContent({ onNavigate, withBrand = false }: { onNavigate?: () => void; withBrand?: boolean }) {
   return (
-    <div className="ap-surface-dark flex h-full flex-col gap-5 py-4">
+    <div className="ap-surface-dark flex h-full min-h-0 flex-col gap-5 pt-4">
       {withBrand ? <AdminBrand className="h-11 pr-14 pl-5" /> : null}
-      <div className="flex-1 overflow-y-auto">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[max(1rem,env(safe-area-inset-bottom))]">
         <AdminNav onNavigate={onNavigate} />
       </div>
     </div>
