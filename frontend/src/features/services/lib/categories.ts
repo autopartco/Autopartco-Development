@@ -41,6 +41,9 @@ const ICON_BY_NAME: Record<string, LucideIcon> = {
   ellipsis: EllipsisIcon,
 }
 
+/** Todas las categorías, en el orden del servidor. */
+export const SERVICE_CATEGORY_CODES = Object.keys(CATEGORY) as ServiceCategory[]
+
 export function isServiceCategory(value: string | null | undefined): value is ServiceCategory {
   return !!value && value in CATEGORY
 }

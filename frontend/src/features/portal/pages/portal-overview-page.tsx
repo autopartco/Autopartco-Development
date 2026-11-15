@@ -15,7 +15,8 @@ import { ReviewsCard } from '../components/reviews-card'
 import { StatusBadge } from '../components/status-badge'
 import { UsageMeter } from '../components/usage-meter'
 import { usePortal } from '../context'
-import { useStoreQuery } from '../hooks'
+import { usePortalBusinessType, useStoreQuery } from '../hooks'
+import { requiresProducts } from '../lib/publish-checklist'
 import { alertTarget, SEVERITY_LABEL } from '../lib/alerts'
 import { formatDate, formatDateTime, formatDays, SUBSCRIPTION_STATUS_LABEL, SUBSCRIPTION_STATUS_TONE, type Tone } from '../lib/labels'
 
@@ -243,7 +244,8 @@ function PlanStatus({ data }: { data: Dashboard }) {
 
 function DashboardView({ data }: { data: Dashboard }) {
   const { storeId, can } = usePortal()
-  const emptyCatalog = data.usage.products === 0
+  const businessType = usePortalBusinessType()
+  const emptyCatalog = data.usage.products === 0 && requiresProducts(businessType)
 
   return (
     <div className="flex flex-col gap-6">

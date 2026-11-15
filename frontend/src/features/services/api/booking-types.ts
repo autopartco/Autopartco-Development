@@ -82,7 +82,8 @@ export interface Booking {
     whatsapp: string | null
   }
   quotedPrice: number | null
-  promotion: { id: string } | null
+  /** Promoción vigente al pedir; `label` es el texto del descuento (p. ej. `-15%`). */
+  promotion: { id: string; name?: string | null; label?: string | null } | null
   vehicle: BookingVehicle | null
   contactPhone: string | null
   buyerNote: string | null

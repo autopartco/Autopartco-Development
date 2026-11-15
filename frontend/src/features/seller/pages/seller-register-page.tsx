@@ -11,6 +11,7 @@ import { ACCOUNT_FIELDS, readAccount, readPasswordConfirm, validateAccount } fro
 import { AuthShell, SimulatedNotice } from '@/features/auth/components/auth-shell'
 import { CheckEmail } from '@/features/auth/components/check-email'
 import { compact, emailError, requiredText, type FieldErrors } from '@/features/auth/lib/validation'
+import { SelectField } from '@/features/portal/components/form-controls'
 import { UnsavedChangesDialog } from '@/components/common/unsaved-changes-dialog'
 import { ApiError } from '@/lib/api'
 import { useFormTouched } from '@/lib/use-form-touched'
@@ -27,6 +28,7 @@ import {
   OPEN_APPLICATION_STATUSES,
   REQUEST_MAX_BYTES,
   REQUIRED_DOCUMENTS,
+  type BusinessType,
   type CurrentUserApplicationResult,
   type LegalType,
   type MyStoreApplication,
@@ -50,6 +52,14 @@ const CRUMBS = [
   { label: 'Vender', to: '/vender' },
   { label: 'Registrar almacén' },
 ]
+
+const BUSINESS_TYPE_OPTIONS: { value: BusinessType; label: string }[] = [
+  { value: 'PARTS', label: 'Repuestos' },
+  { value: 'SERVICES', label: 'Servicios (taller)' },
+  { value: 'BOTH', label: 'Repuestos y servicios' },
+]
+const parseBusinessType = (value: string): BusinessType =>
+  BUSINESS_TYPE_OPTIONS.find((option) => option.value === value)?.value ?? 'PARTS'
 
 const storeId = (field: string) => `almacen-${field}`
 const documentId = (key: SellerDocumentKey) => `documento-${key}`
@@ -254,6 +264,7 @@ function ApplicationForm({ mode, notice }: { mode: FormMode; notice?: ReactNode 
       businessName: String(data.get(storeId('businessName')) ?? '').trim(),
       nit: String(data.get(storeId('nit')) ?? '').trim(),
       businessEmail: String(data.get(storeId('businessEmail')) ?? '').trim(),
+      businessType: parseBusinessType(String(data.get(storeId('businessType')) ?? '')),
     }
     const account = withAccount ? readAccount(data, ACCOUNT_PREFIX) : undefined
     const documents: Partial<Record<SellerDocumentKey, File>> = {}
@@ -375,6 +386,16 @@ function ApplicationForm({ mode, notice }: { mode: FormMode; notice?: ReactNode 
             maxLength={200}
             required
             error={storeErrors.businessEmail}
+          />
+          <SelectField
+            id={storeId('businessType')}
+            name={storeId('businessType')}
+            label="Tipo de negocio"
+            hint="Qué ofrece tu almacén. Lo puedes cambiar después en «Tienda»."
+            defaultValue="PARTS"
+            options={BUSINESS_TYPE_OPTIONS}
+            error={storeErrors.businessType}
+            containerClassName="sm:col-span-2"
           />
         </div>
       </Section>

@@ -225,4 +225,19 @@ export interface VisibilityReport {
   topProducts: { productId: string; name: string; views: number; visitors: number; shares: number }[]
   /** Un día por fila, con ceros. */
   daily: { day: string; profileViews: number; productViews: number }[]
+  /** Vistas del detalle de sus servicios (ausente con la fuente `mock`). */
+  serviceViews?: number
+  /** Hasta 20 servicios con vistas, clics o citas en el rango. */
+  topServices?: ServiceVisibilityRow[]
+  /** Citas solicitadas en el rango y su resultado; `confirmed` incluye las atendidas y las de no asistencia. */
+  bookings?: { requested: number; confirmed: number; completed: number; noShow: number }
+}
+
+export interface ServiceVisibilityRow {
+  serviceId: string
+  name: string
+  views: number
+  whatsappClicks: number
+  directionsClicks: number
+  bookings: number
 }

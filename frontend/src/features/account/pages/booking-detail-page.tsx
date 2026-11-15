@@ -164,7 +164,12 @@ function BookingDetail({ booking }: { booking: Booking }) {
               {booking.quotedPrice !== null ? formatCOP(booking.quotedPrice) : 'A consultar con el taller'}
               <span className="block font-normal text-ap-muted">Precio de referencia, sujeto a revisión del vehículo.</span>
             </Row>
-            {booking.promotion ? <Row term="Promoción">Esta cita tiene una promoción vigente aplicada al precio.</Row> : null}
+            {booking.promotion ? (
+              <Row term="Promoción">
+                {[booking.promotion.name, booking.promotion.label].filter(Boolean).join(' · ') || 'Promoción vigente'}
+                <span className="block font-normal text-ap-muted">Aplicada al precio de referencia al pedir la cita.</span>
+              </Row>
+            ) : null}
             <VehicleRow booking={booking} />
             {booking.contactPhone ? <Row term="Teléfono">{booking.contactPhone}</Row> : null}
             {booking.buyerNote ? <Row term="Tu nota"><span className="whitespace-pre-line">{booking.buyerNote}</span></Row> : null}

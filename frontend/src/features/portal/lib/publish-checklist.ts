@@ -52,6 +52,14 @@ export function buildChecklist(input: ChecklistInput): ChecklistItem[] {
   return items
 }
 
+/**
+ * El perfil del almacén exige productos publicados salvo que sea solo de servicios
+ * (espejo de `BusinessType.requiresProducts()`; con tipo desconocido se exige, como `PARTS`).
+ */
+export function requiresProducts(businessType: 'PARTS' | 'SERVICES' | 'BOTH' | undefined): boolean {
+  return businessType !== 'SERVICES'
+}
+
 export const missingCount = (items: ChecklistItem[]): number => items.filter((item) => item.state === 'missing').length
 
 export function checklistSummary(items: ChecklistItem[]): string {

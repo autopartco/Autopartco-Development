@@ -27,7 +27,7 @@ import type { PromotionConfig } from '../lib/promotion-config'
 import { AUDIENCE_HINT, AUDIENCE_LABEL, fromLocalInput, TARGET_LABEL, toLocalInput } from '../lib/promotions'
 import { SelectField } from './form-controls'
 
-const FIELDS = ['name', 'audience', 'targetType', 'targetId', 'attributeKey', 'attributeValue', 'discountValue', 'startsAt', 'endsAt'] as const
+const FIELDS = ['name', 'audience', 'targetType', 'targetId', 'targetKey', 'attributeKey', 'attributeValue', 'discountValue', 'startsAt', 'endsAt'] as const
 const fieldId = (field: string) => `promocion-${field}`
 
 interface Values {
@@ -35,6 +35,7 @@ interface Values {
   audience: PromotionAudience
   targetType: PromotionTargetType
   targetId: string
+  targetKey: string
   attributeKey: string
   attributeValue: string
   attributeOperator: PromotionAttributeOperator
@@ -45,7 +46,9 @@ interface Values {
   enabled: boolean
 }
 
-const NEEDS_ID: PromotionTargetType[] = ['PRODUCT', 'CATEGORY', 'MANUFACTURER']
+const NEEDS_ID: PromotionTargetType[] = ['PRODUCT', 'CATEGORY', 'MANUFACTURER', 'SERVICE']
+/** Promociones de servicios: la audiencia queda fija en «Todos» (el servidor rechaza otra). */
+const isServiceTarget = (type: PromotionTargetType) => type === 'SERVICE' || type === 'SERVICE_CATEGORY'
 
 function valuesOf(promotion: Promotion | undefined, config: PromotionConfig, audience: PromotionAudience | undefined): Values {
   if (promotion) {
@@ -54,6 +57,7 @@ function valuesOf(promotion: Promotion | undefined, config: PromotionConfig, aud
       audience: promotion.audience,
       targetType: promotion.targetType,
       targetId: promotion.targetId ?? '',
+      targetKey: promotion.targetKey ?? '',
       attributeKey: promotion.attributeKey ?? '',
       attributeValue: promotion.attributeValue ?? '',
       attributeOperator: promotion.attributeOperator ?? 'EQUALS',
@@ -72,6 +76,7 @@ function valuesOf(promotion: Promotion | undefined, config: PromotionConfig, aud
     audience: audience && config.audiences.includes(audience) ? audience : 'ALL',
     targetType: config.targetTypes[0] ?? 'STORE',
     targetId: '',
+    targetKey: '',
     attributeKey: '',
     attributeValue: '',
     attributeOperator: 'EQUALS',
@@ -91,7 +96,8 @@ function makeValidate(config: PromotionConfig) {
     if (values.audience === 'PLATFORM_FREQUENT' && !config.platformAudienceAllowed) {
       errors.audience = 'Tu plan no incluye Reportes avanzados. Elige otra audiencia.'
     }
-    if (NEEDS_ID.includes(values.targetType) && !values.targetId) errors.targetId = 'Elige a qué aplica el descuento.'
+    if (NEEDS_ID.includes(values.targetType) && !values.targetId) errors.targetId = values.targetType === 'SERVICE' ? 'Elige el servicio.' : 'Elige a qué aplica el descuento.'
+    if (values.targetType === 'SERVICE_CATEGORY' && !values.targetKey) errors.targetKey = 'Elige la categoría de servicios.'
     if (values.targetType === 'ATTRIBUTE') {
       if (!values.attributeKey.trim()) errors.attributeKey = 'Escribe el nombre del atributo.'
       if (!values.attributeValue.trim()) errors.attributeValue = 'Escribe el valor del atributo.'
@@ -114,6 +120,7 @@ function buildInput(values: Values): PromotionInput {
     name: values.name.trim(),
     targetType: values.targetType,
     targetId: NEEDS_ID.includes(values.targetType) ? values.targetId : null,
+    targetKey: values.targetType === 'SERVICE_CATEGORY' ? values.targetKey : null,
     attributeKey: attribute ? values.attributeKey.trim() : null,
     attributeValue: attribute ? values.attributeValue.trim() : null,
     attributeOperator: attribute ? values.attributeOperator : null,
@@ -122,7 +129,7 @@ function buildInput(values: Values): PromotionInput {
     startsAt: fromLocalInput(values.startsAt) ?? '',
     endsAt: fromLocalInput(values.endsAt) ?? '',
     enabled: values.enabled,
-    audience: values.audience,
+    audience: isServiceTarget(values.targetType) ? 'ALL' : values.audience,
   }
 }
 
@@ -207,8 +214,11 @@ function PromotionForm({ config, promotion, initialAudience, onDone, onCancel, o
         ? options.data?.categories
         : values.targetType === 'MANUFACTURER'
           ? options.data?.manufacturers
-          : undefined
-  const idLabel = values.targetType === 'PRODUCT' ? 'Producto' : values.targetType === 'CATEGORY' ? 'Categoría' : 'Marca'
+          : values.targetType === 'SERVICE'
+            ? options.data?.services
+            : undefined
+  const idLabel = values.targetType === 'PRODUCT' ? 'Producto' : values.targetType === 'CATEGORY' ? 'Categoría' : values.targetType === 'SERVICE' ? 'Servicio' : 'Marca'
+  const lockedAudience = isServiceTarget(values.targetType)
   const audienceBlocked = (audience: PromotionAudience) => audience === 'PLATFORM_FREQUENT' && !config.platformAudienceAllowed
 
   return (
@@ -224,7 +234,8 @@ function PromotionForm({ config, promotion, initialAudience, onDone, onCancel, o
         <SelectField
           {...bind('audience')}
           label="¿Quién ve este precio?"
-          value={values.audience}
+          value={lockedAudience ? 'ALL' : values.audience}
+          disabled={lockedAudience}
           onChange={(event) => draft.set('audience', event.target.value as PromotionAudience)}
           options={config.audiences.map((audience) => ({
             value: audience,
@@ -233,7 +244,7 @@ function PromotionForm({ config, promotion, initialAudience, onDone, onCancel, o
           }))}
           hint={
             <>
-              {AUDIENCE_HINT[values.audience]}
+              {lockedAudience ? 'Las promociones de servicios las ve cualquier persona: no se segmentan por audiencia.' : AUDIENCE_HINT[values.audience]}
               {!config.platformAudienceAllowed && config.audiences.includes('PLATFORM_FREQUENT') ? (
                 <>
                   {' '}
@@ -257,7 +268,7 @@ function PromotionForm({ config, promotion, initialAudience, onDone, onCancel, o
           {...bind('targetType')}
           label="¿A qué se aplica?"
           value={values.targetType}
-          onChange={(event) => draft.patch({ targetType: event.target.value as PromotionTargetType, targetId: '' })}
+          onChange={(event) => draft.patch({ targetType: event.target.value as PromotionTargetType, targetId: '', targetKey: '' })}
           options={targetTypes.map((type) => ({ value: type, label: TARGET_LABEL[type] }))}
         />
         {NEEDS_ID.includes(values.targetType) ? (
@@ -273,6 +284,18 @@ function PromotionForm({ config, promotion, initialAudience, onDone, onCancel, o
               ...(values.targetId && !(idOptions ?? []).some((option) => option.id === values.targetId) ? [{ value: values.targetId, label: 'Destino actual' }] : []),
             ]}
             disabled={idOptions === undefined && options.status !== 'error'}
+            hint={options.status === 'error' ? 'No pudimos cargar las opciones. Cierra el panel y vuelve a abrirlo.' : undefined}
+          />
+        ) : null}
+        {values.targetType === 'SERVICE_CATEGORY' ? (
+          <SelectField
+            {...bind('targetKey')}
+            label="Categoría de servicios"
+            value={values.targetKey}
+            onChange={(event) => draft.set('targetKey', event.target.value)}
+            placeholder={options.data?.serviceCategories ? 'Elige una categoría' : 'Cargando opciones…'}
+            options={(options.data?.serviceCategories ?? []).map((option) => ({ value: option.id, label: option.label }))}
+            disabled={options.data?.serviceCategories === undefined && options.status !== 'error'}
             hint={options.status === 'error' ? 'No pudimos cargar las opciones. Cierra el panel y vuelve a abrirlo.' : undefined}
           />
         ) : null}

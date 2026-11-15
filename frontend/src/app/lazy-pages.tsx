@@ -83,7 +83,10 @@ export const PortalAdsPaymentResultPage = lazy(() => import('@/features/portal/p
 export const PortalAlertsPage = lazy(() => import('@/features/portal/pages/alerts-page'))
 export const PortalBranchesPage = lazy(() => import('@/features/portal/pages/branches-page'))
 export const PortalTeamPage = lazy(() => import('@/features/portal/pages/team-page'))
-export const PortalStorePage = lazy(() => import('@/features/portal/pages/store-profile-page'))
+export const PortalServicesPage = lazy(() => import('@/features/portal/pages/services-page'))
+export const PortalBookingsPage = lazy(() => import('@/features/portal/pages/bookings-page'))
+export const PortalSettingsPage = lazy(() => import('@/features/portal/pages/store-settings-page'))
+export const PortalStorePage =lazy(() => import('@/features/portal/pages/store-profile-page'))
 
 // Administración (ROOT): resumen, solicitudes, planes, promociones, catálogo e inteligencia.
 export const AdminRoot = lazy(() => import('@/features/admin/layout/admin-root').then((module) => ({ default: module.AdminRoot })))

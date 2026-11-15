@@ -5,7 +5,7 @@ import { DataTable, type DataColumn } from '@/components/common/data-table'
 import { EmptyState } from '@/components/common/states'
 import { formatNumber } from '@/lib/format'
 import { getAnalyticsService } from '../api/analytics-service'
-import type { TrafficSource, VisibilityReport } from '../api/analytics-types'
+import type { ServiceVisibilityRow, TrafficSource, VisibilityReport } from '../api/analytics-types'
 import { AnalyticsChart, type ChartPoint } from '../components/analytics-chart'
 import { ChartEmpty, ChartSection, ChartSkeleton } from '../components/chart-section'
 import { SelectField } from '../components/form-controls'
@@ -45,6 +45,54 @@ function shortDay(value: string): string {
 
 type SourceRow = VisibilityReport['bySource'][number] & { share: number }
 type ProductRow = VisibilityReport['topProducts'][number]
+
+const SERVICE_COLUMNS: DataColumn<ServiceVisibilityRow>[] = [
+  { id: 'servicio', header: 'Servicio', rowHeader: true, cell: (row) => row.name, sortValue: (row) => row.name },
+  { id: 'vistas', header: 'Vistas', align: 'end', cell: (row) => formatNumber(row.views), sortValue: (row) => row.views },
+  { id: 'whatsapp', header: 'Clics en WhatsApp', align: 'end', cell: (row) => formatNumber(row.whatsappClicks), sortValue: (row) => row.whatsappClicks },
+  { id: 'llegar', header: 'Clics en «Cómo llegar»', align: 'end', cell: (row) => formatNumber(row.directionsClicks), sortValue: (row) => row.directionsClicks },
+  { id: 'citas', header: 'Citas', align: 'end', cell: (row) => formatNumber(row.bookings), sortValue: (row) => row.bookings },
+]
+
+/** Servicios y citas del periodo: cifras que entrega el servidor, sin estimaciones. */
+function ServicesSection({ report }: { report: VisibilityReport }) {
+  const bookings = report.bookings
+  const rows = report.topServices ?? []
+  const items = bookings
+    ? [
+        { label: 'Citas solicitadas', value: bookings.requested, detail: undefined },
+        { label: 'Confirmadas', value: bookings.confirmed, detail: 'Incluye las atendidas y las de no asistencia' },
+        { label: 'Atendidas', value: bookings.completed, detail: undefined },
+        { label: 'No asistió', value: bookings.noShow, detail: undefined },
+      ]
+    : []
+  return (
+    <section aria-labelledby="vis-servicios" className="flex min-w-0 flex-col gap-3 border-t border-ap-line-strong pt-4">
+      <h2 id="vis-servicios" className="text-base font-semibold text-ap-ink">
+        ¿Cómo van tus servicios?
+      </h2>
+      <p className="max-w-prose text-sm text-ap-muted">
+        {formatNumber(report.serviceViews ?? 0)} vistas a la página de tus servicios en el periodo. Las citas se cuentan por la fecha en que se solicitaron.
+      </p>
+      {items.length > 0 ? (
+        <dl className="grid gap-x-8 gap-y-4 border-y border-ap-line-strong py-4 sm:grid-cols-2 lg:grid-cols-4">
+          {items.map((item) => (
+            <div key={item.label} className="flex flex-col gap-1">
+              <dt className="ap-index">{item.label}</dt>
+              <dd className="ap-price text-3xl leading-none text-ap-ink tabular-nums">{formatNumber(item.value)}</dd>
+              {item.detail ? <dd className="text-sm text-ap-muted">{item.detail}</dd> : null}
+            </div>
+          ))}
+        </dl>
+      ) : null}
+      {rows.length > 0 ? (
+        <DataTable caption="Servicios con más vistas, clics y citas del periodo" columns={SERVICE_COLUMNS} rows={rows} getRowId={(row) => row.serviceId} defaultSort={{ columnId: 'vistas', direction: 'desc' }} />
+      ) : (
+        <ChartEmpty>Ningún servicio recibió vistas, clics ni citas en este periodo.</ChartEmpty>
+      )}
+    </section>
+  )
+}
 
 const SOURCE_COLUMNS: DataColumn<SourceRow>[] = [
   { id: 'origen', header: 'Origen', rowHeader: true, cell: (row) => SOURCE_LABELS[row.source] ?? row.source, sortValue: (row) => SOURCE_LABELS[row.source] ?? row.source },
@@ -108,7 +156,8 @@ function VisibilityView({ report }: { report: VisibilityReport }) {
     [report.bySource, totalViews],
   )
 
-  if (totalViews === 0 && report.shares === 0) {
+  const hasServiceData = (report.serviceViews ?? 0) > 0 || (report.bookings?.requested ?? 0) > 0 || (report.topServices?.length ?? 0) > 0
+  if (totalViews === 0 && report.shares === 0 && !hasServiceData) {
     return (
       <EmptyState
         icon={<EyeIcon />}
@@ -158,6 +207,7 @@ function VisibilityView({ report }: { report: VisibilityReport }) {
           <ChartEmpty>Ninguna publicación recibió visitas en este periodo.</ChartEmpty>
         )}
       </section>
+      {report.serviceViews !== undefined || report.topServices !== undefined || report.bookings !== undefined ? <ServicesSection report={report} /> : null}
     </div>
   )
 }

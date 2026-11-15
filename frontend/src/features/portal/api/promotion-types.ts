@@ -5,7 +5,7 @@
 
 export type PromotionAudience = 'ALL' | 'PLATFORM_FREQUENT' | 'STORE_FREQUENT' | 'STORE_AT_RISK' | 'STORE_NEW' | 'STORE_DORMANT'
 export type PromotionScope = 'STORE' | 'PLATFORM'
-export type PromotionTargetType = 'ALL' | 'STORE' | 'PRODUCT' | 'CATEGORY' | 'MANUFACTURER' | 'ATTRIBUTE'
+export type PromotionTargetType = 'ALL' | 'STORE' | 'PRODUCT' | 'CATEGORY' | 'MANUFACTURER' | 'ATTRIBUTE' | 'SERVICE' | 'SERVICE_CATEGORY'
 export type PromotionDiscountType = 'PERCENTAGE' | 'FIXED_AMOUNT'
 export type PromotionAttributeOperator = 'EQUALS' | 'CONTAINS'
 
@@ -17,6 +17,8 @@ export interface Promotion {
   name: string
   targetType: PromotionTargetType
   targetId: string | null
+  /** Categoría de servicio (`SERVICE_CATEGORY`); sin `targetId`. */
+  targetKey?: string | null
   attributeKey: string | null
   attributeValue: string | null
   attributeOperator: PromotionAttributeOperator | null
@@ -36,6 +38,8 @@ export interface PromotionInput {
   name: string
   targetType: PromotionTargetType
   targetId?: string | null
+  /** Solo `SERVICE_CATEGORY`: código de la categoría. */
+  targetKey?: string | null
   attributeKey?: string | null
   attributeValue?: string | null
   attributeOperator?: PromotionAttributeOperator | null
