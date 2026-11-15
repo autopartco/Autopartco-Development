@@ -53,7 +53,12 @@ export function useBranchSearchParam(name = 'sucursal'): string {
 export function usePortalBusinessType(): BusinessType | undefined {
   const { storeId, can } = usePortal()
   const readable = can('STORE_READ')
-  const profile = useAsync(`portal:${storeId}:profile`, async () => (readable ? (await getPortalService()).profile(storeId) : undefined))
+  // Sin permiso (o antes de que lleguen los permisos) no se toca la clave del perfil: guardar `undefined` en ella
+  // dejaba la página «Tienda» con la caché resuelta sin datos, cargando para siempre.
+  const profile = useAsync(
+    readable ? `portal:${storeId}:profile` : `portal:${storeId}:profile-unreadable`,
+    async () => (readable ? (await getPortalService()).profile(storeId) : undefined),
+  )
   if (profile.status !== 'success' || !profile.data) return undefined
   return profile.data.businessType ?? 'PARTS'
 }
