@@ -10,8 +10,8 @@
     "noRelevantPct" : 0.0,
     "falseResultsPct" : 33.3333,
     "avgSql" : 1.189,
-    "p50Ms" : 17.2062,
-    "p95Ms" : 64.7929
+    "p50Ms" : 13.8125,
+    "p95Ms" : 37.2656
   },
   "byKind" : {
     "exact" : {
@@ -24,8 +24,8 @@
       "noRelevantPct" : 0.0,
       "falseResultsPct" : null,
       "avgSql" : 1.0,
-      "p50Ms" : 38.9391,
-      "p95Ms" : 181.7751
+      "p50Ms" : 13.8125,
+      "p95Ms" : 55.7457
     },
     "natural" : {
       "queries" : 12,
@@ -37,8 +37,8 @@
       "noRelevantPct" : 0.0,
       "falseResultsPct" : null,
       "avgSql" : 1.0,
-      "p50Ms" : 15.231,
-      "p95Ms" : 20.785
+      "p50Ms" : 11.4158,
+      "p95Ms" : 13.6627
     },
     "typo" : {
       "queries" : 13,
@@ -50,8 +50,8 @@
       "noRelevantPct" : 0.0,
       "falseResultsPct" : null,
       "avgSql" : 1.0,
-      "p50Ms" : 14.2627,
-      "p95Ms" : 33.22
+      "p50Ms" : 12.445,
+      "p95Ms" : 22.7466
     },
     "vehicle_form" : {
       "queries" : 13,
@@ -63,8 +63,8 @@
       "noRelevantPct" : 0.0,
       "falseResultsPct" : null,
       "avgSql" : 1.0,
-      "p50Ms" : 12.0137,
-      "p95Ms" : 21.5087
+      "p50Ms" : 12.0185,
+      "p95Ms" : 16.981
     },
     "reference" : {
       "queries" : 13,
@@ -76,8 +76,8 @@
       "noRelevantPct" : 0.0,
       "falseResultsPct" : null,
       "avgSql" : 1.0,
-      "p50Ms" : 10.2016,
-      "p95Ms" : 51.0038
+      "p50Ms" : 10.7068,
+      "p95Ms" : 40.3861
     },
     "manufacturer" : {
       "queries" : 11,
@@ -89,8 +89,8 @@
       "noRelevantPct" : 0.0,
       "falseResultsPct" : null,
       "avgSql" : 1.0,
-      "p50Ms" : 21.8833,
-      "p95Ms" : 36.0252
+      "p50Ms" : 14.2975,
+      "p95Ms" : 25.054
     },
     "position_spec" : {
       "queries" : 13,
@@ -102,8 +102,8 @@
       "noRelevantPct" : 0.0,
       "falseResultsPct" : null,
       "avgSql" : 1.0,
-      "p50Ms" : 24.6212,
-      "p95Ms" : 38.1114
+      "p50Ms" : 16.0471,
+      "p95Ms" : 27.2082
     },
     "synonym_slang" : {
       "queries" : 12,
@@ -115,8 +115,8 @@
       "noRelevantPct" : 0.0,
       "falseResultsPct" : null,
       "avgSql" : 1.1667,
-      "p50Ms" : 12.5086,
-      "p95Ms" : 39.124
+      "p50Ms" : 11.7217,
+      "p95Ms" : 33.6968
     },
     "generic" : {
       "queries" : 9,
@@ -128,8 +128,8 @@
       "noRelevantPct" : 0.0,
       "falseResultsPct" : null,
       "avgSql" : 1.0,
-      "p50Ms" : 18.165,
-      "p95Ms" : 32.6021
+      "p50Ms" : 17.6307,
+      "p95Ms" : 21.5105
     },
     "no_match" : {
       "queries" : 9,
@@ -141,8 +141,8 @@
       "noRelevantPct" : null,
       "falseResultsPct" : 33.3333,
       "avgSql" : 3.0,
-      "p50Ms" : 38.3567,
-      "p95Ms" : 58.3913
+      "p50Ms" : 35.0386,
+      "p95Ms" : 58.9558
     },
     "long" : {
       "queries" : 10,
@@ -154,8 +154,8 @@
       "noRelevantPct" : 0.0,
       "falseResultsPct" : null,
       "avgSql" : 1.4,
-      "p50Ms" : 19.5975,
-      "p95Ms" : 82.2591
+      "p50Ms" : 22.0144,
+      "p95Ms" : 66.0723
     }
   }
 }
