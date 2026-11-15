@@ -179,4 +179,209 @@ class QueryParserTest {
         assertThat(parsed.year()).isNull();
         assertThat(parsed.text()).isEqualTo("bomba 1890");
     }
+
+    // ------------------------------------------------------------------ T3: ortografía, vehículo, año, referencia
+
+    static final Make TOYOTA = new Make(UUID.randomUUID(), "Toyota");
+    static final Model HILUX = new Model(UUID.randomUUID(), TOYOTA.id(), "Hilux");
+    /** Como en producción: el nombre del modelo incluye la marca. */
+    static final Model MAZDA_3_FULL = new Model(UUID.randomUUID(), MAZDA.id(), "Mazda 3");
+    static final Model MAZDA_2_FULL = new Model(UUID.randomUUID(), MAZDA.id(), "Mazda 2");
+    static final Model CX_5 = new Model(UUID.randomUUID(), MAZDA.id(), "CX-5");
+
+    /** Catálogo con léxico de palabras de los listados (frecuencia = listados que la contienen). */
+    static Vocabulary catalog() {
+        Map<String, Integer> lexicon = new java.util.HashMap<>();
+        for (Object[] entry : new Object[][] {{"radiador", 40}, {"valeo", 12}, {"amortiguador", 50},
+                {"delantero", 30}, {"pastillas", 60}, {"pastilla", 20}, {"freno", 80}, {"bomba", 70}, {"agua", 40},
+                {"filtro", 90}, {"aire", 50}, {"terminal", 15}, {"direccion", 20}, {"aceite", 40}, {"litros", 10},
+                {"gasolina", 10}, {"tensor", 1}, {"sensor", 100}, {"correa", 30}, {"bujia", 30}, {"rin", 5}}) {
+            lexicon.put((String) entry[0], (Integer) entry[1]);
+        }
+        return new Vocabulary(List.of(CHEVROLET, MAZDA, TOYOTA),
+                List.of(SPARK, SPARK_GT, MAZDA_3_FULL, MAZDA_2_FULL, CX_5, HILUX),
+                List.of(BOGOTA, MEDELLIN),
+                Map.of("bandas", List.of("pastillas")), lexicon);
+    }
+
+    private ParsedQuery catalogParse(String q) {
+        SearchDictionary catalog = mock(SearchDictionary.class);
+        when(catalog.vocabulary()).thenReturn(catalog());
+        return new QueryParser(catalog).parse(q, true);
+    }
+
+    private static List<ParsedQuery.Correction> corrections(String... pairs) {
+        List<ParsedQuery.Correction> out = new java.util.ArrayList<>();
+        for (int i = 0; i < pairs.length; i += 2) {
+            out.add(new ParsedQuery.Correction(pairs[i], pairs[i + 1]));
+        }
+        return out;
+    }
+
+    @Test
+    void misspelledCatalogWordsAreCorrectedAndTheTextUsesTheCorrection() {
+        ParsedQuery radiador = catalogParse("radidor valeo");
+        assertThat(radiador.corrections()).isEqualTo(corrections("radidor", "radiador"));
+        assertThat(radiador.words()).containsExactly("radiador", "valeo");
+        assertThat(radiador.fuzzyText()).isEqualTo("radiador valeo");
+        assertThat(radiador.tsQuery()).isEqualTo("radiador & valeo:*");
+
+        ParsedQuery pastillas = catalogParse("pastiyas de freno");
+        assertThat(pastillas.corrections()).isEqualTo(corrections("pastiyas", "pastillas"));
+        assertThat(pastillas.words()).containsExactly("pastillas", "de", "freno");
+    }
+
+    @Test
+    void correctionAndVehicleWorkTogether() {
+        ParsedQuery parsed = catalogParse("amortigudor delantero hilux");
+
+        assertThat(parsed.corrections()).isEqualTo(corrections("amortigudor", "amortiguador"));
+        assertThat(parsed.make()).isEqualTo(TOYOTA);
+        assertThat(parsed.model()).isEqualTo(HILUX);
+        assertThat(parsed.words()).containsExactly("amortiguador", "delantero");
+    }
+
+    @Test
+    void numericModelAfterACorrectedMakeInBothCatalogForms() {
+        ParsedQuery full = catalogParse("bomba de agua del masda 3");
+        assertThat(full.make()).isEqualTo(MAZDA);
+        assertThat(full.model()).isEqualTo(MAZDA_3_FULL);
+        assertThat(full.words()).containsExactly("bomba", "de", "agua", "del").doesNotContain("3", "masda");
+        assertThat(full.corrections()).isEqualTo(corrections("masda", "mazda"));
+
+        ParsedQuery bare = parser.parse("bomba de agua del masda 3", true);
+        assertThat(bare.model()).isEqualTo(MAZDA_3);
+        assertThat(bare.words()).doesNotContain("3");
+
+        assertThat(catalogParse("bomba mazda tres").model()).isEqualTo(MAZDA_3_FULL);
+    }
+
+    @Test
+    void gluedAndUnseparatedModelsAreRecognized() {
+        ParsedQuery mazda3 = catalogParse("filtro aire mazda3");
+        assertThat(mazda3.model()).isEqualTo(MAZDA_3_FULL);
+        assertThat(mazda3.words()).containsExactly("filtro", "aire");
+        assertThat(parser.parse("filtro aire mazda3", true).model()).as("modelo «3» sin la marca").isEqualTo(MAZDA_3);
+        assertThat(catalogParse("filtro mazda-3").model()).isEqualTo(MAZDA_3_FULL);
+
+        ParsedQuery cx5 = catalogParse("terminal direccion cx5");
+        assertThat(cx5.model()).isEqualTo(CX_5);
+        assertThat(cx5.make()).isEqualTo(MAZDA);
+        assertThat(cx5.words()).containsExactly("terminal", "direccion");
+        assertThat(catalogParse("terminal cx-5").model()).isEqualTo(CX_5);
+        assertThat(catalogParse("terminal mazda cx5").model()).isEqualTo(CX_5);
+
+        assertThat(catalogParse("bujia sparkgt").model()).isEqualTo(SPARK_GT);
+
+        ParsedQuery hilux = catalogParse("amortiguador hilux2015");
+        assertThat(hilux.model()).isEqualTo(HILUX);
+        assertThat(hilux.year()).isEqualTo(2015);
+        assertThat(hilux.words()).containsExactly("amortiguador");
+    }
+
+    @Test
+    void aLoneNumberIsNeverAModel() {
+        assertThat(catalogParse("filtro 3").model()).isNull();
+        assertThat(catalogParse("filtro 3").words()).containsExactly("filtro", "3");
+    }
+
+    @Test
+    void yearRangesAndShortYearsNextToTheVehicle() {
+        ParsedQuery range = catalogParse("spark gt 2010-2015");
+        assertThat(range.model()).isEqualTo(SPARK_GT);
+        assertThat(range.yearFrom()).isEqualTo(2010);
+        assertThat(range.yearTo()).isEqualTo(2015);
+        assertThat(range.year()).as("año medio como pista").isEqualTo(2012);
+        assertThat(range.words()).isEmpty();
+
+        ParsedQuery words = catalogParse("bomba spark 2010 a 2015");
+        assertThat(words.yearFrom()).isEqualTo(2010);
+        assertThat(words.yearTo()).isEqualTo(2015);
+        assertThat(words.words()).containsExactly("bomba");
+
+        ParsedQuery shortRange = catalogParse("bomba de gasolina mazda 2 08-13");
+        assertThat(shortRange.model()).isEqualTo(MAZDA_2_FULL);
+        assertThat(shortRange.yearFrom()).isEqualTo(2008);
+        assertThat(shortRange.yearTo()).isEqualTo(2013);
+        assertThat(shortRange.reference()).isNull();
+        assertThat(shortRange.words()).containsExactly("bomba", "de", "gasolina");
+
+        ParsedQuery shortYear = catalogParse("bomba spark 08");
+        assertThat(shortYear.year()).isEqualTo(2008);
+        assertThat(shortYear.words()).containsExactly("bomba");
+        assertThat(catalogParse("bomba spark modelo 98").year()).isEqualTo(1998);
+        assertThat(catalogParse("bomba spark modelo 98").words()).containsExactly("bomba");
+        assertThat(catalogParse("bomba '08 spark").year()).isEqualTo(2008);
+
+        ParsedQuery single = catalogParse("bomba spark 2015");
+        assertThat(single.yearFrom()).isEqualTo(2015);
+        assertThat(single.yearTo()).isEqualTo(2015);
+        assertThat(single.year()).isEqualTo(2015);
+    }
+
+    @Test
+    void numbersThatAreNotYearsAreLeftAlone() {
+        ParsedQuery oil = catalogParse("aceite 5w30 4 litros");
+        assertThat(oil.corrections()).isEmpty();
+        assertThat(oil.year()).isNull();
+        assertThat(oil.reference()).isNull();
+        assertThat(oil.words()).containsExactly("aceite", "5w30", "4", "litros");
+
+        assertThat(catalogParse("rin 15 bomba").year()).as("dos dígitos lejos del vehículo").isNull();
+        assertThat(catalogParse("filtro mazda 3 1.6").year()).as("cilindrada").isNull();
+        assertThat(catalogParse("aceite 500 ml").year()).isNull();
+    }
+
+    @Test
+    void referencePrefixesAreNeverWords() {
+        ParsedQuery prefixed = catalogParse("ref a49457-rna-e50");
+        assertThat(prefixed.reference()).isEqualTo("A49457-RNA-E50");
+        assertThat(prefixed.words()).isEmpty();
+        assertThat(prefixed.tsQuery()).isNull();
+
+        ParsedQuery withPart = catalogParse("bomba M89697-SAA-A14");
+        assertThat(withPart.reference()).isEqualTo("M89697-SAA-A14");
+        assertThat(withPart.words()).containsExactly("bomba");
+
+        assertThat(catalogParse("codigo 4521 bomba").reference()).isEqualTo("4521");
+        assertThat(catalogParse("codigo 4521 bomba").words()).containsExactly("bomba");
+        assertThat(catalogParse("bomba #4521").reference()).isEqualTo("4521");
+        assertThat(catalogParse("numero de parte 89643").reference()).isEqualTo("89643");
+        assertThat(catalogParse("numero de parte 89643").words()).isEmpty();
+        assertThat(catalogParse("no. 89643 bomba").words()).containsExactly("bomba");
+        assertThat(catalogParse("ref bomba").words()).as("sin referencia").containsExactly("bomba");
+    }
+
+    @Test
+    void validRareWordsAreNotCorrectedAndShortTokensNeverBecomeAVehicle() {
+        ParsedQuery rare = catalogParse("tensor correa");
+        assertThat(rare.corrections()).isEmpty();
+        assertThat(rare.words()).containsExactly("tensor", "correa");
+
+        assertThat(catalogParse("bomba medellin").corrections()).as("municipio").isEmpty();
+        assertThat(parser.parse("logn", true).corrections()).isEmpty();
+    }
+
+    @Test
+    void withoutInterpretationNothingIsCorrected() {
+        SearchDictionary catalog = mock(SearchDictionary.class);
+        when(catalog.vocabulary()).thenReturn(catalog());
+        ParsedQuery parsed = new QueryParser(catalog).parse("radidor masda 3 2015", false);
+
+        assertThat(parsed.corrections()).isEmpty();
+        assertThat(parsed.words()).containsExactly("radidor", "masda", "3", "2015");
+        assertThat(parsed.make()).isNull();
+        assertThat(parsed.year()).isNull();
+    }
+
+    @Test
+    void synonymsAreFoundForPluralWords() {
+        Map<String, List<String>> synonyms = Map.of("plumilla", List.of("limpiaparabrisas"), "farol", List.of("farola"),
+                "mofle", List.of("silenciador"));
+        assertThat(QueryParser.synonymsOf("mofle", synonyms)).containsExactly("silenciador");
+        assertThat(QueryParser.synonymsOf("plumillas", synonyms)).containsExactly("limpiaparabrisas");
+        assertThat(QueryParser.synonymsOf("faroles", synonyms)).containsExactly("farola");
+        assertThat(QueryParser.synonymsOf("bus", synonyms)).isEmpty();
+        assertThat(QueryParser.synonymsOf("filtro", synonyms)).isEmpty();
+    }
 }

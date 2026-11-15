@@ -54,6 +54,41 @@ class SearchLogTest {
     }
 
     @Test
+    void rowKeepsTheSearchIdTheClientReceivedOrGeneratesOne() {
+        UUID id = UUID.randomUUID();
+        assertThat(SearchLog.toRow(new MarketplaceSearch("x", null, null, null, null, null, null, 1, "s", false, id),
+                DAY).id()).isEqualTo(id);
+        assertThat(SearchLog.toRow(new MarketplaceSearch("x", null, null, null, null, null, null, 1, "s", false),
+                DAY).id()).isNotNull();
+    }
+
+    @Test
+    void aDedupedSearchMapsItsIdToTheExistingSearchSoClicksAreNotLost() {
+        UUID returned = UUID.randomUUID();
+        UUID existing = UUID.randomUUID();
+        JdbcClient jdbc = mock(JdbcClient.class);
+        JdbcClient.StatementSpec insert = mock(JdbcClient.StatementSpec.class, invocation ->
+                invocation.getMethod().getReturnType().isInstance(invocation.getMock()) ? invocation.getMock() : 0);
+        JdbcClient.StatementSpec lookup = mock(JdbcClient.StatementSpec.class, invocation ->
+                invocation.getMethod().getReturnType().isInstance(invocation.getMock()) ? invocation.getMock() : 0);
+        @SuppressWarnings("unchecked")
+        JdbcClient.MappedQuerySpec<UUID> mapped = mock(JdbcClient.MappedQuerySpec.class);
+        when(mapped.optional()).thenReturn(java.util.Optional.of(existing));
+        org.mockito.Mockito.doReturn(mapped).when(lookup).query(UUID.class);
+        when(jdbc.sql(SearchLog.INSERT_SQL)).thenReturn(insert);
+        when(jdbc.sql(SearchLog.EXISTING_SQL)).thenReturn(lookup);
+        SearchLog searchLog = new SearchLog(jdbc, DIRECT);
+
+        searchLog.record(new MarketplaceSearch("filtro", null, null, null, null, null, null, 1, "s", false,
+                returned));
+
+        assertThat(searchLog.resolve(returned)).isEqualTo(existing);
+        UUID other = UUID.randomUUID();
+        assertThat(searchLog.resolve(other)).isEqualTo(other);
+        assertThat(searchLog.resolve(null)).isNull();
+    }
+
+    @Test
     void searchWithoutCriteriaIsNotRecorded() {
         JdbcClient jdbc = mock(JdbcClient.class);
         new SearchLog(jdbc, DIRECT).record(new MarketplaceSearch("  ", null, null, null, null, null, null, 4,

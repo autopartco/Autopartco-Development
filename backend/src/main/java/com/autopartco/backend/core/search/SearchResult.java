@@ -9,7 +9,9 @@ import com.autopartco.backend.core.catalog.ProductResponse;
 /**
  * Página de resultados: un listado por producto, ya hidratado con el precio del comprador. {@code fuzzy=true} si la
  * consulta exacta no dio resultados y se muestran resultados parecidos (trigramas). {@code interpreted} es nulo si no
- * se interpretó nada (o con {@code interpret=false}); {@code facets} es nulo si no se pidieron.
+ * se interpretó nada (o con {@code interpret=false}); {@code facets} es nulo si no se pidieron. {@code searchId}
+ * identifica esta respuesta de {@code /search} (UUID nuevo en cada llamada, nunca sale de la caché de resultados) y
+ * es el que el cliente devuelve al registrar un clic; nulo en el catálogo compatible.
  */
 public record SearchResult(
         List<Hit> items,
@@ -19,16 +21,23 @@ public record SearchResult(
         boolean fuzzy,
         SearchInterpretation interpreted,
         Facets facets,
-        List<Sponsored> sponsored
+        List<Sponsored> sponsored,
+        UUID searchId
 ) {
     public SearchResult {
         sponsored = sponsored == null ? List.of() : List.copyOf(sponsored);
     }
 
+    /** Sin identificador de búsqueda (catálogo compatible y pruebas). */
+    public SearchResult(List<Hit> items, int page, int size, long total, boolean fuzzy,
+            SearchInterpretation interpreted, Facets facets, List<Sponsored> sponsored) {
+        this(items, page, size, total, fuzzy, interpreted, facets, sponsored, null);
+    }
+
     /** Sin anuncios (catálogo compatible y pruebas). */
     public SearchResult(List<Hit> items, int page, int size, long total, boolean fuzzy,
             SearchInterpretation interpreted, Facets facets) {
-        this(items, page, size, total, fuzzy, interpreted, facets, List.of());
+        this(items, page, size, total, fuzzy, interpreted, facets, List.of(), null);
     }
 
     /**
