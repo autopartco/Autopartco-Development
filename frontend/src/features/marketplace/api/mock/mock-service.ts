@@ -193,10 +193,11 @@ export function createMockMarketplaceService(): MarketplaceService {
     async suggest(text) {
       await simulateNetwork()
       const needle = normalize(text.trim())
-      if (needle.length < 2) return { suggestions: [], products: [], services: [], serviceCategories: [] }
+      if (needle.length < 2) return { suggestions: [], products: [], services: [], serviceCategories: [], stores: [] }
       return {
         services: [],
         serviceCategories: [],
+        stores: [],
         suggestions: MOCK_CATEGORIES.filter((item) => normalize(item.name).includes(needle)).map((item) => ({
           term: item.name.toLowerCase(),
           kind: 'CATEGORY' as const,
@@ -333,6 +334,12 @@ export function createMockMarketplaceService(): MarketplaceService {
 
     // Los datos simulados no incluyen servicios: no se inventan talleres ni precios.
     async searchServices(query) {
+      await simulateNetwork()
+      return { items: [], total: 0, page: query.page, pageSize: query.pageSize, totalPages: 1 }
+    },
+
+    // Los datos simulados no publican almacenes buscables: lista vacía.
+    async searchStores(query) {
       await simulateNetwork()
       return { items: [], total: 0, page: query.page, pageSize: query.pageSize, totalPages: 1 }
     },

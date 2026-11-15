@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.autopartco.backend.core.catalog.ProductResponse;
 import com.autopartco.backend.core.organization.ServiceCategory;
+import com.autopartco.backend.core.organization.StoreBrand;
 import com.autopartco.backend.core.pricing.BuyerContext;
 import com.autopartco.backend.shared.cache.AppCaches;
 import com.autopartco.backend.shared.cache.ResilientCacheManager;
@@ -36,6 +37,7 @@ public class Suggestions {
     public static final int MAX_PRODUCTS = 4;
     public static final int MAX_SERVICES = 3;
     public static final int MAX_SERVICE_CATEGORIES = 2;
+    public static final int MAX_STORES = 3;
     static final int MAX_TERM_LENGTH = 120;
     /**
      * Umbral de las búsquedas que pasan a sugerencia. {@code session_hash} sale de una cabecera que controla el
@@ -123,21 +125,31 @@ public class Suggestions {
     public record ServiceSuggestion(UUID id, String name, ServiceCategory category, String storeName) {
     }
 
+    /** Almacén publicado sugerido; {@code city} es la primera ciudad de sus sucursales activas o {@code null}. */
+    public record StoreSuggestion(UUID id, String name, String logoUrl, String city) {
+    }
+
     /**
-     * {@code services} (hasta {@value #MAX_SERVICES}) y {@code serviceCategories} (hasta
-     * {@value #MAX_SERVICE_CATEGORIES}) son aditivos: nunca nulos.
+     * {@code services} (hasta {@value #MAX_SERVICES}), {@code serviceCategories} (hasta
+     * {@value #MAX_SERVICE_CATEGORIES}) y {@code stores} (hasta {@value #MAX_STORES}) son aditivos: nunca nulos.
      */
     public record Result(List<Suggestion> suggestions, List<ProductResponse> products, List<ServiceSuggestion> services,
-            List<ServiceCategory> serviceCategories) {
+            List<ServiceCategory> serviceCategories, List<StoreSuggestion> stores) {
         public static final Result EMPTY = new Result(List.of(), List.of());
 
         public Result {
             services = services == null ? List.of() : List.copyOf(services);
             serviceCategories = serviceCategories == null ? List.of() : List.copyOf(serviceCategories);
+            stores = stores == null ? List.of() : List.copyOf(stores);
+        }
+
+        public Result(List<Suggestion> suggestions, List<ProductResponse> products, List<ServiceSuggestion> services,
+                List<ServiceCategory> serviceCategories) {
+            this(suggestions, products, services, serviceCategories, List.of());
         }
 
         public Result(List<Suggestion> suggestions, List<ProductResponse> products) {
-            this(suggestions, products, List.of(), List.of());
+            this(suggestions, products, List.of(), List.of(), List.of());
         }
     }
 
@@ -196,7 +208,29 @@ public class Suggestions {
                 .map(SearchResult.Hit::listing)
                 .toList();
         return new Result(suggestions, products, services(normalized), ServiceTerms.suggest(normalized,
-                MAX_SERVICE_CATEGORIES));
+                MAX_SERVICE_CATEGORIES), stores(normalized));
+    }
+
+    /** Almacenes publicados con la misma coincidencia que la búsqueda de almacenes ({@link StoreSearchSql}). */
+    private List<StoreSuggestion> stores(String normalized) {
+        try {
+            Map<String, Object> params = new java.util.LinkedHashMap<>(StoreSearchService.params(normalized, ""));
+            params.put("limit", MAX_STORES);
+            return jdbcClient.sql(StoreSearchSql.SUGGEST_SQL)
+                    .params(params)
+                    .query((rs, row) -> {
+                        UUID id = rs.getObject("id", UUID.class);
+                        List<String> cities = StoreSearchService.cities(rs.getString("cities"));
+                        return new StoreSuggestion(id, rs.getString("business_name"),
+                                StoreBrand.url(id, StoreBrand.LOGO, rs.getString("logo_path")),
+                                cities.isEmpty() ? null : cities.get(0));
+                    })
+                    .list();
+        } catch (RuntimeException unavailable) {
+            // Las sugerencias de almacenes nunca rompen el autocompletado de productos.
+            log.warn("Sugerencias de almacenes no disponibles: {}", unavailable.getClass().getSimpleName());
+            return List.of();
+        }
     }
 
     /** Servicios publicados cuyo nombre, categoría o almacén contiene el texto (una fila por servicio). */

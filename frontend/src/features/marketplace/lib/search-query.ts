@@ -30,13 +30,13 @@ export const SEARCH_PARAMS = {
   page: 'pagina',
   /** `0` = no interpretar el texto (se pone al quitar una ficha interpretada). */
   interpret: 'interpretar',
-  /** Pestaña de la búsqueda unificada: `all` (por defecto), `parts` o `services`. */
+  /** Pestaña de la búsqueda unificada: `all` (por defecto), `parts`, `services` o `stores`. */
   tab: 'tab',
 } as const
 
-export type SearchTab = 'all' | 'parts' | 'services'
+export type SearchTab = 'all' | 'parts' | 'services' | 'stores'
 
-export const SEARCH_TABS: readonly SearchTab[] = ['all', 'parts', 'services']
+export const SEARCH_TABS: readonly SearchTab[] = ['all', 'parts', 'services', 'stores']
 
 export const SEARCH_SORT_LABELS: Record<SearchSort, string> = {
   relevance: 'Más relevantes',
@@ -105,11 +105,12 @@ export function parseSearchState(params: URLSearchParams, fixedCategory?: string
 }
 
 /**
- * Href de una pestaña de `/buscar`. «Todo» y «Repuestos» comparten los filtros de repuestos; «Servicios» usa los suyos,
- * así que al entrar o salir de ella solo se conserva el texto de la búsqueda.
+ * Href de una pestaña de `/buscar`. «Todo» y «Repuestos» comparten los filtros de repuestos; «Servicios» y «Tiendas» usan
+ * los suyos, así que al entrar o salir de ellas solo se conserva el texto de la búsqueda.
  */
 export function searchTabHref(current: URLSearchParams, from: SearchTab, to: SearchTab): string {
-  const params = new URLSearchParams(from !== 'services' && to !== 'services' ? current : undefined)
+  const sharesFilters = (tab: SearchTab) => tab === 'all' || tab === 'parts'
+  const params = new URLSearchParams(sharesFilters(from) && sharesFilters(to) ? current : undefined)
   const q = current.get(SEARCH_PARAMS.q)
   if (q) params.set(SEARCH_PARAMS.q, q)
   params.delete(SEARCH_PARAMS.page)

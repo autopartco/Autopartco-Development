@@ -2,13 +2,13 @@ import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type Keybo
 import { useLocation, useNavigate, useSearchParams } from 'react-router'
 import { LoaderCircleIcon, SearchIcon, XIcon } from 'lucide-react'
 import { useMapArea } from '@/features/location/hooks'
-import { formatCOP } from '@/lib/format'
+import { formatCOP, initials } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { serviceCategoryIcon, serviceCategoryLabel } from '@/features/services/lib/categories'
 import { servicePath, servicesCategoryPath } from '@/features/services/lib/paths'
 import type { ServiceCategory, SuggestionKind } from '../../api/types'
 import { useSearchSuggestions } from '../../hooks'
-import { productPath } from '../../lib/paths'
+import { productPath, storePath } from '../../lib/paths'
 import { SEARCH_PARAMS } from '../../lib/search-query'
 import { PhotoSearchButton } from '../photo-search'
 
@@ -37,6 +37,30 @@ type Option =
   | { type: 'product'; id: string; productId: string; name: string; price: number; partNumber?: string }
   | { type: 'serviceCategory'; id: string; category: ServiceCategory }
   | { type: 'service'; id: string; serviceId: string; name: string; category: ServiceCategory; storeName: string }
+  | { type: 'store'; id: string; storeId: string; name: string; logoUrl?: string; city?: string }
+
+/** Logo del almacén en la sugerencia, o su inicial si no hay logo o no carga. */
+function StoreLogo({ name, logoUrl }: { name: string; logoUrl?: string }) {
+  const [failed, setFailed] = useState(false)
+  if (logoUrl && !failed) {
+    return (
+      <img
+        src={logoUrl}
+        alt=""
+        width={28}
+        height={28}
+        loading="lazy"
+        className="size-7 shrink-0 rounded border border-ap-line bg-ap-white object-contain"
+        onError={() => setFailed(true)}
+      />
+    )
+  }
+  return (
+    <span className="grid size-7 shrink-0 place-items-center rounded bg-ap-graphite text-xs font-semibold text-ap-white" aria-hidden>
+      {initials(name) || name.charAt(0)}
+    </span>
+  )
+}
 
 /** "/" no debe robar la tecla mientras se escribe en otro campo. */
 function isTyping(target: EventTarget | null): boolean {
@@ -101,6 +125,9 @@ export function SearchBox({ className, tone = 'light', autoFocus, shortcut, size
           storeName: service.storeName,
         }),
       ),
+      ...data.stores.map(
+        (store): Option => ({ type: 'store', id: `a${store.id}`, storeId: store.id, name: store.name, logoUrl: store.logoUrl, city: store.city }),
+      ),
     ]
   }, [suggestions.data])
 
@@ -157,6 +184,10 @@ export function SearchBox({ className, tone = 'light', autoFocus, shortcut, size
       navigate(servicePath(option.serviceId))
       return
     }
+    if (option.type === 'store') {
+      navigate(storePath(option.storeId))
+      return
+    }
     if (option.type === 'serviceCategory') {
       navigate(servicesCategoryPath(option.category))
       return
@@ -207,6 +238,7 @@ export function SearchBox({ className, tone = 'light', autoFocus, shortcut, size
   const termOptions = options.filter((option) => option.type === 'term')
   const productOptions = options.filter((option) => option.type === 'product')
   const serviceOptions = options.filter((option) => option.type === 'serviceCategory' || option.type === 'service')
+  const storeOptions = options.filter((option) => option.type === 'store')
   const optionClass = (index: number) =>
     cn(
       'flex min-h-11 cursor-pointer items-center gap-3 px-4 py-2 text-sm text-ap-ink',
@@ -231,7 +263,7 @@ export function SearchBox({ className, tone = 'light', autoFocus, shortcut, size
         )}
       >
         <label htmlFor={`${uid}-input`} className="sr-only">
-          Buscar repuestos o servicios
+          Buscar repuestos, servicios o tiendas
         </label>
         <SearchIcon
           className={cn(
@@ -263,7 +295,7 @@ export function SearchBox({ className, tone = 'light', autoFocus, shortcut, size
           autoCapitalize="off"
           spellCheck={false}
           enterKeyHint="search"
-          placeholder="Busca repuestos o servicios"
+          placeholder={shortcut ? 'Buscar' : 'Busca repuestos, servicios o tiendas'}
           className={cn(
             'h-full min-w-0 flex-1 appearance-none bg-transparent px-2.5 text-base text-ellipsis outline-none sm:text-sm',
             dark
@@ -400,6 +432,32 @@ export function SearchBox({ className, tone = 'light', autoFocus, shortcut, size
                     <span className="min-w-0 flex-1 truncate">Servicios de {serviceCategoryLabel(option.category).toLowerCase()}</span>
                   )}
                   <span className="shrink-0 text-xs text-ap-muted">{option.type === 'service' ? 'Servicio' : 'Categoría de servicio'}</span>
+                </div>
+              )
+            })}
+          </div>
+        ) : null}
+        {storeOptions.length > 0 ? (
+          <div role="group" aria-label="Tiendas">
+            {storeOptions.map((option) => {
+              const index = options.indexOf(option)
+              if (option.type !== 'store') return null
+              return (
+                <div
+                  key={option.id}
+                  id={optionId(index)}
+                  role="option"
+                  aria-selected={index === activeIndex}
+                  className={optionClass(index)}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => choose(option)}
+                >
+                  <StoreLogo name={option.name} logoUrl={option.logoUrl} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-medium">{option.name}</span>
+                    {option.city ? <span className="block truncate text-xs text-ap-muted">{option.city}</span> : null}
+                  </span>
+                  <span className="shrink-0 text-xs text-ap-muted">Tienda</span>
                 </div>
               )
             })}
