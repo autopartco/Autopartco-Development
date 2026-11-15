@@ -373,4 +373,15 @@ class QueryParserTest {
         assertThat(parsed.make()).isNull();
         assertThat(parsed.year()).isNull();
     }
+
+    @Test
+    void synonymsAreFoundForPluralWords() {
+        Map<String, List<String>> synonyms = Map.of("plumilla", List.of("limpiaparabrisas"), "farol", List.of("farola"),
+                "mofle", List.of("silenciador"));
+        assertThat(QueryParser.synonymsOf("mofle", synonyms)).containsExactly("silenciador");
+        assertThat(QueryParser.synonymsOf("plumillas", synonyms)).containsExactly("limpiaparabrisas");
+        assertThat(QueryParser.synonymsOf("faroles", synonyms)).containsExactly("farola");
+        assertThat(QueryParser.synonymsOf("bus", synonyms)).isEmpty();
+        assertThat(QueryParser.synonymsOf("filtro", synonyms)).isEmpty();
+    }
 }

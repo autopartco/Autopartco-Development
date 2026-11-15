@@ -50,7 +50,7 @@ record SearchCriteria(
     static final Set<String> FILLER_WORDS = Set.of("necesito", "necesita", "busco", "buscando", "quiero",
             "quisiera", "cambiar", "consigo", "conseguir", "donde", "hace", "falta", "me", "comprar", "compro",
             "venden", "vende", "tienen", "tiene", "hay", "precio", "cuanto", "cuesta", "vale", "carro", "auto",
-            "vehiculo", "favor", "porfa", "urgente", "bueno", "buena", "barato", "barata", "economico", "original");
+            "vehiculo", "favor", "porfa", "urgente", "bueno", "buena", "barato", "barata", "economico", "original", "completo", "completa", "nuevo", "nueva");
 
     /**
      * Lo interpretado de {@code q} que el cliente no fijó. {@code makeId} (con {@code vehicleTsQuery}) solo existe sin

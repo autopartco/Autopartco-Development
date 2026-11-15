@@ -233,13 +233,31 @@ public class QueryParser {
             List<String> alternatives = new ArrayList<>();
             // Sin prefijo en palabras vacías: «para:*» encontraría «parabrisas».
             alternatives.add(last && word.length() >= 3 && !STOPWORDS.contains(word) ? word + ":*" : word);
-            for (String expansion : synonyms.getOrDefault(word, List.of())) {
+            for (String expansion : synonymsOf(word, synonyms)) {
                 String[] parts = expansion.split(" ");
                 alternatives.add(parts.length == 1 ? parts[0] : "(" + String.join(" & ", parts) + ")");
             }
             groups.add(alternatives.size() == 1 ? alternatives.getFirst() : "(" + String.join(" | ", alternatives) + ")");
         }
         return groups;
+    }
+
+    /** Sinónimos de la palabra o, si no tiene, de su singular («plumillas» → «plumilla», «faroles» → «farol»). */
+    static List<String> synonymsOf(String word, Map<String, List<String>> synonyms) {
+        List<String> exact = synonyms.get(word);
+        if (exact != null) {
+            return exact;
+        }
+        if (word.length() > 3 && word.endsWith("s")) {
+            List<String> singular = synonyms.get(word.substring(0, word.length() - 1));
+            if (singular != null) {
+                return singular;
+            }
+            if (word.length() > 4 && word.endsWith("es")) {
+                return synonyms.getOrDefault(word.substring(0, word.length() - 2), List.of());
+            }
+        }
+        return List.of();
     }
 
     // ------------------------------------------------------------------ tokens

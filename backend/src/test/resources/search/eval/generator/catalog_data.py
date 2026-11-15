@@ -125,15 +125,26 @@ UNIVERSAL = [
     ("refrigerante", "Refrigerante verde 50/50 galón Valeo", "REFRIGERACION", "Valeo", None, {"volumen": "1 galón"}, 54000),
 ]
 
-# Sinonimos de arranque (inventados; la tabla real tiene ~58). Sin 'clutch', 'mofle', 'exploradoras' ni 'bujes' a proposito:
-# la jerga que el catalogo real no cubre debe verse como fallo en la linea base.
+# Copia de public.search_synonyms de Supabase autopartco-dev (2026-11-15). Mantener sincronizada: la evaluacion debe
+# medir los sinonimos reales.
 SYNONYMS = {
-    "bandas": ["pastillas"], "shock": ["amortiguador"], "shocks": ["amortiguador"], "bujia": ["bujias"],
-    "bujias": ["bujia"], "correa": ["banda"], "banda": ["correa"], "llanta": ["neumatico"],
-    "bateria": ["acumulador"], "silenciador": ["muffler"], "radiador": ["panal"],
-    "farola": ["faro", "farol"], "faro": ["farola"], "retrovisor": ["espejo"], "espejo": ["retrovisor"],
-    "limpiaparabrisas": ["plumillas"], "plumillas": ["limpiaparabrisas"], "guardabarro": ["guardafango"],
-    "tijera": ["brazo"], "cauchos": ["bujes"], "filtro": ["filtros"],
+    "aceite 5w30": ["aceite de motor sintético 5w-30"], "acumulador": ["bateria"], "alternador": ["alternador"],
+    "amortiguadores": ["amortiguador delantero", "amortiguador trasero"], "antiniebla": ["exploradora"],
+    "arranque": ["motor de arranque"], "balatas": ["pastillas de freno"], "balinera": ["rodamiento"],
+    "bateria": ["acumulador"], "bocina": ["pito"], "bombilla": ["bombillo"], "bombillo": ["bombillo farola"],
+    "bujia": ["bujías", "juego de bujías"], "bumper": ["parachoques", "defensa"], "caucho": ["buje"],
+    "clutch": ["embrague"], "combustible": ["gasolina"], "correa": ["correa de distribución"],
+    "cremallera": ["caja de direccion"], "defensa": ["parachoques", "bumper"], "discos": ["discos de freno"],
+    "distribucion": ["timing"], "embrague": ["clutch"], "empaque": ["junta"], "escobilla": ["plumilla"],
+    "espejo": ["retrovisor"], "exosto": ["silenciador"], "exploradora": ["antiniebla"], "faro": ["farola"],
+    "farola": ["faro"], "filtro aceite": ["filtro de aceite"], "filtro motor": ["filtro de aire motor"],
+    "foco": ["bombillo"], "gasolina": ["combustible"], "guardabarro": ["guardafango"],
+    "guardafango": ["guardabarro", "guarda barro"], "guaya": ["cable"], "lambda": ["sensor de oxigeno"],
+    "limpiaparabrisas": ["plumilla"], "llanta": ["neumatico"], "mofle": ["silenciador"], "neumatico": ["llanta"],
+    "panal": ["radiador"], "parachoques": ["bumper", "defensa"], "pastas": ["pastillas de freno", "frenos"],
+    "pito": ["bocina"], "plumilla": ["limpiaparabrisas", "escobilla"], "radiador": ["radiador de motor"],
+    "retrovisor": ["espejo"], "rodamiento": ["rodamiento de rueda", "balinera"], "shock": ["amortiguador"],
+    "silenciador": ["mofle"], "stop": ["stop trasero"], "timing": ["distribucion"], "tripoide": ["homocinetica"],
 }
 
 # Almacenes y sucursales: (almacen, [(sucursal, municipio, lat, lng)])
