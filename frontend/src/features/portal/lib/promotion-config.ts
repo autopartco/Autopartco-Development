@@ -10,6 +10,10 @@ export interface TargetOptions {
   products: TargetOption[]
   categories: TargetOption[]
   manufacturers: TargetOption[]
+  /** Servicios del almacén (solo portal). */
+  services?: TargetOption[]
+  /** Categorías de servicio; `id` es el código que va en `targetKey`. */
+  serviceCategories?: TargetOption[]
 }
 
 /**

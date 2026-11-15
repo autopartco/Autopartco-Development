@@ -1,5 +1,6 @@
 import {
   BellIcon,
+  CalendarCheckIcon,
   ClipboardListIcon,
   StarIcon,
   UserRoundIcon,
@@ -73,10 +74,11 @@ interface MenuOptions {
 
 const MY_ACCOUNT: AccountMenuLink = { key: 'mi-cuenta', label: 'Mi cuenta', to: '/cuenta', icon: UserRoundIcon }
 const MY_ORDERS: AccountMenuLink = { key: 'mis-pedidos', label: 'Mis pedidos', to: '/mis-pedidos', icon: PackageIcon }
+const MY_BOOKINGS: AccountMenuLink = { key: 'mis-citas', label: 'Mis citas', to: '/mis-citas', icon: CalendarCheckIcon }
 const TO_RATE: AccountMenuLink = { key: 'por-calificar', label: 'Por calificar', to: '/cuenta/calificar', icon: StarIcon }
 const NOTIFICATIONS: AccountMenuLink = { key: 'notificaciones', label: 'Notificaciones', to: '/cuenta/notificaciones', icon: BellIcon }
 /** Igual para cualquier cuenta: un almacén o un administrador también compra y administra su cuenta. */
-const COMMON: AccountMenuLink[] = [MY_ACCOUNT, MY_ORDERS, TO_RATE, NOTIFICATIONS]
+const COMMON: AccountMenuLink[] = [MY_ACCOUNT, MY_ORDERS, MY_BOOKINGS, TO_RATE, NOTIFICATIONS]
 const MY_BENEFITS: AccountMenuLink = { key: 'mis-beneficios', label: 'Tus beneficios', to: '/mis-beneficios', icon: GiftIcon }
 const CART: AccountMenuLink = { key: 'carrito', label: 'Carrito', to: '/carrito', icon: ShoppingCartIcon }
 const MARKETPLACE: AccountMenuLink = { key: 'marketplace', label: 'Ir al marketplace', to: '/buscar', icon: ShoppingBagIcon }

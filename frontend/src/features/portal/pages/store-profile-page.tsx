@@ -12,9 +12,9 @@ import { useDraftForm, type FieldErrors } from '@/lib/use-draft-form'
 import { useSubmitOnce } from '@/lib/use-submit-once'
 import { useUnsavedChanges } from '@/lib/use-unsaved-changes'
 import { getPortalService } from '../api/portal-service'
-import type { StoreContact, StoreProfile, StoreProfileUpdate } from '../api/types'
+import type { BusinessType, StoreContact, StoreProfile, StoreProfileUpdate } from '../api/types'
 import { BrandUploader } from '../components/brand-uploader'
-import { TextAreaField } from '../components/form-controls'
+import { SelectField, TextAreaField } from '../components/form-controls'
 import { ListSkeleton } from '../components/list-skeleton'
 import { PageHeader } from '../components/page-header'
 import { QueryBoundary } from '../components/query-boundary'
@@ -26,10 +26,15 @@ import { EMAIL_PATTERN, focusById } from '../lib/forms'
 
 const CONTACT_FIELDS = ['whatsapp', 'phone', 'website', 'instagram', 'facebook', 'tiktok'] as const
 type ContactField = (typeof CONTACT_FIELDS)[number]
-const FIELDS = ['businessName', 'businessEmail', 'description', ...CONTACT_FIELDS] as const
+const FIELDS = ['businessName', 'businessEmail', 'businessType', 'description', ...CONTACT_FIELDS] as const
 type Field = (typeof FIELDS)[number]
 const fieldId = (field: Field) => `tienda-${field}`
 const DESCRIPTION_MAX = 1000
+const BUSINESS_TYPES: { value: BusinessType; label: string }[] = [
+  { value: 'PARTS', label: 'Repuestos' },
+  { value: 'SERVICES', label: 'Servicios' },
+  { value: 'BOTH', label: 'Ambos (repuestos y servicios)' },
+]
 
 type Values = Record<Field, string>
 
@@ -83,6 +88,7 @@ function ProfileForm({ profile }: { profile: StoreProfile }) {
     initial: {
       businessName: profile.businessName,
       businessEmail: profile.businessEmail,
+      businessType: profile.businessType ?? 'PARTS',
       description: profile.description ?? '',
       ...(Object.fromEntries(CONTACT_FIELDS.map((field) => [field, storedContact(profile.publicProfile, field)])) as Record<ContactField, string>),
     },
@@ -119,6 +125,7 @@ function ProfileForm({ profile }: { profile: StoreProfile }) {
     const input: StoreProfileUpdate = {}
     if (values.businessName.trim() !== profile.businessName) input.businessName = values.businessName.trim()
     if (values.businessEmail.trim() !== profile.businessEmail) input.businessEmail = values.businessEmail.trim()
+    if (values.businessType !== (profile.businessType ?? 'PARTS')) input.businessType = values.businessType as BusinessType
     if (values.description.trim() !== (profile.description ?? '')) input.description = values.description.trim()
     const contact: NonNullable<StoreProfileUpdate['publicProfile']> = {}
     for (const field of CONTACT_FIELDS) {
@@ -178,6 +185,16 @@ function ProfileForm({ profile }: { profile: StoreProfile }) {
       </FormSection>
       <FormSection title="Contacto y presentación" description="Lo que leen los compradores y por dónde te escribimos." className="border-t border-ap-line-strong pt-4">
         <TextField {...bind('businessEmail')} label="Correo del almacén" type="email" inputMode="email" maxLength={200} autoComplete="off" required hint="Aquí te escribimos sobre pedidos y tu suscripción." onChange={(event) => change('businessEmail', event.target.value)} />
+        <SelectField
+          id={fieldId('businessType')}
+          label="Tipo de negocio"
+          options={BUSINESS_TYPES}
+          value={values.businessType}
+          error={draft.errorFor('businessType')}
+          disabled={!editable}
+          hint="Qué ofreces. Con «Servicios» no necesitas publicar productos para completar tu perfil."
+          onChange={(event) => change('businessType', event.target.value)}
+        />
         <TextAreaField
           {...bind('description')}
           label="Descripción"

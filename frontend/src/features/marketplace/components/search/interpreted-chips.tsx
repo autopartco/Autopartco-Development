@@ -1,4 +1,5 @@
 import { XIcon } from 'lucide-react'
+import { serviceCategoryLabel } from '@/features/services/lib/categories'
 import type { InterpretedQuery } from '../../api/types'
 import type { InterpretedChip } from '../../lib/search-query'
 
@@ -16,6 +17,9 @@ function buildChips(interpreted: InterpretedQuery): Chip[] {
   if (interpreted.year) chips.push({ key: 'year', label: String(interpreted.year), kind: 'Año' })
   if (interpreted.cityCode) chips.push({ key: 'city', label: interpreted.cityName ?? interpreted.cityCode, kind: 'Ciudad' })
   if (interpreted.reference) chips.push({ key: 'reference', label: interpreted.reference, kind: 'Referencia' })
+  if (interpreted.serviceCategory) {
+    chips.push({ key: 'service', label: serviceCategoryLabel(interpreted.serviceCategory), kind: 'Servicio' })
+  }
   return chips
 }
 

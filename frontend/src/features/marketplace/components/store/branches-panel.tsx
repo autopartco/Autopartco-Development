@@ -56,10 +56,20 @@ interface BranchRowProps {
   active: boolean
   whatsappMessage?: string
   whatsappEnabled: boolean
+  service?: BranchesService
   onShowOnMap?: () => void
 }
 
-function BranchRow({ storeId, storeName, storePath, branch, active, whatsappMessage, whatsappEnabled, onShowOnMap }: BranchRowProps) {
+/** Servicio por el que se consulta la sede: el WhatsApp usa la plantilla de servicios y el clic se atribuye a él. */
+export interface BranchesService {
+  id: string
+  name: string
+  /** Ruta interna que se envía como `{enlace}`. */
+  path: string
+  promotionLabel?: string
+}
+
+function BranchRow({ storeId, storeName, storePath, branch, active, whatsappMessage, whatsappEnabled, service, onShowOnMap }: BranchRowProps) {
   const place = [branch.address, branch.city].filter(Boolean).join(', ')
   return (
     <li id={`sede-${branch.id}`} className={cn('flex flex-col gap-2 px-4 py-4 transition-colors', active && 'bg-ap-paper')}>
@@ -83,13 +93,14 @@ function BranchRow({ storeId, storeName, storePath, branch, active, whatsappMess
             storeId={storeId}
             targets={[{ branchId: branch.id, name: branch.name, phone: branch.whatsapp }]}
             template={whatsappMessage}
-            subject={storeName}
-            path={storePath}
+            subject={service?.name ?? storeName}
+            path={service?.path ?? storePath}
+            service={service ? { id: service.id, promotionLabel: service.promotionLabel } : undefined}
             label="Escribir"
             size="sm"
           />
         ) : null}
-        <DirectionsMenu storeId={storeId} branches={[branch]} size="sm" />
+        <DirectionsMenu storeId={storeId} branches={[branch]} serviceId={service?.id} size="sm" />
         {branch.phone ? (
           <a
             href={`tel:${branch.phone}`}
@@ -115,17 +126,34 @@ interface BranchesPanelProps {
   storeName: string
   storePath: string
   branches: StoreBranch[]
+  /** Plantilla de WhatsApp: la de producto del almacén o, con `service`, la de servicios. */
   whatsappMessage?: string
   whatsappEnabled: boolean
   /** Sin otra columna a su lado: mapa más ancho y lista en dos columnas. */
   wide?: boolean
+  /** Detalle de un servicio: el panel lista solo las sedes que lo prestan. */
+  service?: BranchesService
+  /** Índice de sección sobre el título (por defecto «Tienda / Ubicación»). */
+  indexLabel?: string
+  title?: string
 }
 
 /**
  * Mapa y lista de sedes. El mapa es un complemento: la lista tiene toda la información y las acciones, y sigue
  * disponible si el mapa no carga o no hay coordenadas.
  */
-export function BranchesPanel({ storeId, storeName, storePath, branches, whatsappMessage, whatsappEnabled, wide }: BranchesPanelProps) {
+export function BranchesPanel({
+  storeId,
+  storeName,
+  storePath,
+  branches,
+  whatsappMessage,
+  whatsappEnabled,
+  wide,
+  service,
+  indexLabel = 'Tienda / Ubicación',
+  title,
+}: BranchesPanelProps) {
   const [activeId, setActiveId] = useState<string>()
   const [mapFailed, setMapFailed] = useState(false)
   const hasMap = !mapFailed && branches.some((branch) => branch.point)
@@ -154,9 +182,9 @@ export function BranchesPanel({ storeId, storeName, storePath, branches, whatsap
       )}
     >
       <div className="flex flex-col gap-1">
-        <p className="ap-index">Tienda / Ubicación</p>
+        <p className="ap-index">{indexLabel}</p>
         <h2 id="sedes-titulo" className="text-block-title text-ap-ink">
-          {branches.length === 1 ? 'Dónde encontrarnos' : `Nuestras ${pluralize(branches.length, 'sede', 'sedes')}`}
+          {title ?? (branches.length === 1 ? 'Dónde encontrarnos' : `Nuestras ${pluralize(branches.length, 'sede', 'sedes')}`)}
         </h2>
       </div>
       <div className={cn('flex min-h-0 flex-1 gap-4', wide ? 'flex-col lg:grid lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]' : 'flex-col')}>
@@ -185,6 +213,7 @@ export function BranchesPanel({ storeId, storeName, storePath, branches, whatsap
               active={branch.id === activeId}
               whatsappMessage={whatsappMessage}
               whatsappEnabled={whatsappEnabled}
+              service={service}
               onShowOnMap={hasMap ? () => showOnMap(branch.id) : undefined}
             />
           ))}

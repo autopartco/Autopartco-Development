@@ -10,7 +10,7 @@ import { getAnonymousSessionId } from './anonymous-session'
  * `utm_source` y `document.referrer`. En la navegación interna `document.referrer` no cambia (SPA), así que se envía
  * el propio dominio y el servidor la clasifica como `INTERNAL`.
  */
-export type VisibilityKind = 'PROFILE_VIEW' | 'PRODUCT_VIEW' | 'SHARE' | 'WHATSAPP_CLICK' | 'DIRECTIONS_CLICK'
+export type VisibilityKind = 'PROFILE_VIEW' | 'PRODUCT_VIEW' | 'SERVICE_VIEW' | 'SHARE' | 'WHATSAPP_CLICK' | 'DIRECTIONS_CLICK'
 
 /** Clics que el servidor mide por sucursal (`branchId` obligatorio). */
 export type ClickKind = 'WHATSAPP_CLICK' | 'DIRECTIONS_CLICK'
@@ -67,10 +67,13 @@ function send(body: Record<string, unknown>): void {
   }
 }
 
-/** Visita al perfil o a una publicación. Llamar una vez por vista (en un efecto). */
-export function trackView(kind: 'PROFILE_VIEW' | 'PRODUCT_VIEW', storeId: string, productId?: string): void {
+/**
+ * Visita al perfil, a una publicación (`itemId` = producto) o al detalle de un servicio (`itemId` = servicio, que el
+ * servidor exige para `SERVICE_VIEW`). Llamar una vez por vista (en un efecto).
+ */
+export function trackView(kind: 'PROFILE_VIEW' | 'PRODUCT_VIEW' | 'SERVICE_VIEW', storeId: string, itemId?: string): void {
   // Un mismo render puede ejecutar el efecto dos veces (StrictMode): la misma vista en menos de 2 s cuenta una vez.
-  const key = `${kind}:${storeId}:${productId ?? ''}:${window.location.pathname}`
+  const key = `${kind}:${storeId}:${itemId ?? ''}:${window.location.pathname}`
   const now = Date.now()
   if (key === lastView.key && now - lastView.at < 2000) return
   lastView = { key, at: now }
@@ -80,7 +83,8 @@ export function trackView(kind: 'PROFILE_VIEW' | 'PRODUCT_VIEW', storeId: string
     anonymousId: getAnonymousSessionId(),
     kind,
     storeId,
-    productId,
+    productId: kind === 'PRODUCT_VIEW' ? itemId : undefined,
+    serviceId: kind === 'SERVICE_VIEW' ? itemId : undefined,
     ref: landing ? (params.get(REF_PARAM) ?? undefined) : undefined,
     utmSource: landing ? (params.get('utm_source') ?? undefined) : undefined,
     referrer: landing ? document.referrer || undefined : window.location.origin,
@@ -90,10 +94,10 @@ export function trackView(kind: 'PROFILE_VIEW' | 'PRODUCT_VIEW', storeId: string
 
 /**
  * Clic para cotizar por WhatsApp o para ir a la sucursal. `keepalive` deja salir la petición aunque el clic abra
- * otra pestaña. Con `productId` el servidor lo atribuye a esa publicación.
+ * otra pestaña. Con `productId` o `serviceId` el servidor lo atribuye a esa publicación o servicio.
  */
-export function trackClick(kind: ClickKind, storeId: string, branchId: string, productId?: string): void {
-  send({ anonymousId: getAnonymousSessionId(), kind, storeId, branchId, productId })
+export function trackClick(kind: ClickKind, storeId: string, branchId: string, productId?: string, serviceId?: string): void {
+  send({ anonymousId: getAnonymousSessionId(), kind, storeId, branchId, productId, serviceId })
 }
 
 export function trackShare(channel: ShareChannel, storeId: string, productId?: string): void {

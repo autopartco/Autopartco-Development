@@ -130,6 +130,25 @@ public class BookingCatalog {
         return result;
     }
 
+    static final String PROMOTIONS_SQL =
+            "select id, name, discount_type, discount_value from promotions where id in (:ids)";
+
+    /** Nombre y etiqueta ({@code -15%}) de las promociones citadas; las borradas también. */
+    public Map<UUID, com.autopartco.backend.core.booking.Booking.PromotionRef> promotions(Collection<UUID> ids) {
+        Map<UUID, com.autopartco.backend.core.booking.Booking.PromotionRef> result = new LinkedHashMap<>();
+        if (ids.isEmpty()) {
+            return result;
+        }
+        jdbcClient.sql(PROMOTIONS_SQL).param("ids", ids).query((rs, row) -> {
+            UUID id = rs.getObject("id", UUID.class);
+            String label = com.autopartco.backend.core.pricing.PriceCalculator.label(
+                    com.autopartco.backend.core.pricing.PromotionDiscountType.valueOf(rs.getString("discount_type")),
+                    rs.getBigDecimal("discount_value"));
+            return new com.autopartco.backend.core.booking.Booking.PromotionRef(id, rs.getString("name"), label);
+        }).list().forEach(ref -> result.put(ref.id(), ref));
+        return result;
+    }
+
     public Optional<String> profilePhone(UUID accountId) {
         return jdbcClient.sql(PROFILE_PHONE_SQL).param("accountId", accountId).query(String.class).optional();
     }

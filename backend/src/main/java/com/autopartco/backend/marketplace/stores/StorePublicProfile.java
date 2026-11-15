@@ -34,7 +34,9 @@ public record StorePublicProfile(
         String whatsappMessage,
         List<StoreServiceItem> services,
         List<UUID> featuredProductIds,
-        BusinessType businessType
+        BusinessType businessType,
+        /** Mensaje de WhatsApp para servicios ({@code {servicio}}, {@code {sucursal}}, {@code {enlace}}). */
+        String whatsappServiceMessage
 ) {
     /** Mismo perfil con los precios de servicios recalculados (las promociones vencen sin invalidar la caché). */
     StorePublicProfile withPricedServices(ServicePricing.Rules rules) {
@@ -44,7 +46,7 @@ public record StorePublicProfile(
         return new StorePublicProfile(id, name, description, logoUrl, bannerUrl, cities, branchCount, memberSince,
                 rating, publishedProducts, contact, tagline, verified, whatsappEnabled, whatsappMessage,
                 services.stream().map(service -> service.priced(id, rules)).toList(), featuredProductIds,
-                businessType);
+                businessType, whatsappServiceMessage);
     }
 
     static StorePublicProfile of(
@@ -73,7 +75,8 @@ public record StorePublicProfile(
                 settings.contact().whatsappMessage(),
                 services.stream().map(StoreServiceItem::of).toList(),
                 featuredProductIds,
-                store.businessType()
+                store.businessType(),
+                settings.contact().whatsappServiceMessage()
         );
     }
 }

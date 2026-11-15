@@ -37,7 +37,12 @@ export interface StoreProfile {
   bannerUrl: string | null
   /** Contacto público que se muestra en el perfil de la tienda. */
   publicProfile?: StoreContact
+  /** Qué ofrece el almacén (`BusinessType`); `PARTS` si el servidor no lo envía. */
+  businessType?: BusinessType
 }
+
+/** `core.organization.BusinessType`. */
+export type BusinessType = 'PARTS' | 'SERVICES' | 'BOTH'
 
 /** Contacto público (`StorePublicContactRequest`). Redes como usuario, sin @ ni URL. */
 export interface StoreContact {
@@ -56,6 +61,7 @@ export interface StoreProfileUpdate {
   businessName?: string
   businessEmail?: string
   description?: string
+  businessType?: BusinessType
   /** En cada campo: ausente no cambia, cadena vacía lo borra. */
   publicProfile?: Partial<Record<keyof StoreContact, string>>
 }
@@ -87,6 +93,8 @@ export type StorePermission =
   | 'SHIPMENT_UPDATE'
   | 'COLLABORATOR_READ'
   | 'COLLABORATOR_MANAGE'
+  | 'BOOKING_READ'
+  | 'BOOKING_MANAGE'
 
 // ------------------------------------------------------------ suscripción
 

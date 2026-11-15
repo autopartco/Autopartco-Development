@@ -28,7 +28,7 @@ interface SectionHeadingProps {
   link?: { to: string; label: string }
 }
 
-function SectionHeading({ id, label, title, intro, link }: SectionHeadingProps) {
+export function SectionHeading({ id, label, title, intro, link }: SectionHeadingProps) {
   return (
     <div className="mb-6 flex flex-col gap-3 sm:mb-8 md:flex-row md:items-end md:justify-between md:gap-10">
       <div className="flex max-w-2xl flex-col gap-2">
@@ -65,7 +65,7 @@ function homeErrorCopy(error: unknown): { title: string; description?: string } 
   return { title: 'No pudimos cargar esta sección. Intenta de nuevo' }
 }
 
-function HomeError({ home }: { home: Home }) {
+export function HomeError({ home }: { home: Home }) {
   return <ErrorState {...homeErrorCopy(home.error)} onRetry={home.retry} />
 }
 

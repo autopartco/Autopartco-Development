@@ -21,6 +21,28 @@ export function whatsappUrl(phone: string | undefined, template: string | undefi
   return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`
 }
 
+/** Mensaje por defecto de WhatsApp de servicios (mismo texto que el del servidor). */
+export const DEFAULT_SERVICE_WHATSAPP_MESSAGE = 'Hola, vi el servicio {servicio} en Autopartco y quiero información para agendar: {enlace}'
+
+/**
+ * `wa.me` de un servicio: `{servicio}` = nombre, `{sucursal}` = sede a la que se escribe y `{enlace}` = URL canónica del
+ * servicio. Con promoción vigente se añade al final «(Promoción: <etiqueta>)». Sin número válido devuelve `undefined`.
+ */
+export function serviceWhatsappUrl(
+  phone: string | undefined,
+  template: string | undefined,
+  service: { name: string; branchName: string; link: string; promotionLabel?: string },
+): string | undefined {
+  const digits = phone?.replace(/\D/g, '') ?? ''
+  if (digits.length < 10) return undefined
+  let message = (template?.trim() || DEFAULT_SERVICE_WHATSAPP_MESSAGE)
+    .replaceAll('{servicio}', service.name)
+    .replaceAll('{sucursal}', service.branchName)
+    .replaceAll('{enlace}', service.link)
+  if (service.promotionLabel) message = `${message} (Promoción: ${service.promotionLabel})`
+  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`
+}
+
 export interface DirectionsLink {
   id: 'google' | 'waze' | 'apple'
   label: string

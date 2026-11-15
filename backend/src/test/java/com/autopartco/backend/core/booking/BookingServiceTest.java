@@ -111,10 +111,14 @@ class BookingServiceTest {
         BookingService priced = new BookingService(repository, catalog, accountLookup, auditService, events, CLOCK,
                 pricing);
 
+        when(catalog.promotions(java.util.Set.of(promotionId))).thenReturn(Map.of(promotionId,
+                new Booking.PromotionRef(promotionId, "Alineación -15", "-15%")));
+
         Booking created = priced.request(BUYER_EMAIL, request("2026-11-17T09:00", null));
 
         assertThat(created.quotedPrice()).isEqualByComparingTo(new BigDecimal("51000"));
         assertThat(created.promotion().id()).isEqualTo(promotionId);
+        assertThat(created.promotion().label()).isEqualTo("-15%");
     }
 
     @Test

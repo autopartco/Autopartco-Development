@@ -1,3 +1,14 @@
+import type {
+  HomeServices,
+  ServiceCategoryCount,
+  ServiceDetail,
+  ServicePromotion,
+  ServiceSearchQuery,
+  ServiceSearchResult,
+  ServiceSuggestion,
+  ServicesStrip,
+} from '@/features/services/api/types'
+
 /**
  * Modelo de UI del marketplace. Es independiente de los DTO del backend: cada
  * implementación de `MarketplaceService` mapea su origen a estos tipos.
@@ -186,6 +197,8 @@ export interface InterpretedQuery {
   cityCode?: string
   cityName?: string
   reference?: string
+  /** El texto expresa intención de servicio («alineación», «cambio de aceite»). */
+  serviceCategory?: ServiceCategory
 }
 
 export interface IdFacet {
@@ -215,6 +228,10 @@ export interface SearchResult {
   fuzzy: boolean
   interpreted?: InterpretedQuery
   facets?: SearchFacets
+  /** Franja de hasta 4 servicios de la búsqueda unificada; solo con texto de búsqueda. */
+  services?: ServicesStrip
+  /** El servidor sugiere abrir la pestaña de servicios (intención clara de servicio). */
+  suggestedTab?: 'services'
 }
 
 export type SuggestionKind = 'CATEGORY' | 'MANUFACTURER' | 'VEHICLE' | 'QUERY'
@@ -222,6 +239,10 @@ export type SuggestionKind = 'CATEGORY' | 'MANUFACTURER' | 'VEHICLE' | 'QUERY'
 export interface SearchSuggestions {
   suggestions: { term: string; kind: SuggestionKind }[]
   products: Product[]
+  /** Hasta 3 servicios que coinciden con el texto. */
+  services: ServiceSuggestion[]
+  /** Hasta 2 categorías de servicio que coinciden con el texto. */
+  serviceCategories: ServiceCategory[]
 }
 
 export interface ProductPage {
@@ -290,11 +311,20 @@ export interface StoreService {
   category: ServiceCategory
   name: string
   description?: string
+  /** «Desde», con la promoción vigente ya aplicada por el servidor. */
   priceFrom?: number
+  /** Precio «desde» antes de la promoción. */
+  basePriceFrom?: number
+  promotion?: ServicePromotion
   durationMinutes?: number
+  imageUrl?: string
+  bookingEnabled: boolean
   /** Sedes que lo prestan. */
   branchIds: string[]
 }
+
+/** Qué vende el almacén (`business_type`): repuestos, servicios o ambos. */
+export type BusinessType = 'PARTS' | 'SERVICES' | 'BOTH'
 
 /** Horario semanal: días `mon..sun` con franjas `[«08:00», «18:00»]` y notas libres. */
 export interface OpeningHours {
@@ -350,6 +380,7 @@ export interface StoreProfile {
   whatsappEnabled: boolean
   /** Plantilla con `{producto}` y `{enlace}`. */
   whatsappMessage?: string
+  businessType: BusinessType
   services: StoreService[]
   featuredProductIds: string[]
 }
@@ -454,6 +485,8 @@ export interface HomeData {
   nearby: Product[]
   /** Mezcla de anuncios (`sponsored`) y relleno orgánico. */
   featured: Product[]
+  /** Categorías, cercanos y promociones de servicios; ausente si el origen no los informa. */
+  services?: HomeServices
 }
 
 /** Ubicaciones de anuncio que se piden aparte de la búsqueda. */
@@ -490,6 +523,12 @@ export interface MarketplaceService {
   getReviewSummary(target: ReviewTarget): Promise<ReviewSummary>
   /** `GET /marketplace/{products|stores}/{id}/reviews` (público). Páginas desde 1. */
   listReviews(target: ReviewTarget, query: ReviewListQuery): Promise<ReviewPage>
+  /** `GET /marketplace/services/search`: un resultado por servicio (con la sucursal más cercana). */
+  searchServices(query: ServiceSearchQuery, signal?: AbortSignal): Promise<ServiceSearchResult>
+  /** `GET /marketplace/services/categories`: categorías con servicios publicados (opcionalmente de una ciudad). */
+  listServiceCategories(cityCode?: string, signal?: AbortSignal): Promise<ServiceCategoryCount[]>
+  /** `GET /marketplace/services/{id}`; 404 (`isNotFoundError`) si el servicio no es visible. */
+  getService(id: string, near?: { lat: number; lng: number }, signal?: AbortSignal): Promise<ServiceDetail>
   /** Con sesión: pedidos con los que puede calificar el producto, o su reseña existente. Sin sesión, nada elegible. */
   getProductReviewEligibility(productId: string): Promise<ProductReviewEligibility>
   /** Pedidos entregados del comprador con sesión que aún no tienen reseña; vacío sin sesión. */
