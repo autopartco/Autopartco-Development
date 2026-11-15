@@ -2,6 +2,7 @@ package com.autopartco.backend.marketplace.catalog;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 
 import com.autopartco.backend.core.catalog.ProductResponse;
 import com.autopartco.backend.core.search.SearchInterpretation;
@@ -14,7 +15,8 @@ import com.fasterxml.jackson.annotation.JsonUnwrapped;
 /**
  * Respuesta de {@code GET /api/v1/marketplace/search} (§1 del plan v2.0.0). {@code page} desde 0. {@code sponsored}:
  * hasta 2 anuncios {@code SEARCH_TOP} con {@code sponsored: true} y {@code adImpressionToken} (vacío sin campañas que
- * coincidan); el frontend los muestra con la etiqueta «Patrocinado».
+ * coincidan); el frontend los muestra con la etiqueta «Patrocinado». {@code searchId}: identificador de esta respuesta
+ * (nuevo en cada llamada) que el cliente devuelve en {@code POST /marketplace/search/click}.
  */
 public record SearchResponse(
         List<Item> items,
@@ -27,8 +29,16 @@ public record SearchResponse(
         List<Item> sponsored,
         @JsonInclude(JsonInclude.Include.NON_NULL) Services services,
         @JsonInclude(JsonInclude.Include.NON_NULL) String suggestedTab,
-        @JsonInclude(JsonInclude.Include.NON_NULL) Stores stores
+        @JsonInclude(JsonInclude.Include.NON_NULL) Stores stores,
+        @JsonInclude(JsonInclude.Include.NON_NULL) UUID searchId
 ) {
+    /** Sin identificador de búsqueda. */
+    public SearchResponse(List<Item> items, int page, int size, long total, boolean fuzzy,
+            SearchInterpretation interpreted, SearchResult.Facets facets, List<Item> sponsored, Services services,
+            String suggestedTab, Stores stores) {
+        this(items, page, size, total, fuzzy, interpreted, facets, sponsored, services, suggestedTab, stores, null);
+    }
+
     /** Franja de servicios de la búsqueda unificada: hasta 4 tarjetas y el total de servicios que coinciden. */
     public record Services(List<ServiceCard> items, long total) {
     }
@@ -40,19 +50,19 @@ public record SearchResponse(
     /** Sin servicios (compatibilidad con quien construye la respuesta de productos). */
     public SearchResponse(List<Item> items, int page, int size, long total, boolean fuzzy,
             SearchInterpretation interpreted, SearchResult.Facets facets, List<Item> sponsored) {
-        this(items, page, size, total, fuzzy, interpreted, facets, sponsored, null, null, null);
+        this(items, page, size, total, fuzzy, interpreted, facets, sponsored, null, null, null, null);
     }
 
     /** Misma respuesta con la franja de servicios y la pestaña sugerida ({@code services}, o {@code null}). */
     SearchResponse withServices(Services services, String suggestedTab) {
         return new SearchResponse(items, page, size, total, fuzzy, interpreted, facets, sponsored, services,
-                suggestedTab, stores);
+                suggestedTab, stores, searchId);
     }
 
     /** Misma respuesta con la franja de almacenes ({@code null} la omite). */
     SearchResponse withStores(Stores stores) {
         return new SearchResponse(items, page, size, total, fuzzy, interpreted, facets, sponsored, services,
-                suggestedTab, stores);
+                suggestedTab, stores, searchId);
     }
 
     /** {@link ProductResponse} con sus campos al mismo nivel, más distancia y datos de anuncio. */
@@ -74,6 +84,6 @@ public record SearchResponse(
     static SearchResponse of(SearchResult result) {
         return new SearchResponse(result.items().stream().map(Item::organic).toList(), result.page(), result.size(),
                 result.total(), result.fuzzy(), result.interpreted(), result.facets(),
-                result.sponsored().stream().map(Item::sponsored).toList());
+                result.sponsored().stream().map(Item::sponsored).toList(), null, null, null, result.searchId());
     }
 }

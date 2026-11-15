@@ -763,6 +763,65 @@ class SearchServiceTest {
                 .categoryAds(CATEGORY, "s:1", null)).isEmpty();
     }
 
+    // --- Identificador de búsqueda y aprendizaje de clics ----------------------------------------------------------
+
+    @Test
+    void searchIdIsNewOnEveryCallAndNeverComesFromTheResultCache() {
+        UUID product = UUID.randomUUID();
+        UUID branch = UUID.randomUUID();
+        jdbc.rows(sql -> sql.contains("limit :limit"), call -> List.of(row(product, branch, null, 1)));
+        when(listingQueries.publishedListingsByKeys(anyList(), any())).thenReturn(List.of(listing(product, branch)));
+        SearchResultCache cache = new SearchResultCache(
+                com.autopartco.backend.shared.cache.ResilientCacheManager.local(),
+                com.autopartco.backend.shared.cache.SharedCounters.local());
+        service = new SearchService(jdbc.client, new QueryParser(dictionary), listingQueries, null, cache);
+        SearchQuery query = SearchQuery.builder().q("pastillas").facets(false).build();
+
+        SearchResult first = service.search(query, null);
+        SearchResult second = service.search(query, null);
+
+        // La parte orgánica salió de la caché (una sola consulta de página), el identificador no.
+        assertThat(jdbc.callsMatching(sql -> sql.contains("limit :limit"))).hasSize(1);
+        assertThat(first.searchId()).isNotNull();
+        assertThat(second.searchId()).isNotNull().isNotEqualTo(first.searchId());
+        assertThat(service.catalog(SearchQuery.builder().facets(false).build(), null).searchId()).isNull();
+    }
+
+    @Test
+    void learnedCategoryOrdersBetweenYearAndCityWithoutFilteringOrAddingStatements() {
+        UUID learned = UUID.randomUUID();
+        QueryLearning learning = mock(QueryLearning.class);
+        when(learning.categoryFor("pastillas")).thenReturn(java.util.Optional.of(learned));
+        jdbc.rows(sql -> sql.contains("limit :limit"), call -> List.of());
+        service.setQueryLearning(learning);
+
+        service.search(SearchQuery.builder().q("pastillas").facets(false).build(), null);
+
+        List<SearchFakeJdbc.Call> pages = jdbc.callsMatching(sql -> sql.contains("limit :limit"));
+        assertThat(pages).isNotEmpty();
+        String sql = pages.getFirst().sql();
+        assertThat(sql).contains("year_ok desc, cat_ok desc, city_ok desc, text_rank desc")
+                .contains("sl.category_path @> array[cast(:learnedCategoryId as uuid)]")
+                .doesNotContain(learned.toString());
+        assertThat(pages.getFirst().params()).containsEntry("learnedCategoryId", learned);
+    }
+
+    @Test
+    void anExplicitCategoryOrNoLearningLeavesTheRelevanceUntouched() {
+        QueryLearning learning = mock(QueryLearning.class);
+        when(learning.categoryFor(any())).thenReturn(java.util.Optional.of(UUID.randomUUID()));
+        jdbc.rows(sql -> sql.contains("limit :limit"), call -> List.of());
+        service.setQueryLearning(learning);
+
+        service.search(SearchQuery.builder().q("pastillas").categoryId(CATEGORY).facets(false).build(), null);
+        verify(learning, never()).categoryFor(any());
+        assertThat(jdbc.callsMatching(sql -> sql.contains("cat_ok"))).isEmpty();
+
+        when(learning.categoryFor(any())).thenReturn(java.util.Optional.empty());
+        service.search(SearchQuery.builder().q("pastillas").facets(false).build(), null);
+        assertThat(jdbc.callsMatching(sql -> sql.contains("cat_ok"))).isEmpty();
+    }
+
     private static ProductResponse listing(UUID product, UUID branch) {
         return new ProductResponse(product, UUID.randomUUID(), branch, "Sede", "Pastillas", "SKU", null, null,
                 BigDecimal.TEN, BigDecimal.TEN, BigDecimal.ZERO, null, 1, null, null, false, CATEGORY, "ACTIVE",

@@ -55,10 +55,11 @@ record SearchCriteria(
     /**
      * Lo interpretado de {@code q} que el cliente no fijó. {@code makeId} (con {@code vehicleTsQuery}) solo existe sin
      * marca explícita; {@code modelId} solo si es de la marca efectiva; {@code year} (con el rango pedido
-     * {@code yearFrom}–{@code yearTo}) y {@code cityCode} solo sin el parámetro explícito.
+     * {@code yearFrom}–{@code yearTo}) y {@code cityCode} solo sin el parámetro explícito. {@code learnedCategoryId} es
+     * la categoría que más eligen los compradores para esta consulta ({@link QueryLearning}); solo ordena.
      */
     record Hints(UUID makeId, UUID modelId, Integer year, String cityCode, String vehicleTsQuery,
-            String modelTsQuery, Integer yearFrom, Integer yearTo) {
+            String modelTsQuery, Integer yearFrom, Integer yearTo, UUID learnedCategoryId) {
         static final Hints NONE = new Hints(null, null, null, null, null, null);
 
         Hints {
@@ -71,9 +72,20 @@ record SearchCriteria(
             }
         }
 
+        /** Sin categoría aprendida. */
+        Hints(UUID makeId, UUID modelId, Integer year, String cityCode, String vehicleTsQuery, String modelTsQuery,
+                Integer yearFrom, Integer yearTo) {
+            this(makeId, modelId, year, cityCode, vehicleTsQuery, modelTsQuery, yearFrom, yearTo, null);
+        }
+
         /** Año único (o ninguno): el rango es ese año. */
         Hints(UUID makeId, UUID modelId, Integer year, String cityCode, String vehicleTsQuery, String modelTsQuery) {
-            this(makeId, modelId, year, cityCode, vehicleTsQuery, modelTsQuery, year, year);
+            this(makeId, modelId, year, cityCode, vehicleTsQuery, modelTsQuery, year, year, null);
+        }
+
+        Hints withLearnedCategory(UUID categoryId) {
+            return new Hints(makeId, modelId, year, cityCode, vehicleTsQuery, modelTsQuery, yearFrom, yearTo,
+                    categoryId);
         }
 
         boolean any() {
@@ -153,6 +165,14 @@ record SearchCriteria(
             }
         }
         return terms;
+    }
+
+    /** Misma búsqueda con la categoría aprendida como pista de orden ({@code null} la quita). */
+    SearchCriteria withLearnedCategory(UUID learnedCategoryId) {
+        return new SearchCriteria(tsQuery, reference, fuzzyText, terms, categoryId, manufacturerIds, makeId,
+                modelId, versionId, year, priceMin, priceMax, inStock, onSale, storeId, branchId, cityCode,
+                departmentCode, lat, lng, radiusKm, minRating, minProductRating, universal, sort,
+                hints.withLearnedCategory(learnedCategoryId));
     }
 
     /** Misma búsqueda con trigramas sobre {@code text} en lugar del texto (último recurso). */

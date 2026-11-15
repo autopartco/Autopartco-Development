@@ -32,7 +32,8 @@ import java.util.Set;
  * marca interpretada el nivel 0 se descarta ya en los candidatos. Las menciones son
  * {@code mentioned_make_ids}/{@code mentioned_model_ids} del índice: cruces de arreglos, sin texto por fila.</p>
  * <p>Relevancia, lexicográfica: tramo de cobertura, referencia exacta, nivel de vehículo, año pedido cubierto por
- * {@code year_from/year_to}, misma ciudad interpretada, {@code ts_rank_cd}, stock, calificación de la tienda y
+ * {@code year_from/year_to}, categoría aprendida de los clics ({@link QueryLearning}; solo ordena), misma ciudad
+ * interpretada, {@code ts_rank_cd}, stock, calificación de la tienda y
  * cercanía ({@code 1/(1 + km/25)}). Los demás órdenes usan el mismo conjunto y desempatan por relevancia.</p>
  * <ul>
  *   <li>Vehículo explícito: el índice guarda en {@code vehicle_model_ids} también la marca de las reglas sin modelo, y
@@ -239,7 +240,7 @@ final class SearchSql {
                            sl.manufacturer_id, sl.city_code, sl.has_promotion, sl.universal, sl.document,
                            sl.latitude, sl.longitude, sl.year_from, sl.year_to, sl.vehicle_make_ids,
                            sl.vehicle_model_ids, sl.mentioned_make_ids, sl.mentioned_model_ids,
-                           %s as text_rank%s
+                           %s as text_rank%s%s
                     from search_listings sl
                     where %s%s
                 ), scored as (
@@ -255,9 +256,22 @@ final class SearchSql {
                     select scored.*, %s as cov_tier
                     from scored
                     where %s
-                )""".formatted(rank, extraColumns, String.join("\n      and ", where), limit, distance,
+                )""".formatted(rank, extraColumns, learnedColumn(c.hints(), params), String.join("\n      and ", where), limit, distance,
                 coverage.covered(), coverage.referenceExact(), vehicleLevel(c.hints(), params),
                 yearCovered(c.hints(), params), cityMatch(c.hints(), params), coverage.tier(), coverage.filter());
+    }
+
+    /**
+     * {@code cat_ok}: 1 si el producto está en la categoría que los compradores eligen para esta consulta
+     * ({@link QueryLearning}), vía {@code category_path @> [categoría]}. Sin categoría aprendida no añade columna.
+     */
+    private static String learnedColumn(SearchCriteria.Hints hints, Map<String, Object> params) {
+        if (hints.learnedCategoryId() == null) {
+            return "";
+        }
+        params.put("learnedCategoryId", hints.learnedCategoryId());
+        return ",\n                           (case when sl.category_path @> array[cast(:learnedCategoryId as uuid)]"
+                + " then 1 else 0 end) as cat_ok";
     }
 
     /** {@code tsquery} de los candidatos: grupos con contenido unidos por {@code |}, más la referencia. */
@@ -391,7 +405,9 @@ final class SearchSql {
     /** Orden de relevancia (lexicográfico), con la cercanía como último desempate si hay ubicación. */
     static String relevance(SearchCriteria criteria) {
         String nearby = criteria.hasLocation() ? "(1.0 / (1.0 + coalesce(distance_km, 0) / 25.0)) desc, " : "";
-        return "cov_tier desc, ref_exact desc, vehicle_level desc, year_ok desc, city_ok desc, text_rank desc, "
+        String learned = criteria.hints().learnedCategoryId() == null ? "" : "cat_ok desc, ";
+        return "cov_tier desc, ref_exact desc, vehicle_level desc, year_ok desc, " + learned
+                + "city_ok desc, text_rank desc, "
                 + "(stock > 0) desc, coalesce(store_rating, 0) desc, " + nearby + "product_id";
     }
 

@@ -94,6 +94,7 @@ public class SearchService {
     private final AdServer adServer;
     private final SearchResultCache resultCache;
     private HomeFacts homeFacts;
+    private QueryLearning queryLearning;
     private final AtomicBoolean ready = new AtomicBoolean();
     private final AtomicLong lastReadyCheck = new AtomicLong(Long.MIN_VALUE);
 
@@ -175,7 +176,7 @@ public class SearchService {
     private SearchResult run(SearchQuery query, BuyerContext buyer, boolean withAds, String visitorKey) {
         BuyerContext effectiveBuyer = buyer == null ? BuyerContext.anonymous() : buyer;
         ParsedQuery parsed = parser.parse(query.q(), query.interpretOrDefault());
-        SearchCriteria criteria = SearchCriteria.of(query, parsed);
+        SearchCriteria criteria = learned(SearchCriteria.of(query, parsed), query);
         int page = query.pageOrDefault();
         int size = query.sizeOrDefault();
         // Solo /search pasa por la caché (el catálogo compatible pide páginas de hasta 10 000 y ya tiene la suya).
@@ -187,8 +188,29 @@ public class SearchService {
         List<SearchResult.Sponsored> sponsored = withAds
                 ? sponsored(criteria, parsed, organic.items(), effectiveBuyer, visitorKey)
                 : List.of();
+        // El identificador de la búsqueda se genera aquí, después de la caché: dos respuestas iguales nunca lo comparten.
         return new SearchResult(organic.items(), page, size, organic.total(), organic.fuzzy(), organic.interpreted(),
-                organic.facets(), sponsored);
+                organic.facets(), sponsored, withAds ? UUID.randomUUID() : null);
+    }
+
+    /**
+     * Añade la categoría que los compradores eligen para esta consulta ({@link QueryLearning}, búsqueda en memoria:
+     * ninguna sentencia SQL). Solo ordena, y no se usa si el cliente ya filtró por categoría. Forma parte de la clave
+     * de {@link SearchResultCache} (pista {@code hcat}), así que si el aprendizaje cambia, la consulta deja de leer su
+     * entrada anterior sin esperar al TTL.
+     */
+    private SearchCriteria learned(SearchCriteria criteria, SearchQuery query) {
+        if (queryLearning == null || query.categoryId() != null) {
+            return criteria;
+        }
+        UUID category = queryLearning.categoryFor(query.q()).orElse(null);
+        return category == null ? criteria : criteria.withLearnedCategory(category);
+    }
+
+    /** Aprendizaje de los clics (opcional: sin él no hay categoría aprendida). */
+    @Autowired(required = false)
+    void setQueryLearning(QueryLearning queryLearning) {
+        this.queryLearning = queryLearning;
     }
 
     private SearchResultCache.Organic organic(SearchQuery query, ParsedQuery parsed, SearchCriteria exact, int page,

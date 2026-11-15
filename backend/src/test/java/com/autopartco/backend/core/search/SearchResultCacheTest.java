@@ -83,6 +83,20 @@ class SearchResultCacheTest {
     }
 
     @Test
+    void learnedCategoryIsPartOfTheKeySoAChangedLearningDoesNotReuseTheOldOrder() {
+        SearchQuery query = SearchQuery.builder().q("bujia").build();
+        UUID learned = UUID.randomUUID();
+
+        get(query, BuyerContext.anonymous());
+        cache.get(query.q(), criteria(query).withLearnedCategory(learned), query, BuyerContext.anonymous(), this::load);
+        cache.get(query.q(), criteria(query).withLearnedCategory(learned), query, BuyerContext.anonymous(), this::load);
+
+        assertThat(loads).hasValue(2);
+        assertThat(SearchResultCache.normalized(query.q(), criteria(query).withLearnedCategory(learned), query))
+                .contains("hcat=" + learned + "&");
+    }
+
+    @Test
     void priceGroupSeparatesSegmentsAndSkipsIndividualPromotions() {
         SearchQuery query = SearchQuery.builder().q("bujia").build();
         BuyerContext withoutSegments = new BuyerContext(UUID.randomUUID(), Set.of(), Map.of());

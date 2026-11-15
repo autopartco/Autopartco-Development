@@ -87,6 +87,30 @@ create table search_query_category (
     updated_at timestamptz not null default now(),
     primary key (normalized_query, category_id)
 );
+create table marketplace_searches (
+    id uuid primary key,
+    occurred_at timestamptz not null,
+    session_hash varchar,
+    query_text varchar,
+    query_normalized varchar,
+    make_id uuid,
+    model_id uuid,
+    version_id uuid,
+    vehicle_year smallint,
+    category_id uuid,
+    municipality_code char(5),
+    results_count int not null,
+    authenticated boolean not null
+);
+create table search_clicks (
+    id bigint generated always as identity primary key,
+    search_id uuid not null references marketplace_searches (id) on delete cascade,
+    product_id uuid not null references products (id) on delete cascade,
+    position int not null check (position >= 0),
+    created_at timestamptz not null default now()
+);
+create index ix_search_clicks_search on search_clicks (search_id);
+create index ix_search_clicks_created on search_clicks (created_at);
 create index ix_sl_document on search_listings using gin (document);
 create index ix_sl_search_text on search_listings using gin (search_text gin_trgm_ops);
 create index ix_sl_category_path on search_listings using gin (category_path);

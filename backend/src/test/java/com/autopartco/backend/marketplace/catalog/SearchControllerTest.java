@@ -166,6 +166,22 @@ class SearchControllerTest {
     }
 
     @Test
+    void searchIdIsReturnedAndRecordedWithTheSearch() throws Exception {
+        SearchResult organic = result();
+        UUID searchId = UUID.randomUUID();
+        org.mockito.Mockito.doReturn(new SearchResult(organic.items(), 0, 24, 312, false, null, null, List.of(),
+                searchId)).when(searchService).search(any(), any(), any());
+
+        mvc.perform(get(URL).param("q", "pastillas").header("X-Session-Id", "sess"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.searchId").value(searchId.toString()));
+
+        ArgumentCaptor<MarketplaceSearch> search = ArgumentCaptor.forClass(MarketplaceSearch.class);
+        verify(searchLog).record(search.capture());
+        assertThat(search.getValue().searchId()).isEqualTo(searchId);
+    }
+
+    @Test
     void responseWithSponsoredIsNoStore() throws Exception {
         SearchResult organic = result();
         SearchResult.Sponsored ad = new SearchResult.Sponsored(organic.items().getFirst(), "tok");
