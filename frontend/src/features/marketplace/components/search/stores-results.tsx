@@ -96,7 +96,7 @@ export function StoresSearchView() {
         crumbs={[{ label: 'Inicio', to: '/' }, { label: 'Buscar' }]}
         label="Catálogo / Tiendas"
         title={title}
-        description="Almacenes publicados en Autopartco. Entra a una tienda para ver sus repuestos, servicios y sedes."
+        description="Encuentra almacenes y talleres cerca de ti. Entra a uno para ver sus repuestos, servicios y sedes."
         className="mb-6"
       />
       <SearchTabs active="stores" />

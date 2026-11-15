@@ -14,7 +14,7 @@ const COOKIES: { name: string; purpose: ReactNode; duration: string }[] = [
   {
     name: 'ap_area',
     purpose:
-      'El área que elegiste en el mapa, redondeada a unos 1 km. Sirve para mostrar almacenes y repuestos cercanos.',
+      'El área que elegiste en el mapa, redondeada a unos 1 km. Sirve para mostrar almacenes, servicios y repuestos cercanos.',
     duration: '30 días',
   },
   {
@@ -51,16 +51,20 @@ export default function PrivacyPage() {
         crumbs={[{ label: 'Inicio', to: '/' }, { label: 'Privacidad y cookies' }]}
         label="LEGAL / PRIVACIDAD"
         title="Privacidad y cookies"
-        description="Qué datos tratamos, para qué, qué derechos tienes y qué cookies usa el sitio."
+        description="Qué datos usamos cuando compras repuestos, agendas servicios o buscas almacenes cerca de ti, para qué, qué derechos tienes y qué cookies usa el sitio."
       >
-        <p className="text-sm text-ap-muted">Actualizado el 11 de noviembre de 2026.</p>
+        <p className="text-sm text-ap-muted">Última actualización: 15 de noviembre de 2026.</p>
       </PageIntro>
 
       <div className="flex flex-col gap-8">
         <Section id="responsable" title="Responsable del tratamiento">
           <p>
-            El responsable de tus datos personales es Autopartco. Tratamos la información conforme a la Ley 1581 de 2012
-            y sus normas reglamentarias en Colombia.
+            El responsable de tus datos personales es Autopartco. Tratamos la información conforme a la Ley 1581 de 2012,
+            el Decreto 1377 de 2013 y las demás normas de protección de datos de Colombia.
+          </p>
+          <p>
+            Al crear tu cuenta, comprar, agendar un servicio o usar las funciones del sitio, nos autorizas para tratar
+            tus datos como se explica aquí. Solo pedimos los datos que necesitamos para cada función.
           </p>
           <p>
             {contact ? (
@@ -84,23 +88,92 @@ export default function PrivacyPage() {
               pago.
             </li>
             <li>
-              <strong>Estadísticas agregadas:</strong> visitas y anuncios medidos sin identificar a la persona, para
-              mejorar el sitio.
+              <strong>Citas de servicio:</strong> el servicio, la sede, la fecha y la hora, tu teléfono de contacto, tu
+              vehículo (marca, modelo, año y, si quieres, la placa) y tus notas. Los usamos para gestionar tu cita y
+              avisarte por correo y notificaciones cuando cambie.
+            </li>
+            <li>
+              <strong>Ubicación:</strong> tu ubicación aproximada o la ciudad que elijas, para mostrarte almacenes,
+              servicios y repuestos cerca de ti.
+            </li>
+            <li>
+              <strong>Estadísticas anónimas:</strong> visitas a perfiles, productos y servicios, y clics en WhatsApp y en
+              «Cómo llegar», sin identificar a la persona, para mejorar el sitio y mostrarle a cada almacén cómo le va.
             </li>
           </ul>
         </Section>
 
+        <Section id="citas" title="Citas de servicio y almacenes">
+          <p>
+            Cuando agendas un servicio, compartimos los datos de la cita con el almacén que lo presta, para que pueda
+            atenderte. Ese almacén solo ve tu teléfono y la placa de tu vehículo mientras la cita no esté cancelada,
+            rechazada o vencida. Después deja de verlos.
+          </p>
+          <p>
+            Autopartco no cobra los servicios en línea: el precio que ves es de referencia («desde») y lo confirma el
+            almacén.
+          </p>
+        </Section>
+
+        <Section id="whatsapp" title="WhatsApp">
+          <p>
+            Al tocar «Escribir por WhatsApp» pasas a WhatsApp. La conversación ocurre allí, fuera de Autopartco, y se rige
+            por la política de privacidad de WhatsApp y Meta. Autopartco no ve ni guarda lo que escribas.
+          </p>
+          <p>
+            Lo único que registramos es el clic, de forma anónima, para contarle al almacén cuántas personas quisieron
+            escribirle.
+          </p>
+        </Section>
+
+        <Section id="ubicacion" title="Tu ubicación">
+          <p>
+            Usamos tu ubicación aproximada o la ciudad que elijas para mostrarte lo que tienes cerca. Puedes cambiarla en
+            cualquier momento desde el selector de ubicación.
+          </p>
+          <ul className="list-disc space-y-2 pl-5">
+            <li>
+              <strong>Zona elegida:</strong> se guarda en tu navegador, redondeada a unos 1 km, durante 30 días (cookie{' '}
+              <span className="font-mono text-[0.8125rem]">ap_area</span>).
+            </li>
+            <li>
+              <strong>Ubicación exacta:</strong> solo si tocas «Usar mi ubicación» y aceptas el permiso de tu navegador.
+              Se usa en el momento, redondeada a unos 100 m, para ordenar los resultados por cercanía. No se guarda y no
+              queda ligada a tu cuenta.
+            </li>
+            <li>
+              <strong>Buscador de lugares:</strong> para sugerir direcciones y nombrar tu zona usamos un servicio externo
+              de mapas (Photon). Recibe el texto que escribes o la zona redondeada, no tu cuenta.
+            </li>
+          </ul>
+        </Section>
+
+        <Section id="metricas" title="Estadísticas anónimas de visitas">
+          <p>
+            Medimos visitas a perfiles de almacén, productos y servicios, y los clics en WhatsApp y en «Cómo llegar».
+            Para no contar dos veces a la misma persona usamos un identificador anónimo que cambia cada día. No guardamos
+            tu IP ni lo relacionamos con tu cuenta. Cada almacén ve solo totales, nunca quién fue.
+          </p>
+        </Section>
+
         <Section id="derechos" title="Tus derechos como titular">
-          <p>Según la Ley 1581 de 2012 puedes, en cualquier momento:</p>
+          <p>Según la Ley 1581 de 2012 y el Decreto 1377 de 2013 puedes, en cualquier momento:</p>
           <ul className="list-disc space-y-1 pl-5">
             <li>Conocer los datos que tenemos sobre ti.</li>
             <li>Actualizarlos y rectificarlos.</li>
             <li>Solicitar que los suprimamos.</li>
             <li>Revocar la autorización que nos diste.</li>
+            <li>Pedir prueba de la autorización y saber cómo usamos tus datos.</li>
+            <li>Presentar quejas ante la Superintendencia de Industria y Comercio.</li>
           </ul>
           <p>
-            Puedes ejercerlos desde tu cuenta o por contacto:{' '}
-            {contact ? <>escríbenos a {contact}.</> : <>escríbenos desde el formulario de contacto.</>}
+            Desde Mi cuenta, en Privacidad, puedes descargar una copia de tus datos, que ya incluye tus citas de servicio,
+            y solicitar la eliminación de tu cuenta.
+          </p>
+          <p>
+            Para cualquier otra solicitud:{' '}
+            {contact ? <>escríbenos a {contact}.</> : <>escríbenos desde el formulario de contacto.</>} Respondemos las
+            consultas en máximo 10 días hábiles y los reclamos en máximo 15 días hábiles.
           </p>
         </Section>
 

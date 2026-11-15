@@ -546,7 +546,7 @@ export function CoverageMap() {
     body = (
       <ErrorState
         title="No pudimos cargar los almacenes cercanos"
-        description="Revisa tu conexión e inténtalo de nuevo. Mientras tanto, puedes buscar tu repuesto."
+        description="Revisa tu conexión e inténtalo de nuevo. Mientras tanto, puedes buscar lo que necesitas por nombre."
         onRetry={result.retry}
       />
     )

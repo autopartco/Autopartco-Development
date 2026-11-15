@@ -11,7 +11,7 @@ interface NotFoundContentProps {
 /** Contenido 404 reutilizable (ruta inexistente, producto o categoría que no existe). */
 export function NotFoundContent({
   title = 'No encontramos esta página',
-  description = 'El enlace puede estar mal escrito o la página ya no existe. Busca el repuesto que necesitas o vuelve al inicio.',
+  description = 'El enlace puede estar mal escrito o la página ya no existe. Busca el repuesto o el servicio que necesitas, o vuelve al inicio.',
 }: NotFoundContentProps) {
   return (
     <Container className="flex flex-col items-start gap-5 py-14 sm:gap-6 sm:py-24">

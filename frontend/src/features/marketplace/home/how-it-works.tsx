@@ -3,19 +3,19 @@ import { Container } from '@/components/common/page-header'
 const STEPS = [
   {
     title: 'Busca',
-    body: 'Escribe el repuesto que necesitas. Si quieres, indícanos la marca y el modelo de tu carro.',
+    body: 'Escribe el repuesto o el servicio que necesitas. Si quieres, dinos la marca y el modelo de tu carro.',
   },
   {
     title: 'Compara',
-    body: 'Mira precio, disponibilidad y distancia de cada almacén.',
+    body: 'Mira precios, qué hay disponible y qué tan cerca queda cada almacén o taller.',
   },
   {
     title: 'Elige con seguridad',
-    body: 'Revisa que la pieza sirva para tu vehículo y escríbele a la tienda si tienes dudas.',
+    body: 'Revisa que sirva para tu carro y escríbele por WhatsApp a la tienda si tienes dudas.',
   },
   {
     title: 'Compra fácil',
-    body: 'Agrégalo al carrito y págalo en línea.',
+    body: 'Compra tu repuesto en línea o agenda tu cita en el taller.',
   },
 ] as const
 

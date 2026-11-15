@@ -29,7 +29,7 @@ function ExportSection() {
     }
   }
   return (
-    <AccountSection id="priv-export" title="Descargar mis datos" description="Un archivo con tu perfil, direcciones, pedidos, reseñas, preguntas y preferencias.">
+    <AccountSection id="priv-export" title="Descargar mis datos" description="Un archivo con tu perfil, direcciones, pedidos, citas de servicio, reseñas, preguntas y preferencias.">
       <Button variant="outline" className="h-11 w-fit" disabled={busy} onClick={() => void download()}>
         <DownloadIcon aria-hidden />
         {busy ? 'Preparando…' : 'Descargar (JSON)'}

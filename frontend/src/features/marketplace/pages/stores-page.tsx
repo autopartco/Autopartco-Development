@@ -178,12 +178,12 @@ export default function StoresPage() {
 
   return (
     <Container className="py-6 sm:py-8">
-      <title>Tiendas de repuestos | Autopartco</title>
+      <title>Almacenes y talleres | Autopartco</title>
       <PageIntro
         crumbs={[{ label: 'Inicio', to: '/' }, { label: 'Tiendas' }]}
         label={data ? `Tiendas / ${pluralize(data.total, 'almacén', 'almacenes')}` : 'Tiendas / Directorio'}
-        title="Tiendas de repuestos"
-        description={<p>Almacenes que publican en Autopartco. Entra a una tienda para ver sus repuestos, servicios y sedes.</p>}
+        title="Almacenes y talleres"
+        description={<p>Encuentra almacenes y talleres cerca de ti. Entra a uno para ver sus repuestos, servicios y sedes, escribirle por WhatsApp o ver cómo llegar.</p>}
         className="mb-6"
       />
 
@@ -197,7 +197,7 @@ export default function StoresPage() {
             type="search"
             value={text}
             onChange={(event) => setText(event.target.value)}
-            placeholder="Ej. Repuestos del Caribe, Cartagena"
+            placeholder="Ej. Taller del Caribe, Cartagena"
             autoComplete="off"
             className="flex-1"
           />
