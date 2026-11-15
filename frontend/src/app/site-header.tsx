@@ -49,7 +49,7 @@ function SellerHeaderLink() {
   const cta = useSellerCta()
   if (cta.state === 'loading') return null
   const label =
-    cta.state === 'learn' ? 'Vender' : cta.state === 'review' ? 'Mi solicitud' : cta.state === 'register' ? 'Registrar almacén' : cta.label
+    cta.state === 'learn' || cta.state === 'register' ? 'Vender' : cta.state === 'review' ? 'Mi solicitud' : cta.label
   return (
     <Link
       to={cta.to}
@@ -130,12 +130,12 @@ export function SiteHeader() {
   const { pathname } = useLocation()
   return (
     <header className="ap-surface-dark sticky top-0 z-40 bg-ap-graphite">
-      <Container className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 [grid-template-areas:'logo_actions'_'search_search'] xl:h-16 xl:grid-cols-[auto_minmax(17rem,1fr)_auto_minmax(0,auto)] xl:gap-x-4 xl:[grid-template-areas:'logo_search_nav_actions'] 2xl:gap-x-6">
+      <Container className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 [grid-template-areas:'logo_actions'_'search_search'] xl:h-16 xl:grid-cols-[auto_minmax(12rem,1fr)_auto_auto] xl:gap-x-4 xl:[grid-template-areas:'logo_search_nav_actions']">
         <div className="flex h-14 items-center [grid-area:logo] xl:h-auto">
           <Logo tone="dark" compact />
         </div>
         {/* En móvil la ubicación va junto al buscador: en la fila del logo no cabe sin solaparse con el imagotipo. */}
-        <div className="flex min-w-0 items-center gap-1 pb-3 [grid-area:search] xl:min-w-68 xl:max-w-2xl xl:pb-0">
+        <div className="flex min-w-0 items-center gap-1 pb-3 [grid-area:search] xl:min-w-48 xl:max-w-2xl xl:pb-0">
           <SearchBox tone="dark" shortcut className="min-w-0 flex-1" />
           <LocationPicker className="md:hidden" />
         </div>
