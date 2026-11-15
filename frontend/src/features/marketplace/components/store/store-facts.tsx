@@ -22,11 +22,13 @@ export function StoreFacts({ store, branches }: { store: StoreProfile; branches:
   const branchCount = branches.length > 0 ? branches.length : store.branchCount
   const items: ReactNode[] = []
 
-  items.push(
-    <Fact key="products" label="Repuestos">
-      <span className="tabular-nums">{store.publishedProducts}</span>
-    </Fact>,
-  )
+  if (store.businessType !== 'SERVICES' || store.publishedProducts > 0) {
+    items.push(
+      <Fact key="products" label="Repuestos">
+        <span className="tabular-nums">{store.publishedProducts}</span>
+      </Fact>,
+    )
+  }
   if (branchCount > 0) {
     items.push(
       <Fact key="branches" label={branchCount === 1 ? 'Sede' : 'Sedes'} detail={store.cities.length > 0 ? store.cities.join(', ') : undefined}>

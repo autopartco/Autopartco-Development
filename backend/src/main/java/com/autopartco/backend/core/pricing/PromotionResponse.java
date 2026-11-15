@@ -21,6 +21,8 @@ public record PromotionResponse(
         OffsetDateTime endsAt,
         boolean enabled,
         boolean currentlyActive,
-        PromotionAudience audience
+        PromotionAudience audience,
+        /** Categoría de servicio en {@code SERVICE_CATEGORY}; nula en los demás tipos. */
+        String targetKey
 ) {
 }

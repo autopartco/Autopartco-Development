@@ -15,6 +15,7 @@ import java.util.regex.Pattern;
 import org.springframework.stereotype.Component;
 
 import com.autopartco.backend.core.analytics.SearchText;
+import com.autopartco.backend.core.organization.ServiceCategory;
 import com.autopartco.backend.core.search.SearchDictionary.City;
 import com.autopartco.backend.core.search.SearchDictionary.Make;
 import com.autopartco.backend.core.search.SearchDictionary.Model;
@@ -169,8 +170,10 @@ public class QueryParser {
         String modelTerm = model == null ? null : modelTerm(model, make);
         String vehicleTsQuery = make == null ? null
                 : modelTerm == null ? phrase(make.name()) : phrase(make.name()) + " | " + modelTerm;
+        // Intención de servicio sobre el texto completo (los términos de servicio no se descuentan del texto buscado).
+        ServiceCategory serviceCategory = interpret ? ServiceTerms.intent(normalizeName(normalized)) : null;
         return new ParsedQuery(normalized, words, groups.isEmpty() ? null : String.join(" & ", groups), reference,
-                make, model, year, city, anyTerms, vehicleTsQuery, modelTerm);
+                make, model, year, city, anyTerms, vehicleTsQuery, modelTerm, serviceCategory);
     }
 
     /** Nombre normalizado como término de {@code tsquery}: {@code palabra} o {@code (varias & palabras)}. */

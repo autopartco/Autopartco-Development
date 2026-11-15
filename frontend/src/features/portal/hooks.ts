@@ -4,7 +4,8 @@ import { toast } from 'sonner'
 import { useAsync, type AsyncResult } from '@/lib/use-async'
 import { getBranchService } from './api/branch-service'
 import { getProductService } from './api/product-service'
-import type { Branch, ProductRow } from './api/types'
+import { getPortalService } from './api/portal-service'
+import type { Branch, BusinessType, ProductRow } from './api/types'
 import { usePortal } from './context'
 import { actionErrorMessage, publishBlockers } from './lib/errors'
 
@@ -43,6 +44,18 @@ export function useBranchSearchParam(name = 'sucursal'): string {
   const value = params.get(name)
   if (value === null) return branchId ?? ''
   return value === ALL_BRANCHES_PARAM ? '' : value
+}
+
+/**
+ * Tipo de negocio del almacén (misma caché que la página «Tienda»). `undefined` mientras carga, si falla o si no hay
+ * `STORE_READ`: quien lo usa debe tener un comportamiento por defecto seguro.
+ */
+export function usePortalBusinessType(): BusinessType | undefined {
+  const { storeId, can } = usePortal()
+  const readable = can('STORE_READ')
+  const profile = useAsync(`portal:${storeId}:profile`, async () => (readable ? (await getPortalService()).profile(storeId) : undefined))
+  if (profile.status !== 'success' || !profile.data) return undefined
+  return profile.data.businessType ?? 'PARTS'
 }
 
 /** Pone el foco en el contenido principal (p. ej. cuando el elemento enfocado desaparece). */

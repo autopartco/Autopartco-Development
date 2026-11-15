@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -60,6 +61,67 @@ public class PriceCalculator {
                 .orElse(new PriceQuote(originalPrice, ZERO, null, null, null));
     }
 
+    /**
+     * Precio «desde» de un servicio: solo aplican promociones {@code SERVICE} (del mismo almacén) y
+     * {@code SERVICE_CATEGORY} (del almacén o de plataforma) con audiencia {@code ALL}; las de {@code STORE}/{@code ALL}
+     * no afectan servicios. Gana la de menor precio (empate: nombre). Sin {@code priceFrom} gana la primera por nombre y
+     * el precio queda nulo (solo se muestra el texto de la promoción).
+     *
+     * @param category nombre de la categoría de servicio
+     */
+    public ServicePrice servicePrice(UUID serviceId, UUID storeId, String category, BigDecimal priceFrom,
+            List<PromotionRule> promotions) {
+        BigDecimal base = priceFrom == null ? null : priceFrom.setScale(2, RoundingMode.HALF_UP);
+        PromotionRule best = null;
+        BigDecimal bestPrice = null;
+        for (PromotionRule promotion : promotions) {
+            if (promotion.audience() != PromotionAudience.ALL || !appliesToService(promotion, serviceId, storeId,
+                    category)) {
+                continue;
+            }
+            BigDecimal price = base == null ? null : quote(base, promotion).effectivePrice();
+            int comparison = best == null ? -1
+                    : price == null ? 0 : price.compareTo(bestPrice);
+            if (comparison < 0 || (comparison == 0 && promotion.name().compareToIgnoreCase(best.name()) < 0)) {
+                best = promotion;
+                bestPrice = price;
+            }
+        }
+        if (best == null) {
+            return new ServicePrice(base, base, null);
+        }
+        return new ServicePrice(bestPrice, base, new ServicePrice.Applied(best.promotionId(), best.name(),
+                label(best), best.endsAt()));
+    }
+
+    private static boolean appliesToService(PromotionRule promotion, UUID serviceId, UUID storeId, String category) {
+        if (promotion.scope() == PromotionScope.STORE && !Objects.equals(promotion.storeId(), storeId)) {
+            return false;
+        }
+        return switch (promotion.targetType()) {
+            case SERVICE -> serviceId.equals(promotion.targetId());
+            case SERVICE_CATEGORY -> category != null && category.equalsIgnoreCase(promotion.targetKey());
+            default -> false;
+        };
+    }
+
+    /** {@code -15%} o {@code -$9.000} (pesos sin decimales, separador de miles con punto). */
+    static String label(PromotionRule promotion) {
+        return label(promotion.discountType(), promotion.discountValue());
+    }
+
+    /** {@code -15%} o {@code -$9.000} para un descuento. */
+    public static String label(PromotionDiscountType type, BigDecimal discountValue) {
+        BigDecimal value = discountValue.stripTrailingZeros();
+        if (type == PromotionDiscountType.PERCENTAGE) {
+            return "-" + value.toPlainString().replace('.', ',') + "%";
+        }
+        java.text.DecimalFormatSymbols symbols = new java.text.DecimalFormatSymbols(Locale.ROOT);
+        symbols.setGroupingSeparator('.');
+        return "-$" + new java.text.DecimalFormat("#,##0", symbols)
+                .format(discountValue.setScale(0, RoundingMode.HALF_UP));
+    }
+
     private PriceQuote quote(BigDecimal originalPrice, PromotionRule promotion) {
         BigDecimal discount = switch (promotion.discountType()) {
             case PERCENTAGE -> originalPrice.multiply(promotion.discountValue())
@@ -89,6 +151,8 @@ public class PriceCalculator {
             case CATEGORY -> subject.categoryId().equals(promotion.targetId());
             case MANUFACTURER -> subject.manufacturerId().equals(promotion.targetId());
             case ATTRIBUTE -> matchesAttribute(promotion, subject);
+            // Las promociones de servicios nunca tocan productos.
+            case SERVICE, SERVICE_CATEGORY -> false;
         };
     }
 
@@ -161,7 +225,9 @@ public class PriceCalculator {
                 promotion.getAttributeOperator(),
                 promotion.getDiscountType(),
                 promotion.getDiscountValue(),
-                promotion.getAudience()
+                promotion.getAudience(),
+                promotion.getTargetKey(),
+                promotion.getEndsAt()
         );
     }
 }

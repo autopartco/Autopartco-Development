@@ -23,11 +23,18 @@ public record StoreUpdateRequest(
         @Size(max = 1000, message = "La descripción no puede superar 1000 caracteres.")
         String description,
         @Valid
-        StorePublicContactRequest publicProfile
+        StorePublicContactRequest publicProfile,
+        /** Opcional: repuestos, servicios o ambos. */
+        BusinessType businessType
 ) {
+    public StoreUpdateRequest(String businessName, String nit, String businessEmail, String description,
+            StorePublicContactRequest publicProfile) {
+        this(businessName, nit, businessEmail, description, publicProfile, null);
+    }
+
     @AssertTrue(message = "Debe proporcionar al menos un dato permitido para actualizar.")
     public boolean hasChanges() {
         return businessName != null || nit != null || businessEmail != null || description != null
-                || (publicProfile != null && publicProfile.hasChanges());
+                || businessType != null || (publicProfile != null && publicProfile.hasChanges());
     }
 }

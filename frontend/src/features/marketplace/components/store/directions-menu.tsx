@@ -18,13 +18,15 @@ interface DirectionsMenuProps {
   storeId: string
   /** Una sede: menú de aplicaciones. Varias: el menú agrupa las aplicaciones por sede. */
   branches: StoreBranch[]
+  /** Servicio desde el que se pide la ruta: el clic se atribuye a él además de a la sede. */
+  serviceId?: string
   variant?: 'default' | 'outline' | 'ghost'
   size?: 'default' | 'sm'
   className?: string
 }
 
 /** «Cómo llegar» con Google Maps, Waze o Apple Maps; cada elección registra un clic de la sede. Operable con teclado. */
-export function DirectionsMenu({ storeId, branches, variant = 'outline', size = 'default', className }: DirectionsMenuProps) {
+export function DirectionsMenu({ storeId, branches, serviceId, variant = 'outline', size = 'default', className }: DirectionsMenuProps) {
   const usable = branches.filter((branch) => directionsLinks(branch).length > 0)
   if (usable.length === 0) return null
   const grouped = usable.length > 1
@@ -44,7 +46,7 @@ export function DirectionsMenu({ storeId, branches, variant = 'outline', size = 
               <DropdownMenuItem
                 key={link.id}
                 render={<a href={link.href} target="_blank" rel="noopener noreferrer" />}
-                onClick={() => trackClick('DIRECTIONS_CLICK', storeId, branch.id)}
+                onClick={() => trackClick('DIRECTIONS_CLICK', storeId, branch.id, undefined, serviceId)}
               >
                 {link.label}
                 <span className="sr-only">{grouped ? ` hacia ${branch.name}` : ''} (se abre en una pestaña nueva)</span>

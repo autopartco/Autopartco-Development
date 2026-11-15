@@ -8,6 +8,8 @@ export const CategoryPage = lazy(() => import('@/features/marketplace/pages/cate
 export const ProductPage = lazy(() => import('@/features/marketplace/pages/product-page'))
 export const StoresPage = lazy(() => import('@/features/marketplace/pages/stores-page'))
 export const StorePage = lazy(() => import('@/features/marketplace/pages/store-page'))
+export const ServicesPage = lazy(() => import('@/features/services/pages/services-page'))
+export const ServicePage = lazy(() => import('@/features/services/pages/service-page'))
 export const PrivacyPage = lazy(() => import('@/features/marketplace/pages/privacy-page'))
 export const SellPage =lazy(() => import('@/features/marketplace/pages/sell-page'))
 
@@ -38,6 +40,8 @@ export const AccountSecurityPage = lazy(() => import('@/features/account/pages/s
 export const AccountAddressesPage = lazy(() => import('@/features/account/pages/addresses-page'))
 export const AccountPreferencesPage = lazy(() => import('@/features/account/pages/preferences-page'))
 export const AccountPrivacyPage = lazy(() => import('@/features/account/pages/privacy-page'))
+export const BookingsPage = lazy(() => import('@/features/account/pages/bookings-page'))
+export const BookingDetailPage = lazy(() => import('@/features/account/pages/booking-detail-page'))
 export const OrderDetailPage = lazy(() => import('@/features/orders/pages/order-detail-page'))
 // Reseñas pendientes del comprador (enlace del correo de invitación: /cuenta/calificar?pedido=).
 export const RatePage = lazy(() => import('@/features/reviews/pages/rate-page'))
@@ -79,7 +83,10 @@ export const PortalAdsPaymentResultPage = lazy(() => import('@/features/portal/p
 export const PortalAlertsPage = lazy(() => import('@/features/portal/pages/alerts-page'))
 export const PortalBranchesPage = lazy(() => import('@/features/portal/pages/branches-page'))
 export const PortalTeamPage = lazy(() => import('@/features/portal/pages/team-page'))
-export const PortalStorePage = lazy(() => import('@/features/portal/pages/store-profile-page'))
+export const PortalServicesPage = lazy(() => import('@/features/portal/pages/services-page'))
+export const PortalBookingsPage = lazy(() => import('@/features/portal/pages/bookings-page'))
+export const PortalSettingsPage = lazy(() => import('@/features/portal/pages/store-settings-page'))
+export const PortalStorePage =lazy(() => import('@/features/portal/pages/store-profile-page'))
 
 // Administración (ROOT): resumen, solicitudes, planes, promociones, catálogo e inteligencia.
 export const AdminRoot = lazy(() => import('@/features/admin/layout/admin-root').then((module) => ({ default: module.AdminRoot })))

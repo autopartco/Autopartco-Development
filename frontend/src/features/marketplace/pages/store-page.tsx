@@ -7,6 +7,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useSession } from '@/features/auth/hooks'
 import { ReviewDialog } from '@/features/reviews/components/review-dialog'
 import { useStoreDistances } from '@/features/location/hooks'
+import { ServiceCard, ServiceGrid } from '@/features/services/components/service-card'
+import { storeServiceToSummary } from '@/features/services/lib/format'
 import { pluralize } from '@/lib/format'
 import { cn } from '@/lib/utils'
 import { trackView } from '@/lib/visibility'
@@ -14,7 +16,6 @@ import { isNotFoundError, type StoreBranch, type StoreProfile } from '../api/typ
 import { ProductCard, ProductGrid, ProductGridSkeleton } from '../components/product-card'
 import { ResultsPagination } from '../components/results-pagination'
 import { BranchesPanel } from '../components/store/branches-panel'
-import { ServicesList } from '../components/store/services-list'
 import { ReviewsSection } from '../components/reviews/reviews-section'
 import { StoreFacts } from '../components/store/store-facts'
 import { StoreHeader } from '../components/store/store-header'
@@ -70,6 +71,8 @@ function BranchFilter({ branches, value, onChange }: { branches: StoreBranch[]; 
 }
 
 function StoreProducts({ store, branches }: { store: StoreProfile; branches: StoreBranch[] }) {
+  // Un taller que solo presta servicios no muestra una sección de repuestos vacía.
+  const servicesOnly = store.businessType === 'SERVICES'
   const [searchParams, setSearchParams] = useSearchParams()
   const parsed = parseProductQuery(searchParams)
   const page = parsed.page
@@ -91,6 +94,8 @@ function StoreProducts({ store, branches }: { store: StoreProfile; branches: Sto
       { replace: true, preventScrollReset: true },
     )
   }
+
+  if (servicesOnly && results.data && results.data.total === 0 && !branchId) return null
 
   let content: ReactNode
   if (results.status === 'error') {
@@ -243,7 +248,13 @@ function ServicesSection({ store, branches, wide }: { store: StoreProfile; branc
         </h2>
         <p className="text-sm text-ap-muted">Los precios son de referencia; confirma el valor final con la tienda.</p>
       </div>
-      <ServicesList services={store.services} branches={branches} wide={wide} />
+      <ServiceGrid className={wide ? 'lg:grid-cols-3' : undefined}>
+        {store.services.map((service) => (
+          <li key={service.id}>
+            <ServiceCard service={storeServiceToSummary(service, store, branches)} />
+          </li>
+        ))}
+      </ServiceGrid>
     </section>
   )
 }
@@ -287,8 +298,18 @@ function StoreDetail({ store }: { store: StoreProfile }) {
           <div className={cn('grid gap-10', twoColumns && 'lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)] lg:gap-12')}>
             {hasLeft ? (
               <div className="flex min-w-0 flex-col gap-10">
-                <AboutSection store={store} />
-                <ServicesSection store={store} branches={branches} wide={!twoColumns} />
+                {/* Un taller (solo servicios) abre en sus servicios; con repuestos, primero «Sobre la tienda». */}
+                {store.businessType === 'SERVICES' ? (
+                  <>
+                    <ServicesSection store={store} branches={branches} wide={!twoColumns} />
+                    <AboutSection store={store} />
+                  </>
+                ) : (
+                  <>
+                    <AboutSection store={store} />
+                    <ServicesSection store={store} branches={branches} wide={!twoColumns} />
+                  </>
+                )}
               </div>
             ) : null}
             {hasBranches ? (

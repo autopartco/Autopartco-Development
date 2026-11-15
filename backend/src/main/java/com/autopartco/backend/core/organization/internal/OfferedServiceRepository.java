@@ -24,6 +24,12 @@ public interface OfferedServiceRepository extends JpaRepository<OfferedService, 
     @Query("select count(s) from OfferedService s where s.storeId = :storeId and s.active = true")
     long countActiveInStore(@Param("storeId") UUID storeId);
 
+    /** Almacenes con algún servicio activo (de la categoría, si no es nula). */
+    @Query("select distinct s.storeId from OfferedService s where s.active = true "
+            + "and (:category is null or s.category = :category)")
+    List<UUID> findStoreIdsWithActiveServices(
+            @Param("category") com.autopartco.backend.core.organization.ServiceCategory category);
+
     /** Pares (servicio, sucursal) de los servicios activos del almacén. */
     @Query("select s.id, b from OfferedService s join s.branchIds b where s.storeId = :storeId and s.active = true")
     List<Object[]> findActiveBranchLinks(@Param("storeId") UUID storeId);

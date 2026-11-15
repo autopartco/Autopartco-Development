@@ -4,7 +4,8 @@ import { cn } from '@/lib/utils'
 import { usePortal } from '../context'
 import { usePortalQuestionPending } from '../lib/questions'
 import { usePortalReviewSummary } from '../lib/reviews'
-import { canOpenSection, PORTAL_SECTION_GROUPS } from '../lib/sections'
+import { usePortalBusinessType } from '../hooks'
+import { canOpenSection, groupsFor } from '../lib/sections'
 
 /** Contador de pendientes junto a «Reseñas» o «Preguntas»; sin pendientes (o si falla la consulta) no se dibuja. */
 function UnansweredBadge({ unanswered }: { unanswered: number }) {
@@ -31,6 +32,7 @@ function UnansweredQuestionsCount() {
  */
 export function PortalNav({ onNavigate }: { onNavigate?: () => void }) {
   const { storeId, can, permissionsReady } = usePortal()
+  const businessType = usePortalBusinessType()
 
   if (!permissionsReady) {
     return (
@@ -45,7 +47,7 @@ export function PortalNav({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <nav aria-label="Portal del almacén" className="flex flex-col gap-5 px-3">
-      {PORTAL_SECTION_GROUPS.map((group) => {
+      {groupsFor(businessType).map((group) => {
         const items = group.items.filter((item) => canOpenSection(can, item))
         if (items.length === 0) return null
         const headingId = `nav-${group.label}`

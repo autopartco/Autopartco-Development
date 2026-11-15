@@ -15,6 +15,12 @@ public record StoreProfileResponse(
         String description,
         String logoUrl,
         String bannerUrl,
-        PublishedStoreProfile.PublicContact publicProfile
+        PublishedStoreProfile.PublicContact publicProfile,
+        BusinessType businessType
 ) {
+    public StoreProfileResponse(UUID id, String businessName, String nit, String businessEmail, String state,
+            String description, String logoUrl, String bannerUrl, PublishedStoreProfile.PublicContact publicProfile) {
+        this(id, businessName, nit, businessEmail, state, description, logoUrl, bannerUrl, publicProfile,
+                BusinessType.PARTS);
+    }
 }

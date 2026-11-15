@@ -32,11 +32,16 @@ export const DOCUMENT_MAX_BYTES = 10 * 1024 * 1024
 /** `spring.servlet.multipart.max-request-size`. */
 export const REQUEST_MAX_BYTES = 35 * 1024 * 1024
 
+/** `core.organization.BusinessType`: qué ofrece el almacén. */
+export type BusinessType = 'PARTS' | 'SERVICES' | 'BOTH'
+
 /** `StoreRegistrationRequest`. */
 export interface StoreRegistration {
   businessName: string
   nit: string
   businessEmail: string
+  /** `core.organization.BusinessType`; sin valor el servidor usa `PARTS`. */
+  businessType?: BusinessType
 }
 
 export interface SellerApplicationInput {

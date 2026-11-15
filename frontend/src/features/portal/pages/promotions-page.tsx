@@ -2,6 +2,8 @@ import { useMemo, type ReactNode } from 'react'
 import { useSearchParams } from 'react-router'
 import { Skeleton } from '@/components/ui/skeleton'
 import { getProductService } from '../api/product-service'
+import { serviceCategoryLabel, SERVICE_CATEGORY_CODES } from '@/features/services/lib/categories'
+import { getStoreServicesService } from '../api/store-services-service'
 import { lazyPromotionService } from '../api/promotion-service'
 import { PageHeader } from '../components/page-header'
 import { UpgradeNotice } from '../components/plan-gate'
@@ -30,18 +32,27 @@ export default function PortalPromotionsPage() {
       cacheKey: `portal:${storeId}:promotions`,
       audiences: STORE_AUDIENCES,
       platformAudienceAllowed: capabilities?.includes(REPORTS_CAPABILITY) ?? false,
-      targetTypes: ['STORE', 'PRODUCT', 'CATEGORY', 'MANUFACTURER', 'ATTRIBUTE'],
+      targetTypes: ['STORE', 'PRODUCT', 'CATEGORY', 'MANUFACTURER', 'ATTRIBUTE', 'SERVICE', 'SERVICE_CATEGORY'],
       canCreate: can('PROMOTION_CREATE'),
       canUpdate: can('PROMOTION_UPDATE'),
       canDelete: can('PROMOTION_DELETE'),
       loadTargetOptions: async () => {
         const service = await getProductService()
-        const [options, rows] = await Promise.all([service.options(), service.list(storeId)])
+        const [options, rows, services] = await Promise.all([
+          service.options(),
+          service.list(storeId),
+          can('STORE_READ') ? getStoreServicesService().then((api) => api.list(storeId)) : Promise.resolve([]),
+        ])
         const products = new Map(rows.map((row) => [row.id, row.name]))
         return {
           products: [...products].map(([id, label]) => ({ id, label })).toSorted((a, b) => a.label.localeCompare(b.label, 'es-CO')),
           categories: options.categories.map((category) => ({ id: category.id, label: humanizeCode(category.code) })),
           manufacturers: options.manufacturers.map((manufacturer) => ({ id: manufacturer.id, label: manufacturer.name })),
+          services: services
+            .filter((item) => item.active)
+            .map((item) => ({ id: item.id, label: item.name }))
+            .toSorted((a, b) => a.label.localeCompare(b.label, 'es-CO')),
+          serviceCategories: SERVICE_CATEGORY_CODES.map((code) => ({ id: code, label: serviceCategoryLabel(code) })),
         }
       },
       promptUpgrade,
@@ -87,7 +98,7 @@ export default function PortalPromotionsPage() {
       <title>Promociones | Autopartco</title>
       <PageHeader
         title="Promociones"
-        description="Descuentos para tus productos. Elige quién ve el precio, cuándo corre y mide cuánto vendió."
+        description="Descuentos para tus productos y servicios. Elige quién ve el precio, cuándo corre y mide cuánto vendió."
       />
       {body}
     </>

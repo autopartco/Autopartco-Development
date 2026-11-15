@@ -1,4 +1,4 @@
-import { apiRequest } from '@/lib/api'
+import { apiAssetUrl, apiRequest } from '@/lib/api'
 import { cachedGet, type HttpResult } from '@/lib/http'
 import { getAnonymousSessionId } from '@/lib/anonymous-session'
 import { getAuthService } from '@/features/auth/api/auth-service'
@@ -25,8 +25,18 @@ import type {
   VehicleVersionOptionDto,
 } from '../dto'
 import { humanizeCode } from '../../lib/humanize-code'
+import type { ServiceDetailDto, ServiceCategoryItemDto, ServiceSearchResponseDto } from '@/features/services/api/dto'
+import {
+  toHomeServices,
+  toServiceCategoryCount,
+  toServiceDetail,
+  toServiceSearchResult,
+  toServicesStrip,
+} from '@/features/services/api/mapping'
+import { isServiceCategory, toServiceCategory } from '@/features/services/lib/categories'
 import {
   MarketplaceError,
+  type BusinessType,
   type Category,
   type FilterOptions,
   type FrequentlyBoughtItem,
@@ -71,7 +81,12 @@ const PATHS = {
   store: (storeId: string) => `/marketplace/stores/${encodeURIComponent(storeId)}`,
   storeBranches: (storeId: string) => `/marketplace/stores/${encodeURIComponent(storeId)}/branches`,
   storeReviews: (storeId: string) => `/marketplace/stores/${encodeURIComponent(storeId)}/reviews`,
+  serviceSearch: '/marketplace/services/search',
+  serviceCategories: '/marketplace/services/categories',
+  service: (id: string) => `/marketplace/services/${encodeURIComponent(id)}`,
 } as const
+
+const BUSINESS_TYPES: readonly BusinessType[] = ['PARTS', 'SERVICES', 'BOTH']
 
 const WEEK_DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'] as const
 
@@ -411,8 +426,11 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
               cityCode: interpreted.cityCode ?? undefined,
               cityName: interpreted.cityName ?? undefined,
               reference: interpreted.reference ?? undefined,
+              serviceCategory: isServiceCategory(interpreted.serviceCategory) ? interpreted.serviceCategory : undefined,
             }
           : undefined,
+        services: dto.services ? toServicesStrip(dto.services) : undefined,
+        suggestedTab: dto.suggestedTab === 'services' ? 'services' : undefined,
         facets: facets
           ? {
               categories: facets.categories,
@@ -439,6 +457,13 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
       return {
         suggestions: dto.suggestions.map((item) => ({ term: item.term, kind: item.kind as SuggestionKind })),
         products: dto.products.map((item) => toProduct(item, maps)),
+        services: (dto.services ?? []).map((item) => ({
+          id: item.id,
+          name: item.name,
+          category: toServiceCategory(item.category),
+          storeName: item.storeName,
+        })),
+        serviceCategories: (dto.serviceCategories ?? []).filter(isServiceCategory),
       }
     },
 
@@ -460,6 +485,7 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
         categories: dto.categories ?? [],
         nearby: (dto.nearby ?? []).map((item) => toSearchItem(item, maps)),
         featured: (dto.featured ?? []).map((item) => toSearchItem(item, maps)),
+        services: dto.services ? toHomeServices(dto.services) : undefined,
       }
     },
 
@@ -547,13 +573,20 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
         verified: dto.verified ?? false,
         whatsappEnabled: dto.whatsappEnabled ?? false,
         whatsappMessage: dto.whatsappMessage ?? undefined,
+        businessType: BUSINESS_TYPES.find((type) => type === dto.businessType) ?? 'PARTS',
         services: (dto.services ?? []).map((service) => ({
           id: service.id,
           category: service.category as ServiceCategory,
           name: service.name,
           description: service.description ?? undefined,
           priceFrom: service.priceFrom ?? undefined,
+          basePriceFrom: service.basePriceFrom ?? undefined,
+          promotion: service.promotion
+            ? { id: service.promotion.id, label: service.promotion.label, endsAt: service.promotion.endsAt ?? undefined }
+            : undefined,
           durationMinutes: service.durationMinutes ?? undefined,
+          imageUrl: apiAssetUrl(service.imageUrl) ?? undefined,
+          bookingEnabled: service.bookingEnabled ?? false,
           branchIds: service.branchIds ?? [],
         })),
         featuredProductIds: dto.featuredProductIds ?? [],
@@ -563,6 +596,41 @@ export function createHttpMarketplaceService(baseUrl: string): MarketplaceServic
     async listStoreBranches(storeId) {
       const branches = await get<PublicBranchDto[]>(PATHS.storeBranches(storeId))
       return branches.map(toBranch)
+    },
+
+    async searchServices(query, signal) {
+      const params = new URLSearchParams()
+      const text = query.q.trim()
+      if (text) params.set('q', text)
+      if (query.category) params.set('category', query.category)
+      if (query.cityCode) params.set('cityCode', query.cityCode)
+      if (query.lat !== undefined && query.lng !== undefined) {
+        params.set('lat', String(query.lat))
+        params.set('lng', String(query.lng))
+      }
+      // Sin lat/lng, el servidor usa la cookie `ap_area` si el orden o el radio piden cercanía.
+      if (query.radiusKm !== undefined) params.set('radiusKm', String(query.radiusKm))
+      if (query.store) params.set('storeId', query.store)
+      if (query.priceMax !== undefined) params.set('priceMax', String(query.priceMax))
+      if (query.onSale) params.set('onSale', 'true')
+      if (query.bookable) params.set('bookable', 'true')
+      if (query.openNow) params.set('openNow', 'true')
+      params.set('sort', query.sort)
+      params.set('page', String(Math.max(0, query.page - 1)))
+      params.set('size', String(query.pageSize))
+      params.set('facets', 'true')
+      return toServiceSearchResult(await get<ServiceSearchResponseDto>(`${PATHS.serviceSearch}?${params}`, {}, undefined, signal))
+    },
+
+    async listServiceCategories(cityCode, signal) {
+      const qs = cityCode ? `?${new URLSearchParams({ cityCode })}` : ''
+      const items = await get<ServiceCategoryItemDto[]>(`${PATHS.serviceCategories}${qs}`, {}, undefined, signal)
+      return items.map(toServiceCategoryCount)
+    },
+
+    async getService(id, near, signal) {
+      const qs = near ? `?${new URLSearchParams({ lat: String(near.lat), lng: String(near.lng) })}` : ''
+      return toServiceDetail(await get<ServiceDetailDto>(`${PATHS.service(id)}${qs}`, {}, undefined, signal), toBranch)
     },
 
     async getReviewSummary(target) {

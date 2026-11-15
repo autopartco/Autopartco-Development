@@ -16,6 +16,8 @@ import {
   AdminReviewsPage,
   AdminRoot,
   BenefitsPage,
+  BookingDetailPage,
+  BookingsPage,
   CartPage,
   CategoriesPage,
   CategoryPage,
@@ -64,6 +66,9 @@ import {
   PortalSalesPage,
   PortalRoot,
   PortalStorePage,
+  PortalServicesPage,
+  PortalBookingsPage,
+  PortalSettingsPage,
   PortalQuestionsPage,
   PortalReviewsPage,
   PortalTeamPage,
@@ -73,6 +78,8 @@ import {
   SearchPage,
   SellerRegisterPage,
   SellerSetupPage,
+  ServicePage,
+  ServicesPage,
   StaffInvitationPage,
   SellPage,
   StorePage,
@@ -110,6 +117,9 @@ export const router = createBrowserRouter([
           { path: 'categorias', element: <CategoriesPage /> },
           { path: 'categoria/:slug', element: <CategoryPage /> },
           { path: 'producto/:id', element: <ProductPage /> },
+          // Servicios: sección propia (?category=AC es la URL canónica por categoría) y detalle.
+          { path: 'servicios', element: <ServicesPage /> },
+          { path: 'servicio/:id', element: <ServicePage /> },
           { path: 'tiendas', element: <StoresPage /> },
           // Perfil público del almacén (GET /marketplace/stores/{id}).
           { path: 'tiendas/:storeId', element: <StorePage /> },
@@ -123,6 +133,9 @@ export const router = createBrowserRouter([
           // Beneficios del comprador (GET /marketplace/me/benefits): exigen sesión.
           { path: 'mis-beneficios', element: <RequireSession fallback={<PageFallback />}><BenefitsPage /></RequireSession> },
           { path: 'mis-pedidos/:id', element: <RequireSession fallback={<PageFallback />}><OrderDetailPage /></RequireSession> },
+          // Mis citas de servicios (GET /bookings): exigen sesión; el servidor solo devuelve las del titular.
+          { path: 'mis-citas', element: <RequireSession fallback={<PageFallback />}><BookingsPage /></RequireSession> },
+          { path: 'mis-citas/:id', element: <RequireSession fallback={<PageFallback />}><BookingDetailPage /></RequireSession> },
           // Reseñas pendientes (GET /account/reviews/pending); el correo de invitación enlaza con ?pedido=.
           {
             path: 'cuenta',
@@ -210,7 +223,10 @@ export const router = createBrowserRouter([
           { path: 'alertas', element: <RequirePermission permission="STORE_READ"><PortalAlertsPage /></RequirePermission> },
           { path: 'resenas', element: <RequirePermission permission="STORE_READ"><PortalReviewsPage /></RequirePermission> },
           { path: 'preguntas', element: <RequirePermission permission="STORE_READ"><PortalQuestionsPage /></RequirePermission> },
-          { path: 'sucursales', element: <RequirePermission permission="BRANCH_READ"><PortalBranchesPage /></RequirePermission> },
+          { path: 'servicios', element: <RequirePermission permission="STORE_READ"><PortalServicesPage /></RequirePermission> },
+          { path: 'citas', element: <RequirePermission permission="BOOKING_READ"><PortalBookingsPage /></RequirePermission> },
+          { path: 'configuracion', element: <RequirePermission permission="STORE_UPDATE"><PortalSettingsPage /></RequirePermission> },
+          { path: 'sucursales',element: <RequirePermission permission="BRANCH_READ"><PortalBranchesPage /></RequirePermission> },
           { path: 'equipo', element: <RequirePermission permission="COLLABORATOR_READ"><PortalTeamPage /></RequirePermission> },
           { path: 'tienda', element: <RequirePermission permission="STORE_READ"><PortalStorePage /></RequirePermission> },
           { path: 'plan', element: <RequirePermission permission="STORE_READ"><PortalPlanPage /></RequirePermission> },

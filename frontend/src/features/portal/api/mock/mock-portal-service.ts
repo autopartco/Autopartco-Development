@@ -38,6 +38,7 @@ export function createMockPortalService(): PortalService {
         store.summary.businessName = input.businessName
       }
       if (input.businessEmail !== undefined) store.profile.businessEmail = input.businessEmail
+      if (input.businessType !== undefined) store.profile.businessType = input.businessType
       if (input.description !== undefined) store.profile.description = input.description || null
       if (input.publicProfile) {
         const contact = { ...store.profile.publicProfile }

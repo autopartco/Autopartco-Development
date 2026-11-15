@@ -23,6 +23,10 @@ import com.autopartco.backend.core.organization.BranchService;
 import com.autopartco.backend.core.pricing.BuyerContext;
 import com.autopartco.backend.core.pricing.PromotionExposureRecorder;
 import com.autopartco.backend.core.search.SearchInterpretation;
+import com.autopartco.backend.core.search.ServiceSearchQuery;
+import com.autopartco.backend.core.search.ServiceSearchResult;
+import com.autopartco.backend.core.search.ServiceSearchService;
+import com.autopartco.backend.marketplace.services.ServiceCard;
 import com.autopartco.backend.core.search.SearchQuery;
 import com.autopartco.backend.core.search.SearchResult;
 import com.autopartco.backend.core.search.SearchService;
@@ -37,17 +41,21 @@ import com.autopartco.backend.shared.web.SlidingWindowRateLimiter;
 import com.autopartco.backend.shared.web.VisitorCookie;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Búsqueda v2 del marketplace (público). Contratos en §1 del plan v2.0.0. Límite por IP: 120 búsquedas y 240
  * sugerencias por minuto.
  */
+@Slf4j
 @RestController
 public class SearchController {
     static final String SEARCH = ApiPaths.MARKETPLACE + "/search";
     static final String SUGGEST = SEARCH + "/suggest";
     static final int SEARCHES_PER_MINUTE = 120;
     static final int SUGGESTIONS_PER_MINUTE = 240;
+    /** Servicios de la franja de la búsqueda unificada. */
+    static final int SERVICE_STRIP = 4;
 
     private final SearchService searchService;
     private final Suggestions suggestions;
@@ -55,6 +63,7 @@ public class SearchController {
     private final BuyerContexts buyerContexts;
     private final PromotionExposureRecorder exposureRecorder;
     private final BranchService branchService;
+    private final ServiceSearchService serviceSearchService;
     private final SlidingWindowRateLimiter searchLimiter;
     private final SlidingWindowRateLimiter suggestLimiter;
 
@@ -62,30 +71,38 @@ public class SearchController {
     @Autowired
     public SearchController(SearchService searchService, Suggestions suggestions, SearchLog searchLog,
             BuyerContexts buyerContexts, PromotionExposureRecorder exposureRecorder, BranchService branchService,
-            RateLimiters rateLimiters) {
+            ServiceSearchService serviceSearchService, RateLimiters rateLimiters) {
         this.searchService = searchService;
         this.suggestions = suggestions;
         this.searchLog = searchLog;
         this.buyerContexts = buyerContexts;
         this.exposureRecorder = exposureRecorder;
         this.branchService = branchService;
+        this.serviceSearchService = serviceSearchService;
         this.searchLimiter = rateLimiters.create("search", "SEARCH_RATE_LIMITED", SEARCHES_PER_MINUTE,
                 Duration.ofMinutes(1));
         this.suggestLimiter = rateLimiters.create("suggest", "SEARCH_RATE_LIMITED", SUGGESTIONS_PER_MINUTE,
                 Duration.ofMinutes(1));
     }
 
+    /** Sin franja de servicios (pruebas del catálogo de productos). */
     public SearchController(SearchService searchService, Suggestions suggestions, SearchLog searchLog,
             BuyerContexts buyerContexts, PromotionExposureRecorder exposureRecorder, BranchService branchService) {
-        this(searchService, suggestions, searchLog, buyerContexts, exposureRecorder, branchService,
+        this(searchService, suggestions, searchLog, buyerContexts, exposureRecorder, branchService, null,
                 Clock.systemUTC());
     }
 
     SearchController(SearchService searchService, Suggestions suggestions, SearchLog searchLog,
             BuyerContexts buyerContexts, PromotionExposureRecorder exposureRecorder, BranchService branchService,
             Clock clock) {
+        this(searchService, suggestions, searchLog, buyerContexts, exposureRecorder, branchService, null, clock);
+    }
+
+    SearchController(SearchService searchService, Suggestions suggestions, SearchLog searchLog,
+            BuyerContexts buyerContexts, PromotionExposureRecorder exposureRecorder, BranchService branchService,
+            ServiceSearchService serviceSearchService, Clock clock) {
         this(searchService, suggestions, searchLog, buyerContexts, exposureRecorder, branchService,
-                RateLimiters.inMemory(clock));
+                serviceSearchService, RateLimiters.inMemory(clock));
     }
 
     /**
@@ -170,13 +187,53 @@ public class SearchController {
         CatalogTracking.recordExposures(exposureRecorder, buyer,
                 result.items().stream().map(SearchResult.Hit::listing).toList());
         SearchResponse body = SearchResponse.of(result);
+        SearchResponse.Services services = services(q, cityCode, departmentCode, lat, lng, radiusKm, storeId);
+        body = body.withServices(services, suggestedTab(interpret, interpreted, services));
         return body.sponsored().isEmpty()
                 ? ResponseEntity.ok(body)
                 : ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(body);
     }
 
     /**
-     * Autocompletado: hasta 8 términos y 4 productos con precio general. Menos de 2 caracteres útiles: listas vacías.
+     * Franja de servicios de la búsqueda unificada: hasta {@value #SERVICE_STRIP} tarjetas con la misma ubicación y
+     * filtros de lugar. Solo con texto en {@code q} (no hay correspondencia entre las categorías de producto y las de
+     * servicio). Un fallo nunca rompe la búsqueda de productos: responde sin franja.
+     */
+    private SearchResponse.Services services(String q, String cityCode, String departmentCode, BigDecimal lat,
+            BigDecimal lng, Integer radiusKm, UUID storeId) {
+        if (serviceSearchService == null || q == null || q.isBlank()) {
+            return null;
+        }
+        try {
+            ServiceSearchResult found = serviceSearchService.search(ServiceSearchQuery.builder()
+                    .q(q).cityCode(cityCode).departmentCode(departmentCode).lat(lat).lng(lng).radiusKm(radiusKm)
+                    .storeId(storeId).page(0).size(SERVICE_STRIP).facets(false).build());
+            return new SearchResponse.Services(found.items().stream().map(ServiceCard::of).toList(), found.total());
+        } catch (RuntimeException failure) {
+            log.warn("Franja de servicios no disponible: {}", failure.getClass().getSimpleName());
+            return null;
+        }
+    }
+
+    /**
+     * {@code "services"} cuando {@code interpret} está activo, la consulta pide una categoría de servicio, no se
+     * reconoció marca, modelo ni referencia (nada que apunte a un repuesto) y hay servicios que mostrar.
+     */
+    private static String suggestedTab(Boolean interpret, SearchInterpretation interpreted,
+            SearchResponse.Services services) {
+        boolean interpreting = interpret == null || interpret;
+        if (!interpreting || interpreted == null || interpreted.serviceCategory() == null || services == null
+                || services.total() == 0) {
+            return null;
+        }
+        boolean productOrVehicle = interpreted.makeId() != null || interpreted.modelId() != null
+                || interpreted.reference() != null;
+        return productOrVehicle ? null : "services";
+    }
+
+    /**
+     * Autocompletado: hasta 8 términos y 4 productos con precio general; además hasta 3 servicios y 2 categorías de
+     * servicio ({@code services}, {@code serviceCategories}). Menos de 2 caracteres útiles: listas vacías.
      * Caché del servidor de 5 minutos ({@code search:suggest}); la cabecera HTTP la pone
      * {@code MarketplaceHttpCacheFilter} (pública 30 s con ETag; no depende de la sesión).
      */

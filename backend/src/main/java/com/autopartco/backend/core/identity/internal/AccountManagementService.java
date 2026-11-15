@@ -200,7 +200,7 @@ public class AccountManagementService {
 
     // ------------------------------------------------------------------ datos personales
 
-    /** Copia de los datos de la cuenta (perfil, direcciones, pedidos, reseñas, preguntas y preferencias). */
+    /** Copia de los datos de la cuenta (perfil, direcciones, pedidos, reseñas, preguntas, citas y preferencias). */
     @Transactional(readOnly = true)
     public Map<String, Object> export(String email) {
         Account account = find(email);
@@ -239,6 +239,16 @@ public class AccountManagementService {
                 FROM product_questions q JOIN products p ON p.id = q.product_id
                 WHERE q.person_id = ? AND q.deleted_at IS NULL ORDER BY q.created_at DESC
                 """, personId));
+        data.put("serviceBookings", jdbcTemplate.queryForList("""
+                SELECT b.code, b.status, ss.name AS service, s.business_name AS store, br.name AS branch,
+                       b.starts_at, b.ends_at, b.proposed_starts_at, b.contact_phone, b.vehicle::text AS vehicle,
+                       b.buyer_note, b.store_note, b.quoted_price, b.created_at
+                FROM service_bookings b
+                JOIN store_services ss ON ss.id = b.service_id
+                JOIN store s ON s.id = b.store_id
+                JOIN branches br ON br.id = b.branch_id
+                WHERE b.account_id = ? ORDER BY b.created_at DESC
+                """, account.getId()));
         data.put("linkedSignIns", identities(email));
         auditService.record(account.getId(), "PERSONAL_DATA_EXPORTED", "ACCOUNT", account.getId(), Map.of());
         return data;

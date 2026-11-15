@@ -9,14 +9,15 @@ import org.springframework.jdbc.core.simple.JdbcClient;
 import org.springframework.stereotype.Service;
 
 /**
- * Registra visitas al perfil del almacén, a sus publicaciones, compartidos y clics de WhatsApp o «Cómo llegar» (estos
- * dos exigen sucursal del almacén) en {@code store_visibility_events}. Igual
+ * Registra visitas al perfil del almacén, a sus publicaciones y a sus servicios ({@code SERVICE_VIEW} exige un servicio
+ * activo del almacén), compartidos y clics de WhatsApp o «Cómo llegar» (estos dos exigen sucursal del almacén) en
+ * {@code store_visibility_events}. Igual
  * que {@link TrafficRecorder}: el visitante es un SHA-256 de su id anónimo con sal diaria y nunca se guarda IP,
  * user-agent ni cuenta (Ley 1581). Los datos inválidos se ignoran sin error.
  */
 @Service
 public class VisibilityRecorder {
-    public enum Kind { PROFILE_VIEW, PRODUCT_VIEW, SHARE, WHATSAPP_CLICK, DIRECTIONS_CLICK }
+    public enum Kind { PROFILE_VIEW, PRODUCT_VIEW, SHARE, WHATSAPP_CLICK, DIRECTIONS_CLICK, SERVICE_VIEW }
 
     /**
      * Solo almacenes publicados (almacén {@code ACTIVE} y, si la tiene, solicitud {@code ACTIVE}) y, con producto, un producto {@code ACTIVE} de ese
@@ -85,7 +86,10 @@ public class VisibilityRecorder {
             return false;
         }
         boolean click = kind == Kind.WHATSAPP_CLICK || kind == Kind.DIRECTIONS_CLICK;
-        UUID productId = kind == Kind.PROFILE_VIEW ? null : visit.productId();
+        UUID productId = kind == Kind.PROFILE_VIEW || kind == Kind.SERVICE_VIEW ? null : visit.productId();
+        if (kind == Kind.SERVICE_VIEW && visit.serviceId() == null) {
+            return false;
+        }
         if (kind == Kind.PRODUCT_VIEW && productId == null) {
             return false;
         }
@@ -94,7 +98,7 @@ public class VisibilityRecorder {
             return false;
         }
         UUID branchId = click ? visit.branchId() : null;
-        UUID serviceId = click ? visit.serviceId() : null;
+        UUID serviceId = click || kind == Kind.SERVICE_VIEW ? visit.serviceId() : null;
         TrafficSource source = source(kind, visit, ownHost);
         LocalDate day = Analytics.today();
         return jdbcClient.sql(INSERT_SQL)

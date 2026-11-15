@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,13 +19,15 @@ import com.autopartco.backend.core.organization.internal.StoreRepository;
 import com.autopartco.backend.shared.error.BadRequestException;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.error.NotFoundException;
+import com.autopartco.backend.shared.events.ServicesChanged;
 
 import lombok.AllArgsConstructor;
 
 /**
  * Servicios que presta un almacén (instalación, alineación, diagnóstico…), siempre acotados por {@code storeId}: un
  * servicio de otro almacén es {@code SERVICE_NOT_FOUND}. No resuelve permisos: lo hacen los casos de uso de
- * {@code storesuite.services}.
+ * {@code storesuite.services}. Cada alta, edición o baja publica {@link ServicesChanged}: la búsqueda de servicios se
+ * reindexa tras el commit.
  */
 @Service
 @AllArgsConstructor
@@ -34,6 +37,8 @@ public class StoreServices {
     private final OfferedServiceRepository serviceRepository;
     private final BranchRepository branchRepository;
     private final StoreRepository storeRepository;
+    private final ApplicationEventPublisher events;
+    private final com.autopartco.backend.core.organization.internal.StoreFileStorage fileStorage;
 
     @Transactional(readOnly = true)
     public List<StoreServiceView> list(UUID storeId, boolean includeInactive) {
@@ -41,6 +46,13 @@ public class StoreServices {
                 ? serviceRepository.findAllInStore(storeId)
                 : serviceRepository.findActiveInStore(storeId);
         return services.stream().map(StoreServices::toView).toList();
+    }
+
+    /** Almacén dueño del servicio (activo o no); vacío si no existe. */
+    @Transactional(readOnly = true)
+    public java.util.Optional<UUID> storeOf(UUID serviceId) {
+        return serviceId == null ? java.util.Optional.empty()
+                : serviceRepository.findById(serviceId).map(OfferedService::getStoreId);
     }
 
     @Transactional(readOnly = true)
@@ -58,7 +70,9 @@ public class StoreServices {
         service.setStoreId(storeId);
         service.setActive(true);
         apply(service, request, branchIds);
-        return toView(serviceRepository.saveAndFlush(service));
+        OfferedService saved = serviceRepository.saveAndFlush(service);
+        events.publishEvent(ServicesChanged.of(saved.getId()));
+        return toView(saved);
     }
 
     @Transactional
@@ -77,13 +91,49 @@ public class StoreServices {
             service.setActive(request.active());
         }
         apply(service, request, branchIds);
-        return toView(serviceRepository.saveAndFlush(service));
+        OfferedService saved = serviceRepository.saveAndFlush(service);
+        events.publishEvent(ServicesChanged.of(saved.getId()));
+        return toView(saved);
+    }
+
+    /**
+     * Reemplaza ({@code file} no nulo) o quita la imagen del servicio. La imagen va al bucket público (como las de
+     * producto) y se guarda su URL; la anterior se borra después del commit lógico (best-effort).
+     *
+     * @return la vista con la nueva {@code imageUrl}
+     */
+    @Transactional
+    public StoreServiceView replaceImage(UUID storeId, UUID serviceId, org.springframework.web.multipart.MultipartFile file) {
+        OfferedService service = find(storeId, serviceId);
+        String previous = service.getImageUrl();
+        String uploadedPath = null;
+        if (file != null) {
+            uploadedPath = fileStorage.uploadServiceImage(storeId, serviceId, file);
+            service.setImageUrl(fileStorage.publicUrl(uploadedPath));
+        } else {
+            service.setImageUrl(null);
+        }
+        OfferedService saved;
+        try {
+            saved = serviceRepository.saveAndFlush(service);
+        } catch (RuntimeException failure) {
+            if (uploadedPath != null) {
+                fileStorage.deletePublicQuietly(uploadedPath);
+            }
+            throw failure;
+        }
+        if (previous != null) {
+            fileStorage.deletePublicUrlQuietly(previous);
+        }
+        events.publishEvent(ServicesChanged.of(serviceId));
+        return toView(saved);
     }
 
     /** Desactiva el servicio (idempotente). */
     @Transactional
     public void deactivate(UUID storeId, UUID serviceId) {
         find(storeId, serviceId).setActive(false);
+        events.publishEvent(ServicesChanged.of(serviceId));
     }
 
     /** Servicios activos para el perfil público: sucursales solo activas y orden {@code sort_order, name}. */
@@ -102,8 +152,16 @@ public class StoreServices {
                         service.getDescription(),
                         service.getPriceFrom(),
                         service.getDurationMinutes(),
-                        service.getBranchIds().stream().filter(activeBranches::contains).sorted().toList()))
+                        service.getBranchIds().stream().filter(activeBranches::contains).sorted().toList(),
+                        service.getImageUrl(),
+                        service.isBookingEnabled()))
                 .toList();
+    }
+
+    /** Almacenes con servicios activos (de {@code category}, si no es nula). */
+    @Transactional(readOnly = true)
+    public Set<UUID> storesWithActiveServices(ServiceCategory category) {
+        return new HashSet<>(serviceRepository.findStoreIdsWithActiveServices(category));
     }
 
     /** Ids de servicios activos que presta cada sucursal. */
@@ -123,6 +181,12 @@ public class StoreServices {
         service.setDescription(blankToNull(request.description()));
         service.setPriceFrom(request.priceFrom());
         service.setDurationMinutes(request.durationMinutes());
+        if (request.bookingEnabled() != null) {
+            service.setBookingEnabled(request.bookingEnabled());
+        }
+        if (request.slotMinutes() != null) {
+            service.setSlotMinutes(request.slotMinutes());
+        }
         if (request.sortOrder() != null) {
             service.setSortOrder(request.sortOrder());
         }
@@ -170,6 +234,9 @@ public class StoreServices {
                 service.isActive(),
                 service.getSortOrder(),
                 service.getBranchIds().stream().sorted().toList(),
-                service.getVersion());
+                service.getVersion(),
+                service.getImageUrl(),
+                service.isBookingEnabled(),
+                service.getSlotMinutes());
     }
 }

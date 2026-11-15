@@ -11,11 +11,12 @@ import com.autopartco.backend.core.organization.StorePermissionCodes;
 import com.autopartco.backend.core.organization.StoreResponse;
 import com.autopartco.backend.core.organization.StoreService;
 import com.autopartco.backend.core.organization.StoreUpdateRequest;
+import com.autopartco.backend.shared.events.ListingsChanged;
 import com.autopartco.backend.shared.events.StoreProfileChanged;
 
 import lombok.AllArgsConstructor;
 
-/** Actualiza nombre, NIT o correo del almacén. Requiere {@code STORE_UPDATE}. Invalida el perfil público cacheado. */
+/** Actualiza nombre, NIT, correo o tipo de negocio del almacén. Requiere {@code STORE_UPDATE}. Invalida el perfil público cacheado. */
 @Service
 @AllArgsConstructor
 public class UpdateStoreProfile {
@@ -28,6 +29,10 @@ public class UpdateStoreProfile {
         storeAccess.requirePermission(email, storeId, StorePermissionCodes.STORE_UPDATE);
         StoreResponse updated = storeService.update(storeId, request);
         events.publishEvent(new StoreProfileChanged(storeId));
+        if (request.businessType() != null) {
+            // Las tarjetas de servicio muestran el tipo de negocio del almacén.
+            events.publishEvent(ListingsChanged.ofStore(storeId));
+        }
         return updated;
     }
 }

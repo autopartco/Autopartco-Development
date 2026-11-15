@@ -46,6 +46,8 @@ export const TARGET_LABEL: Record<PromotionTargetType, string> = {
   CATEGORY: 'Una categoría',
   MANUFACTURER: 'Una marca',
   ATTRIBUTE: 'Productos con un atributo',
+  SERVICE: 'Un servicio',
+  SERVICE_CATEGORY: 'Una categoría de servicios',
 }
 
 export function discountText(promotion: Pick<Promotion, 'discountType' | 'discountValue'>): string {

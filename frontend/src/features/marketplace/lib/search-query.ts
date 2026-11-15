@@ -30,7 +30,13 @@ export const SEARCH_PARAMS = {
   page: 'pagina',
   /** `0` = no interpretar el texto (se pone al quitar una ficha interpretada). */
   interpret: 'interpretar',
+  /** Pestaña de la búsqueda unificada: `all` (por defecto), `parts` o `services`. */
+  tab: 'tab',
 } as const
+
+export type SearchTab = 'all' | 'parts' | 'services'
+
+export const SEARCH_TABS: readonly SearchTab[] = ['all', 'parts', 'services']
 
 export const SEARCH_SORT_LABELS: Record<SearchSort, string> = {
   relevance: 'Más relevantes',
@@ -48,6 +54,7 @@ const SORT_VALUES = Object.keys(SEARCH_SORT_LABELS) as SearchSort[]
 /** Estado de búsqueda en la URL: la consulta más la intención de buscar cerca. */
 export interface SearchState extends Omit<SearchQuery, 'lat' | 'lng'> {
   near: boolean
+  tab: SearchTab
 }
 
 function positiveInt(value: string | null, max?: number): number | undefined {
@@ -69,7 +76,9 @@ export function parseSearchState(params: URLSearchParams, fixedCategory?: string
   const modelId = makeId ? text(params.get(SEARCH_PARAMS.modelId)) : undefined
   const versionId = modelId ? text(params.get(SEARCH_PARAMS.versionId)) : undefined
   const near = params.get(SEARCH_PARAMS.near) === '1'
+  const tab = SEARCH_TABS.find((value) => value === params.get(SEARCH_PARAMS.tab)) ?? 'all'
   return {
+    tab,
     q: text(params.get(SEARCH_PARAMS.q)) ?? '',
     category: fixedCategory ?? text(params.get(SEARCH_PARAMS.category)),
     manufacturers: (params.get(SEARCH_PARAMS.manufacturers) ?? '').split(',').filter(Boolean),
@@ -95,6 +104,21 @@ export function parseSearchState(params: URLSearchParams, fixedCategory?: string
   }
 }
 
+/**
+ * Href de una pestaña de `/buscar`. «Todo» y «Repuestos» comparten los filtros de repuestos; «Servicios» usa los suyos,
+ * así que al entrar o salir de ella solo se conserva el texto de la búsqueda.
+ */
+export function searchTabHref(current: URLSearchParams, from: SearchTab, to: SearchTab): string {
+  const params = new URLSearchParams(from !== 'services' && to !== 'services' ? current : undefined)
+  const q = current.get(SEARCH_PARAMS.q)
+  if (q) params.set(SEARCH_PARAMS.q, q)
+  params.delete(SEARCH_PARAMS.page)
+  if (to === 'all') params.delete(SEARCH_PARAMS.tab)
+  else params.set(SEARCH_PARAMS.tab, to)
+  const qs = params.toString()
+  return qs ? `/buscar?${qs}` : '/buscar'
+}
+
 /** `/buscar` ordenado por cercanía («Cerca de ti» del inicio): `cerca=1&orden=nearest`. */
 export function nearbyUrl(): string {
   return `/buscar?${SEARCH_PARAMS.near}=1&${SEARCH_PARAMS.sort}=nearest`
@@ -107,6 +131,7 @@ export function toSearchParams(state: SearchState, options: { omitCategory?: boo
     if (value !== undefined && value !== '') params.set(key, String(value))
   }
   set(SEARCH_PARAMS.q, state.q)
+  if (state.tab !== 'all') set(SEARCH_PARAMS.tab, state.tab)
   if (!options.omitCategory) set(SEARCH_PARAMS.category, state.category)
   if (state.manufacturers.length > 0) set(SEARCH_PARAMS.manufacturers, state.manufacturers.join(','))
   set(SEARCH_PARAMS.store, state.store)
@@ -134,7 +159,8 @@ export function toSearchParams(state: SearchState, options: { omitCategory?: boo
 
 /** Consulta para el servidor: añade las coordenadas solo si hay ubicación exacta y se pidió cerca. */
 export function toSearchQuery(state: SearchState, origin: GeoPoint | undefined): SearchQuery {
-  const { near, ...rest } = state
+  // La pestaña es solo de la pantalla: no viaja al servidor ni cambia la clave de caché.
+  const { near, tab: _tab, ...rest } = state
   const located = near && origin !== undefined
   return {
     ...rest,
@@ -169,7 +195,7 @@ export function countSearchFilters(state: SearchState, options: { fixedCategory?
   return count
 }
 
-export type InterpretedChip = 'make' | 'model' | 'year' | 'city' | 'reference'
+export type InterpretedChip = 'make' | 'model' | 'year' | 'city' | 'reference' | 'service'
 
 /**
  * Quitar una ficha interpretada: se vuelve a buscar con `interpret=false` y los filtros explícitos

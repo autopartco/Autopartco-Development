@@ -1,3 +1,5 @@
+import type { HomeServicesDto, ServiceSuggestionDto, ServicesStripDto } from '@/features/services/api/dto'
+
 /**
  * Copia en TypeScript de los DTO públicos del backend (solo campos reales).
  * Origen: backend/src/main/java/com/autopartco/backend/core/catalog/ y core/organization/.
@@ -127,13 +129,19 @@ export interface StorePublicProfileDto {
   verified?: boolean
   whatsappEnabled?: boolean
   whatsappMessage?: string | null
+  /** `PARTS`, `SERVICES` o `BOTH`; ausente en servidores antiguos (se trata como `PARTS`). */
+  businessType?: string | null
   services?: {
     id: string
     category: string
     name: string
     description: string | null
     priceFrom: number | null
+    basePriceFrom?: number | null
+    promotion?: { id: string; label: string; endsAt: string | null } | null
     durationMinutes: number | null
+    imageUrl?: string | null
+    bookingEnabled?: boolean
     branchIds: string[]
   }[]
   featuredProductIds?: string[]
@@ -210,7 +218,11 @@ export interface SearchResponseDto {
     cityCode: string | null
     cityName: string | null
     reference: string | null
+    serviceCategory?: string | null
   } | null
+  /** Franja de servicios y pestaña sugerida: el servidor los omite del JSON si son nulos. */
+  services?: ServicesStripDto
+  suggestedTab?: string
   facets: {
     categories: { id: string; name: string; count: number }[]
     manufacturers: { id: string; name: string; count: number }[]
@@ -229,6 +241,7 @@ export interface HomeResponseDto {
   categories: { id: string; code: string; productCount: number }[]
   nearby: SearchItemDto[]
   featured: SearchItemDto[]
+  services?: HomeServicesDto | null
 }
 
 /** `GET /marketplace/ads` (CATEGORY_TOP y PRODUCT_RELATED). */
@@ -240,6 +253,8 @@ export interface AdsResponseDto {
 export interface SuggestResponseDto {
   suggestions: { term: string; kind: string }[]
   products: ProductResponseDto[]
+  services?: ServiceSuggestionDto[]
+  serviceCategories?: string[]
 }
 
 /** `shared/web/PageResponse` (páginas desde 1). */

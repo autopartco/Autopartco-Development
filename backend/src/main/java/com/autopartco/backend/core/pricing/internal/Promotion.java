@@ -55,6 +55,10 @@ public class Promotion extends BaseEntity {
     @Column(name = "target_id")
     private UUID targetId;
 
+    /** Categoría de servicio en {@code SERVICE_CATEGORY}; nula en los demás tipos. */
+    @Column(name = "target_key", length = 30)
+    private String targetKey;
+
     @Column(name = "attribute_key", length = 100)
     private String attributeKey;
 

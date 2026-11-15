@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, NavLink } from 'react-router'
+import { Link, NavLink, useLocation } from 'react-router'
 import { MenuIcon, StoreIcon } from 'lucide-react'
 import { useSellerCta } from '@/features/seller/hooks'
 import { Container } from '@/components/common/page-header'
@@ -12,11 +12,16 @@ import { SearchBox } from '@/features/marketplace/components/search/search-box'
 import { CartIndicator } from '@/features/cart/components/cart-indicator'
 import { HeaderAccount, MobileMenuAccount } from '@/features/auth/components/account-menu'
 
+/** `also`: rutas hijas que cuentan como la misma sección (categoría y producto pertenecen a Repuestos; el servicio, a Servicios). */
 const NAV = [
-  { to: '/buscar', label: 'Productos', wide: true },
-  { to: '/categorias', label: 'Categorías' },
-  { to: '/tiendas', label: 'Tiendas' },
+  { to: '/categorias', label: 'Repuestos', also: ['/categoria/', '/producto/'] },
+  { to: '/servicios', label: 'Servicios', also: ['/servicio/'] },
+  { to: '/tiendas', label: 'Tiendas', also: [] as string[] },
 ]
+
+function isSectionActive(item: (typeof NAV)[number], pathname: string, isActive: boolean): boolean {
+  return isActive || item.also.some((prefix) => pathname.startsWith(prefix))
+}
 
 /**
  * Enlace de la cabecera grafito (§3.5): la página activa se marca con una línea roja
@@ -60,6 +65,7 @@ function SellerHeaderLink() {
 
 /** Menú de navegación en pantallas estrechas, donde los enlaces no caben junto al logo y la ciudad. */
 function MobileMenu({ className }: { className?: string }) {
+  const { pathname } = useLocation()
   const [open, setOpen] = useState(false)
   const cta = useSellerCta()
   const close = () => setOpen(false)
@@ -83,7 +89,12 @@ function MobileMenu({ className }: { className?: string }) {
         </SheetHeader>
         <nav aria-label="Principal" className="flex flex-col gap-1 px-3 py-4">
           {NAV.map((item) => (
-            <NavLink key={item.to} to={item.to} className={menuLinkClass} onClick={close}>
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) => menuLinkClass({ isActive: isSectionActive(item, pathname, isActive) })}
+              onClick={close}
+            >
               {item.label}
             </NavLink>
           ))}
@@ -116,6 +127,7 @@ function MobileMenu({ className }: { className?: string }) {
  * después del logo en el orden del documento: es lo primero que se usa.
  */
 export function SiteHeader() {
+  const { pathname } = useLocation()
   return (
     <header className="ap-surface-dark sticky top-0 z-40 bg-ap-graphite">
       <Container className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 [grid-template-areas:'logo_actions'_'search_search'] xl:h-16 xl:grid-cols-[auto_minmax(17rem,1fr)_auto_minmax(0,auto)] xl:gap-x-4 xl:[grid-template-areas:'logo_search_nav_actions'] 2xl:gap-x-6">
@@ -133,8 +145,7 @@ export function SiteHeader() {
             <NavLink
               key={item.to}
               to={item.to}
-              // «Productos» duplica al buscador: solo se muestra donde sobra ancho para no pisarlo.
-              className={(state) => cn(navClass(state), item.wide && 'hidden min-[1600px]:inline-flex')}
+              className={({ isActive }) => navClass({ isActive: isSectionActive(item, pathname, isActive) })}
             >
               {item.label}
             </NavLink>

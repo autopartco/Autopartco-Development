@@ -326,6 +326,89 @@ public class EmailService {
         sendHtml(to, subject, text, html);
     }
 
+    /**
+     * Detalle de una cita de servicio para los correos de agenda. {@code when} ya viene formateado en hora de Colombia;
+     * {@code note} (del comprador o del almacén) es opcional.
+     */
+    public record BookingMail(String code, String serviceName, String storeName, String branchName, String when,
+            String noteLabel, String note) {
+    }
+
+    /** Aviso al almacén de una solicitud de cita nueva; {@code portalLink} abre la bandeja de citas. */
+    public void sendBookingRequested(String to, BookingMail booking, String portalLink) {
+        String text = """
+                Hola,
+
+                Un comprador solicitó una cita en %s:
+
+                Servicio: %s
+                Sede: %s
+                Fecha y hora: %s
+                Código: %s
+                %s
+                Confirma, propone otra hora o rechaza la solicitud en el portal:
+                %s
+
+                Recibes este correo porque tu almacén tiene activos los avisos de citas. Puedes cambiarlo en
+                Configuración > Notificaciones.
+                """.formatted(booking.storeName(), booking.serviceName(), booking.branchName(), booking.when(),
+                booking.code(), noteLine(booking), portalLink);
+        String html = EmailTemplate.layout("Nueva solicitud de cita",
+                EmailTemplate.paragraph("Un comprador solicitó una cita en <strong>"
+                        + EmailTemplate.escape(booking.storeName()) + "</strong>.")
+                        + bookingDetails(booking)
+                        + EmailTemplate.button("Responder en el portal", portalLink)
+                        + EmailTemplate.paragraph("Si no respondes antes de la hora pedida, la solicitud vence sola.")
+                        + EmailTemplate.note("Recibes este correo porque tu almacén tiene activos los avisos de citas. "
+                                + "Puedes cambiarlo en Configuración &gt; Notificaciones."));
+        sendHtml(to, "Nueva solicitud de cita: " + oneLine(booking.serviceName()), text, html);
+    }
+
+    /**
+     * Aviso al comprador sobre su cita (confirmada, nueva hora propuesta, rechazada, cancelada, vencida o recordatorio).
+     * {@code title} y {@code message} ya vienen redactados; {@code link} abre la cita en «Mis citas».
+     */
+    public void sendBookingUpdate(String to, String givenName, String title, String message, BookingMail booking,
+            String link) {
+        String text = """
+                Hola %s,
+
+                %s
+
+                Servicio: %s
+                Almacén: %s
+                Sede: %s
+                Fecha y hora: %s
+                Código: %s
+                %s
+                Mira el detalle de tu cita:
+                %s
+                """.formatted(givenName, message, booking.serviceName(), booking.storeName(), booking.branchName(),
+                booking.when(), booking.code(), noteLine(booking), link);
+        String html = EmailTemplate.layout(title,
+                EmailTemplate.paragraph("Hola " + EmailTemplate.escape(givenName) + ",")
+                        + EmailTemplate.paragraph(EmailTemplate.escape(message))
+                        + EmailTemplate.detail("Almacén", booking.storeName(), false)
+                        + bookingDetails(booking)
+                        + EmailTemplate.button("Ver mi cita", link));
+        sendHtml(to, oneLine(title), text, html);
+    }
+
+    private static String bookingDetails(BookingMail booking) {
+        String html = EmailTemplate.detail("Servicio", booking.serviceName(), false)
+                + EmailTemplate.detail("Sede", booking.branchName(), false)
+                + EmailTemplate.detail("Fecha y hora", booking.when(), false)
+                + EmailTemplate.detail("Código", booking.code(), true);
+        return booking.note() == null || booking.note().isBlank() ? html
+                : html + EmailTemplate.paragraph(EmailTemplate.escape(booking.noteLabel()) + ":")
+                        + EmailTemplate.quote(booking.note());
+    }
+
+    private static String noteLine(BookingMail booking) {
+        return booking.note() == null || booking.note().isBlank() ? ""
+                : booking.noteLabel() + ": \"" + booking.note() + "\"\n";
+    }
+
     public void sendSellerCollaboratorInvitation(
             String to,
             String storeName,

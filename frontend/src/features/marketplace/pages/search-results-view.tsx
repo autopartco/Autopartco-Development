@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { InfoIcon, SlidersHorizontalIcon } from 'lucide-react'
 import { Container, PageIntro, type Crumb } from '@/components/common/page-header'
 import { EmptyState, ErrorState } from '@/components/common/states'
@@ -14,6 +14,9 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
+import { ServiceResults } from '@/features/services/components/service-results'
+import { ServicesStrip } from '@/features/services/components/services-strip'
+import { useServiceState } from '@/features/services/hooks'
 import { pluralize } from '@/lib/format'
 import { MarketplaceError, type FilterOptions, type SearchResult } from '../api/types'
 import { CategoryAds } from '../components/ads/category-ads'
@@ -22,13 +25,14 @@ import { ProductList, ProductListSkeleton, ProductRow } from '../components/prod
 import { ResultsPagination } from '../components/results-pagination'
 import { ActiveFilters } from '../components/search/active-filters'
 import { SearchFilters, type SearchFiltersProps } from '../components/search/filters-panel'
+import { SearchTabs } from '../components/search/search-tabs'
 import { InterpretedChips } from '../components/search/interpreted-chips'
 import { SortSelect } from '../components/search/sort-select'
 import { useFitStickyPanel } from '../components/search/use-fit-sticky-panel'
 import { useNearMe } from '../components/search/use-near-me'
 import { useFilterOptions, useListingSearch, useSearchState, useStores, useVehicleFilterLabel } from '../hooks'
 import { categoryPath } from '../lib/paths'
-import { countSearchFilters, dropInterpretedChip, toSearchQuery, type SearchState } from '../lib/search-query'
+import { countSearchFilters, dropInterpretedChip, searchTabHref, toSearchQuery, type SearchState } from '../lib/search-query'
 import { NotFoundContent } from './not-found-page'
 
 const CLEARED_FILTERS: Partial<SearchState> = {
@@ -193,12 +197,43 @@ function ResultCount({ page, loading }: { page: SearchResult | undefined; loadin
 }
 
 /**
+ * Búsqueda unificada: pestañas «Todo · Repuestos · Servicios» en `/buscar?tab=`. «Servicios» tiene sus propios filtros
+ * y su propia consulta; «Todo» y «Repuestos» muestran los repuestos (en «Todo», con la franja de servicios). La ruta de
+ * categoría (`/categoria/:slug`) es solo de repuestos.
+ */
+export function SearchResultsView({ fixedCategory }: { fixedCategory?: string }) {
+  const [state] = useSearchState(fixedCategory)
+  if (!fixedCategory && state.tab === 'services') return <ServicesSearchView />
+  return <ProductSearchView fixedCategory={fixedCategory} />
+}
+
+function ServicesSearchView() {
+  const [state, update] = useServiceState()
+  const title = state.q ? `Servicios para “${state.q}”` : 'Todos los servicios'
+  return (
+    <Container className="py-6 sm:py-8">
+      <title>{`${title} | Autopartco`}</title>
+      <PageIntro
+        crumbs={[{ label: 'Inicio', to: '/' }, { label: 'Buscar' }]}
+        label="Catálogo / Servicios"
+        title={title}
+        description="Los precios «desde» son de referencia y pueden cambiar tras revisar tu vehículo."
+        className="mb-6"
+      />
+      <SearchTabs active="services" />
+      <ServiceResults state={state} update={update} context="search" />
+    </Container>
+  )
+}
+
+/**
  * Resultados del motor de búsqueda v2 (§7.2, §15): cabecera con la consulta visible, línea de control
  * con conteo y orden, filtros laterales en escritorio (hoja inferior en móvil), anuncios «Patrocinado»
  * arriba y resultados en filas con divisores. Todo el estado vive en la URL.
  */
-export function SearchResultsView({ fixedCategory }: { fixedCategory?: string }) {
+function ProductSearchView({ fixedCategory }: { fixedCategory?: string }) {
   const [state, update] = useSearchState(fixedCategory)
+  const [searchParams] = useSearchParams()
   const nearMe = useNearMe()
   const filtersPanelRef = useFitStickyPanel<HTMLDivElement>()
   const options = useFilterOptions()
@@ -264,6 +299,13 @@ export function SearchResultsView({ fixedCategory }: { fixedCategory?: string })
 
   const showSponsored = Boolean(page && page.sponsored.length > 0 && page.page === 1)
 
+  // Franja de servicios de «Todo»: arriba si la intención es de servicio (o no hay repuestos), abajo si es de producto.
+  const stripNode =
+    page?.services && page.services.items.length > 0 && state.tab === 'all' && !isCategoryRoute && page.page === 1 ? (
+      <ServicesStrip strip={page.services} allHref={searchTabHref(searchParams, 'all', 'services')} />
+    ) : null
+  const stripOnTop = page?.suggestedTab === 'services' || page?.items.length === 0
+
   return (
     <Container className="py-6 sm:py-8">
       <title>{`${title} | Autopartco`}</title>
@@ -276,6 +318,8 @@ export function SearchResultsView({ fixedCategory }: { fixedCategory?: string })
       />
 
       {isCategoryRoute && category ? <CategoryAds key={category.id} categoryId={category.id} /> : null}
+
+      {isCategoryRoute ? null : <SearchTabs active={state.tab} />}
 
       {state.makeId ? (
         <div className="mb-6 flex flex-wrap items-center gap-x-4 gap-y-1 border-l-2 border-ap-red bg-ap-paper py-2 pr-3 pl-4">
@@ -360,6 +404,8 @@ export function SearchResultsView({ fixedCategory }: { fixedCategory?: string })
             onClear={clearFilters}
           />
 
+          {stripOnTop ? stripNode : null}
+
           {result.status === 'error' ? (
             <ErrorState {...errorCopy(result.error)} onRetry={result.retry} />
           ) : !page ? (
@@ -391,6 +437,7 @@ export function SearchResultsView({ fixedCategory }: { fixedCategory?: string })
                 ))}
               </ProductList>
               <ResultsPagination page={page.page} totalPages={page.totalPages} />
+              {stripOnTop ? null : stripNode}
             </>
           )}
         </section>

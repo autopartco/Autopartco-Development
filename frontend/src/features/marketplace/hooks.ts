@@ -58,7 +58,7 @@ export function useSearchSuggestions(text: string, near: { lat: number; lng: num
             if (!controller.signal.aborted) setState({ key, data })
           },
           () => {
-            if (!controller.signal.aborted) setState({ key, data: { suggestions: [], products: [] } })
+            if (!controller.signal.aborted) setState({ key, data: { suggestions: [], products: [], services: [], serviceCategories: [] } })
           },
         )
     }, 250)

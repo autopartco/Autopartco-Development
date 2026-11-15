@@ -193,8 +193,10 @@ export function createMockMarketplaceService(): MarketplaceService {
     async suggest(text) {
       await simulateNetwork()
       const needle = normalize(text.trim())
-      if (needle.length < 2) return { suggestions: [], products: [] }
+      if (needle.length < 2) return { suggestions: [], products: [], services: [], serviceCategories: [] }
       return {
+        services: [],
+        serviceCategories: [],
         suggestions: MOCK_CATEGORIES.filter((item) => normalize(item.name).includes(needle)).map((item) => ({
           term: item.name.toLowerCase(),
           kind: 'CATEGORY' as const,
@@ -318,6 +320,7 @@ export function createMockMarketplaceService(): MarketplaceService {
         contact: {},
         verified: false,
         whatsappEnabled: false,
+        businessType: 'PARTS',
         services: [],
         featuredProductIds: [],
       }
@@ -326,6 +329,22 @@ export function createMockMarketplaceService(): MarketplaceService {
     async listStoreBranches() {
       await simulateNetwork()
       return []
+    },
+
+    // Los datos simulados no incluyen servicios: no se inventan talleres ni precios.
+    async searchServices(query) {
+      await simulateNetwork()
+      return { items: [], total: 0, page: query.page, pageSize: query.pageSize, totalPages: 1 }
+    },
+
+    async listServiceCategories() {
+      await simulateNetwork()
+      return []
+    },
+
+    async getService() {
+      await simulateNetwork()
+      throw new MarketplaceError('No se encontró el servicio.', { status: 404, code: 'SERVICE_NOT_FOUND' })
     },
 
     async getReviewSummary(target) {

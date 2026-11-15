@@ -188,6 +188,9 @@ public class PromotionService {
         promotion.setTargetId(request.targetType() == PromotionTargetType.STORE
                 ? storeTargetId
                 : request.targetId());
+        promotion.setTargetKey(request.targetType() == PromotionTargetType.SERVICE_CATEGORY
+                ? request.targetKey().trim().toUpperCase(java.util.Locale.ROOT)
+                : null);
         promotion.setAttributeKey(trimToNull(request.attributeKey()));
         promotion.setAttributeValue(trimToNull(request.attributeValue()));
         promotion.setAttributeOperator(request.attributeOperator());
@@ -236,6 +239,14 @@ public class PromotionService {
         boolean hasAttribute = request.attributeKey() != null
                 || request.attributeValue() != null
                 || request.attributeOperator() != null;
+
+        if (targetType.isService()) {
+            validateServiceTarget(request, scope, ownerStoreId, hasAttribute);
+            return;
+        }
+        if (request.targetKey() != null && !request.targetKey().isBlank()) {
+            throw invalidTarget("Solo las promociones por categoría de servicio llevan categoría.");
+        }
 
         if (targetType == PromotionTargetType.ALL) {
             if (scope != PromotionScope.PLATFORM || targetId != null || hasAttribute) {
@@ -293,6 +304,38 @@ public class PromotionService {
         }
     }
 
+    /**
+     * {@code SERVICE}: servicio del mismo almacén, solo en promociones de almacén. {@code SERVICE_CATEGORY}: categoría
+     * válida en {@code targetKey}, sin {@code targetId}. Ambas solo con audiencia {@code ALL} (sin checkout no hay
+     * comprador que identificar). Errores: 400 {@code INVALID_PROMOTION_TARGET}, {@code INVALID_PROMOTION_AUDIENCE}.
+     */
+    private void validateServiceTarget(PromotionUpsertRequest request, PromotionScope scope, UUID ownerStoreId,
+            boolean hasAttribute) {
+        if (hasAttribute) {
+            throw invalidTarget("Las promociones de servicios no admiten atributos.");
+        }
+        if (request.audienceOrDefault() != PromotionAudience.ALL) {
+            throw new BadRequestException("INVALID_PROMOTION_AUDIENCE",
+                    "Las promociones de servicios se dirigen a todos los compradores.");
+        }
+        if (request.targetType() == PromotionTargetType.SERVICE) {
+            if (scope != PromotionScope.STORE || request.targetId() == null
+                    || (request.targetKey() != null && !request.targetKey().isBlank())) {
+                throw invalidTarget("La promoción de un servicio la crea su almacén e indica el servicio.");
+            }
+            UUID serviceStore = promotionTargets.findServiceStore(request.targetId())
+                    .orElseThrow(() -> invalidTarget("No se encontró el servicio de destino."));
+            if (!serviceStore.equals(ownerStoreId)) {
+                throw invalidTarget("El servicio de destino no pertenece a este almacén.");
+            }
+            return;
+        }
+        if (request.targetId() != null || request.targetKey() == null
+                || !promotionTargets.serviceCategoryExists(request.targetKey().trim().toUpperCase(java.util.Locale.ROOT))) {
+            throw invalidTarget("Elige una categoría de servicio válida.");
+        }
+    }
+
     private PromotionResponse toResponse(Promotion promotion) {
         OffsetDateTime now = OffsetDateTime.now(ZoneOffset.UTC);
         boolean active = promotion.isEnabled()
@@ -314,7 +357,8 @@ public class PromotionService {
                 promotion.getEndsAt(),
                 promotion.isEnabled(),
                 active,
-                promotion.getAudience() == null ? PromotionAudience.ALL : promotion.getAudience()
+                promotion.getAudience() == null ? PromotionAudience.ALL : promotion.getAudience(),
+                promotion.getTargetKey()
         );
     }
 

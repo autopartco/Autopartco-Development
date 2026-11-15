@@ -3,6 +3,8 @@ package com.autopartco.backend.core.search;
 import java.util.List;
 import java.util.Locale;
 
+import com.autopartco.backend.core.organization.ServiceCategory;
+
 /**
  * Resultado de {@link QueryParser#parse}: texto restante (palabras normalizadas), su {@code tsquery} con sinónimos y
  * prefijo en la última palabra, y lo reconocido (año, marca, modelo, ciudad, referencia). {@code tsQuery} solo
@@ -24,10 +26,19 @@ public record ParsedQuery(
         SearchDictionary.City city,
         List<String> anyTerms,
         String vehicleTsQuery,
-        String modelTsQuery
+        String modelTsQuery,
+        ServiceCategory serviceCategory
 ) {
     public static final ParsedQuery EMPTY = new ParsedQuery(null, List.of(), null, null, null, null, null, null,
             List.of(), null, null);
+
+    /** Sin intención de servicio. */
+    public ParsedQuery(String normalized, List<String> words, String tsQuery, String reference,
+            SearchDictionary.Make make, SearchDictionary.Model model, Integer year, SearchDictionary.City city,
+            List<String> anyTerms, String vehicleTsQuery, String modelTsQuery) {
+        this(normalized, words, tsQuery, reference, make, model, year, city, anyTerms, vehicleTsQuery, modelTsQuery,
+                null);
+    }
 
     public ParsedQuery {
         words = words == null ? List.of() : List.copyOf(words);
@@ -68,7 +79,8 @@ public record ParsedQuery(
                 year,
                 city == null ? null : city.code(),
                 city == null ? null : city.name(),
-                reference);
+                reference,
+                serviceCategory);
         return interpretation.recognizedSomething() ? interpretation : null;
     }
 }
