@@ -321,6 +321,31 @@ Notas de implementación:
 - **Contexto:** «API del portal», «Configuración del almacén». Incluye el T6 pendiente del plan 2026-11-11 (servicios/sucursales) si aún falta. Depende de T3–T5.
 - **Aceptación:** build y lint; manual: CRUD de servicio con imagen y agenda; bandeja de citas por estado con confirmar/proponer/rechazar (nota obligatoria); promoción con objetivo servicio; mensaje de WhatsApp de servicio sin `{enlace}` marca error; métricas muestran top servicios y citas; usuario sin `BOOKING_READ` no ve «Citas».
 
+### T9 — QA del diff (backend) ✅ (2026-11-15)
+
+Informe sobre el diff de T2–T5. Sin hallazgos críticos ni altos.
+- **IDOR en citas:**
+  - Comprador: `findById/lockById` filtran por `accountId`; una cita ajena es 404.
+  - Almacén: filtran por `storeId`, y el `branchId` del listado se combina con `storeId`.
+  - Permisos: `BOOKING_READ` para leer y `BOOKING_MANAGE` para actuar.
+  - La imagen de servicio usa `findInStore` y exige `STORE_UPDATE`.
+- **Teléfono y placa:** el portal no los recibe en citas canceladas, rechazadas o vencidas. La exportación de la cuenta solo incluye las citas propias.
+- **Abuso:**
+  - Límites de 3 citas activas por almacén y 10 solicitudes al día, serializados con un advisory lock por comprador.
+  - `availability` es pública con 60 consultas por minuto por IP y no expone datos personales.
+- **Inyección y XSS:**
+  - En los correos de citas, notas, nombres y vehículo pasan por `EmailTemplate.escape`/`quote`, y el asunto por `oneLine`.
+  - `whatsappServiceMessage` tiene el mismo validador que el mensaje de producto (≤ 300, sin HTML, con `{enlace}`).
+  - El vehículo se valida (placa `^[A-Za-z0-9]{5,7}$`).
+- **Promociones:** `SERVICE` de otro almacén → 400. Las promociones `STORE`/`ALL` no afectan servicios y las de servicios no afectan productos.
+- **Índice:** desactivar un servicio, una sucursal o el almacén lo retira (T2). Las promociones se refrescan cada 15 min y las tarjetas recalculan precio y promoción al leer.
+- **Zona horaria:** las citas y el conteo de métricas usan `America/Bogota`.
+- **Corregido en este paso:**
+  - Las citas (`serviceBookings`) se incluyen en la exportación de datos de la cuenta (Ley 1581, derecho de acceso).
+  - Nueva prueba de ida y vuelta JSON de la caché de la home (`HomeContentCacheJsonTest`), también con entradas antiguas.
+- **Riesgo abierto (bajo):** el backend no tiene un flujo que ejecute la eliminación de cuenta; la solicitud la atiende un administrador a mano. Cuando ese flujo exista debe cancelar las citas activas y borrar o anonimizar `contact_phone`, `vehicle` y `buyer_note`.
+- **Pendiente:** QA del frontend cuando lleguen T6–T8.
+
 ### T9 — QA del diff
 - **Modelo:** Opus · **Agente:** qa-seguridad
 - **Contexto:** solo el diff de T2–T8: IDOR en citas (comprador y almacén), exposición del teléfono del comprador, abuso de solicitudes (límites), inyección en `whatsappServiceMessage` y URLs, XSS en notas/`vehicle`, promociones sobre servicios ajenos, consistencia del índice al desactivar servicio/almacén, zona horaria.
