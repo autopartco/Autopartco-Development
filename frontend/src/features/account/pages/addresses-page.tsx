@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { EmptyState, ErrorState } from '@/components/common/states'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { ConfirmDialog } from '@/features/portal/components/confirm-dialog'
 import { AddressForm } from '@/features/checkout/components/address-form'
 import { ApiError } from '@/lib/api'
 import { invalidateAsync, useAsync } from '@/lib/use-async'
@@ -15,6 +16,7 @@ export default function AccountAddressesPage() {
   const addresses = useAsync('portal:account:addresses', listAddresses)
   const [adding, setAdding] = useState(false)
   const [removing, setRemoving] = useState<string>()
+  const [toDelete, setToDelete] = useState<{ id: string; label: string }>()
 
   function refresh() {
     invalidateAsync('portal:account:addresses')
@@ -86,13 +88,27 @@ export default function AccountAddressesPage() {
                   {address.city}, {address.department}
                 </p>
               </div>
-              <Button variant="ghost" size="icon" className="size-11 shrink-0 text-ap-muted sm:size-9" aria-label={`Eliminar ${address.label}`} disabled={removing === address.id} onClick={() => void remove(address.id)}>
+              <Button variant="ghost" size="icon" className="size-11 shrink-0 text-ap-muted sm:size-9" aria-label={`Eliminar ${address.label}`} disabled={removing === address.id} onClick={() => setToDelete(address)}>
                 <Trash2Icon aria-hidden />
               </Button>
             </li>
           ))}
         </ul>
       )}
+      <ConfirmDialog
+        open={toDelete !== undefined}
+        onOpenChange={(next) => {
+          if (!next) setToDelete(undefined)
+        }}
+        title={`¿Eliminar la dirección ${toDelete?.label ?? ''}?`}
+        description="Dejará de aparecer entre tus direcciones guardadas. Tus pedidos anteriores no cambian. Esta acción no se puede deshacer."
+        confirmLabel="Eliminar dirección"
+        loadingText="Eliminando…"
+        destructive
+        onConfirm={async () => {
+          if (toDelete) await remove(toDelete.id)
+        }}
+      />
     </AccountSection>
   )
 }

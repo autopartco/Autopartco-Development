@@ -8,6 +8,7 @@ import type { OrderDetail } from '../api/types'
 import { usePortal } from '../context'
 import { actionErrorMessage } from '../lib/errors'
 import { formatDateTime } from '../lib/labels'
+import { ConfirmDialog } from './confirm-dialog'
 
 const MAX_BYTES = 5 * 1024 * 1024
 
@@ -23,6 +24,7 @@ export function InvoicePanel({ order }: { order: OrderDetail }) {
   const { storeId, can, invalidateStore } = usePortal()
   const inputRef = useRef<HTMLInputElement>(null)
   const [busy, setBusy] = useState<'upload' | 'delete' | 'download'>()
+  const [confirmRemove, setConfirmRemove] = useState(false)
   const invoice = order.invoice ?? null
   const editable = can('ORDER_UPDATE')
 
@@ -102,7 +104,7 @@ export function InvoicePanel({ order }: { order: OrderDetail }) {
               {busy === 'upload' ? 'Subiendo…' : invoice ? 'Reemplazar' : 'Adjuntar factura'}
             </Button>
             {invoice ? (
-              <Button variant="ghost" className="h-11 text-ap-muted sm:h-9" disabled={busy !== undefined} onClick={() => void remove()}>
+              <Button variant="ghost" className="h-11 text-ap-muted sm:h-9" disabled={busy !== undefined} onClick={() => setConfirmRemove(true)}>
                 <Trash2Icon aria-hidden />
                 {busy === 'delete' ? 'Quitando…' : 'Quitar'}
               </Button>
@@ -110,6 +112,16 @@ export function InvoicePanel({ order }: { order: OrderDetail }) {
           </>
         ) : null}
       </div>
+      <ConfirmDialog
+        open={confirmRemove}
+        onOpenChange={setConfirmRemove}
+        title={`¿Quitar la factura del pedido #${order.orderNumber}?`}
+        description="El cliente ya no podrá descargarla desde su pedido. Tendrás que adjuntarla de nuevo si la necesita."
+        confirmLabel="Quitar factura"
+        loadingText="Quitando…"
+        destructive
+        onConfirm={remove}
+      />
     </div>
   )
 }

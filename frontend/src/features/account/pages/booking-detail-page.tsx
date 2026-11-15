@@ -14,7 +14,7 @@ import { storePath } from '@/features/marketplace/lib/paths'
 import { useVehicleFilterLabel } from '@/features/marketplace/hooks'
 import { ApiError } from '@/lib/api'
 import { formatCOP } from '@/lib/format'
-import { useSubmitOnce } from '@/lib/use-submit-once'
+import { ConfirmDialog } from '@/features/portal/components/confirm-dialog'
 import { getBookingService } from '@/features/services/api/booking-service'
 import type { Booking } from '@/features/services/api/booking-types'
 import { refreshBuyerBookings, useBuyerBooking } from '@/features/services/booking-hooks'
@@ -80,8 +80,7 @@ function Skeletons() {
 
 function BookingDetail({ booking }: { booking: Booking }) {
   const [cancelOpen, setCancelOpen] = useState(false)
-  const accept = useSubmitOnce(async () => (await getBookingService()).acceptProposal(booking.id))
-  const [acceptError, setAcceptError] = useState<string>()
+  const [acceptOpen, setAcceptOpen] = useState(false)
 
   const branch = toStoreBranch(booking)
   const proposed = booking.status === 'PROPOSED' && booking.proposedStartsAt ? booking.proposedStartsAt : undefined
@@ -91,15 +90,14 @@ function BookingDetail({ booking }: { booking: Booking }) {
   const canDirect = directionsLinks(branch).length > 0
 
   async function acceptProposal() {
-    setAcceptError(undefined)
-    const result = await accept.run()
-    if (result.status === 'ok') {
-      refreshBuyerBookings()
-      toast.success('Aceptaste la nueva hora. Tu cita quedó confirmada.')
-    } else if (result.status === 'error') {
-      if (result.error instanceof ApiError && result.error.code === 'BOOKING_INVALID_TRANSITION') refreshBuyerBookings()
-      setAcceptError(bookingErrorMessage(result.error, 'No pudimos aceptar la nueva hora. Inténtalo de nuevo.'))
+    try {
+      await (await getBookingService()).acceptProposal(booking.id)
+    } catch (error) {
+      if (error instanceof ApiError && error.code === 'BOOKING_INVALID_TRANSITION') refreshBuyerBookings()
+      throw error
     }
+    refreshBuyerBookings()
+    toast.success('Aceptaste la nueva hora. Tu cita quedó confirmada.')
   }
 
   return (
@@ -125,15 +123,20 @@ function BookingDetail({ booking }: { booking: Booking }) {
           <p className="text-sm text-ap-ink">
             Nueva hora: <time dateTime={proposed} className="font-semibold">{formatBookingMoment(proposed)}</time> (hora de Bogotá). Si no te sirve, puedes cancelar la cita.
           </p>
-          {acceptError ? (
-            <p role="alert" className="text-sm font-medium text-ap-danger">
-              {acceptError}
-            </p>
-          ) : null}
-          <Button className="h-11 w-full sm:w-fit" loading={accept.pending} onClick={() => void acceptProposal()}>
+          <Button className="h-11 w-full sm:w-fit" onClick={() => setAcceptOpen(true)}>
             <CalendarCheckIcon aria-hidden />
             Aceptar la nueva hora
           </Button>
+          <ConfirmDialog
+            open={acceptOpen}
+            onOpenChange={setAcceptOpen}
+            title="¿Aceptar la nueva hora de tu cita?"
+            description={`Tu cita pasará al ${formatBookingMoment(proposed)} (hora de Bogotá) y quedará confirmada. La hora anterior se libera.`}
+            confirmLabel="Aceptar nueva hora"
+            loadingText="Aceptando…"
+            errorMessage={(error) => bookingErrorMessage(error, 'No pudimos aceptar la nueva hora. Inténtalo de nuevo.')}
+            onConfirm={acceptProposal}
+          />
         </section>
       ) : null}
 

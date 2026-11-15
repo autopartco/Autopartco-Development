@@ -6,12 +6,14 @@ import { ErrorState } from '@/components/common/states'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Switch } from '@/components/ui/switch'
+import { ConfirmDialog } from '@/features/portal/components/confirm-dialog'
 import { getAuthService } from '@/features/auth/api/auth-service'
 import { useSignOut } from '@/features/auth/hooks'
 import { ApiError } from '@/lib/api'
 import { invalidateAsync, useAsync } from '@/lib/use-async'
 import { AccountSection } from '../account-layout'
 import {
+  type AccountSession,
   changePassword,
   confirmEmailChange,
   confirmTwoFactor,
@@ -221,6 +223,7 @@ function TwoFactorSection({ enabled, social }: { enabled: boolean; social: boole
   const [pending, setPending] = useState<'ENABLE' | 'DISABLE' | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string>()
+  const [disablePassword, setDisablePassword] = useState<string | null>(null)
 
   async function start(action: 'ENABLE' | 'DISABLE') {
     setError(undefined)
@@ -254,20 +257,16 @@ function TwoFactorSection({ enabled, social }: { enabled: boolean; social: boole
     }
   }
 
-  async function disableWithPassword(event: FormEvent<HTMLFormElement>) {
+  function askDisableWithPassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const password = String(new FormData(event.currentTarget).get('password') ?? '')
-    setBusy(true)
     setError(undefined)
-    try {
-      await disableTwoFactorWithPassword(password)
-      toast.success('Desactivamos la verificación en dos pasos.')
-      refresh()
-    } catch (failure) {
-      setError(message(failure, 'No pudimos desactivarla.'))
-    } finally {
-      setBusy(false)
-    }
+    setDisablePassword(String(new FormData(event.currentTarget).get('password') ?? ''))
+  }
+
+  async function disableWithPassword() {
+    await disableTwoFactorWithPassword(disablePassword ?? '')
+    toast.success('Desactivamos la verificación en dos pasos.')
+    refresh()
   }
 
   return (
@@ -299,13 +298,25 @@ function TwoFactorSection({ enabled, social }: { enabled: boolean; social: boole
           Desactivar con un código
         </Button>
       ) : (
-        <form noValidate onSubmit={(event) => void disableWithPassword(event)} className="grid max-w-md gap-4">
+        <form noValidate onSubmit={askDisableWithPassword} className="grid max-w-md gap-4">
           <PasswordField id="dospasos-password" name="password" label="Confirma tu contraseña para desactivarla" autoComplete="current-password" required />
           <Button type="submit" variant="outline" className="h-11 w-fit px-5" loading={busy}>
             Desactivar
           </Button>
         </form>
       )}
+      <ConfirmDialog
+        open={disablePassword !== null}
+        onOpenChange={(next) => {
+          if (!next) setDisablePassword(null)
+        }}
+        title="¿Desactivar la verificación en dos pasos?"
+        description="Tu cuenta quedará protegida solo con la contraseña, sin el código por correo al ingresar. Puedes volver a activarla cuando quieras."
+        confirmLabel="Desactivar verificación"
+        loadingText="Desactivando…"
+        destructive
+        onConfirm={disableWithPassword}
+      />
     </AccountSection>
   )
 }
@@ -338,14 +349,11 @@ function LoginAlertsSection({ enabled }: { enabled: boolean }) {
 
 function SessionsSection() {
   const sessions = useAsync('portal:account:sessions', listSessions)
+  const [toClose, setToClose] = useState<AccountSession>()
   async function close(sessionId: string) {
-    try {
-      await revokeSession(sessionId)
-      toast.success('Cerramos esa sesión.')
-      refresh()
-    } catch (error) {
-      toast.error(message(error, 'No pudimos cerrar la sesión.'))
-    }
+    await revokeSession(sessionId)
+    toast.success('Cerramos esa sesión.')
+    refresh()
   }
   return (
     <AccountSection id="seg-sesiones" title="Sesiones abiertas" description="Dispositivos con tu cuenta abierta. Cierra las que no reconozcas.">
@@ -368,7 +376,7 @@ function SessionsSection() {
                 </p>
               </div>
               {session.current ? null : (
-                <Button variant="outline" size="sm" className="h-11 sm:h-9" onClick={() => void close(session.sessionId)}>
+                <Button variant="outline" size="sm" className="h-11 sm:h-9" onClick={() => setToClose(session)}>
                   Cerrar
                 </Button>
               )}
@@ -376,6 +384,18 @@ function SessionsSection() {
           ))}
         </ul>
       )}
+      <ConfirmDialog
+        open={toClose !== undefined}
+        onOpenChange={(next) => {
+          if (!next) setToClose(undefined)
+        }}
+        title={`¿Cerrar la sesión de ${toClose?.userAgent || 'este dispositivo'}?`}
+        description="Ese dispositivo saldrá de tu cuenta y tendrá que ingresar de nuevo con tu contraseña."
+        confirmLabel="Cerrar sesión"
+        loadingText="Cerrando…"
+        destructive
+        onConfirm={() => close(toClose?.sessionId ?? '')}
+      />
     </AccountSection>
   )
 }
@@ -387,19 +407,21 @@ function IdentitiesSection({ passwordSet }: { passwordSet: boolean }) {
   const [unlinking, setUnlinking] = useState<string | null>(null)
   const [error, setError] = useState<string>()
 
-  async function unlink(event: FormEvent<HTMLFormElement>) {
+  const [unlinkPassword, setUnlinkPassword] = useState<string | null>(null)
+
+  function askUnlink(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!unlinking) return
-    const password = String(new FormData(event.currentTarget).get('password') ?? '')
     setError(undefined)
-    try {
-      await unlinkIdentity(unlinking, password)
-      toast.success(`Desvinculamos ${PROVIDER_LABEL[unlinking] ?? unlinking}.`)
-      setUnlinking(null)
-      refresh()
-    } catch (failure) {
-      setError(message(failure, 'No pudimos desvincularlo.'))
-    }
+    setUnlinkPassword(String(new FormData(event.currentTarget).get('password') ?? ''))
+  }
+
+  async function unlink() {
+    if (!unlinking) return
+    await unlinkIdentity(unlinking, unlinkPassword ?? '')
+    toast.success(`Desvinculamos ${PROVIDER_LABEL[unlinking] ?? unlinking}.`)
+    setUnlinking(null)
+    refresh()
   }
 
   return (
@@ -432,7 +454,7 @@ function IdentitiesSection({ passwordSet }: { passwordSet: boolean }) {
                 )}
               </div>
               {unlinking === identity.provider ? (
-                <form noValidate onSubmit={(event) => void unlink(event)} className="grid max-w-md gap-3">
+                <form noValidate onSubmit={askUnlink} className="grid max-w-md gap-3">
                   {error ? <FormAlert title="No se desvinculó">{error}</FormAlert> : null}
                   <PasswordField id="social-password" name="password" label="Confirma tu contraseña" hint="Así conservas una forma de ingresar." autoComplete="current-password" required />
                   <div className="flex flex-wrap gap-2">
@@ -449,6 +471,18 @@ function IdentitiesSection({ passwordSet }: { passwordSet: boolean }) {
           ))}
         </ul>
       )}
+      <ConfirmDialog
+        open={unlinkPassword !== null}
+        onOpenChange={(next) => {
+          if (!next) setUnlinkPassword(null)
+        }}
+        title={`¿Desvincular ${PROVIDER_LABEL[unlinking ?? ''] ?? 'este método de ingreso'}?`}
+        description="Ya no podrás ingresar a tu cuenta con este método; usarás tu correo y tu contraseña. Puedes vincularlo de nuevo más adelante."
+        confirmLabel="Desvincular"
+        loadingText="Desvinculando…"
+        destructive
+        onConfirm={unlink}
+      />
     </AccountSection>
   )
 }

@@ -171,6 +171,7 @@ function ManufacturersTab() {
   const manufacturers = useAdminManufacturers()
   const [editing, setEditing] = useState<{ manufacturer?: AdminManufacturer }>()
   const [toDeactivate, setToDeactivate] = useState<AdminManufacturer>()
+  const [toApprove, setToApprove] = useState<AdminManufacturer>()
   const [q, setQ] = useState('')
   const [state, setState] = useState('')
   const rows = useMemo(() => {
@@ -222,7 +223,7 @@ function ManufacturersTab() {
       cell: (row) => (
         <div className="flex items-center justify-end gap-1">
           {!row.approved ? (
-            <Button variant="outline" className="h-11 px-3" aria-label={`Aprobar ${row.name}`} onClick={() => void approve(row)}>
+            <Button variant="outline" className="h-11 px-3" aria-label={`Aprobar ${row.name}`} onClick={() => setToApprove(row)}>
               <CheckIcon aria-hidden />
               Aprobar
             </Button>
@@ -286,6 +287,17 @@ function ManufacturersTab() {
           }}
         />
       ) : null}
+      <ConfirmDialog
+        open={toApprove !== undefined}
+        onOpenChange={(next) => !next && setToApprove(undefined)}
+        title={`¿Aprobar ${toApprove?.name ?? 'el fabricante'}?`}
+        description="Pasa al catálogo oficial y todos los almacenes podrán elegirlo al crear productos."
+        confirmLabel="Aprobar fabricante"
+        loadingText="Aprobando…"
+        onConfirm={async () => {
+          if (toApprove) await approve(toApprove)
+        }}
+      />
       <ConfirmDialog
         open={toDeactivate !== undefined}
         onOpenChange={(next) => !next && setToDeactivate(undefined)}
