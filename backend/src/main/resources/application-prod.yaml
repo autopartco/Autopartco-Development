@@ -10,8 +10,10 @@ spring:
     show-sql: false
 
 server:
-  # La app corre detrás de un proxy/balanceador con HTTPS: respeta X-Forwarded-*.
-  forward-headers-strategy: framework
+  # La app corre detrás de nginx (VPS) con HTTPS: respeta X-Forwarded-*. `native` usa el RemoteIpValve de Tomcat,
+  # que recorre X-Forwarded-For de derecha a izquierda saltando proxies internos (127.0.0.1, redes privadas): la IP
+  # resultante es la que vio nginx. `framework` tomaba la de más a la izquierda, que escribe el cliente (ver ClientIp).
+  forward-headers-strategy: native
   error:
     include-message: never
     include-stacktrace: never
