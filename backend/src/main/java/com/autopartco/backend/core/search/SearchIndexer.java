@@ -43,7 +43,81 @@ public class SearchIndexer {
             insert into search_listings (listing_key, product_id, branch_id, store_id, category_id, category_path,
                 manufacturer_id, name, price, stock, has_promotion, city_code, department_code, latitude, longitude,
                 store_rating, product_rating, product_review_count, universal, vehicle_make_ids, vehicle_model_ids,
-                vehicle_version_ids, year_from, year_to, document, search_text, published_at, updated_at)
+                vehicle_version_ids, year_from, year_to, document, search_text, published_at, updated_at,
+                mentioned_make_ids, mentioned_model_ids)
+            with k as materialized (
+                select * from (values {values}) as k(product_id, branch_id, price, stock, has_promotion)
+            ), mk as materialized (
+                select x.id as make_id, x.n
+                from (select id, nullif(btrim(regexp_replace(public.immutable_unaccent(lower(name)),
+                         '[^a-z0-9]+', ' ', 'g')), '') as n from make where deleted_at is null) x
+                where x.n is not null
+            ), mn as materialized (
+                select m.id as model_id, m.make_id, y.n, replace(y.n, ' ', '') as c
+                from model m
+                cross join lateral (select nullif(btrim(regexp_replace(public.immutable_unaccent(lower(m.name)),
+                    '[^a-z0-9]+', ' ', 'g')), '') as n) y
+                where m.deleted_at is null and y.n is not null
+            ), hm as (
+                select n from mn group by n having count(distinct make_id) > 1
+            ), dw as materialized (
+                -- Palabras del dominio (categorías y sinónimos): un modelo llamado así («Escape») exige su marca.
+                select distinct w.n
+                from (select replace(code, '_', ' ') as t from categories where deleted_at is null
+                      union all
+                      select concat_ws(' ', term, array_to_string(expands_to, ' ')) from search_synonyms) src
+                cross join lateral regexp_split_to_table(btrim(regexp_replace(public.immutable_unaccent(lower(src.t)),
+                    '[^a-z0-9]+', ' ', 'g')), ' ') w(n)
+                where w.n <> ''
+            ), md as materialized (
+                select x.model_id, x.make_id, x.n, x.c, mk.n as mn,
+                       (x.letters and not x.common) as standalone, (x.letters and x.common) as conditional
+                from (select mn.*, mn.n ~ '[a-z]' as letters,
+                             (length(mn.c) < 3
+                                 or mn.n in (select n from hm)
+                                 or mn.n in (select n from mk)
+                                 or mn.n in (select n from dw)
+                                 or to_tsvector('public.spanish_unaccent'::regconfig, mn.n) = ''::tsvector) as common
+                      from mn) x
+                join mk on mk.make_id = x.make_id
+            ), vk as (
+                select mk.n as key, 'M' as kind, mk.make_id, null::uuid as model_id from mk
+                union all
+                select s.key, case when md.standalone then 'S' else 'C' end, md.make_id, md.model_id
+                from md cross join lateral (values (md.n), (md.c)) s(key)
+                where md.standalone or md.conditional
+                union all
+                select a.key, 'A', md.make_id, md.model_id
+                from md cross join lateral (values (md.mn || ' ' || md.n), (md.mn || ' ' || md.c),
+                    (replace(md.mn, ' ', '') || md.c)) a(key)
+                where not md.standalone
+            ), vkt as (
+                select distinct key, kind, make_id, model_id, split_part(key, ' ', 1) as tok1,
+                       array_length(string_to_array(key, ' '), 1) as ntok
+                from vk
+            ), pt as materialized (
+                select p.id as product_id, string_to_array(nullif(btrim(regexp_replace(
+                           public.immutable_unaccent(lower(concat_ws(' ', p.name, p.part_number, p.description,
+                               (select string_agg(e.value, ' ') from jsonb_each_text(p.attributes) e)))),
+                           '[^a-z0-9]+', ' ', 'g')), ''), ' ') as w
+                from products p where p.id in (select product_id from k)
+            ), hits as materialized (
+                select pt.product_id, vkt.kind, vkt.make_id, vkt.model_id
+                from pt
+                cross join lateral generate_subscripts(pt.w, 1) g(i)
+                join vkt on vkt.tok1 = pt.w[g.i] and array_to_string(pt.w[g.i : g.i + vkt.ntok - 1], ' ') = vkt.key
+            ), ment as (
+                select product_id, make_id, null::uuid as model_id from hits where kind = 'M'
+                union
+                select h.product_id, h.make_id, h.model_id from hits h
+                where h.kind in ('S', 'A')
+                   or (h.kind = 'C' and exists (select 1 from hits x
+                       where x.product_id = h.product_id and x.kind = 'M' and x.make_id = h.make_id))
+            ), mm as (
+                select product_id, array_agg(distinct make_id) as make_ids,
+                       array_agg(distinct model_id) filter (where model_id is not null) as model_ids
+                from ment group by product_id
+            )
             select k.product_id::text || ':' || k.branch_id::text,
                    k.product_id, k.branch_id, b.store_id, p.category_id,
                    case when p.category_id is null then '{}'::uuid[] else array[p.category_id] end,
@@ -63,8 +137,8 @@ public class SearchIndexer {
                        concat_ws(' ', p.description, attr.text)), 'D'),
                    public.immutable_unaccent(lower(concat_ws(' ', p.name, m.name, replace(c.code, '_', ' '),
                        p.part_number))),
-                   p.created_at, now()
-            from (values {values}) as k(product_id, branch_id, price, stock, has_promotion)
+                   p.created_at, now(), coalesce(mm.make_ids, '{}'::uuid[]), coalesce(mm.model_ids, '{}'::uuid[])
+            from k
             join products p on p.id = k.product_id
             join branches b on b.id = k.branch_id
             left join manufacturers m on m.id = p.manufacturer_id
@@ -97,6 +171,7 @@ public class SearchIndexer {
             left join lateral (
                 select string_agg(e.value, ' ') as text from jsonb_each_text(p.attributes) e
             ) attr on true
+            left join mm on mm.product_id = p.id
             on conflict (listing_key) do update set
                 store_id = excluded.store_id, category_id = excluded.category_id,
                 category_path = excluded.category_path, manufacturer_id = excluded.manufacturer_id,
@@ -109,7 +184,8 @@ public class SearchIndexer {
                 vehicle_make_ids = excluded.vehicle_make_ids, vehicle_model_ids = excluded.vehicle_model_ids,
                 vehicle_version_ids = excluded.vehicle_version_ids, year_from = excluded.year_from,
                 year_to = excluded.year_to, document = excluded.document, search_text = excluded.search_text,
-                published_at = excluded.published_at, updated_at = excluded.updated_at
+                published_at = excluded.published_at, updated_at = excluded.updated_at,
+                mentioned_make_ids = excluded.mentioned_make_ids, mentioned_model_ids = excluded.mentioned_model_ids
             """;
 
     static final String VALUE_ROW = "(?::uuid, ?::uuid, ?::numeric, ?::int, ?::boolean)";

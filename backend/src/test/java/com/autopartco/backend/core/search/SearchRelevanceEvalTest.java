@@ -171,7 +171,10 @@ class SearchRelevanceEvalTest {
         // Indexación real: reconstrucción completa con el SearchIndexer de producción.
         SearchIndexer indexer = new SearchIndexer(JdbcClient.create(admin), listingQueries,
                 new DataSourceTransactionManager(admin));
+        long reindexStart = System.nanoTime();
         int reindexed = indexer.reindexAll();
+        System.out.printf(Locale.ROOT, "[search-eval] reindexAll: %d listados en %.0f ms%n", reindexed,
+                (System.nanoTime() - reindexStart) / 1_000_000.0);
         indexedListings = jdbc.queryForObject("select count(*) from search_listings", Integer.class);
         int published = jdbc.queryForObject("select count(*) from (" + PUBLISHED_WHERE + ") x", Integer.class);
         assertThat(indexedListings).as("search_listings tras reindexAll").isEqualTo(published).isEqualTo(reindexed)
@@ -229,6 +232,178 @@ class SearchRelevanceEvalTest {
         printTable(total, byKind);
         writeReports(outcomes, total, byKind);
         gate(total, byKind);
+    }
+
+    // ------------------------------------------------------------------ T2: marcas y modelos mencionados
+
+    @Test
+    void fixtureListingsRecordTheVehiclesTheirTextMentions() {
+        JdbcTemplate jdbc = new JdbcTemplate(admin);
+        UUID mazda = jdbc.queryForObject("select id from make where name = 'Mazda'", UUID.class);
+        UUID mazda3 = jdbc.queryForObject("select id from model where name = 'Mazda 3'", UUID.class);
+        List<Map<String, Object>> rows = jdbc.queryForList("""
+                select sl.name, sl.mentioned_make_ids, sl.mentioned_model_ids,
+                       exists (select 1 from product_vehicle_rules r where r.product_id = sl.product_id
+                               and r.deleted_at is null) as has_rule
+                from search_listings sl""");
+
+        int withMentions = 0;
+        int mazda3WithoutRule = 0;
+        int mazda3Named = 0;
+        for (Map<String, Object> row : rows) {
+            String name = QueryParser.normalizeName((String) row.get("name"));
+            Set<Object> makes = Set.of((Object[]) array(row.get("mentioned_make_ids")));
+            Set<Object> models = Set.of((Object[]) array(row.get("mentioned_model_ids")));
+            if (!makes.isEmpty()) {
+                withMentions++;
+            }
+            String padded = " " + name + " ";
+            if (padded.contains(" mazda 3 ")) {
+                assertThat(makes).as(name).contains(mazda);
+                assertThat(models).as(name).contains(mazda3);
+                mazda3Named++;
+                if (!(Boolean) row.get("has_rule")) {
+                    mazda3WithoutRule++;
+                }
+            }
+            if (padded.contains(" kia ") && !padded.contains(" mazda ")) {
+                assertThat(makes).as(name).doesNotContain(mazda);
+                assertThat(models).as(name).doesNotContain(mazda3);
+            }
+        }
+        System.out.printf("[search-eval] listados con marcas mencionadas: %d de %d (Mazda 3 sin regla: %d)%n",
+                withMentions, rows.size(), mazda3WithoutRule);
+        assertThat(withMentions).isPositive();
+        assertThat(mazda3Named).isPositive();
+    }
+
+    private static Object array(Object sqlArray) {
+        try {
+            return ((java.sql.Array) sqlArray).getArray();
+        } catch (java.sql.SQLException failure) {
+            throw new IllegalStateException(failure);
+        }
+    }
+
+    @Test
+    void mentionedVehiclesFollowTheExtractionRules() {
+        String url = POSTGRES.getJdbcUrl() + (POSTGRES.getJdbcUrl().contains("?") ? "&" : "?")
+                + "currentSchema=rules";
+        DriverManagerDataSource rules = new DriverManagerDataSource(url, POSTGRES.getUsername(),
+                POSTGRES.getPassword());
+        JdbcTemplate jdbc = new JdbcTemplate(rules);
+        new JdbcTemplate(admin).execute("create schema rules");
+        for (String table : List.of("make", "model", "versions", "products", "branches", "manufacturers", "categories",
+                "locations", "geo_municipalities", "store_reviews", "product_reviews", "product_vehicle_rules",
+                "search_listings", "search_synonyms")) {
+            jdbc.execute("create table rules." + table + " (like public." + table + " including all)");
+        }
+        jdbc.update("insert into categories (id, code) values (?, 'ESCAPE')", UUID.randomUUID());
+        jdbc.update("insert into search_synonyms (term, expands_to) values ('mofle', array['silenciador'])");
+        UUID store = UUID.randomUUID();
+        UUID branch = UUID.randomUUID();
+        jdbc.update("insert into branches (id, store_id, name, state) values (?, ?, 'Sede', ?)", branch, store,
+                UUID.randomUUID());
+        Map<String, UUID> makes = new HashMap<>();
+        for (String name : List.of("Mazda", "Kia", "Chevrolet", "Ford", "Land Rover", "Renault", "Nissan")) {
+            UUID id = UUID.randomUUID();
+            makes.put(name, id);
+            jdbc.update("insert into make (id, name) values (?, ?)", id, name);
+        }
+        jdbc.update("update make set deleted_at = now() where name = 'Renault'");
+        String[][] models = {{"Mazda", "2"}, {"Mazda", "3"}, {"Mazda", "626"}, {"Mazda", "CX-5"}, {"Kia", "Rio"},
+                {"Kia", "Sport"}, {"Ford", "Sport"}, {"Chevrolet", "Spark"}, {"Chevrolet", "Spark GT"},
+                {"Chevrolet", "Aveo"}, {"Land Rover", "Discovery"}, {"Ford", "A3"}, {"Kia", "A3"},
+                {"Kia", "Picanto"}, {"Ford", "Escape"}, {"Kia", "Silenciador"}, {"Nissan", "Nissan Kicks"}};
+        for (String[] model : models) {
+            jdbc.update("insert into model (id, make_id, name) values (?, ?, ?)", UUID.randomUUID(),
+                    makes.get(model[0]), model[1]);
+        }
+        jdbc.update("update model set deleted_at = now() where name = 'Picanto'");
+
+        Map<UUID, String> products = new LinkedHashMap<>();
+        Map<String, UUID> byName = new HashMap<>();
+        // {clave, nombre, descripción, atributos JSON}
+        String[][] texts = {
+                {"kiara", "Pastilla de freno para Kiara", null, null},
+                {"suelto", "Filtro con 3 puntos de anclaje y 626 mm", "Pieza 3 de 4", null},
+                {"cx5", "Bomba CX5 2015", null, null},
+                {"cx-5", "Bomba cx-5 delantera", null, null},
+                {"cx 5", "Bomba CX 5", null, null},
+                {"lista", "Terminal direccion MAZDA 2, MAZDA 3", null, null},
+                {"slash", "Cauchos spark/aveo", null, null},
+                {"pegado", "Filtro MAZDA3 aceite", null, null},
+                {"guion", "Filtro mazda-3 aire", null, null},
+                {"homonimo-sin-marca", "Disco Sport trasero", null, null},
+                {"homonimo-con-marca", "Disco Sport para Kia", null, null},
+                {"spark-gt", "Bujia SPARK GT", null, null},
+                {"sparkgt", "Bujia SparkGT", null, null},
+                {"atributo", "Amortiguador", null, "{\"compatible\": \"Rio\"}"},
+                {"descripcion", "Amortiguador", "Sirve para MAZDA 3 modelo 2014 - 2018", null},
+                {"borrada", "Filtro Renault Picanto", null, null},
+                {"multi", "Pastilla Land Rover Discovery", null, null},
+                {"corto-sin-marca", "Sensor A3", null, null},
+                {"corto-con-marca", "Sensor A3 Ford", null, null},
+                {"otra", "Filtro de aceite universal", null, null},
+                {"dominio-sin-marca", "Silenciador de escape trasero", null, null},
+                {"dominio-con-marca", "Silenciador de escape Ford Escape", null, null},
+                {"nombre-con-marca", "Sensor NISSAN KICKS", null, null}};
+        for (String[] text : texts) {
+            UUID id = UUID.randomUUID();
+            products.put(id, text[0]);
+            byName.put(text[0], id);
+            jdbc.update("insert into products (id, store_id, name, description, state_id, attributes) "
+                    + "values (?, ?, ?, ?, ?, ?::jsonb)", id, store, text[1], text[2], UUID.randomUUID(),
+                    text[3] == null ? "{}" : text[3]);
+        }
+        ListingQueries queries = mock(ListingQueries.class);
+        when(queries.publishedListingsOfProducts(anyCollection())).thenAnswer(call -> {
+            Collection<UUID> ids = call.getArgument(0);
+            return ids.stream().map(id -> listing(id, branch, store, "Sede", BigDecimal.TEN, 1)).toList();
+        });
+        new SearchIndexer(JdbcClient.create(rules), queries, new DataSourceTransactionManager(rules))
+                .reindexProducts(products.keySet());
+
+        assertThat(mentions(jdbc, byName.get("kiara"))).as("kia no dentro de kiara").isEmpty();
+        assertThat(mentions(jdbc, byName.get("suelto"))).as("3 y 626 sueltos").isEmpty();
+        for (String variant : List.of("cx5", "cx-5", "cx 5")) {
+            assertThat(mentions(jdbc, byName.get(variant))).as(variant).containsExactly("Mazda", "Mazda:CX-5");
+        }
+        assertThat(mentions(jdbc, byName.get("lista"))).containsExactly("Mazda", "Mazda:2", "Mazda:3");
+        assertThat(mentions(jdbc, byName.get("slash"))).containsExactly("Chevrolet", "Chevrolet:Aveo",
+                "Chevrolet:Spark");
+        assertThat(mentions(jdbc, byName.get("pegado"))).containsExactly("Mazda", "Mazda:3");
+        assertThat(mentions(jdbc, byName.get("guion"))).containsExactly("Mazda", "Mazda:3");
+        assertThat(mentions(jdbc, byName.get("descripcion"))).as("años y versiones no entran")
+                .containsExactly("Mazda", "Mazda:3");
+        assertThat(mentions(jdbc, byName.get("homonimo-sin-marca"))).as("modelo en varias marcas sin marca").isEmpty();
+        assertThat(mentions(jdbc, byName.get("homonimo-con-marca"))).containsExactly("Kia", "Kia:Sport");
+        assertThat(mentions(jdbc, byName.get("spark-gt"))).contains("Chevrolet", "Chevrolet:Spark GT");
+        assertThat(mentions(jdbc, byName.get("sparkgt"))).contains("Chevrolet", "Chevrolet:Spark GT");
+        assertThat(mentions(jdbc, byName.get("atributo"))).containsExactly("Kia", "Kia:Rio");
+        assertThat(mentions(jdbc, byName.get("borrada"))).as("marca y modelo dados de baja").isEmpty();
+        assertThat(mentions(jdbc, byName.get("multi"))).containsExactly("Land Rover", "Land Rover:Discovery");
+        assertThat(mentions(jdbc, byName.get("corto-sin-marca"))).as("modelo corto repetido sin marca").isEmpty();
+        assertThat(mentions(jdbc, byName.get("corto-con-marca"))).containsExactly("Ford", "Ford:A3");
+        assertThat(mentions(jdbc, byName.get("dominio-sin-marca"))).as("palabra de categoría o sinónimo sin marca")
+                .isEmpty();
+        assertThat(mentions(jdbc, byName.get("dominio-con-marca"))).containsExactly("Ford", "Ford:Escape");
+        assertThat(mentions(jdbc, byName.get("nombre-con-marca"))).as("modelo cuyo nombre incluye la marca")
+                .containsExactly("Nissan", "Nissan:Nissan Kicks");
+        assertThat(mentions(jdbc, byName.get("otra"))).isEmpty();
+    }
+
+    /** Marcas ({@code Marca}) y modelos ({@code Marca:Modelo}) mencionados por el listado del producto, ordenados. */
+    private static List<String> mentions(JdbcTemplate jdbc, UUID productId) {
+        List<String> found = jdbc.queryForList("""
+                select name from (
+                    select mk.name as name from search_listings sl join make mk on mk.id = any(sl.mentioned_make_ids)
+                    where sl.product_id = ?
+                    union all
+                    select mk.name || ':' || md.name from search_listings sl
+                    join model md on md.id = any(sl.mentioned_model_ids) join make mk on mk.id = md.make_id
+                    where sl.product_id = ?) x""", String.class, productId, productId);
+        return found.stream().sorted().toList();
     }
 
     // ------------------------------------------------------------------ ejecución

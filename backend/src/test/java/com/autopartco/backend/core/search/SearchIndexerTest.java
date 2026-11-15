@@ -146,6 +146,20 @@ class SearchIndexerTest {
                         "r.deleted_at is null");
     }
 
+    @Test
+    void upsertFillsMentionedMakesAndModelsFromTheProductTextInTheSameStatement() {
+        String sql = SearchIndexer.UPSERT_SQL.replaceAll("\s+", " ");
+        assertThat(sql)
+                .contains("mentioned_make_ids, mentioned_model_ids)",
+                        "coalesce(mm.make_ids, '{}'::uuid[]), coalesce(mm.model_ids, '{}'::uuid[])",
+                        "mentioned_make_ids = excluded.mentioned_make_ids",
+                        "mentioned_model_ids = excluded.mentioned_model_ids",
+                        "lower(concat_ws(' ', p.name, p.part_number, p.description,",
+                        "from make where deleted_at is null",
+                        "where m.deleted_at is null",
+                        "left join mm on mm.product_id = p.id");
+    }
+
     private static ProductResponse listing(UUID product, UUID branch, String price, String effective,
             String discount, int stock) {
         return new ProductResponse(product, UUID.randomUUID(), branch, "Sede", "Pastillas", "SKU", null, null,
