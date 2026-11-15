@@ -14,6 +14,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet'
+import { StoresSearchView } from '../components/search/stores-results'
+import { StoresStrip } from '../components/search/stores-strip'
 import { ServiceResults } from '@/features/services/components/service-results'
 import { ServicesStrip } from '@/features/services/components/services-strip'
 import { useServiceState } from '@/features/services/hooks'
@@ -197,13 +199,14 @@ function ResultCount({ page, loading }: { page: SearchResult | undefined; loadin
 }
 
 /**
- * Búsqueda unificada: pestañas «Todo · Repuestos · Servicios» en `/buscar?tab=`. «Servicios» tiene sus propios filtros
- * y su propia consulta; «Todo» y «Repuestos» muestran los repuestos (en «Todo», con la franja de servicios). La ruta de
+ * Búsqueda unificada: pestañas «Todo · Repuestos · Servicios · Tiendas» en `/buscar?tab=`. «Servicios» y «Tiendas» tienen
+ * sus propios filtros y su propia consulta; «Todo» y «Repuestos» muestran los repuestos (en «Todo», con la franja de servicios). La ruta de
  * categoría (`/categoria/:slug`) es solo de repuestos.
  */
 export function SearchResultsView({ fixedCategory }: { fixedCategory?: string }) {
   const [state] = useSearchState(fixedCategory)
   if (!fixedCategory && state.tab === 'services') return <ServicesSearchView />
+  if (!fixedCategory && state.tab === 'stores') return <StoresSearchView />
   return <ProductSearchView fixedCategory={fixedCategory} />
 }
 
@@ -305,6 +308,12 @@ function ProductSearchView({ fixedCategory }: { fixedCategory?: string }) {
       <ServicesStrip strip={page.services} allHref={searchTabHref(searchParams, 'all', 'services')} />
     ) : null
   const stripOnTop = page?.suggestedTab === 'services' || page?.items.length === 0
+  // Franja de tiendas: debajo de la de servicios; arriba si no hay repuestos ni servicios.
+  const storesNode =
+    page?.stores && page.stores.items.length > 0 && state.tab === 'all' && !isCategoryRoute && page.page === 1 ? (
+      <StoresStrip strip={page.stores} allHref={searchTabHref(searchParams, 'all', 'stores')} />
+    ) : null
+  const storesOnTop = page?.items.length === 0 && !(page.services && page.services.items.length > 0)
 
   return (
     <Container className="py-6 sm:py-8">
@@ -405,6 +414,7 @@ function ProductSearchView({ fixedCategory }: { fixedCategory?: string }) {
           />
 
           {stripOnTop ? stripNode : null}
+          {storesOnTop ? storesNode : null}
 
           {result.status === 'error' ? (
             <ErrorState {...errorCopy(result.error)} onRetry={result.retry} />
@@ -438,6 +448,7 @@ function ProductSearchView({ fixedCategory }: { fixedCategory?: string }) {
               </ProductList>
               <ResultsPagination page={page.page} totalPages={page.totalPages} />
               {stripOnTop ? null : stripNode}
+              {storesOnTop ? null : storesNode}
             </>
           )}
         </section>

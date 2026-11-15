@@ -4,9 +4,11 @@ import { ChevronRightIcon } from 'lucide-react'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatKm } from '@/features/location/lib/geo'
 import { initials, pluralize } from '@/lib/format'
-import type { StoreSummary } from '../api/types'
+import { Badge } from '@/components/ui/badge'
+import type { BusinessType, StoreSearchItem, StoreSummary } from '../api/types'
 import { storePath } from '../lib/paths'
 import { RecommendedMark } from './product-meta'
+import { RatingTag } from './reviews/rating-tag'
 
 function NoData() {
   return (
@@ -19,7 +21,7 @@ function NoData() {
   )
 }
 
-function StoreAvatar({ store }: { store: StoreSummary }) {
+function StoreAvatar({ store }: { store: { name: string; logoUrl?: string } }) {
   const [failed, setFailed] = useState(false)
   if (store.logoUrl && !failed) {
     return (
@@ -97,5 +99,49 @@ export function StoreRowSkeleton() {
         <Skeleton className="h-3 w-1/4" />
       </div>
     </div>
+  )
+}
+
+const BUSINESS_TYPE_LABEL: Record<BusinessType, string> = {
+  PARTS: 'Repuestos',
+  SERVICES: 'Servicios',
+  BOTH: 'Repuestos y servicios',
+}
+
+/**
+ * Almacén de la búsqueda como fila con separadores: logo (o inicial), nombre con enlace, ciudades, calificación,
+ * cifras de catálogo, tipo de negocio y descripción corta. Solo muestra lo que el servidor informa: sin reseñas dice
+ * «Sin reseñas» y las cifras en cero se omiten.
+ */
+export function StoreResultRow({ store }: { store: StoreSearchItem }) {
+  const counts = [
+    store.publishedProducts > 0 ? pluralize(store.publishedProducts, 'repuesto', 'repuestos') : null,
+    store.activeServices > 0 ? pluralize(store.activeServices, 'servicio', 'servicios') : null,
+  ].filter((item): item is string => item !== null)
+  const { average, count } = store.rating
+  return (
+    <article className="group relative grid grid-cols-[2.75rem_minmax(0,1fr)_1.25rem] items-start gap-x-4 px-1 py-4 transition-colors hover:bg-ap-paper sm:px-3">
+      <StoreAvatar store={store} />
+      <div className="flex min-w-0 flex-col gap-1.5">
+        <h3 className="text-base leading-snug font-semibold text-ap-ink">
+          <Link
+            to={storePath(store.id)}
+            className="after:absolute after:inset-0 focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-[var(--focus)] group-hover:text-ap-red"
+          >
+            {store.name}
+          </Link>
+        </h3>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ap-muted">
+          {store.cities.length > 0 ? <span>{store.cities.join(' · ')}</span> : null}
+          {average !== null && count > 0 ? <RatingTag rating={average} reviewCount={count} /> : <span>Sin reseñas</span>}
+        </div>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-ap-ink">
+          <Badge variant="neutral">{BUSINESS_TYPE_LABEL[store.businessType]}</Badge>
+          {counts.length > 0 ? <span className="tabular-nums">{counts.join(' · ')}</span> : null}
+        </div>
+        {store.description ? <p className="line-clamp-2 max-w-prose text-sm text-ap-muted">{store.description}</p> : null}
+      </div>
+      <ChevronRightIcon className="mt-3 size-5 text-ap-steel group-hover:text-ap-red" aria-hidden />
+    </article>
   )
 }
