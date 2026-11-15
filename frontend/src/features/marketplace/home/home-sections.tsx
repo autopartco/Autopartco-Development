@@ -207,7 +207,7 @@ export function FeaturedSection({ home }: { home: Home }) {
           id="destacados-titulo"
           label="Catálogo / Destacados"
           title="Repuestos destacados"
-          intro="Repuestos de almacenes de todo el país. Los marcados como «Patrocinado» son anuncios."
+          intro="Repuestos de almacenes de todo el país."
           link={{ to: '/buscar', label: 'Ver todo el catálogo' }}
         />
         {home.status === 'error' ? (
