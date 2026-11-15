@@ -58,11 +58,53 @@ public final class OpeningHours {
         return ordered.isEmpty() ? null : ordered;
     }
 
+    /** Días del formato heredado ({@code "lunes": "08:00-18:00"}, {@code "domingo": "cerrado"}). */
+    private static final Map<String, String> LEGACY_DAYS = Map.of("lunes", "mon", "martes", "tue", "miercoles", "wed",
+            "jueves", "thu", "viernes", "fri", "sabado", "sat", "domingo", "sun");
+    private static final Pattern LEGACY_RANGE = Pattern.compile("^(\\d{2}:\\d{2})-(\\d{2}:\\d{2})$");
+
+    /**
+     * Horario en el formato del contrato para leerlo. Un horario heredado con días en español y franjas en texto
+     * ({@code {"lunes": "08:00-18:00", "domingo": "cerrado"}}) se traduce a {@code {"mon": [["08:00","18:00"]],
+     * "sun": []}}. Uno ya oficial (o nulo) se devuelve igual. Al guardar desde el portal queda en el formato oficial.
+     */
+    public static Map<String, Object> readable(Map<String, Object> hours) {
+        if (hours == null || DAYS.stream().anyMatch(hours::containsKey)
+                || LEGACY_DAYS.keySet().stream().noneMatch(hours::containsKey)) {
+            return hours;
+        }
+        Map<String, Object> converted = new LinkedHashMap<>();
+        for (String day : DAYS) {
+            LEGACY_DAYS.entrySet().stream().filter(entry -> entry.getValue().equals(day)).findFirst()
+                    .map(entry -> hours.get(entry.getKey()))
+                    .ifPresent(value -> converted.put(day, legacySlots(value)));
+        }
+        if (hours.get(NOTES) instanceof String notes) {
+            converted.put(NOTES, notes);
+        }
+        return converted;
+    }
+
+    private static List<List<String>> legacySlots(Object value) {
+        List<List<String>> slots = new ArrayList<>();
+        if (value instanceof String text) {
+            for (String part : text.split(",")) {
+                java.util.regex.Matcher matcher = LEGACY_RANGE.matcher(part.strip());
+                if (matcher.matches() && TIME.matcher(matcher.group(1)).matches()
+                        && TIME.matcher(matcher.group(2)).matches()) {
+                    slots.add(List.of(matcher.group(1), matcher.group(2)));
+                }
+            }
+        }
+        return slots;
+    }
+
     /**
      * {@code true} si ahora (hora de {@code clock}) cae dentro de una franja de hoy; {@code false} si hoy no tiene
      * franjas o ya pasaron; {@code null} si no hay horario semanal (vacío, solo notas o ilegible).
      */
-    public static Boolean openNow(Map<String, Object> hours, Clock clock) {
+    public static Boolean openNow(Map<String, Object> rawHours, Clock clock) {
+        Map<String, Object> hours = readable(rawHours);
         if (hours == null || DAYS.stream().noneMatch(hours::containsKey)) {
             return null;
         }

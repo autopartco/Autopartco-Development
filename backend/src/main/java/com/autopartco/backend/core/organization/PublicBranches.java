@@ -68,7 +68,7 @@ public class PublicBranches {
                 BranchService.isApproximate(location),
                 phone(branch.getNumberPhone()),
                 branch.getWhatsapp(),
-                branch.getOpeningHours(),
+                OpeningHours.readable(branch.getOpeningHours()),
                 OpeningHours.openNow(branch.getOpeningHours(), clock),
                 serviceIds
         );
