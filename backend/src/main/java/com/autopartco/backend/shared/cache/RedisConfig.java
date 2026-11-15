@@ -23,8 +23,9 @@ import io.lettuce.core.TimeoutOptions;
  * Conexión a Redis (Lettuce) solo si hay {@code spring.data.redis.url} ({@code REDIS_URL}). La autoconfiguración de
  * Spring Boot para Redis está excluida en {@code application.yaml} para que, sin URL, nunca se intente
  * {@code localhost:6379} ni aparezca Redis en {@code /actuator/health}. La conexión es perezosa: la app arranca aunque
- * Redis no responda. Tiempos de espera: conexión {@code spring.data.redis.connect-timeout} (500 ms) y comando
- * {@code spring.data.redis.timeout} (200 ms); sin conexión los comandos fallan de inmediato.
+ * Redis no responda. Tiempos de espera: conexión {@code spring.data.redis.connect-timeout} (3 s) y comando
+ * {@code spring.data.redis.timeout} (1 s); sin conexión los comandos fallan de inmediato. Lettuce también aplica el
+ * tiempo de comando al saludo inicial (TLS + HELLO + AUTH): contra un Redis gestionado como Upstash no cabe en 200 ms.
  */
 @Configuration(proxyBeanMethods = false)
 @ConditionalOnRedis
@@ -33,8 +34,8 @@ public class RedisConfig {
     @Bean
     LettuceConnectionFactory redisConnectionFactory(
             @Value("${spring.data.redis.url}") String url,
-            @Value("${spring.data.redis.connect-timeout:500ms}") String connectTimeoutText,
-            @Value("${spring.data.redis.timeout:200ms}") String commandTimeoutText) {
+            @Value("${spring.data.redis.connect-timeout:3s}") String connectTimeoutText,
+            @Value("${spring.data.redis.timeout:1s}") String commandTimeoutText) {
         Duration connectTimeout = DurationStyle.detectAndParse(connectTimeoutText.strip());
         Duration commandTimeout = DurationStyle.detectAndParse(commandTimeoutText.strip());
         URI uri = URI.create(url.strip());

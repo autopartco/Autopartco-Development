@@ -25,8 +25,8 @@ spring:
     redis:
       # redis://[usuario:clave@]host:puerto[/db] o rediss:// (TLS). Vacío: cachés y limitadores en memoria.
       url: "${REDIS_URL:}"
-      connect-timeout: "${REDIS_CONNECT_TIMEOUT:500ms}"
-      timeout: "${REDIS_COMMAND_TIMEOUT:200ms}"
+      connect-timeout: "${REDIS_CONNECT_TIMEOUT:3s}"
+      timeout: "${REDIS_COMMAND_TIMEOUT:1s}"
 
   datasource:
     url: "jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:autopartco}"
