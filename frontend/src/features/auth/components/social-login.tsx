@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { LoaderCircleIcon } from 'lucide-react'
 import { FormAlert, TextField } from '@/components/common/form-fields'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
@@ -49,7 +50,7 @@ function GoogleButton({ mode, disabled, onToken }: { mode: 'login' | 'register';
 
   if (SIMULATED) {
     return (
-      <Button type="button" variant="outline" className="h-11 w-full gap-2" disabled={disabled} onClick={() => onToken('mock-google-token')}>
+      <Button type="button" variant="outline" className="h-11 w-full gap-2" loading={disabled} loadingText="Conectando con Google…" onClick={() => onToken('mock-google-token')}>
         <GoogleIcon />
         Continuar con Google
       </Button>
@@ -174,12 +175,17 @@ export function SocialLogin({ mode, onSession }: SocialLoginProps) {
       {error ? <FormAlert ref={alertRef} title={error} /> : null}
       {showGoogle ? <GoogleButton mode={mode} disabled={busy} onToken={(token) => void signIn('google', token)} /> : null}
       {showFacebook ? (
-        <Button type="button" className="h-11 w-full gap-2 bg-[#1877F2] text-white hover:bg-[#166FE5]" disabled={busy} onClick={() => void withFacebook()}>
+        <Button type="button" className="h-11 w-full gap-2 bg-[#1877F2] text-white hover:bg-[#166FE5]" loading={busy} loadingText="Conectando con Facebook…" onClick={() => void withFacebook()}>
           <FacebookIcon />
           Continuar con Facebook
         </Button>
       ) : null}
-      {busy && !pendingSignup ? <p role="status" className="text-sm text-ap-muted">Validando tu ingreso…</p> : null}
+      {busy && !pendingSignup ? (
+        <p role="status" className="flex items-center gap-2 text-sm text-ap-muted">
+          <LoaderCircleIcon className="ap-spinner ap-live size-4 shrink-0" aria-hidden />
+          Validando tu ingreso…
+        </p>
+      ) : null}
       <div className="flex items-center gap-3 text-sm text-ap-muted" aria-hidden>
         <span className="h-px flex-1 bg-ap-line" />o con tu correo<span className="h-px flex-1 bg-ap-line" />
       </div>
@@ -222,8 +228,8 @@ export function SocialLogin({ mode, onSession }: SocialLoginProps) {
               <TextField id="social-dateBirth" name="dateBirth" type="date" label="Fecha de nacimiento" autoComplete="bday" required error={regErrors.dateBirth} />
               <TextField id="social-numberPhone" name="numberPhone" label="Celular" inputMode="tel" maxLength={10} autoComplete="tel-national" required error={regErrors.numberPhone} />
             </div>
-            <Button type="submit" disabled={busy}>
-              {busy ? 'Creando tu cuenta…' : 'Crear cuenta y continuar'}
+            <Button type="submit" loading={busy} loadingText="Creando tu cuenta…">
+              Crear cuenta y continuar
             </Button>
           </form>
         </DialogContent>

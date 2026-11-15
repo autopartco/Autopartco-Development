@@ -192,8 +192,8 @@ function PreferencesForm({ preferences }: { preferences: AlertPreference[] }) {
         })}
       </ul>
       <div className="flex justify-end">
-        <Button type="submit" className="h-11 px-5" disabled={submit.pending || !draft.isDirty}>
-          {submit.pending ? 'Guardando…' : 'Guardar preferencias'}
+        <Button type="submit" className="h-11 px-5" loading={submit.pending} loadingText="Guardando…" disabled={!draft.isDirty}>
+          Guardar preferencias
         </Button>
       </div>
       <UnsavedChangesDialog blocker={blocker} />

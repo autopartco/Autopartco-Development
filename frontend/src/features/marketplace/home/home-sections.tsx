@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import { BadgeCheckIcon, CheckIcon, ChevronRightIcon, MessageSquareTextIcon, ShieldCheckIcon } from 'lucide-react'
+import { CountUp } from '@/components/common/count-up'
 import { Container } from '@/components/common/page-header'
+import { Reveal } from '@/components/common/reveal'
 import { EmptyState, ErrorState } from '@/components/common/states'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -30,7 +32,7 @@ interface SectionHeadingProps {
 
 export function SectionHeading({ id, label, title, intro, link }: SectionHeadingProps) {
   return (
-    <div className="mb-6 flex flex-col gap-3 sm:mb-8 md:flex-row md:items-end md:justify-between md:gap-10">
+    <Reveal className="mb-6 flex flex-col gap-3 sm:mb-8 md:flex-row md:items-end md:justify-between md:gap-10">
       <div className="flex max-w-2xl flex-col gap-2">
         <p className="ap-index">{label}</p>
         <h2 id={id} className="text-section text-ap-ink">
@@ -46,7 +48,7 @@ export function SectionHeading({ id, label, title, intro, link }: SectionHeading
           {link.label}
         </Link>
       ) : null}
-    </div>
+    </Reveal>
   )
 }
 
@@ -100,19 +102,19 @@ function CategoriesIndex({ home }: { home: Home }) {
       {categories.map((category) => {
         const Icon = categoryIcon(category.code)
         return (
-          <li key={category.id} className="border-t border-ap-line">
+          <Reveal as="li" key={category.id} className="border-t border-ap-line">
             <Link
               to={categoryPath(category.code.toLowerCase())}
               className="group flex min-h-14 items-center gap-3 py-3 transition-colors hover:text-ap-red"
             >
               <Icon className="size-5 shrink-0 text-ap-steel group-hover:text-ap-red" aria-hidden />
               <span className="min-w-0 flex-1">
-                <span className="block font-semibold text-ap-ink group-hover:text-ap-red">{humanizeCode(category.code)}</span>
+                <span className="block font-semibold text-ap-ink underline-offset-4 group-hover:text-ap-red group-hover:underline">{humanizeCode(category.code)}</span>
                 <span className="text-sm text-ap-muted tabular-nums">{pluralize(category.productCount, 'repuesto', 'repuestos')}</span>
               </span>
-              <ChevronRightIcon className="size-4 shrink-0 text-ap-steel group-hover:text-ap-red" aria-hidden />
+              <ChevronRightIcon className="ap-nudge size-4 shrink-0 text-ap-steel group-hover:text-ap-red" aria-hidden />
             </Link>
-          </li>
+          </Reveal>
         )
       })}
     </ul>
@@ -181,12 +183,12 @@ export function QuickAccessSection({ home }: { home: Home }) {
           <CategoriesIndex home={home} />
         </div>
         <div>
-          <div className="mb-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-1">
+          <Reveal className="mb-4 flex flex-wrap items-end justify-between gap-x-6 gap-y-1">
             <h3 className="text-block-title text-ap-ink">Cerca de ti</h3>
             <Link to={nearbyUrl()} className="inline-flex min-h-11 items-center text-sm font-semibold text-ap-red underline-offset-4 hover:underline">
               Ver más cerca de ti
             </Link>
-          </div>
+          </Reveal>
           <NearbyCarousel home={home} />
         </div>
       </Container>
@@ -283,7 +285,9 @@ function PlatformFigures({ home }: { home: Home }) {
       {figures.map((figure) => (
         <div key={figure.label} className="flex flex-col-reverse gap-1">
           <dt className="text-sm text-ap-muted">{figure.label}</dt>
-          <dd className="ap-price text-2xl text-ap-ink tabular-nums sm:text-3xl">{new Intl.NumberFormat('es-CO').format(figure.value)}</dd>
+          <dd className="ap-price text-2xl text-ap-ink tabular-nums sm:text-3xl">
+            <CountUp value={figure.value} />
+          </dd>
         </div>
       ))}
     </dl>
@@ -294,7 +298,7 @@ export function AboutSection({ home }: { home: Home }) {
   return (
     <section aria-labelledby="que-es-titulo" className="border-t border-ap-line bg-ap-paper py-14 sm:py-20">
       <Container className="grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-14">
-        <div className="flex flex-col gap-5">
+        <Reveal className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">
             <p className="ap-index">Plataforma / Colombia</p>
             <h2 id="que-es-titulo" className="text-section text-ap-ink">
@@ -306,16 +310,16 @@ export function AboutSection({ home }: { home: Home }) {
             precios y escríbeles por WhatsApp al más cercano.
           </p>
           <PlatformFigures home={home} />
-        </div>
+        </Reveal>
         <ul className="grid gap-x-8 gap-y-6 self-start sm:grid-cols-3 lg:grid-cols-1 lg:gap-y-0">
           {GUARANTEES.map((item) => (
-            <li key={item.title} className="flex gap-4 border-t border-ap-graphite py-5">
+            <Reveal as="li" key={item.title} className="flex gap-4 border-t border-ap-graphite py-5">
               <item.icon className="mt-0.5 size-5 shrink-0 text-ap-graphite" aria-hidden />
               <div className="flex flex-col gap-1">
                 <h3 className="text-base font-semibold text-ap-ink">{item.title}</h3>
                 <p className="text-sm text-ap-muted">{item.body}</p>
               </div>
-            </li>
+            </Reveal>
           ))}
         </ul>
       </Container>
@@ -339,7 +343,7 @@ export function SellersSection({ home }: { home: Home }) {
   return (
     <section aria-labelledby="vendedores-titulo" className="border-t border-ap-line py-14 sm:py-20">
       <Container className="grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-14">
-        <div className="flex flex-col gap-5">
+        <Reveal className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">
             <p className="ap-index">Para vendedores / Almacenes y talleres</p>
             <h2 id="vendedores-titulo" className="text-section text-ap-ink">
@@ -359,13 +363,13 @@ export function SellersSection({ home }: { home: Home }) {
               Conoce los almacenes
             </Button>
           </div>
-        </div>
+        </Reveal>
         <ul className="flex flex-col self-start">
           {SELLER_BENEFITS.map((benefit) => (
-            <li key={benefit} className="flex items-start gap-3 border-t border-ap-graphite py-4 text-ap-ink">
+            <Reveal as="li" key={benefit} className="flex items-start gap-3 border-t border-ap-graphite py-4 text-ap-ink">
               <CheckIcon className="mt-1 size-4 shrink-0 text-ap-red" aria-hidden />
               {benefit}
-            </li>
+            </Reveal>
           ))}
         </ul>
       </Container>

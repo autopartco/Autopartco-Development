@@ -1,6 +1,6 @@
 import { Button as ButtonPrimitive } from "@base-ui/react/button"
 import { cva, type VariantProps } from "class-variance-authority"
-import { LoaderCircleIcon } from "lucide-react"
+import { CheckIcon, LoaderCircleIcon } from "lucide-react"
 import { cn } from "cn"
 
 /**
@@ -14,11 +14,12 @@ import { cn } from "cn"
  * El foco lo dibuja la regla global `:focus-visible` (index.css).
  */
 const buttonVariants = cva(
-  "group/button relative inline-flex shrink-0 items-center justify-center rounded-md border border-transparent bg-clip-padding text-sm font-semibold whitespace-nowrap ap-transition-colors outline-none select-none active:not-disabled:translate-y-px disabled:pointer-events-none disabled:opacity-50 disabled:aria-busy:opacity-75 aria-invalid:border-destructive [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+  "group/button relative inline-flex shrink-0 items-center justify-center rounded-md border border-transparent bg-clip-padding text-sm font-semibold whitespace-nowrap ap-transition-colors outline-none select-none active:not-disabled:scale-97 disabled:pointer-events-none disabled:opacity-50 disabled:aria-busy:opacity-75 aria-invalid:border-destructive [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   {
     variants: {
       variant: {
-        default: "bg-ap-red text-ap-white hover:bg-ap-red-hover active:bg-ap-red-hover",
+        default:
+          "ap-sheen bg-ap-red text-ap-white hover:bg-ap-red-hover active:bg-ap-red-hover [&_svg:not(.ap-live)]:transition-transform [&_svg:not(.ap-live)]:duration-200 hover:not-disabled:[&_svg:not(.ap-live)]:translate-x-0.5",
         outline:
           "border-input bg-ap-white text-ap-graphite hover:border-ap-graphite hover:bg-ap-paper aria-expanded:bg-ap-paper",
         secondary:
@@ -49,18 +50,24 @@ const buttonVariants = cva(
 )
 
 /**
- * `loading`: acción en curso. Deshabilita el botón, marca `aria-busy` y muestra un spinner de 16px
- * centrado; el contenido sigue ocupando su sitio (invisible) para que el ancho y el alto no cambien.
+ * `loading`: acción en curso. Deshabilita el botón, marca `aria-busy` y muestra un spinner siempre en movimiento
+ * (con movimiento reducido pulsa la opacidad). Con `loadingText` el spinner va junto al texto de progreso
+ * («Ingresando…»); el contenido original sigue ocupando su sitio (invisible) para que el ancho no salte.
+ * `success`: check breve en lugar del contenido (el llamador lo apaga a los ~600 ms).
  */
 function Button({
   className,
   variant = "default",
   size = "default",
   loading = false,
+  loadingText,
+  success = false,
   disabled,
   children,
   ...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants> & { loading?: boolean }) {
+}: ButtonPrimitive.Props &
+  VariantProps<typeof buttonVariants> & { loading?: boolean; loadingText?: string; success?: boolean }) {
+  const covered = loading || success
   return (
     <ButtonPrimitive
       data-slot="button"
@@ -69,13 +76,25 @@ function Button({
       aria-busy={loading || undefined}
       {...props}
     >
-      {loading ? (
+      {covered ? (
         <>
           <span className="contents invisible">{children}</span>
-          <LoaderCircleIcon
-            className="absolute top-1/2 left-1/2 size-4 -translate-x-1/2 -translate-y-1/2 animate-spin motion-reduce:animate-none"
-            aria-hidden
-          />
+          {loading && loadingText ? (
+            <span className="absolute inset-0 inline-flex items-center justify-center gap-2 px-3" role="status">
+              <LoaderCircleIcon className="ap-spinner ap-live size-4 shrink-0" aria-hidden />
+              {loadingText}
+            </span>
+          ) : loading ? (
+            <LoaderCircleIcon
+              className="ap-spinner ap-live absolute top-1/2 left-1/2 size-4 -translate-x-1/2 -translate-y-1/2"
+              aria-hidden
+            />
+          ) : (
+            <CheckIcon
+              className="ap-check-in ap-live absolute top-1/2 left-1/2 size-4 -translate-x-1/2 -translate-y-1/2"
+              aria-hidden
+            />
+          )}
         </>
       ) : (
         children

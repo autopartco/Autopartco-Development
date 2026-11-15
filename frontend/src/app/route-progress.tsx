@@ -18,6 +18,19 @@ export function useReportPageLoading() {
   }, [])
 }
 
+/** Igual que `useReportPageLoading`, pero solo mientras `active` es verdadero (p. ej. una búsqueda en curso). */
+export function useReportBusy(active: boolean) {
+  useEffect(() => {
+    if (!active) return
+    loadingPages += 1
+    emit()
+    return () => {
+      loadingPages -= 1
+      emit()
+    }
+  }, [active])
+}
+
 function subscribe(listener: () => void) {
   listeners.add(listener)
   return () => {
@@ -25,8 +38,8 @@ function subscribe(listener: () => void) {
   }
 }
 
-/** Retardo antes de mostrar la barra: en cargas rápidas no aparece (evita parpadeo). */
-const SHOW_DELAY_MS = 150
+/** Retardo mínimo antes de mostrar la barra: casi inmediato, para que el clic tenga respuesta visible. */
+const SHOW_DELAY_MS = 40
 const FINISH_MS = 220
 
 type Phase = 'idle' | 'running' | 'finishing'

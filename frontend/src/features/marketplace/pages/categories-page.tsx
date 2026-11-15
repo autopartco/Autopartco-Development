@@ -1,6 +1,8 @@
 import { createElement } from 'react'
 import { Link } from 'react-router'
-import { ArrowRightIcon } from 'lucide-react'
+import { ArrowRightIcon, ChevronRightIcon } from 'lucide-react'
+import { CountUp } from '@/components/common/count-up'
+import { Reveal } from '@/components/common/reveal'
 import { Container, PageIntro } from '@/components/common/page-header'
 import { EmptyState, ErrorState } from '@/components/common/states'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -26,40 +28,50 @@ const linkFocus = 'focus-visible:outline-2 focus-visible:-outline-offset-2 focus
 
 function Featured({ category }: { category: HomeCategory }) {
   return (
-    <li className="border-t-2 border-ap-graphite">
+    <Reveal as="li" className="border-t-2 border-ap-graphite">
       <Link
         to={categoryPath(category.code.toLowerCase())}
         className={`group flex h-full min-h-36 flex-col justify-between gap-6 p-3 transition-colors hover:bg-ap-paper sm:p-4 ${linkFocus}`}
       >
-        <Glyph code={category.code} className="size-7 text-ap-graphite group-hover:text-ap-red" />
+        <span className="flex items-start justify-between">
+          <Glyph code={category.code} className="size-7 text-ap-graphite group-hover:text-ap-red" />
+          <ArrowRightIcon className="ap-nudge size-4 text-ap-steel group-hover:text-ap-graphite" aria-hidden />
+        </span>
         <span className="flex flex-col gap-1">
-          <span className="text-lg leading-snug font-semibold text-ap-ink group-hover:text-ap-red">{humanizeCode(category.code)}</span>
+          <span className="text-lg leading-snug font-semibold text-ap-ink underline-offset-4 group-hover:text-ap-red group-hover:underline">{humanizeCode(category.code)}</span>
           <span className="text-sm text-ap-muted tabular-nums">
-            <strong className="font-semibold text-ap-ink">{category.productCount.toLocaleString('es-CO')}</strong>{' '}
+            <strong className="font-semibold text-ap-ink"><CountUp value={category.productCount} /></strong>{' '}
             {category.productCount === 1 ? 'repuesto' : 'repuestos'}
           </span>
         </span>
       </Link>
-    </li>
+    </Reveal>
   )
 }
 
 function Compact({ category }: { category: HomeCategory }) {
   return (
-    <li className="border-t border-ap-line">
+    <Reveal as="li" className="border-t border-ap-line">
       <Link
         to={categoryPath(category.code.toLowerCase())}
         className={`group flex min-h-14 items-center gap-3 px-1 py-3 transition-colors hover:bg-ap-paper sm:px-2 ${linkFocus}`}
       >
         <Glyph code={category.code} className="size-5 shrink-0 text-ap-steel group-hover:text-ap-red" />
         <span className="min-w-0 flex-1">
-          <span className="block leading-snug font-semibold text-ap-ink group-hover:text-ap-red">{humanizeCode(category.code)}</span>
+          <span className="block leading-snug font-semibold text-ap-ink underline-offset-4 group-hover:text-ap-red group-hover:underline">{humanizeCode(category.code)}</span>
           <span className="text-sm text-ap-muted tabular-nums">
-            {category.productCount > 0 ? pluralize(category.productCount, 'repuesto', 'repuestos') : 'Sin repuestos publicados'}
+            {category.productCount > 0 ? (
+              <>
+                <CountUp value={category.productCount} /> {category.productCount === 1 ? 'repuesto' : 'repuestos'}
+              </>
+            ) : (
+              'Sin repuestos publicados'
+            )}
           </span>
         </span>
+        <ChevronRightIcon className="ap-nudge size-4 shrink-0 text-ap-steel group-hover:text-ap-red" aria-hidden />
       </Link>
-    </li>
+    </Reveal>
   )
 }
 

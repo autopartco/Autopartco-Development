@@ -64,7 +64,7 @@ function ResendSetupEmail({ applicationId }: { applicationId: string }) {
 
   return (
     <div className="flex flex-col items-start gap-2">
-      <Button variant="outline" className="h-11 gap-2 px-5" disabled={sending} onClick={() => void resend()}>
+      <Button variant="outline" className="h-11 gap-2 px-5" loading={sending} onClick={() => void resend()}>
         <MailIcon className="size-4" aria-hidden />
         {sending ? 'Enviando…' : 'Reenviarme el correo de configuración'}
       </Button>

@@ -883,7 +883,7 @@ function ProductForm({
             ))}
           </ul>
           <div>
-            <Button type="button" variant="outline" className="h-11 px-4" disabled={busy} onClick={() => void submit(mode === 'create' ? 'draft' : 'save')}>
+            <Button type="button" variant="outline" className="h-11 px-4" loading={busy} onClick={() => void submit(mode === 'create' ? 'draft' : 'save')}>
               {mode === 'create' ? 'Guardar como borrador' : 'Guardar cambios sin publicar'}
             </Button>
           </div>
@@ -911,18 +911,18 @@ function ProductForm({
           </Button>
         ) : null}
         {mode === 'edit' && step !== 'revision' ? (
-          <Button type="button" variant="outline" className="h-11 px-4" disabled={busy} onClick={() => void submit('save')}>
+          <Button type="button" variant="outline" className="h-11 px-4" loading={busy} onClick={() => void submit('save')}>
             <SaveIcon aria-hidden />
             {label('save', 'Guardar cambios')}
           </Button>
         ) : null}
         {step === 'revision' && mode === 'create' ? (
           <>
-            <Button type="button" variant="outline" className="h-11 px-4" disabled={busy} onClick={() => void submit('draft')}>
+            <Button type="button" variant="outline" className="h-11 px-4" loading={busy} onClick={() => void submit('draft')}>
               {label('draft', 'Guardar borrador')}
             </Button>
             {canPublish ? (
-              <Button type="button" className="h-11 px-4" disabled={busy} onClick={() => void submit('publish')}>
+              <Button type="button" className="h-11 px-4" loading={busy} onClick={() => void submit('publish')}>
                 {label('publish', 'Crear y publicar')}
               </Button>
             ) : null}
@@ -930,16 +930,16 @@ function ProductForm({
         ) : null}
         {step === 'revision' && mode === 'edit' ? (
           <>
-            <Button type="button" variant={published || !canPublish ? 'default' : 'outline'} className="h-11 px-4" disabled={busy} onClick={() => void submit('save')}>
+            <Button type="button" variant={published || !canPublish ? 'default' : 'outline'} className="h-11 px-4" loading={busy} onClick={() => void submit('save')}>
               {label('save', 'Guardar cambios')}
             </Button>
             {canPublish && !published ? (
-              <Button type="button" className="h-11 px-4" disabled={busy} onClick={() => void submit('publish')}>
+              <Button type="button" className="h-11 px-4" loading={busy} onClick={() => void submit('publish')}>
                 {label('publish', 'Guardar y publicar')}
               </Button>
             ) : null}
             {canPublish && published ? (
-              <Button type="button" variant="outline" className="h-11 px-4" disabled={busy} onClick={() => void submit('unpublish')}>
+              <Button type="button" variant="outline" className="h-11 px-4" loading={busy} onClick={() => void submit('unpublish')}>
                 {label('unpublish', 'Retirar del marketplace')}
               </Button>
             ) : null}

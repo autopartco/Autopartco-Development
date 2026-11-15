@@ -84,8 +84,8 @@ export function TwoFactorStep({ challenge, onSession, onCancel }: TwoFactorStepP
         {error ? <FormAlert title={error} /> : null}
         {notice ? <FormAlert tone="info" title={notice} /> : null}
         <TextField id="dospasos-code" name="code" label="Código" inputMode="numeric" autoComplete="one-time-code" maxLength={12} required />
-        <Button type="submit" className="h-11" disabled={busy}>
-          {verify.pending ? 'Validando…' : 'Ingresar'}
+        <Button type="submit" className="h-11" loading={busy} loadingText="Validando…">
+          Ingresar
         </Button>
       </form>
       <div className="flex flex-wrap gap-2">

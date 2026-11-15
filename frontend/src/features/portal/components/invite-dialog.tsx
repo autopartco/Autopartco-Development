@@ -113,8 +113,8 @@ function InviteForm({ onDone, onCancel, onDirtyChange }: InviteFormProps) {
         <Button type="button" variant="outline" className="h-11 px-4" disabled={pending} onClick={onCancel}>
           Cancelar
         </Button>
-        <Button type="submit" className="h-11 px-4" disabled={pending}>
-          {pending ? 'Enviando…' : 'Enviar invitación'}
+        <Button type="submit" className="h-11 px-4" loading={pending} loadingText="Enviando…">
+          Enviar invitación
         </Button>
       </DialogFooter>
       <UnsavedChangesDialog blocker={blocker} />

@@ -131,8 +131,8 @@ export default function PasswordRecoveryPage() {
               required
               error={errors.email}
             />
-            <Button type="submit" disabled={submitting}>
-              {submitting ? 'Enviando…' : 'Enviar código'}
+            <Button type="submit" loading={submitting} loadingText="Enviando…">
+              Enviar código
             </Button>
             <button
               type="button"
@@ -181,8 +181,8 @@ export default function PasswordRecoveryPage() {
               required
               error={errors.confirm}
             />
-            <Button type="submit" disabled={submitting}>
-              {submitting ? 'Guardando…' : 'Cambiar contraseña'}
+            <Button type="submit" loading={submitting} loadingText="Guardando…">
+              Cambiar contraseña
             </Button>
             <button
               type="button"

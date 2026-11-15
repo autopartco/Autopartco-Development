@@ -40,8 +40,8 @@ interface CheckoutSummaryProps {
 
 export function PayButton({ total, canPay, busy, onPay, className }: Pick<CheckoutSummaryProps, 'total' | 'canPay' | 'busy' | 'onPay'> & { className?: string }) {
   return (
-    <Button type="button" size="lg" className={cn('w-full', className)} disabled={!canPay || busy} aria-busy={busy || undefined} onClick={onPay}>
-      {busy ? 'Procesando el pago…' : `Pagar ${formatCOP(total)}`}
+    <Button type="button" size="lg" className={cn('w-full', className)} loading={busy} loadingText="Procesando el pago…" disabled={!canPay} onClick={onPay}>
+      {`Pagar ${formatCOP(total)}`}
     </Button>
   )
 }

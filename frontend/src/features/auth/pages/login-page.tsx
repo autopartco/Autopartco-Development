@@ -170,8 +170,8 @@ export default function LoginPage() {
             ¿Olvidaste tu contraseña?
           </Link>
         </div>
-        <Button type="submit" className="w-full sm:w-auto sm:self-start" disabled={submitting}>
-          {submitting ? 'Ingresando…' : 'Ingresar'}
+        <Button type="submit" className="w-full sm:w-auto sm:self-start" loading={submitting} loadingText="Ingresando…">
+          Ingresar
         </Button>
         <p className="border-t border-ap-line pt-4 text-sm text-ap-muted">
           ¿Aún no tienes cuenta?{' '}

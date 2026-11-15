@@ -323,7 +323,7 @@ function ReviewForm({ target, targetName, orders = [], existing, onDone, onClose
         <div role="group" aria-label="Confirmar borrado" className="flex flex-col gap-3 rounded-md border border-ap-danger/30 bg-ap-danger-soft p-3">
           <p className="text-sm font-medium text-ap-ink">¿Borrar tu reseña? Dejará de verse y no se puede deshacer.</p>
           <div className="flex flex-wrap gap-2">
-            <Button type="button" variant="destructive" className="h-11 px-4" disabled={pending} onClick={() => void confirmDiscard()}>
+            <Button type="button" variant="destructive" className="h-11 px-4" loading={pending} onClick={() => void confirmDiscard()}>
               {discard.pending ? 'Borrando…' : 'Sí, borrar mi reseña'}
             </Button>
             <Button type="button" variant="outline" className="h-11 px-4" disabled={pending} onClick={() => setConfirmingDiscard(false)}>
@@ -371,7 +371,7 @@ function Actions({
         {readOnly ? 'Cerrar' : 'Ahora no'}
       </Button>
       {readOnly ? null : (
-        <Button type="submit" className="h-11 px-5" disabled={pending}>
+        <Button type="submit" className="h-11 px-5" loading={pending}>
           {saving ? 'Guardando…' : editing ? 'Guardar cambios' : 'Publicar reseña'}
         </Button>
       )}

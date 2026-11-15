@@ -130,7 +130,7 @@ function MobileMenu({ className }: { className?: string }) {
 export function SiteHeader() {
   const { pathname } = useLocation()
   return (
-    <header className="ap-surface-dark sticky top-0 z-40 bg-ap-graphite">
+    <header className="ap-surface-dark sticky top-0 z-40 bg-ap-graphite" style={{ viewTransitionName: 'site-header' }}>
       <Container className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-2 [grid-template-areas:'logo_actions'_'search_search'] xl:h-16 xl:grid-cols-[auto_minmax(12rem,1fr)_auto_auto] xl:gap-x-4 xl:[grid-template-areas:'logo_search_nav_actions']">
         <div className="flex h-14 items-center [grid-area:logo] xl:h-auto">
           <Logo tone="dark" compact />

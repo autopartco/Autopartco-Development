@@ -202,7 +202,7 @@ function CustomersView({
                 Quitar filtro
               </Button>
             ) : null}
-            <Button variant="outline" className="h-11 px-4" disabled={exporting} onClick={() => void exportCsv()}>
+            <Button variant="outline" className="h-11 px-4" loading={exporting} onClick={() => void exportCsv()}>
               <DownloadIcon aria-hidden />
               {exporting ? 'Preparando archivo…' : 'Exportar CSV con autorización de correo'}
             </Button>

@@ -96,8 +96,8 @@ function AskForm({ productId, productName }: { productId: string; productName: s
         }
       />
       <div>
-        <Button type="submit" className="h-11 px-5" disabled={submit.pending}>
-          {submit.pending ? 'Enviando…' : 'Enviar pregunta'}
+        <Button type="submit" className="h-11 px-5" loading={submit.pending} loadingText="Enviando…">
+          Enviar pregunta
         </Button>
       </div>
     </form>

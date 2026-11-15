@@ -39,7 +39,7 @@ function InvoiceDownload({ orderId, saleId, fileName }: { orderId: string; saleI
     }
   }
   return (
-    <Button variant="outline" size="sm" className="h-11 w-fit sm:h-9" disabled={busy} onClick={() => void download()}>
+    <Button variant="outline" size="sm" className="h-11 w-fit sm:h-9" loading={busy} onClick={() => void download()}>
       <FileDownIcon aria-hidden />
       {busy ? 'Descargando…' : 'Descargar factura'}
       <span className="sr-only"> ({fileName})</span>
@@ -62,7 +62,7 @@ function ReceiptButton({ orderId }: { orderId: string }) {
     }
   }
   return (
-    <Button variant="outline" disabled={busy} onClick={() => void open()}>
+    <Button variant="outline" loading={busy} onClick={() => void open()}>
       <ReceiptTextIcon aria-hidden />
       {busy ? 'Abriendo…' : 'Ver comprobante de compra'}
     </Button>

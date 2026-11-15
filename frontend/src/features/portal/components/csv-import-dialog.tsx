@@ -134,7 +134,7 @@ function ImportForm({ onClose }: { onClose: () => void }) {
           Cancelar
         </Button>
         {canConfirm ? (
-          <Button type="button" className="h-11 px-4" disabled={busy} onClick={() => void confirm()}>
+          <Button type="button" className="h-11 px-4" loading={busy} onClick={() => void confirm()}>
             {apply.pending ? 'Importando…' : `Confirmar importación (${pluralize(preview.updated, 'fila', 'filas')})`}
           </Button>
         ) : (

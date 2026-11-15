@@ -80,8 +80,8 @@ export function NoteDecisionDialog({ booking, open, onOpenChange, onSubmit, kind
           <Button type="button" variant="outline" className="h-11 px-4" disabled={send.pending} onClick={() => onOpenChange(false)}>
             Volver
           </Button>
-          <Button type="button" variant="destructive" className="h-11 px-4" disabled={send.pending} onClick={() => void confirm()}>
-            {send.pending ? 'Enviando…' : reject ? 'Rechazar solicitud' : 'Cancelar cita'}
+          <Button type="button" variant="destructive" className="h-11 px-4" loading={send.pending} loadingText="Enviando…" onClick={() => void confirm()}>
+            {reject ? 'Rechazar solicitud' : 'Cancelar cita'}
           </Button>
         </DialogFooter>
       </DialogContent>
