@@ -23,6 +23,7 @@ import { ApiError } from '@/lib/api'
 import { formatCOP, formatNumber } from '@/lib/format'
 import { invalidateAsync } from '@/lib/use-async'
 import { getStoreBookingsService, type BookingDecisionBody, type StoreBooking, type StoreBookingAction } from '../api/store-bookings-service'
+import { ConfirmDialog } from '../components/confirm-dialog'
 import { NoteDecisionDialog, ProposeDialog } from '../components/booking-decision-dialogs'
 import { SelectField } from '../components/form-controls'
 import { ListSkeleton } from '../components/list-skeleton'
@@ -52,6 +53,27 @@ const ACTION_LABEL: Record<StoreBookingAction, string> = {
   cancel: 'Cancelar cita',
   complete: 'Marcar atendida',
   'no-show': 'No asistió',
+}
+
+type QuickAction = 'confirm' | 'complete' | 'no-show'
+
+/** Texto de la confirmación de las acciones que no piden nota. */
+const QUICK_COPY: Record<QuickAction, { title: string; confirm: string; description: (buyer?: string) => string }> = {
+  confirm: {
+    title: '¿Confirmar',
+    confirm: 'Confirmar cita',
+    description: (buyer) => `${buyer ?? 'El cliente'} recibirá un aviso de que su cita quedó confirmada y ese horario se reserva para él.`,
+  },
+  complete: {
+    title: '¿Marcar como atendida',
+    confirm: 'Marcar atendida',
+    description: (buyer) => `Cerraremos la cita como atendida${buyer ? ` para ${buyer}` : ''}. No se puede deshacer.`,
+  },
+  'no-show': {
+    title: '¿Marcar que no asistió a',
+    confirm: 'Marcar no asistió',
+    description: (buyer) => `Registraremos que ${buyer ?? 'el cliente'} no llegó a la cita y la cerraremos. No se puede deshacer.`,
+  },
 }
 
 function Detail({ term, children }: { term: string; children: React.ReactNode }) {
@@ -163,6 +185,7 @@ export default function PortalBookingsPage() {
   const canManage = can('BOOKING_MANAGE')
   const [dialog, setDialog] = useState<Dialog>()
   const [busyId, setBusyId] = useState<string>()
+  const [quick, setQuick] = useState<{ action: StoreBookingAction; booking: StoreBooking }>()
   const [now, setNow] = useState(() => Date.now())
   useEffect(() => {
     const timer = setInterval(() => setNow(Date.now()), 60_000)
@@ -219,9 +242,10 @@ export default function PortalBookingsPage() {
       setDialog({ kind: action, booking })
       return
     }
-    const message = await decide(booking, action)
-    if (message) toast.error(message)
+    setQuick({ action, booking })
   }
+
+  const quickCopy = quick ? QUICK_COPY[quick.action as QuickAction] : undefined
 
   const branchOptions = activeBranches.map((branch) => ({ value: branch.id, label: branch.name }))
 
@@ -331,6 +355,21 @@ export default function PortalBookingsPage() {
           )
         }}
       </QueryBoundary>
+      <ConfirmDialog
+        open={quick !== undefined}
+        onOpenChange={(open) => !open && setQuick(undefined)}
+        title={quick && quickCopy ? `${quickCopy.title} la cita ${quick.booking.code}?` : ''}
+        description={quick && quickCopy ? `${quickCopy.description(quick.booking.buyer?.name)}` : ''}
+        confirmLabel={quickCopy?.confirm ?? ''}
+        loadingText="Guardando…"
+        destructive={quick?.action === 'no-show'}
+        errorMessage={(error) => (error instanceof Error ? error.message : 'No pudimos actualizar la cita. Inténtalo de nuevo.')}
+        onConfirm={async () => {
+          if (!quick) return
+          const message = await decide(quick.booking, quick.action)
+          if (message) throw new Error(message)
+        }}
+      />
       {dialog && dialog.kind !== 'propose' ? (
         <NoteDecisionDialog
           key={`${dialog.kind}-${dialog.booking.id}`}

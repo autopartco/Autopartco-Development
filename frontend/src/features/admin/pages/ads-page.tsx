@@ -8,6 +8,7 @@ import { Button, buttonVariants } from '@/components/ui/button'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { formatCOP, pluralize } from '@/lib/format'
 import { invalidateAsync, useAsync } from '@/lib/use-async'
+import { ConfirmDialog } from '@/features/portal/components/confirm-dialog'
 import { StatusBadge } from '@/features/portal/components/status-badge'
 import { SelectField, TextAreaField } from '@/features/portal/components/form-controls'
 import type { AdCampaign, AdCampaignStatus, AdPlacementPrice } from '@/features/portal/api/ads-api'
@@ -124,6 +125,7 @@ export default function AdminAdsPage() {
   const campaigns = useAsync(`${PREFIX}list:${filters.status ?? ''}:${storeId ?? ''}`, () => adminAdsApi.list(filters.status, storeId))
   const prices = useAsync(`${PREFIX}prices`, () => adminAdsApi.prices())
   const [rejecting, setRejecting] = useState<AdCampaign>()
+  const [pausing, setPausing] = useState<AdCampaign>()
   const [editingPrices, setEditingPrices] = useState(false)
   const [busyId, setBusyId] = useState<string>()
 
@@ -199,7 +201,7 @@ export default function AdminAdsPage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               {canPause ? (
-                <DropdownMenuItem onClick={() => void run(row, () => adminAdsApi.pause(row.id), 'Pausaste la campaña.')}>
+                <DropdownMenuItem onClick={() => setPausing(row)}>
                   <PauseIcon aria-hidden />
                   Pausar
                 </DropdownMenuItem>
@@ -295,6 +297,17 @@ export default function AdminAdsPage() {
         </AdminSection>
       </div>
       <RejectSheet campaign={rejecting} onClose={() => setRejecting(undefined)} />
+      <ConfirmDialog
+        open={pausing !== undefined}
+        onOpenChange={(open) => !open && setPausing(undefined)}
+        title={`¿Pausar “${pausing?.name ?? 'la campaña'}”?`}
+        description="Los anuncios del almacén dejan de mostrarse y el almacén no podrá reanudarla; solo tú. Puedes reanudarla cuando quieras."
+        confirmLabel="Pausar campaña"
+        loadingText="Pausando…"
+        onConfirm={async () => {
+          if (pausing) await run(pausing, () => adminAdsApi.pause(pausing.id), 'Pausaste la campaña.')
+        }}
+      />
     </AdminPage>
   )
 }

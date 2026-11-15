@@ -18,6 +18,10 @@ interface ConfirmDialogProps {
   title: string
   description: ReactNode
   confirmLabel: string
+  /** Texto del botón mientras trabaja (por defecto «Procesando…»). */
+  loadingText?: string
+  /** Traduce el error de la acción a un texto propio (por defecto, el mensaje genérico de la API). */
+  errorMessage?: (error: unknown) => string
   /** Estilo destructivo para borrar o desactivar. */
   destructive?: boolean
   /** Si rechaza, el diálogo sigue abierto y muestra el motivo. */
@@ -28,7 +32,7 @@ interface ConfirmDialogProps {
  * Confirmación de acciones con consecuencias (borrar, desactivar, cancelar). El foco entra al
  * diálogo y vuelve al botón que lo abrió (lo gestiona Base UI). No se cierra mientras trabaja.
  */
-export function ConfirmDialog({ open, onOpenChange, title, description, confirmLabel, destructive, onConfirm }: ConfirmDialogProps) {
+export function ConfirmDialog({ open, onOpenChange, title, description, confirmLabel, loadingText, errorMessage, destructive, onConfirm }: ConfirmDialogProps) {
   // Candado síncrono: un segundo clic en el mismo tick no repite la acción.
   const confirm = useSubmitOnce(onConfirm)
   const pending = confirm.pending
@@ -38,7 +42,7 @@ export function ConfirmDialog({ open, onOpenChange, title, description, confirmL
     setError(undefined)
     const result = await confirm.run()
     if (result.status === 'ok') onOpenChange(false)
-    else if (result.status === 'error') setError(actionErrorMessage(result.error, 'No pudimos completar la acción. Inténtalo de nuevo.'))
+    else if (result.status === 'error') setError(errorMessage ? errorMessage(result.error) : actionErrorMessage(result.error, 'No pudimos completar la acción. Inténtalo de nuevo.'))
   }
 
   return (
@@ -66,7 +70,7 @@ export function ConfirmDialog({ open, onOpenChange, title, description, confirmL
             variant={destructive ? 'destructive' : 'default'}
             className="h-11 px-4"
             loading={pending}
-            loadingText="Procesando…"
+            loadingText={loadingText ?? 'Procesando…'}
             onClick={() => void handleConfirm()}
           >
             {confirmLabel}

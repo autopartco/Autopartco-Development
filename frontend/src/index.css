@@ -392,22 +392,18 @@
 
 /* Brillo del botón primario: un barrido de luz al 10 % al pasar el cursor (una vez por pasada). */
 @keyframes ap-sheen {
-    from { transform: translateX(0); }
-    to { transform: translateX(200%); }
+    from { background-position: 150% 0; }
+    to { background-position: -50% 0; }
 }
+/* Brillo de una sola pasada al pasar el cursor por el botón primario. Es un fondo animado (no un pseudo-elemento),
+   así el botón no necesita overflow:hidden y nunca recorta insignias ni contenido que sobresalga. */
 @utility ap-sheen {
-    overflow: hidden;
-    &::after {
-        content: '';
-        pointer-events: none;
-        position: absolute;
-        inset-block: 0;
-        left: -100%;
-        width: 100%;
-        background-image: linear-gradient(105deg, transparent 30%, rgb(255 255 255 / 0.1) 50%, transparent 70%);
-    }
+    background-image: linear-gradient(105deg, transparent 40%, rgb(255 255 255 / 0.12) 50%, transparent 60%);
+    background-size: 250% 100%;
+    background-repeat: no-repeat;
+    background-position: 150% 0;
     @media (hover: hover) {
-        &:hover:not(:disabled)::after {
+        &:hover:not(:disabled) {
             animation: ap-sheen 600ms var(--ap-ease-out) both;
         }
     }

@@ -106,6 +106,8 @@ function ProductsView({ rows }: { rows: ProductRow[] }) {
   const [selected, setSelected] = useState<Set<string>>(() => new Set())
   const [bulkBusy, setBulkBusy] = useState<ProductBulkAction>()
   const [confirmBulkDelete, setConfirmBulkDelete] = useState(false)
+  const [toRetire, setToRetire] = useState<ProductRow>()
+  const [bulkPublish, setBulkPublish] = useState<'PUBLISH' | 'UNPUBLISH'>()
   const [priceOpen, setPriceOpen] = useState(false)
   const [outcome, setOutcome] = useState<BulkOutcome>()
 
@@ -329,7 +331,7 @@ function ProductsView({ rows }: { rows: ProductRow[] }) {
               Editar
             </DropdownMenuItem>
             {canPublish ? (
-              <DropdownMenuItem disabled={busyId === row.id} onClick={() => void setPublished(row, row.state !== 'ACTIVE')}>
+              <DropdownMenuItem disabled={busyId === row.id} onClick={() => (row.state === 'ACTIVE' ? setToRetire(row) : void setPublished(row, true))}>
                 {row.state === 'ACTIVE' ? <EyeOffIcon aria-hidden /> : <EyeIcon aria-hidden />}
                 {row.state === 'ACTIVE' ? 'Retirar del marketplace' : 'Publicar'}
               </DropdownMenuItem>
@@ -417,11 +419,11 @@ function ProductsView({ rows }: { rows: ProductRow[] }) {
           <div className="flex flex-wrap gap-2 sm:ml-auto">
             {canPublish ? (
               <>
-                <Button variant="outline" className="h-11 px-4" disabled={busy || tooMany} onClick={() => void publishSelected('PUBLISH')}>
+                <Button variant="outline" className="h-11 px-4" disabled={busy || tooMany} onClick={() => setBulkPublish('PUBLISH')}>
                   <EyeIcon aria-hidden />
                   {bulkBusy === 'PUBLISH' ? 'Publicando…' : 'Publicar'}
                 </Button>
-                <Button variant="outline" className="h-11 px-4" disabled={busy || tooMany} onClick={() => void publishSelected('UNPUBLISH')}>
+                <Button variant="outline" className="h-11 px-4" disabled={busy || tooMany} onClick={() => setBulkPublish('UNPUBLISH')}>
                   <EyeOffIcon aria-hidden />
                   {bulkBusy === 'UNPUBLISH' ? 'Retirando…' : 'Retirar'}
                 </Button>
@@ -478,6 +480,40 @@ function ProductsView({ rows }: { rows: ProductRow[] }) {
           invalidateStore()
           toast.success(`Eliminaste “${toDelete.name}”.`)
           focusMain()
+        }}
+      />
+
+      <ConfirmDialog
+        open={toRetire !== undefined}
+        onOpenChange={(open) => !open && setToRetire(undefined)}
+        title={`¿Retirar “${toRetire?.name ?? ''}” del marketplace?`}
+        description="Los compradores dejarán de verlo y de poder comprarlo. No se borra: puedes volver a publicarlo cuando quieras."
+        confirmLabel="Retirar producto"
+        loadingText="Retirando…"
+        destructive
+        onConfirm={async () => {
+          if (toRetire) await setPublished(toRetire, false)
+        }}
+      />
+
+      <ConfirmDialog
+        open={bulkPublish !== undefined}
+        onOpenChange={(open) => !open && setBulkPublish(undefined)}
+        title={
+          bulkPublish === 'PUBLISH'
+            ? `¿Publicar ${count === 1 ? 'el producto seleccionado' : `${count} productos`}?`
+            : `¿Retirar ${count === 1 ? 'el producto seleccionado' : `${count} productos`} del marketplace?`
+        }
+        description={
+          bulkPublish === 'PUBLISH'
+            ? 'Los compradores podrán verlos y comprarlos en el marketplace. Los que no cumplan los requisitos se omiten y verás el detalle.'
+            : 'Los compradores dejarán de verlos y de poder comprarlos. No se borran: puedes volver a publicarlos cuando quieras.'
+        }
+        confirmLabel={bulkPublish === 'PUBLISH' ? 'Publicar' : 'Retirar'}
+        loadingText={bulkPublish === 'PUBLISH' ? 'Publicando…' : 'Retirando…'}
+        destructive={bulkPublish === 'UNPUBLISH'}
+        onConfirm={async () => {
+          if (bulkPublish) await publishSelected(bulkPublish)
         }}
       />
 

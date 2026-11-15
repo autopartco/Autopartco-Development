@@ -6,6 +6,7 @@ import { FormAlert, PasswordField } from '@/components/common/form-fields'
 import { ErrorState } from '@/components/common/states'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
+import { ConfirmDialog } from '@/features/portal/components/confirm-dialog'
 import { ApiError } from '@/lib/api'
 import { saveBlob } from '@/lib/download'
 import { invalidateAsync, useAsync } from '@/lib/use-async'
@@ -44,6 +45,7 @@ function DeletionSection() {
   const [open, setOpen] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string>()
+  const [confirmCancel, setConfirmCancel] = useState(false)
   // Cuentas de Google sin contraseña: basta la sesión (la solicitud se puede cancelar y se avisa por correo).
   const passwordSet = profile.data?.passwordSet !== false
 
@@ -93,9 +95,18 @@ function DeletionSection() {
           <FormAlert tone="info" title="Solicitud en revisión">
             La enviaste el {new Intl.DateTimeFormat('es-CO', { dateStyle: 'long' }).format(new Date(request.data!.createdAt))}. Puedes cancelarla mientras no se procese.
           </FormAlert>
-          <Button variant="outline" className="h-11 w-fit" loading={busy} onClick={() => void cancel()}>
+          <Button variant="outline" className="h-11 w-fit" loading={busy} onClick={() => setConfirmCancel(true)}>
             Cancelar solicitud
           </Button>
+          <ConfirmDialog
+            open={confirmCancel}
+            onOpenChange={setConfirmCancel}
+            title="¿Cancelar la solicitud de eliminación?"
+            description="Tu cuenta y tus datos se quedan como están y la solicitud deja de estar en revisión. Si cambias de idea, puedes pedirla de nuevo."
+            confirmLabel="Cancelar solicitud"
+            loadingText="Cancelando…"
+            onConfirm={cancel}
+          />
         </div>
       ) : open ? (
         <form noValidate onSubmit={(event) => void submit(event)} className="grid max-w-md gap-4">
