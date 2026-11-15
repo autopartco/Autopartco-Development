@@ -16,6 +16,8 @@ import {
   AdminReviewsPage,
   AdminRoot,
   BenefitsPage,
+  BookingDetailPage,
+  BookingsPage,
   CartPage,
   CategoriesPage,
   CategoryPage,
@@ -128,6 +130,9 @@ export const router = createBrowserRouter([
           // Beneficios del comprador (GET /marketplace/me/benefits): exigen sesión.
           { path: 'mis-beneficios', element: <RequireSession fallback={<PageFallback />}><BenefitsPage /></RequireSession> },
           { path: 'mis-pedidos/:id', element: <RequireSession fallback={<PageFallback />}><OrderDetailPage /></RequireSession> },
+          // Mis citas de servicios (GET /bookings): exigen sesión; el servidor solo devuelve las del titular.
+          { path: 'mis-citas', element: <RequireSession fallback={<PageFallback />}><BookingsPage /></RequireSession> },
+          { path: 'mis-citas/:id', element: <RequireSession fallback={<PageFallback />}><BookingDetailPage /></RequireSession> },
           // Reseñas pendientes (GET /account/reviews/pending); el correo de invitación enlaza con ?pedido=.
           {
             path: 'cuenta',

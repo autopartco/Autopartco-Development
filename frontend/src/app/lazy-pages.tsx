@@ -40,6 +40,8 @@ export const AccountSecurityPage = lazy(() => import('@/features/account/pages/s
 export const AccountAddressesPage = lazy(() => import('@/features/account/pages/addresses-page'))
 export const AccountPreferencesPage = lazy(() => import('@/features/account/pages/preferences-page'))
 export const AccountPrivacyPage = lazy(() => import('@/features/account/pages/privacy-page'))
+export const BookingsPage = lazy(() => import('@/features/account/pages/bookings-page'))
+export const BookingDetailPage = lazy(() => import('@/features/account/pages/booking-detail-page'))
 export const OrderDetailPage = lazy(() => import('@/features/orders/pages/order-detail-page'))
 // Reseñas pendientes del comprador (enlace del correo de invitación: /cuenta/calificar?pedido=).
 export const RatePage = lazy(() => import('@/features/reviews/pages/rate-page'))

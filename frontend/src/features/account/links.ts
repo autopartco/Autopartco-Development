@@ -1,4 +1,4 @@
-import { BellIcon, KeyRoundIcon, LayoutGridIcon, MapPinIcon, PackageIcon, ShieldIcon, SlidersHorizontalIcon, StarIcon, UserRoundIcon, type LucideIcon } from 'lucide-react'
+import { BellIcon, CalendarCheckIcon, KeyRoundIcon, LayoutGridIcon, MapPinIcon, PackageIcon, ShieldIcon, SlidersHorizontalIcon, StarIcon, UserRoundIcon, type LucideIcon } from 'lucide-react'
 
 export interface AccountLink {
   to: string
@@ -20,6 +20,7 @@ export const ACCOUNT_LINKS: AccountLink[] = [
 /** Accesos de compra que también viven en la cuenta (páginas propias). */
 export const ACCOUNT_SHORTCUTS: AccountLink[] = [
   { to: '/mis-pedidos', label: 'Mis pedidos', icon: PackageIcon },
+  { to: '/mis-citas', label: 'Mis citas', icon: CalendarCheckIcon },
   { to: '/cuenta/calificar', label: 'Por calificar', icon: StarIcon },
   { to: '/cuenta/notificaciones', label: 'Notificaciones', icon: BellIcon },
 ]

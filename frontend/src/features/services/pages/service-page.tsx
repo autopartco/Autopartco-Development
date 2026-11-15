@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router'
-import { ClockIcon, InfoIcon } from 'lucide-react'
+import { ClockIcon } from 'lucide-react'
 import { Breadcrumbs, Container } from '@/components/common/page-header'
 import { ErrorState } from '@/components/common/states'
 import { SmartImage } from '@/components/common/smart-image'
@@ -14,6 +14,7 @@ import { storePath } from '@/features/marketplace/lib/paths'
 import { NotFoundContent } from '@/features/marketplace/pages/not-found-page'
 import { trackView } from '@/lib/visibility'
 import type { ServiceDetail } from '../api/types'
+import { BookingFlow } from '../components/booking-flow/booking-flow'
 import { ServiceActions } from '../components/service-actions'
 import { ServiceCard, ServiceGrid, ServicePrice } from '../components/service-card'
 import { useService } from '../hooks'
@@ -69,6 +70,8 @@ function ServiceDetailView({ service }: { service: ServiceDetail }) {
         ]}
       />
 
+      {wantsBooking ? <BookingFlow service={service} /> : null}
+
       <header className="mb-6 flex flex-col gap-2 sm:mb-8">
         <p className="ap-index flex items-center gap-1.5">
           <CategoryIcon category={service.category} className="size-3.5 shrink-0" />
@@ -102,12 +105,6 @@ function ServiceDetailView({ service }: { service: ServiceDetail }) {
             </p>
             {service.bookingEnabled ? <Badge variant="info">Agenda en línea disponible</Badge> : null}
           </div>
-          {wantsBooking ? (
-            <p role="status" className="flex items-start gap-2 border-l-2 border-ap-info bg-ap-info-soft px-4 py-3 text-sm text-ap-ink">
-              <InfoIcon className="mt-0.5 size-4 shrink-0 text-ap-info" aria-hidden />
-              Estamos habilitando la agenda en línea. Por ahora escribe por WhatsApp o ve a la sede para pedir tu cita.
-            </p>
-          ) : null}
           <ServiceActions service={service} />
         </aside>
 
