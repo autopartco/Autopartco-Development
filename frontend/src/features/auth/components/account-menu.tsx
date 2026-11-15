@@ -209,14 +209,15 @@ export function MobileMenuAccount({ onNavigate }: { onNavigate: () => void }) {
         <Button
           variant="outline"
           className="h-11 justify-start gap-2"
-          disabled={pending}
+          loading={pending}
+          loadingText="Cerrando sesión…"
           onClick={async () => {
             await leave()
             onNavigate()
           }}
         >
           <LogOutIcon aria-hidden />
-          {pending ? 'Cerrando sesión…' : 'Cerrar sesión'}
+          Cerrar sesión
         </Button>
       </div>
     )

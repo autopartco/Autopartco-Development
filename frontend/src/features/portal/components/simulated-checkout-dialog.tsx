@@ -162,8 +162,8 @@ function CheckoutForm({ storeId, plan, subscription, onPaid, onClose }: Omit<Che
 
       <DialogFooter>
         <DialogClose render={<Button type="button" variant="outline" className="h-11 px-4" disabled={pending} />}>Cancelar</DialogClose>
-        <Button type="submit" className="h-11 px-4" disabled={pending || (!simulated && !wompi)}>
-          {pending ? 'Procesando…' : simulated ? `Pagar ${formatCOP(estimate)} (prueba)` : 'Continuar a Wompi'}
+        <Button type="submit" className="h-11 px-4" loading={pending} loadingText="Procesando…" disabled={!simulated && !wompi}>
+          {simulated ? `Pagar ${formatCOP(estimate)} (prueba)` : 'Continuar a Wompi'}
         </Button>
       </DialogFooter>
     </form>

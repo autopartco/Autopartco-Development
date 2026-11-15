@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from 'react'
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type CSSProperties, type KeyboardEvent } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router'
 import { LoaderCircleIcon, SearchIcon, XIcon } from 'lucide-react'
 import { useMapArea } from '@/features/location/hooks'
@@ -24,6 +24,9 @@ interface SearchBoxProps {
   /** Vehículo elegido al lado de la caja (inicio): se añade a la URL de `/buscar`. */
   vehicle?: { makeId?: string; modelId?: string; versionId?: string }
 }
+
+/** Escalonado corto de las sugerencias: 25 ms por grupo. */
+const groupDelay = (index: number) => ({ '--ap-delay': `${index * 25}ms` }) as CSSProperties
 
 const KIND_LABEL: Record<SuggestionKind, string> = {
   CATEGORY: 'Categoría',
@@ -255,11 +258,11 @@ export function SearchBox({ className, tone = 'light', autoFocus, shortcut, size
     <form ref={containerRef} role="search" onSubmit={handleSubmit} className={cn('relative w-full min-w-0', className)}>
       <div
         className={cn(
-          'group flex w-full min-w-0 items-center overflow-hidden rounded-md border transition-[background-color,border-color] duration-150',
+          'group group/search flex w-full min-w-0 items-center overflow-hidden rounded-md border transition-[background-color,border-color,box-shadow] duration-200 ease-ap-out',
           size === 'lg' ? 'h-14' : 'h-11 xl:h-10',
           dark
-            ? 'border-white/15 bg-white/10 hover:bg-white/15 focus-within:border-transparent focus-within:bg-white focus-within:ring-2 focus-within:ring-ap-red-on-dark focus-within:hover:bg-white'
-            : 'border-input bg-ap-white focus-within:border-ap-graphite focus-within:ring-2 focus-within:ring-ap-red',
+            ? 'border-white/15 bg-white/10 hover:bg-white/15 focus-within:border-ap-red-on-dark focus-within:bg-white focus-within:ring-2 focus-within:ring-ap-red-on-dark focus-within:hover:bg-white'
+            : 'border-input bg-ap-white focus-within:border-ap-red focus-within:ring-2 focus-within:ring-ap-red',
         )}
       >
         <label htmlFor={`${uid}-input`} className="sr-only">
@@ -267,7 +270,7 @@ export function SearchBox({ className, tone = 'light', autoFocus, shortcut, size
         </label>
         <SearchIcon
           className={cn(
-            'pointer-events-none ml-3.5 size-4 shrink-0 transition-colors',
+            'ap-search-icon pointer-events-none ml-3.5 size-4 shrink-0',
             dark ? 'text-ap-on-dark-muted group-focus-within:text-muted-foreground' : 'text-muted-foreground',
           )}
           aria-hidden
@@ -360,7 +363,7 @@ export function SearchBox({ className, tone = 'light', autoFocus, shortcut, size
         className="absolute inset-x-0 top-full z-50 mt-1 max-h-[min(24rem,70svh)] overflow-y-auto overscroll-contain rounded-md border border-ap-line-strong bg-ap-white py-1 text-ap-ink shadow-overlay"
       >
         {termOptions.length > 0 ? (
-          <div role="group" aria-label="Búsquedas sugeridas">
+          <div role="group" aria-label="Búsquedas sugeridas" className="ap-suggest-in" style={groupDelay(0)}>
             {termOptions.map((option) => {
               const index = options.indexOf(option)
               return (
@@ -382,7 +385,7 @@ export function SearchBox({ className, tone = 'light', autoFocus, shortcut, size
           </div>
         ) : null}
         {productOptions.length > 0 ? (
-          <div role="group" aria-label="Repuestos">
+          <div role="group" aria-label="Repuestos" className="ap-suggest-in" style={groupDelay(1)}>
             {productOptions.map((option) => {
               const index = options.indexOf(option)
               if (option.type !== 'product') return null
@@ -407,7 +410,7 @@ export function SearchBox({ className, tone = 'light', autoFocus, shortcut, size
           </div>
         ) : null}
         {serviceOptions.length > 0 ? (
-          <div role="group" aria-label="Servicios">
+          <div role="group" aria-label="Servicios" className="ap-suggest-in" style={groupDelay(2)}>
             {serviceOptions.map((option) => {
               const index = options.indexOf(option)
               if (option.type !== 'service' && option.type !== 'serviceCategory') return null
@@ -438,7 +441,7 @@ export function SearchBox({ className, tone = 'light', autoFocus, shortcut, size
           </div>
         ) : null}
         {storeOptions.length > 0 ? (
-          <div role="group" aria-label="Tiendas">
+          <div role="group" aria-label="Tiendas" className="ap-suggest-in" style={groupDelay(3)}>
             {storeOptions.map((option) => {
               const index = options.indexOf(option)
               if (option.type !== 'store') return null

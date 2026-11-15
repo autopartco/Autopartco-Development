@@ -194,8 +194,8 @@ function EmailSection({ email, passwordSet }: { email: string; passwordSet: bool
           </p>
           <TextField id="correo-code" name="code" label="Código" inputMode="numeric" autoComplete="one-time-code" maxLength={12} required />
           <div className="flex flex-wrap gap-2">
-            <Button type="submit" className="h-11 px-5" disabled={busy}>
-              {busy ? 'Confirmando…' : 'Confirmar correo'}
+            <Button type="submit" className="h-11 px-5" loading={busy} loadingText="Confirmando…">
+              Confirmar correo
             </Button>
             <Button type="button" variant="ghost" className="h-11" onClick={() => setStep(null)}>
               Usar otro correo
@@ -206,8 +206,8 @@ function EmailSection({ email, passwordSet }: { email: string; passwordSet: bool
         <form noValidate onSubmit={(event) => void request(event)} className="grid max-w-md gap-4">
           <TextField id="correo-new" name="newEmail" type="email" label="Correo nuevo" autoComplete="email" maxLength={100} required />
           <PasswordField id="correo-password" name="password" label="Tu contraseña" autoComplete="current-password" />
-          <Button type="submit" className="h-11 w-fit px-5" disabled={busy}>
-            {busy ? 'Enviando…' : 'Enviar código'}
+          <Button type="submit" className="h-11 w-fit px-5" loading={busy} loadingText="Enviando…">
+            Enviar código
           </Button>
         </form>
       )}
@@ -282,7 +282,7 @@ function TwoFactorSection({ enabled, social }: { enabled: boolean; social: boole
         <form noValidate onSubmit={(event) => void confirm(event)} className="grid max-w-md gap-4">
           <TextField id="dospasos-code" name="code" label="Código enviado a tu correo" inputMode="numeric" autoComplete="one-time-code" maxLength={12} required />
           <div className="flex flex-wrap gap-2">
-            <Button type="submit" className="h-11 px-5" disabled={busy}>
+            <Button type="submit" className="h-11 px-5" loading={busy}>
               {pending === 'ENABLE' ? 'Activar' : 'Desactivar'}
             </Button>
             <Button type="button" variant="ghost" className="h-11" onClick={() => setPending(null)}>
@@ -291,17 +291,17 @@ function TwoFactorSection({ enabled, social }: { enabled: boolean; social: boole
           </div>
         </form>
       ) : !enabled ? (
-        <Button className="h-11 w-fit px-5" disabled={busy} onClick={() => void start('ENABLE')}>
+        <Button className="h-11 w-fit px-5" loading={busy} onClick={() => void start('ENABLE')}>
           Activar verificación en dos pasos
         </Button>
       ) : social ? (
-        <Button variant="outline" className="h-11 w-fit px-5" disabled={busy} onClick={() => void start('DISABLE')}>
+        <Button variant="outline" className="h-11 w-fit px-5" loading={busy} onClick={() => void start('DISABLE')}>
           Desactivar con un código
         </Button>
       ) : (
         <form noValidate onSubmit={(event) => void disableWithPassword(event)} className="grid max-w-md gap-4">
           <PasswordField id="dospasos-password" name="password" label="Confirma tu contraseña para desactivarla" autoComplete="current-password" required />
-          <Button type="submit" variant="outline" className="h-11 w-fit px-5" disabled={busy}>
+          <Button type="submit" variant="outline" className="h-11 w-fit px-5" loading={busy}>
             Desactivar
           </Button>
         </form>

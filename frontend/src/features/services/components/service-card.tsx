@@ -1,6 +1,7 @@
 import { memo, type ReactNode } from 'react'
 import { Link } from 'react-router'
-import { ClockIcon, StarIcon } from 'lucide-react'
+import { ArrowRightIcon, ClockIcon, StarIcon } from 'lucide-react'
+import { Reveal } from '@/components/common/reveal'
 import { SmartImage } from '@/components/common/smart-image'
 import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button'
@@ -26,7 +27,7 @@ export function ServiceThumb({ service, eager = false, className }: { service: S
         width={400}
         height={300}
         loading={eager ? 'eager' : 'lazy'}
-        frameClassName={cn('border border-ap-line', className)}
+        frameClassName={cn('ap-zoom-frame border border-ap-line transition-colors ap-dur-panel group-hover:border-ap-graphite', className)}
         className="p-1.5"
       />
     )
@@ -150,10 +151,11 @@ export const ServiceCard = memo(function ServiceCard({ service, layout = 'card',
 
   if (layout === 'row') {
     return (
-      <article
+      <Reveal
+        as="article"
         data-branch-id={service.branch?.id}
         className={cn(
-          'relative grid grid-cols-[5rem_minmax(0,1fr)] gap-x-4 px-3 py-5 transition-colors sm:grid-cols-[7rem_minmax(0,1fr)_11.5rem] sm:gap-x-5',
+          'group relative grid grid-cols-[5rem_minmax(0,1fr)] gap-x-4 px-3 py-5 transition-colors sm:grid-cols-[7rem_minmax(0,1fr)_11.5rem] sm:gap-x-5',
           active && 'bg-ap-paper shadow-[inset_3px_0_0_var(--ap-red)]',
           className,
         )}
@@ -164,7 +166,7 @@ export const ServiceCard = memo(function ServiceCard({ service, layout = 'card',
         <div className="flex min-w-0 flex-col gap-1.5">
           {kind}
           <h3 className="text-base leading-snug font-semibold text-ap-ink">
-            <Link to={href} className="underline-offset-4 hover:text-ap-red hover:underline">
+            <Link to={href} className="underline-offset-4 hover:text-ap-red hover:underline group-hover:underline">
               {service.name}
             </Link>
           </h3>
@@ -178,32 +180,35 @@ export const ServiceCard = memo(function ServiceCard({ service, layout = 'card',
             Ver servicio
           </Link>
         </div>
-      </article>
+      </Reveal>
     )
   }
 
   return (
-    <article className={cn('relative flex h-full flex-col overflow-hidden rounded-lg border border-ap-line bg-ap-white', className)}>
+    <Reveal as="article" className={cn('group relative flex h-full flex-col overflow-hidden rounded-lg border border-ap-line bg-ap-white transition-colors ap-dur-panel hover:border-ap-graphite', className)}>
       <Link to={href} tabIndex={-1} aria-hidden>
         <ServiceThumb service={service} eager={eager} className="aspect-[16/10] w-full border-0 border-b" />
       </Link>
       <div className="flex flex-1 flex-col gap-2 p-4">
         {kind}
         <h3 className="text-base leading-snug font-semibold text-ap-ink">
-          <Link to={href} className="underline-offset-4 hover:text-ap-red hover:underline">
+          <Link to={href} className="underline-offset-4 hover:text-ap-red hover:underline group-hover:underline">
             {service.name}
           </Link>
         </h3>
         <StoreLine service={service} />
         {facts}
         <div className="mt-auto flex flex-col gap-3 pt-2">
-          <ServicePrice service={service} />
+          <div className="flex items-end justify-between gap-2">
+            <ServicePrice service={service} />
+            <ArrowRightIcon className="ap-nudge mb-1 size-4 shrink-0 text-ap-steel group-hover:text-ap-graphite" aria-hidden />
+          </div>
           <Link to={href} tabIndex={-1} aria-hidden className={cn(buttonVariants({ variant: 'outline' }), 'w-full')}>
             Ver servicio
           </Link>
         </div>
       </div>
-    </article>
+    </Reveal>
   )
 })
 

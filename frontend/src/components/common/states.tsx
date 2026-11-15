@@ -26,7 +26,7 @@ export function ErrorState({
   return (
     <div
       role="alert"
-      className={cn('flex flex-col items-start gap-3 rounded-xl border border-ap-danger/30 bg-ap-danger-soft p-5', className)}
+      className={cn('ap-fade-in flex flex-col items-start gap-3 rounded-xl border border-ap-danger/30 bg-ap-danger-soft p-5', className)}
     >
       <div className="flex items-center gap-2 font-semibold text-ap-danger">
         <TriangleAlertIcon className="size-5 shrink-0" aria-hidden />
@@ -55,7 +55,7 @@ interface EmptyStateProps {
 /** Estado vacío: explica qué falta y ofrece el siguiente paso. */
 export function EmptyState({ icon, title, description, children, className }: EmptyStateProps) {
   return (
-    <div className={cn('flex flex-col items-start gap-4 rounded-xl border border-ap-line bg-ap-white px-5 py-8 sm:px-8', className)}>
+    <div className={cn('ap-fade-in flex flex-col items-start gap-4 rounded-xl border border-ap-line bg-ap-white px-5 py-8 sm:px-8', className)}>
       {icon ? <div className="text-ap-muted [&_svg]:size-6" aria-hidden>{icon}</div> : null}
       <div className="flex flex-col gap-1.5">
         <h2 className="text-block-title text-ap-ink">{title}</h2>

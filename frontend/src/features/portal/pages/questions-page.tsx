@@ -80,8 +80,8 @@ function AnswerEditor({ question, initial, onClose, onSaved }: { question: Porta
         }
       />
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" className="h-11 px-4" disabled={save.pending}>
-          {save.pending ? 'Publicando…' : initial ? 'Guardar respuesta' : 'Publicar respuesta'}
+        <Button type="submit" className="h-11 px-4" loading={save.pending} loadingText="Publicando…">
+          {initial ? 'Guardar respuesta' : 'Publicar respuesta'}
         </Button>
         <Button type="button" variant="outline" className="h-11 px-4" disabled={save.pending} onClick={onClose}>
           Cancelar

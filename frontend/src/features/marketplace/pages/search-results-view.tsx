@@ -19,6 +19,7 @@ import { StoresStrip } from '../components/search/stores-strip'
 import { ServiceResults } from '@/features/services/components/service-results'
 import { ServicesStrip } from '@/features/services/components/services-strip'
 import { useServiceState } from '@/features/services/hooks'
+import { useReportBusy } from '@/app/route-progress'
 import { pluralize } from '@/lib/format'
 import { MarketplaceError, type FilterOptions, type SearchResult } from '../api/types'
 import { CategoryAds } from '../components/ads/category-ads'
@@ -27,6 +28,7 @@ import { ProductList, ProductListSkeleton, ProductRow } from '../components/prod
 import { ResultsPagination } from '../components/results-pagination'
 import { ActiveFilters } from '../components/search/active-filters'
 import { SearchFilters, type SearchFiltersProps } from '../components/search/filters-panel'
+import { TabPanel } from '@/components/common/tab-panel'
 import { SearchTabs } from '../components/search/search-tabs'
 import { InterpretedChips } from '../components/search/interpreted-chips'
 import { SortSelect } from '../components/search/sort-select'
@@ -207,7 +209,7 @@ export function SearchResultsView({ fixedCategory }: { fixedCategory?: string })
   const [state] = useSearchState(fixedCategory)
   if (!fixedCategory && state.tab === 'services') return <ServicesSearchView />
   if (!fixedCategory && state.tab === 'stores') return <StoresSearchView />
-  return <ProductSearchView fixedCategory={fixedCategory} />
+  return <ProductSearchView key={state.tab} fixedCategory={fixedCategory} />
 }
 
 function ServicesSearchView() {
@@ -224,7 +226,9 @@ function ServicesSearchView() {
         className="mb-6"
       />
       <SearchTabs active="services" />
-      <ServiceResults state={state} update={update} context="search" />
+      <TabPanel group="search" index={2}>
+        <ServiceResults state={state} update={update} context="search" />
+      </TabPanel>
     </Container>
   )
 }
@@ -243,6 +247,7 @@ function ProductSearchView({ fixedCategory }: { fixedCategory?: string }) {
   const stores = useStores()
   const vehicleLabel = useVehicleFilterLabel(state)
   const result = useListingSearch(toSearchQuery(state, nearMe.origin))
+  useReportBusy(result.status === 'loading' || result.isStale)
 
   const isCategoryRoute = Boolean(fixedCategory)
   const activeCount = countSearchFilters(state, { fixedCategory: isCategoryRoute })
@@ -342,6 +347,7 @@ function ProductSearchView({ fixedCategory }: { fixedCategory?: string }) {
         </div>
       ) : null}
 
+      <TabPanel group="search" index={state.tab === 'parts' || isCategoryRoute ? 1 : 0}>
       <div className="grid gap-6 lg:min-h-[calc(100svh-var(--header-h)-1.5rem)] lg:grid-cols-[16rem_minmax(0,1fr)] lg:gap-10">
         <aside aria-labelledby="filtros-titulo" className="hidden lg:block">
           {/*
@@ -453,6 +459,7 @@ function ProductSearchView({ fixedCategory }: { fixedCategory?: string }) {
           )}
         </section>
       </div>
+      </TabPanel>
     </Container>
   )
 }

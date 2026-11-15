@@ -102,8 +102,8 @@ export default function CustomerRegisterPage() {
           <p className="text-sm text-ap-muted">Todos los campos son obligatorios.</p>
           <AccountFields prefix={PREFIX} errors={errors} />
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <Button type="submit" disabled={submitting}>
-              {submitting ? 'Creando cuenta…' : 'Crear cuenta'}
+            <Button type="submit" loading={submitting} loadingText="Creando tu cuenta…">
+              Crear cuenta
             </Button>
             <p className="text-sm text-ap-muted">
               ¿Tienes un almacén?{' '}

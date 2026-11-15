@@ -107,8 +107,8 @@ export function AddressForm({ makeDefault, onCreated, onCancel }: AddressFormPro
         <TextField id={fieldId('postalCode')} name="postalCode" label="Código postal" inputMode="numeric" autoComplete="postal-code" maxLength={20} optional error={errors.postalCode} />
       </div>
       <div className="flex flex-wrap gap-2">
-        <Button type="submit" disabled={submitting}>
-          {submitting ? 'Guardando…' : 'Guardar dirección'}
+        <Button type="submit" loading={submitting} loadingText="Guardando…">
+          Guardar dirección
         </Button>
         <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>
           Cancelar

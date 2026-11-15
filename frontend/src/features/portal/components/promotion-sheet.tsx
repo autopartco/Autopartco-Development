@@ -351,8 +351,8 @@ function PromotionForm({ config, promotion, initialAudience, onDone, onCancel, o
         <Button type="button" variant="outline" className="h-11 px-5" onClick={onCancel} disabled={pending}>
           Cancelar
         </Button>
-        <Button type="submit" className="h-11 px-5" disabled={pending}>
-          {pending ? 'Guardando…' : promotion ? 'Guardar cambios' : 'Crear promoción'}
+        <Button type="submit" className="h-11 px-5" loading={pending} loadingText="Guardando…">
+          {promotion ? 'Guardar cambios' : 'Crear promoción'}
         </Button>
       </div>
       <UnsavedChangesDialog blocker={blocker} />

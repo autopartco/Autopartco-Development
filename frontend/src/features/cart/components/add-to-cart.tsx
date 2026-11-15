@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { CheckIcon, ShoppingCartIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -20,6 +20,13 @@ export function AddToCart({ product }: { product: Product }) {
   const max = maxFor(product)
   const [quantity, setQuantity] = useState(1)
   const [added, setAdded] = useState<number>()
+  // Check breve (~600 ms) en el botón al agregar.
+  const [confirmed, setConfirmed] = useState(false)
+  useEffect(() => {
+    if (!confirmed) return
+    const timer = window.setTimeout(() => setConfirmed(false), 600)
+    return () => window.clearTimeout(timer)
+  }, [confirmed])
 
   if (!product.branchId || product.availability?.status === 'out_of_stock' || max < 1) {
     return (
@@ -48,13 +55,15 @@ export function AddToCart({ product }: { product: Product }) {
       quantity,
     )
     setAdded(total)
+    setConfirmed(true)
+    setConfirmed(true)
   }
 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-3">
         <QuantityStepper label={product.name} value={quantity} max={max} onChange={setQuantity} />
-        <Button type="button" className="flex-1 px-5" onClick={handleAdd}>
+        <Button type="button" className="flex-1 px-5" success={confirmed} onClick={handleAdd}>
           <ShoppingCartIcon aria-hidden />
           Agregar al carrito
         </Button>

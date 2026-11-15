@@ -145,8 +145,8 @@ function SettingsForm({ settings }: { settings: StoreSettings }) {
         </div>
       </FormSection>
       <div className="sticky bottom-0 z-10 -mx-4 flex flex-wrap items-center gap-3 border-t border-ap-line bg-ap-white px-4 py-3 sm:static sm:mx-0 sm:border-0 sm:bg-transparent sm:p-0">
-        <Button type="submit" className="h-11 px-6" disabled={submit.pending || !draft.isDirty}>
-          {submit.pending ? 'Guardando…' : 'Guardar cambios'}
+        <Button type="submit" className="h-11 px-6" loading={submit.pending} loadingText="Guardando…" disabled={!draft.isDirty}>
+          Guardar cambios
         </Button>
         <p role="status" className="text-sm text-ap-muted">
           {draft.isDirty ? 'Tienes cambios sin guardar.' : 'Sin cambios por guardar.'}

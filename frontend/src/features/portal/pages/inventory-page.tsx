@@ -94,10 +94,10 @@ function MinStockEditor({ item }: { item: LowStockItem }) {
           </p>
         ) : null}
       </div>
-      <Button type="submit" variant="outline" className="h-11 px-3" disabled={save.pending || invalid || parsed === item.minStock}>
+      <Button type="submit" variant="outline" className="h-11 px-3" loading={save.pending} disabled={invalid || parsed === item.minStock}>
         Guardar
       </Button>
-      <Button type="button" variant="ghost" className="h-11 px-3" disabled={save.pending} onClick={() => void run(null)}>
+      <Button type="button" variant="ghost" className="h-11 px-3" loading={save.pending} onClick={() => void run(null)}>
         Usar el mínimo general
       </Button>
     </form>
@@ -363,7 +363,7 @@ export default function PortalInventoryPage() {
         description="Existencias por sucursal. Ajusta con motivo, revisa el stock bajo y mueve o actualiza tu inventario."
         actions={
           <>
-            <Button variant="outline" className="h-11 px-4" disabled={exporter.pending} onClick={() => void exportCsv()}>
+            <Button variant="outline" className="h-11 px-4" loading={exporter.pending} onClick={() => void exportCsv()}>
               <DownloadIcon aria-hidden />
               {exporter.pending ? 'Descargando…' : 'Exportar CSV'}
             </Button>

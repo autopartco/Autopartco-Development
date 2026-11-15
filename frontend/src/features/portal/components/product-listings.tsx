@@ -242,7 +242,7 @@ export function ListingsManager({ productId, productName, rows, branches, sugges
               required
             />
           </div>
-          <Button type="button" variant="outline" className="h-11 w-fit px-4" disabled={add.pending} onClick={() => void handleAdd()}>
+          <Button type="button" variant="outline" className="h-11 w-fit px-4" loading={add.pending} onClick={() => void handleAdd()}>
             <PlusIcon aria-hidden />
             {add.pending ? 'Agregando…' : 'Agregar sucursal'}
           </Button>

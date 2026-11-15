@@ -341,8 +341,8 @@ function ServiceForm({ service: initialService, branches, branchesKnown, onDone,
         <Button type="button" variant="outline" className="h-11 px-5" onClick={onCancel} disabled={pending}>
           Cancelar
         </Button>
-        <Button type="submit" className="h-11 px-5" disabled={pending}>
-          {pending ? 'Guardando…' : service ? 'Guardar cambios' : 'Crear servicio'}
+        <Button type="submit" className="h-11 px-5" loading={pending} loadingText="Guardando…">
+          {service ? 'Guardar cambios' : 'Crear servicio'}
         </Button>
       </div>
       <UnsavedChangesDialog blocker={blocker} />

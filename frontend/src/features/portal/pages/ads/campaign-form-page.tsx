@@ -421,10 +421,10 @@ function CampaignForm({ storeId, campaign, prices }: FormProps) {
         <p className="rounded-md border border-ap-warning/40 bg-ap-warning-soft p-3 text-xs text-ap-ink">{NO_REFUND_NOTICE}</p>
         {editable ? (
           <div className="flex flex-col gap-2">
-            <Button type="button" className="h-11 w-full" disabled={pending} onClick={() => void submit(true)}>
-              {pending ? 'Guardando…' : 'Guardar y pagar'}
+            <Button type="button" className="h-11 w-full" loading={pending} loadingText="Guardando…" onClick={() => void submit(true)}>
+              Guardar y pagar
             </Button>
-            <Button type="submit" variant="outline" className="h-11 w-full" disabled={pending}>
+            <Button type="submit" variant="outline" className="h-11 w-full" loading={pending}>
               Guardar borrador
             </Button>
           </div>

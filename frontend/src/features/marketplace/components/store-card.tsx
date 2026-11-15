@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { ChevronRightIcon } from 'lucide-react'
+import { Reveal } from '@/components/common/reveal'
 import { Skeleton } from '@/components/ui/skeleton'
 import { formatKm } from '@/features/location/lib/geo'
 import { initials, pluralize } from '@/lib/format'
@@ -31,7 +32,7 @@ function StoreAvatar({ store }: { store: { name: string; logoUrl?: string } }) {
         width={44}
         height={44}
         loading="lazy"
-        className="size-11 shrink-0 rounded-md border border-ap-line bg-ap-white object-contain"
+        className="size-11 shrink-0 rounded-md border border-ap-line bg-ap-white object-contain transition-colors ap-dur-panel group-hover:border-ap-graphite"
         onError={() => setFailed(true)}
       />
     )
@@ -50,14 +51,14 @@ function StoreAvatar({ store }: { store: { name: string; logoUrl?: string } }) {
  */
 export function StoreRow({ store, distanceKm }: { store: StoreSummary; distanceKm?: number }) {
   return (
-    <article className="group relative grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 px-1 py-4 transition-colors hover:bg-ap-paper sm:grid-cols-[2.75rem_minmax(0,1fr)_9rem_7rem_1.25rem] sm:px-3">
+    <Reveal as="article" className="group relative grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 px-1 py-4 transition-colors hover:bg-ap-paper sm:grid-cols-[2.75rem_minmax(0,1fr)_9rem_7rem_1.25rem] sm:px-3">
       <StoreAvatar store={store} />
       <div className="flex min-w-0 flex-col gap-1">
         <h2 className="text-base leading-snug font-semibold text-ap-ink">
           <Link
             to={storePath(store.id)}
             data-stretched-link
-            className="after:absolute after:inset-0 focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-[var(--focus)] group-hover:text-ap-red"
+            className="after:absolute after:inset-0 focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-[var(--focus)] underline-offset-4 group-hover:text-ap-red group-hover:underline"
           >
             {store.name}
           </Link>
@@ -85,8 +86,8 @@ export function StoreRow({ store, distanceKm }: { store: StoreSummary; distanceK
           <NoData />
         )}
       </p>
-      <ChevronRightIcon className="size-5 text-ap-steel group-hover:text-ap-red" aria-hidden />
-    </article>
+      <ChevronRightIcon className="ap-nudge size-5 text-ap-steel group-hover:text-ap-red" aria-hidden />
+    </Reveal>
   )
 }
 
@@ -120,13 +121,13 @@ export function StoreResultRow({ store }: { store: StoreSearchItem }) {
   ].filter((item): item is string => item !== null)
   const { average, count } = store.rating
   return (
-    <article className="group relative grid grid-cols-[2.75rem_minmax(0,1fr)_1.25rem] items-start gap-x-4 px-1 py-4 transition-colors hover:bg-ap-paper sm:px-3">
+    <Reveal as="article" className="group relative grid grid-cols-[2.75rem_minmax(0,1fr)_1.25rem] items-start gap-x-4 px-1 py-4 transition-colors hover:bg-ap-paper sm:px-3">
       <StoreAvatar store={store} />
       <div className="flex min-w-0 flex-col gap-1.5">
         <h3 className="text-base leading-snug font-semibold text-ap-ink">
           <Link
             to={storePath(store.id)}
-            className="after:absolute after:inset-0 focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-[var(--focus)] group-hover:text-ap-red"
+            className="after:absolute after:inset-0 focus-visible:after:outline-2 focus-visible:after:-outline-offset-2 focus-visible:after:outline-[var(--focus)] underline-offset-4 group-hover:text-ap-red group-hover:underline"
           >
             {store.name}
           </Link>
@@ -141,7 +142,7 @@ export function StoreResultRow({ store }: { store: StoreSearchItem }) {
         </div>
         {store.description ? <p className="line-clamp-2 max-w-prose text-sm text-ap-muted">{store.description}</p> : null}
       </div>
-      <ChevronRightIcon className="mt-3 size-5 text-ap-steel group-hover:text-ap-red" aria-hidden />
-    </article>
+      <ChevronRightIcon className="ap-nudge mt-3 size-5 text-ap-steel group-hover:text-ap-red" aria-hidden />
+    </Reveal>
   )
 }
