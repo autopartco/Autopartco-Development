@@ -4,80 +4,80 @@
     "queries" : 127,
     "withRelevant" : 118,
     "noMatch" : 9,
-    "precisionAt5" : 0.715,
-    "recallAt10" : 0.8648,
-    "mrr" : 0.8948,
-    "noRelevantPct" : 5.9322,
+    "precisionAt5" : 0.787,
+    "recallAt10" : 0.8828,
+    "mrr" : 0.9266,
+    "noRelevantPct" : 4.2373,
     "falseResultsPct" : 44.4444,
-    "avgSql" : 2.5827,
-    "p50Ms" : 18.3536,
-    "p95Ms" : 56.1635
+    "avgSql" : 2.315,
+    "p50Ms" : 18.9155,
+    "p95Ms" : 43.2796
   },
   "byKind" : {
     "exact" : {
       "queries" : 12,
       "withRelevant" : 12,
       "noMatch" : 0,
-      "precisionAt5" : 0.825,
+      "precisionAt5" : 0.7833,
       "recallAt10" : 1.0,
       "mrr" : 1.0,
       "noRelevantPct" : 0.0,
       "falseResultsPct" : null,
       "avgSql" : 2.0,
-      "p50Ms" : 16.4303,
-      "p95Ms" : 21.7809
+      "p50Ms" : 16.8964,
+      "p95Ms" : 30.5426
     },
     "natural" : {
       "queries" : 12,
       "withRelevant" : 12,
       "noMatch" : 0,
       "precisionAt5" : 0.5986,
-      "recallAt10" : 0.9722,
+      "recallAt10" : 1.0,
       "mrr" : 0.9167,
       "noRelevantPct" : 0.0,
       "falseResultsPct" : null,
       "avgSql" : 2.1667,
-      "p50Ms" : 14.3211,
-      "p95Ms" : 63.4944
+      "p50Ms" : 15.4602,
+      "p95Ms" : 39.392
     },
     "typo" : {
       "queries" : 13,
       "withRelevant" : 13,
       "noMatch" : 0,
-      "precisionAt5" : 0.5308,
-      "recallAt10" : 0.9423,
-      "mrr" : 0.9327,
+      "precisionAt5" : 0.8462,
+      "recallAt10" : 0.9295,
+      "mrr" : 0.9615,
       "noRelevantPct" : 0.0,
       "falseResultsPct" : null,
-      "avgSql" : 2.9231,
-      "p50Ms" : 24.1666,
-      "p95Ms" : 59.4695
+      "avgSql" : 2.0,
+      "p50Ms" : 19.5895,
+      "p95Ms" : 26.1162
     },
     "vehicle_form" : {
       "queries" : 13,
       "withRelevant" : 13,
       "noMatch" : 0,
-      "precisionAt5" : 0.5679,
-      "recallAt10" : 0.8462,
-      "mrr" : 0.741,
+      "precisionAt5" : 0.6679,
+      "recallAt10" : 0.8436,
+      "mrr" : 0.8462,
       "noRelevantPct" : 7.6923,
       "falseResultsPct" : null,
-      "avgSql" : 3.3077,
-      "p50Ms" : 30.8746,
-      "p95Ms" : 72.5063
+      "avgSql" : 2.0,
+      "p50Ms" : 18.4551,
+      "p95Ms" : 31.5338
     },
     "reference" : {
       "queries" : 13,
       "withRelevant" : 13,
       "noMatch" : 0,
-      "precisionAt5" : 0.7692,
-      "recallAt10" : 0.7692,
-      "mrr" : 0.7692,
-      "noRelevantPct" : 23.0769,
+      "precisionAt5" : 0.9231,
+      "recallAt10" : 0.9231,
+      "mrr" : 0.9231,
+      "noRelevantPct" : 7.6923,
       "falseResultsPct" : null,
-      "avgSql" : 2.4615,
-      "p50Ms" : 17.4674,
-      "p95Ms" : 46.8378
+      "avgSql" : 2.1538,
+      "p50Ms" : 14.3908,
+      "p95Ms" : 65.7444
     },
     "manufacturer" : {
       "queries" : 11,
@@ -89,8 +89,8 @@
       "noRelevantPct" : 0.0,
       "falseResultsPct" : null,
       "avgSql" : 2.0,
-      "p50Ms" : 14.0505,
-      "p95Ms" : 18.6949
+      "p50Ms" : 18.4851,
+      "p95Ms" : 23.6309
     },
     "position_spec" : {
       "queries" : 13,
@@ -102,21 +102,21 @@
       "noRelevantPct" : 0.0,
       "falseResultsPct" : null,
       "avgSql" : 2.0,
-      "p50Ms" : 14.4809,
-      "p95Ms" : 26.9923
+      "p50Ms" : 17.9908,
+      "p95Ms" : 27.3245
     },
     "synonym_slang" : {
       "queries" : 12,
       "withRelevant" : 12,
       "noMatch" : 0,
-      "precisionAt5" : 0.5,
+      "precisionAt5" : 0.5667,
       "recallAt10" : 0.6042,
       "mrr" : 0.6944,
       "noRelevantPct" : 25.0,
       "falseResultsPct" : null,
       "avgSql" : 2.75,
-      "p50Ms" : 18.474,
-      "p95Ms" : 56.1635
+      "p50Ms" : 20.9309,
+      "p95Ms" : 61.9648
     },
     "generic" : {
       "queries" : 9,
@@ -128,8 +128,8 @@
       "noRelevantPct" : 0.0,
       "falseResultsPct" : null,
       "avgSql" : 2.0,
-      "p50Ms" : 21.5665,
-      "p95Ms" : 34.2527
+      "p50Ms" : 22.3957,
+      "p95Ms" : 33.1623
     },
     "no_match" : {
       "queries" : 9,
@@ -141,21 +141,21 @@
       "noRelevantPct" : null,
       "falseResultsPct" : 44.4444,
       "avgSql" : 4.1111,
-      "p50Ms" : 26.2056,
-      "p95Ms" : 59.6662
+      "p50Ms" : 38.7238,
+      "p95Ms" : 64.1991
     },
     "long" : {
       "queries" : 10,
       "withRelevant" : 10,
       "noMatch" : 0,
-      "precisionAt5" : 0.4533,
+      "precisionAt5" : 0.5333,
       "recallAt10" : 0.95,
       "mrr" : 0.95,
       "noRelevantPct" : 0.0,
       "falseResultsPct" : null,
-      "avgSql" : 2.9,
-      "p50Ms" : 15.9349,
-      "p95Ms" : 59.9941
+      "avgSql" : 2.8,
+      "p50Ms" : 27.5011,
+      "p95Ms" : 71.0053
     }
   }
 }

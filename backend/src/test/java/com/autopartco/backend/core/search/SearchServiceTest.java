@@ -251,7 +251,8 @@ class SearchServiceTest {
         assertThat(result.items()).extracting(SearchResult.Hit::listing).containsExactly(listing);
         assertThat(jdbc.callsMatching(sql -> sql.equals(SearchSql.FUZZY_THRESHOLD_SQL))).hasSize(1);
         SearchFakeJdbc.Call fuzzyCall = jdbc.callsMatching(sql -> sql.contains("<% sl.search_text")).getFirst();
-        assertThat(fuzzyCall.params()).containsEntry("fuzzy", "pastilas").doesNotContainKey("tsq");
+        // El respaldo busca el texto ya corregido («pastilas» → «pastillas», palabra del vocabulario).
+        assertThat(fuzzyCall.params()).containsEntry("fuzzy", "pastillas").doesNotContainKey("tsq");
     }
 
     @Test

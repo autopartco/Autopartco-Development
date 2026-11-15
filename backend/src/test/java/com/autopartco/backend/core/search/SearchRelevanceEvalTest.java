@@ -234,6 +234,71 @@ class SearchRelevanceEvalTest {
         gate(total, byKind);
     }
 
+    // ------------------------------------------------------------------ T3: léxico del corrector
+
+    /**
+     * Costo de cargar el léxico (por TTL, no por búsqueda): {@link SearchDictionary#LEXICON_SQL} ({@code ts_stat}) y la
+     * alternativa descartada ({@code regexp_split_to_table} + {@code group by}), ambas también sobre el catálogo ×10; la
+     * carga completa del vocabulario y la construcción del índice del parser con su corrector.
+     */
+    @Test
+    void lexiconLoadCost() {
+        JdbcTemplate jdbc = new JdbcTemplate(admin);
+        String regexp = """
+                select x.w as word, count(*) as frequency
+                from %s sl
+                cross join lateral (
+                    select distinct t.w from regexp_split_to_table(sl.search_text, '[^a-z]+') t(w)
+                ) x
+                where length(x.w) between 3 and 30
+                group by x.w
+                """;
+        jdbc.execute("drop table if exists lexicon_x10");
+        jdbc.execute("create table lexicon_x10 as select (sl.search_text || ' ' || g.i::text) as search_text "
+                + "from search_listings sl cross join generate_series(1, 10) g(i)");
+        jdbc.execute("analyze lexicon_x10");
+        String lexiconX10 = SearchDictionary.LEXICON_SQL.replace("from search_listings", "from lexicon_x10");
+        Map<String, Double> timings = new LinkedHashMap<>();
+        int words = 0;
+        for (int round = 0; round < 4; round++) {
+            boolean timed = round > 0;
+            words = time(timings, "ts_stat ×1", timed, () -> jdbc.queryForList(SearchDictionary.LEXICON_SQL).size());
+            time(timings, "regexp_split ×1", timed, () -> jdbc.queryForList(regexp.formatted("search_listings")).size());
+            time(timings, "ts_stat ×10", timed, () -> jdbc.queryForList(lexiconX10).size());
+            time(timings, "regexp_split ×10", timed, () -> jdbc.queryForList(regexp.formatted("lexicon_x10")).size());
+        }
+        jdbc.execute("drop table lexicon_x10");
+
+        SearchDictionary dictionary = new SearchDictionary(JdbcClient.create(admin));
+        long loadStart = System.nanoTime();
+        SearchDictionary.Vocabulary vocabulary = dictionary.vocabulary();
+        double loadMs = (System.nanoTime() - loadStart) / 1_000_000.0;
+        long indexStart = System.nanoTime();
+        new QueryParser(dictionary).parse("radidor valeo", true);
+        double indexMs = (System.nanoTime() - indexStart) / 1_000_000.0;
+
+        timings.forEach((label, ms) -> System.out.printf(Locale.ROOT, "[search-eval] léxico %s: %.1f ms%n", label,
+                ms / 3));
+        System.out.printf(Locale.ROOT, "[search-eval] léxico: %d palabras del catálogo (%d en el vocabulario); "
+                + "vocabulario completo %.1f ms; índice del parser con corrector %.1f ms%n", words,
+                vocabulary.lexicon().size(), loadMs, indexMs);
+        assertThat(vocabulary.lexicon()).containsKeys("radiador", "valeo", "amortiguador");
+        assertThat(vocabulary.lexicon()).doesNotContainKey("ab").allSatisfy((word, frequency) -> {
+            assertThat(word).matches("[a-z]{3,30}");
+            assertThat(frequency).isPositive();
+        });
+    }
+
+    private static int time(Map<String, Double> timings, String label, boolean timed,
+            java.util.function.IntSupplier work) {
+        long start = System.nanoTime();
+        int result = work.getAsInt();
+        if (timed) {
+            timings.merge(label, (System.nanoTime() - start) / 1_000_000.0, Double::sum);
+        }
+        return result;
+    }
+
     // ------------------------------------------------------------------ T2: marcas y modelos mencionados
 
     @Test
