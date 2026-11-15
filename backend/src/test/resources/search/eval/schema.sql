@@ -73,7 +73,19 @@ create table search_listings (
     published_at timestamptz not null,
     updated_at timestamptz not null,
     product_rating numeric,
-    product_review_count integer not null default 0
+    product_review_count integer not null default 0,
+    mentioned_make_ids uuid[] not null default '{}'::uuid[],
+    mentioned_model_ids uuid[] not null default '{}'::uuid[]
+);
+create index ix_sl_mentioned_makes on search_listings using gin (mentioned_make_ids);
+create index ix_sl_mentioned_models on search_listings using gin (mentioned_model_ids);
+create table search_query_category (
+    normalized_query text not null,
+    category_id uuid not null references categories (id) on delete cascade,
+    clicks int not null default 0 check (clicks >= 0),
+    impressions int not null default 0 check (impressions >= 0),
+    updated_at timestamptz not null default now(),
+    primary key (normalized_query, category_id)
 );
 create index ix_sl_document on search_listings using gin (document);
 create index ix_sl_search_text on search_listings using gin (search_text gin_trgm_ops);
