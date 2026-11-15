@@ -4,7 +4,9 @@ import { LoaderCircleIcon, SearchIcon, XIcon } from 'lucide-react'
 import { useMapArea } from '@/features/location/hooks'
 import { formatCOP } from '@/lib/format'
 import { cn } from '@/lib/utils'
-import type { SuggestionKind } from '../../api/types'
+import { serviceCategoryIcon, serviceCategoryLabel } from '@/features/services/lib/categories'
+import { servicePath, servicesCategoryPath } from '@/features/services/lib/paths'
+import type { ServiceCategory, SuggestionKind } from '../../api/types'
 import { useSearchSuggestions } from '../../hooks'
 import { productPath } from '../../lib/paths'
 import { SEARCH_PARAMS } from '../../lib/search-query'
@@ -33,6 +35,8 @@ const KIND_LABEL: Record<SuggestionKind, string> = {
 type Option =
   | { type: 'term'; id: string; term: string; kind: SuggestionKind }
   | { type: 'product'; id: string; productId: string; name: string; price: number; partNumber?: string }
+  | { type: 'serviceCategory'; id: string; category: ServiceCategory }
+  | { type: 'service'; id: string; serviceId: string; name: string; category: ServiceCategory; storeName: string }
 
 /** "/" no debe robar la tecla mientras se escribe en otro campo. */
 function isTyping(target: EventTarget | null): boolean {
@@ -84,6 +88,17 @@ export function SearchBox({ className, tone = 'light', autoFocus, shortcut, size
           name: product.name,
           price: product.price,
           partNumber: product.partNumber,
+        }),
+      ),
+      ...data.serviceCategories.map((category): Option => ({ type: 'serviceCategory', id: `c${category}`, category })),
+      ...data.services.map(
+        (service): Option => ({
+          type: 'service',
+          id: `s${service.id}`,
+          serviceId: service.id,
+          name: service.name,
+          category: service.category,
+          storeName: service.storeName,
         }),
       ),
     ]
@@ -138,6 +153,14 @@ export function SearchBox({ className, tone = 'light', autoFocus, shortcut, size
       navigate(productPath(option.productId))
       return
     }
+    if (option.type === 'service') {
+      navigate(servicePath(option.serviceId))
+      return
+    }
+    if (option.type === 'serviceCategory') {
+      navigate(servicesCategoryPath(option.category))
+      return
+    }
     setValue(option.term)
     search(option.term)
   }
@@ -183,6 +206,7 @@ export function SearchBox({ className, tone = 'light', autoFocus, shortcut, size
   const dark = tone === 'dark'
   const termOptions = options.filter((option) => option.type === 'term')
   const productOptions = options.filter((option) => option.type === 'product')
+  const serviceOptions = options.filter((option) => option.type === 'serviceCategory' || option.type === 'service')
   const optionClass = (index: number) =>
     cn(
       'flex min-h-11 cursor-pointer items-center gap-3 px-4 py-2 text-sm text-ap-ink',
@@ -207,7 +231,7 @@ export function SearchBox({ className, tone = 'light', autoFocus, shortcut, size
         )}
       >
         <label htmlFor={`${uid}-input`} className="sr-only">
-          Buscar repuestos
+          Buscar repuestos o servicios
         </label>
         <SearchIcon
           className={cn(
@@ -239,7 +263,7 @@ export function SearchBox({ className, tone = 'light', autoFocus, shortcut, size
           autoCapitalize="off"
           spellCheck={false}
           enterKeyHint="search"
-          placeholder="Busca repuestos, marca o referencia"
+          placeholder="Busca repuestos o servicios"
           className={cn(
             'h-full min-w-0 flex-1 appearance-none bg-transparent px-2.5 text-base text-ellipsis outline-none sm:text-sm',
             dark
@@ -345,6 +369,37 @@ export function SearchBox({ className, tone = 'light', autoFocus, shortcut, size
                     {option.partNumber ? <span className="ap-ref block truncate text-xs text-ap-muted">REF. {option.partNumber}</span> : null}
                   </span>
                   <span className="shrink-0 text-sm font-semibold tabular-nums">{formatCOP(option.price)}</span>
+                </div>
+              )
+            })}
+          </div>
+        ) : null}
+        {serviceOptions.length > 0 ? (
+          <div role="group" aria-label="Servicios">
+            {serviceOptions.map((option) => {
+              const index = options.indexOf(option)
+              if (option.type !== 'service' && option.type !== 'serviceCategory') return null
+              const Icon = serviceCategoryIcon(option.category)
+              return (
+                <div
+                  key={option.id}
+                  id={optionId(index)}
+                  role="option"
+                  aria-selected={index === activeIndex}
+                  className={optionClass(index)}
+                  onMouseDown={(event) => event.preventDefault()}
+                  onClick={() => choose(option)}
+                >
+                  <Icon className="size-4 shrink-0 text-ap-muted" aria-hidden />
+                  {option.type === 'service' ? (
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-medium">{option.name}</span>
+                      <span className="block truncate text-xs text-ap-muted">{option.storeName}</span>
+                    </span>
+                  ) : (
+                    <span className="min-w-0 flex-1 truncate">Servicios de {serviceCategoryLabel(option.category).toLowerCase()}</span>
+                  )}
+                  <span className="shrink-0 text-xs text-ap-muted">{option.type === 'service' ? 'Servicio' : 'Categoría de servicio'}</span>
                 </div>
               )
             })}

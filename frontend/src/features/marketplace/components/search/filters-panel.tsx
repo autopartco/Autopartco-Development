@@ -23,7 +23,7 @@ export interface SearchFiltersProps {
   fixedCategory?: boolean
 }
 
-function FilterSection({ title, children }: { title: string; children: ReactNode }) {
+export function FilterSection({ title, children }: { title: string; children: ReactNode }) {
   const id = useId()
   return (
     <section aria-labelledby={id} className="flex flex-col gap-3 border-b border-ap-line py-5 first:pt-0 last:border-b-0">
@@ -35,7 +35,7 @@ function FilterSection({ title, children }: { title: string; children: ReactNode
   )
 }
 
-function CheckRow({
+export function CheckRow({
   checked,
   onCheckedChange,
   count,

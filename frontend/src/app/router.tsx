@@ -73,6 +73,8 @@ import {
   SearchPage,
   SellerRegisterPage,
   SellerSetupPage,
+  ServicePage,
+  ServicesPage,
   StaffInvitationPage,
   SellPage,
   StorePage,
@@ -110,6 +112,9 @@ export const router = createBrowserRouter([
           { path: 'categorias', element: <CategoriesPage /> },
           { path: 'categoria/:slug', element: <CategoryPage /> },
           { path: 'producto/:id', element: <ProductPage /> },
+          // Servicios: sección propia (?category=AC es la URL canónica por categoría) y detalle.
+          { path: 'servicios', element: <ServicesPage /> },
+          { path: 'servicio/:id', element: <ServicePage /> },
           { path: 'tiendas', element: <StoresPage /> },
           // Perfil público del almacén (GET /marketplace/stores/{id}).
           { path: 'tiendas/:storeId', element: <StorePage /> },

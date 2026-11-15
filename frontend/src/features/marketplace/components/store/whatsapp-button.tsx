@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { trackClick } from '@/lib/visibility'
-import { canonicalUrl, whatsappUrl } from '../../lib/store-links'
+import { canonicalUrl, serviceWhatsappUrl, whatsappUrl } from '../../lib/store-links'
 
 export interface WhatsappTarget {
   /** Sin sucursal (solo el WhatsApp público del perfil) el clic se abre pero no se mide: el servidor exige sede. */
@@ -29,6 +29,11 @@ interface WhatsappButtonProps {
   /** Ruta interna que se envía como `{enlace}`. */
   path: string
   productId?: string
+  /**
+   * Consulta por un servicio: `template` es la plantilla de servicios (`{servicio}`, `{sucursal}`, `{enlace}`), `subject` el
+   * nombre del servicio y el clic se atribuye a él. Con `promotionLabel` el mensaje cierra con «(Promoción: …)».
+   */
+  service?: { id: string; promotionLabel?: string }
   label?: string
   variant?: 'default' | 'outline'
   size?: 'default' | 'sm'
@@ -46,6 +51,7 @@ export function WhatsappButton({
   subject,
   path,
   productId,
+  service,
   label = 'WhatsApp',
   variant = 'default',
   size = 'default',
@@ -56,12 +62,16 @@ export function WhatsappButton({
   const classes = cn(buttonVariants({ variant, size }), className)
   const link = canonicalUrl(path)
   const open = (target: WhatsappTarget) => {
-    if (target.branchId) trackClick('WHATSAPP_CLICK', storeId, target.branchId, productId)
+    if (target.branchId) trackClick('WHATSAPP_CLICK', storeId, target.branchId, productId, service?.id)
   }
+  const hrefFor = (target: WhatsappTarget) =>
+    service
+      ? serviceWhatsappUrl(target.phone, template, { name: subject, branchName: target.name, link, promotionLabel: service.promotionLabel })
+      : whatsappUrl(target.phone, template, subject, link)
 
   if (valid.length === 1) {
     const target = valid[0]!
-    const href = whatsappUrl(target.phone, template, subject, link)
+    const href = hrefFor(target)
     if (!href) return null
     return (
       <a href={href} target="_blank" rel="noopener noreferrer" className={classes} onClick={() => open(target)}>
@@ -82,7 +92,7 @@ export function WhatsappButton({
         <DropdownMenuGroup>
           <DropdownMenuLabel>¿Con qué sede quieres hablar?</DropdownMenuLabel>
           {valid.map((target) => {
-            const href = whatsappUrl(target.phone, template, subject, link)
+            const href = hrefFor(target)
             if (!href) return null
             return (
               <DropdownMenuItem
