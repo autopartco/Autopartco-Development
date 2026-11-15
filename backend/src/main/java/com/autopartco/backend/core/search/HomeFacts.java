@@ -1,6 +1,7 @@
 package com.autopartco.backend.core.search;
 
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.UUID;
 
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -45,18 +46,49 @@ public class HomeFacts {
     public record CategoryCount(UUID id, String code, long productCount) {
     }
 
+    private static final long TTL_NANOS = 600_000_000_000L;
+
+    /** Valor global con caducidad; no depende del área, así que se comparte entre todas las peticiones. */
+    private static final class Memo<T> {
+        private record Entry<T>(T value, long expiresAt) {
+        }
+
+        private volatile Entry<T> entry;
+
+        synchronized T get(Supplier<T> loader) {
+            Entry<T> current = entry;
+            if (current != null && current.expiresAt() - System.nanoTime() > 0) {
+                return current.value();
+            }
+            T value = loader.get();
+            entry = new Entry<>(value, System.nanoTime() + TTL_NANOS);
+            return value;
+        }
+
+        void clear() {
+            entry = null;
+        }
+    }
+
     private final JdbcClient jdbcClient;
+    private final Memo<Stats> statsMemo = new Memo<>();
+    private final Memo<List<CategoryCount>> categoriesMemo = new Memo<>();
 
     public HomeFacts(JdbcClient jdbcClient) {
         this.jdbcClient = jdbcClient;
     }
 
-    /** Almacenes, ciudades y repuestos publicados. */
-    @Transactional(readOnly = true)
+    /** Almacenes, ciudades y repuestos publicados (caché global de 10 min; se vacía con {@link #invalidate()}). */
     public Stats stats() {
-        return jdbcClient.sql(STATS_SQL)
+        return statsMemo.get(() -> jdbcClient.sql(STATS_SQL)
                 .query((rs, row) -> new Stats(rs.getLong("stores"), rs.getLong("cities"), rs.getLong("products")))
-                .single();
+                .single());
+    }
+
+    /** Descarta las cifras guardadas (el índice cambió). */
+    public void invalidate() {
+        statsMemo.clear();
+        categoriesMemo.clear();
     }
 
     /** Hasta {@value #MAX_POPULAR_SEARCHES} términos; vacía si aún no hay búsquedas suficientes. */
@@ -67,11 +99,10 @@ public class HomeFacts {
     }
 
     /** Categorías con productos publicados, de mayor a menor (el catálogo de categorías es plano: un solo nivel). */
-    @Transactional(readOnly = true)
     public List<CategoryCount> categories() {
-        return jdbcClient.sql(CATEGORIES_SQL).param("limit", MAX_CATEGORIES)
+        return categoriesMemo.get(() -> List.copyOf(jdbcClient.sql(CATEGORIES_SQL).param("limit", MAX_CATEGORIES)
                 .query((rs, row) -> new CategoryCount(rs.getObject("id", UUID.class), rs.getString("code"),
                         rs.getLong("products")))
-                .list();
+                .list()));
     }
 }
