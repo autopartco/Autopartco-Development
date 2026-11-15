@@ -54,6 +54,9 @@ class ServiceSearchIndexerTest {
                         "left join geo_municipalities gm on gm.code = l.municipality_code",
                         "from store_reviews r", "r.deleted_at is null and r.hidden_at is null",
                         "ss.price_from, ss.price_from, false, ss.booking_enabled");
+        // Sin horario semanal en la sede no hay franjas: el servicio se indexa sin agenda ahí.
+        assertThat(sql).contains("ss.booking_enabled and (b.opening_hours is not null and exists (",
+                "jsonb_array_length(d.v) > 0", "'lunes','martes'").doesNotContain("{weeklyHours}");
         // La categoría (B) lleva etiqueta y sinónimos en español como constantes del código, nunca del usuario.
         assertThat(sql).contains("when 'ALIGNMENT_BALANCING' then 'Alineación y balanceo alineacion balanceo alinear'")
                 .contains("when 'LUBRICATION' then 'Lubricación y cambio de aceite cambio de aceite lubricacion "
