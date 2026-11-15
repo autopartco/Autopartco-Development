@@ -1,62 +1,20 @@
-import { useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { XIcon } from 'lucide-react'
 import { Container, PageIntro } from '@/components/common/page-header'
 import { EmptyState, ErrorState } from '@/components/common/states'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { useServiceSearch } from '@/features/services/hooks'
-import { parseServiceState, toServiceQuery } from '@/features/services/lib/service-query'
 import { pluralize } from '@/lib/format'
 import { cn } from '@/lib/utils'
-import { MarketplaceError } from '../../api/types'
-import { useListingSearch, useStoreSearch, useStoreState } from '../../hooks'
-import { parseSearchState, searchTabHref, toSearchQuery } from '../../lib/search-query'
+import { useStoreSearch, useStoreState } from '../../hooks'
+import { searchTabHref } from '../../lib/search-query'
 import { toStoreQuery } from '../../lib/store-search-query'
 import { ResultsPagination } from '../results-pagination'
 import { StoreResultRow, StoreRowSkeleton } from '../store-card'
 import { SearchTabs } from './search-tabs'
+import { errorCopy, useCityOptions } from './store-search-support'
 
 const ALL_CITIES = 'all'
-
-function errorCopy(error: unknown): { title: string; description: string } {
-  if (error instanceof MarketplaceError) {
-    if (error.code === 'SEARCH_RATE_LIMITED' || error.status === 429) {
-      return { title: 'Estás buscando muy rápido', description: 'Espera unos segundos y vuelve a intentarlo. Tu búsqueda se mantiene.' }
-    }
-    if (error.code?.startsWith('SEARCH_')) {
-      return {
-        title: 'No pudimos interpretar la búsqueda',
-        description: 'Revisa el texto o la ciudad elegida, o quita el filtro de ciudad, e inténtalo de nuevo.',
-      }
-    }
-  }
-  return {
-    title: 'No pudimos cargar las tiendas',
-    description: 'El listado no respondió. Revisa tu conexión e inténtalo de nuevo; tu búsqueda se mantiene.',
-  }
-}
-
-/**
- * Ciudades para el filtro. El buscador de tiendas no devuelve facetas, así que se ofrecen las ciudades con repuestos o
- * servicios publicados (facetas del catálogo completo, sin texto), con el mismo código DIVIPOLA que acepta el servidor.
- */
-function useCityOptions(selected: string | undefined) {
-  const parts = useListingSearch(
-    useMemo(() => ({ ...toSearchQuery({ ...parseSearchState(new URLSearchParams()), pageSize: 1 }, undefined) }), []),
-  )
-  const services = useServiceSearch(
-    useMemo(() => ({ ...toServiceQuery(parseServiceState(new URLSearchParams()), undefined), pageSize: 1 }), []),
-  )
-  return useMemo(() => {
-    const byCode = new Map<string, string>()
-    for (const city of [...(parts.data?.facets?.cities ?? []), ...(services.data?.facets?.cities ?? [])]) {
-      if (!byCode.has(city.code)) byCode.set(city.code, city.name)
-    }
-    if (selected && !byCode.has(selected)) byCode.set(selected, 'Ciudad elegida')
-    return [...byCode].map(([code, name]) => ({ code, name })).toSorted((a, b) => a.name.localeCompare(b.name, 'es'))
-  }, [parts.data, services.data, selected])
-}
 
 /** Pestaña «Tiendas» de `/buscar`: texto y ciudad en la URL, filas con separadores y paginación con enlaces. */
 export function StoresSearchView() {
@@ -138,7 +96,7 @@ export function StoresSearchView() {
         crumbs={[{ label: 'Inicio', to: '/' }, { label: 'Buscar' }]}
         label="Catálogo / Tiendas"
         title={title}
-        description="Almacenes publicados en Autopartco. Entra a una tienda para ver sus repuestos, servicios y sedes."
+        description="Encuentra almacenes y talleres cerca de ti. Entra a uno para ver sus repuestos, servicios y sedes."
         className="mb-6"
       />
       <SearchTabs active="stores" />

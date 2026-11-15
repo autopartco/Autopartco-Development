@@ -14,7 +14,7 @@ const CHOICES: Choice[] = [
     to: '/registro/cliente',
     icon: UserRoundIcon,
     title: 'Soy cliente',
-    body: 'Conductor o taller que busca repuestos y compara almacenes.',
+    body: 'Conductor o taller que compra repuestos, agenda servicios y encuentra almacenes cerca.',
   },
   {
     to: '/vender/registro',

@@ -6,7 +6,7 @@ import { useSellerCta } from '@/features/seller/hooks'
 const CURRENT_YEAR = new Date().getFullYear()
 
 const LINKS = [
-  { to: '/buscar', label: 'Buscar repuestos' },
+  { to: '/buscar', label: 'Buscar repuestos y servicios' },
   { to: '/categorias', label: 'Categorías' },
   { to: '/tiendas', label: 'Tiendas' },
 ]
@@ -39,9 +39,8 @@ export function SiteFooter() {
         <div className="col-span-2 flex flex-col items-start gap-4 sm:col-span-3 lg:col-span-1">
           <Logo tone="dark" />
           <p className="max-w-sm text-sm text-ap-on-dark-muted">
-            Repuestos de los almacenes de tu ciudad en un solo lugar, para conductores y talleres. Compara precio,
-            existencias y distancia, revisa que la pieza le sirva a tu vehículo y cómprala en línea con seguimiento
-            del pedido.
+            Repuestos, servicios de taller y almacenes de tu ciudad en un solo lugar. Compara precios, agenda tu
+            cita, escríbeles por WhatsApp y mira cómo llegar.
           </p>
         </div>
         <nav aria-labelledby="pie-explorar">
