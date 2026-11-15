@@ -75,6 +75,13 @@
     --ap-shadow-overlay: 0 12px 32px rgb(32 35 38 / 0.16);
     --ap-content-width: 1200px;
 
+    /* Movimiento (§10): color y opacidad 120–180 ms; menús y paneles 150–220 ms. */
+    --ap-dur-fast: 120ms;
+    --ap-dur-base: 160ms;
+    --ap-dur-panel: 200ms;
+    --ap-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+    --ap-ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+
     /* Tokens semánticos de shadcn/ui, mapeados a la paleta */
     --background: var(--ap-white);
     --foreground: var(--ap-ink);
@@ -213,7 +220,10 @@
     /* Ancho de contenido público: `max-w-content`. */
     --container-content: var(--ap-content-width);
 
-    --ease-out-snap: cubic-bezier(0.23, 1, 0.32, 1);
+    /* Curvas: `ease-ap-out`, `ease-ap-in-out` (y `ease-out-snap`, alias heredado). */
+    --ease-out-snap: var(--ap-ease-out);
+    --ease-ap-out: var(--ap-ease-out);
+    --ease-ap-in-out: var(--ap-ease-in-out);
 }
 
 /* Superficies oscuras (cabecera, pie): el foco pasa a blanco para mantener 3:1. */
@@ -275,6 +285,103 @@
         transition-duration: 0.01ms !important;
         scroll-behavior: auto !important;
     }
+}
+
+/*
+ * Movimiento (§10). Duraciones y curvas salen de los tokens `--ap-dur-*` / `--ap-ease-*`.
+ * Con `prefers-reduced-motion` el bloque de arriba reduce todo a ~0 ms.
+ */
+@utility ap-dur-fast {
+    --tw-duration: var(--ap-dur-fast);
+    transition-duration: var(--ap-dur-fast);
+}
+@utility ap-dur-base {
+    --tw-duration: var(--ap-dur-base);
+    transition-duration: var(--ap-dur-base);
+}
+@utility ap-dur-panel {
+    --tw-duration: var(--ap-dur-panel);
+    transition-duration: var(--ap-dur-panel);
+}
+
+/* Color y opacidad de controles: 120 ms, con la curva de salida del sistema. */
+@utility ap-transition-colors {
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, translate;
+    transition-duration: var(--ap-dur-fast);
+    transition-timing-function: var(--ap-ease-out);
+}
+
+/* Fondo de diálogos y sheets: fade en el panel, salida más corta. */
+@utility ap-backdrop {
+    transition-property: opacity;
+    transition-duration: var(--ap-dur-panel);
+    transition-timing-function: var(--ap-ease-out);
+    &[data-starting-style] {
+        opacity: 0;
+    }
+    &[data-ending-style] {
+        opacity: 0;
+        transition-duration: var(--ap-dur-fast);
+    }
+}
+
+/* Menús, selects, tooltips y diálogos: fade + escala 0,98 (propiedad `scale`, no choca con translate). */
+@utility ap-popup {
+    transition-property: opacity, scale;
+    transition-duration: var(--ap-dur-panel);
+    transition-timing-function: var(--ap-ease-out);
+    &[data-starting-style],
+    &[data-ending-style] {
+        opacity: 0;
+        scale: 0.98;
+    }
+    &[data-ending-style] {
+        transition-duration: var(--ap-dur-fast);
+    }
+}
+
+/* Contenido de una pestaña al cambiar: fade corto, sin desplazamiento. */
+@keyframes ap-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@utility ap-fade-in {
+    animation: ap-fade-in var(--ap-dur-base) var(--ap-ease-out) both;
+}
+
+/* Esqueleto: barrido diagonal sutil sobre el tono línea; fijo con movimiento reducido. */
+@keyframes ap-shimmer {
+    from { background-position: 150% 0; }
+    to { background-position: -50% 0; }
+}
+@utility ap-skeleton {
+    background-color: color-mix(in srgb, var(--ap-line) 60%, transparent);
+    background-image: linear-gradient(110deg, transparent 35%, rgb(255 255 255 / 0.5) 50%, transparent 65%);
+    background-size: 200% 100%;
+    background-repeat: no-repeat;
+    animation: ap-shimmer 1.4s linear infinite;
+    @media (prefers-reduced-motion: reduce) {
+        animation: none;
+        background-image: none;
+    }
+}
+
+/* Barra de progreso de navegación (cabecera): avanza hacia 85 % y se cierra al terminar. */
+@keyframes ap-progress-run {
+    from { transform: scaleX(0.04); }
+    to { transform: scaleX(0.85); }
+}
+@keyframes ap-progress-finish {
+    from { transform: scaleX(0.85); opacity: 1; }
+    to { transform: scaleX(1); opacity: 0; }
+}
+@utility ap-progress-run {
+    transform-origin: left;
+    animation: ap-progress-run 6s var(--ap-ease-out) both;
+}
+@utility ap-progress-finish {
+    transform-origin: left;
+    animation: ap-progress-finish var(--ap-dur-panel) var(--ap-ease-in-out) both;
 }
 
 /* Enlaces que cubren toda una tarjeta: el foco se dibuja en el ::after de la tarjeta. */
@@ -364,4 +471,19 @@
 @utility ap-num {
     text-align: right;
     font-variant-numeric: tabular-nums;
+}
+
+/* Avisos (sonner): sus transiciones de 400 ms pasan a los tokens de panel. */
+.toaster[data-sonner-toaster] {
+    transition: transform var(--ap-dur-panel) var(--ap-ease-out);
+}
+.toaster [data-sonner-toast][data-styled='true'] {
+    transition:
+        transform var(--ap-dur-panel) var(--ap-ease-out),
+        opacity var(--ap-dur-panel) var(--ap-ease-out),
+        height var(--ap-dur-panel) var(--ap-ease-out),
+        box-shadow var(--ap-dur-base) var(--ap-ease-out);
+}
+.toaster [data-sonner-toast] > * {
+    transition-duration: var(--ap-dur-base);
 }

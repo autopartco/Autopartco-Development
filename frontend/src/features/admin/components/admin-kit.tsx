@@ -234,8 +234,8 @@ export function FormSheet({ open, onOpenChange, title, description, submitLabel,
             <Button type="button" variant="outline" className="h-11 px-5" onClick={() => onOpenChange(false)} disabled={pending}>
               Cancelar
             </Button>
-            <Button type="submit" className="h-11 px-5" disabled={pending}>
-              {pending ? 'Guardando…' : submitLabel}
+            <Button type="submit" className="h-11 px-5" loading={pending}>
+              {submitLabel}
             </Button>
           </div>
         </form>

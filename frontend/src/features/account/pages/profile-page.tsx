@@ -70,8 +70,8 @@ function ProfileForm({ profile }: { profile: Profile }) {
       <TextField id="perfil-dateBirth" name="dateBirth" type="date" label="Fecha de nacimiento" defaultValue={profile.dateBirth} autoComplete="bday" required error={errors.dateBirth} />
       <TextField id="perfil-numberPhone" name="numberPhone" label="Teléfono" defaultValue={profile.numberPhone} maxLength={10} inputMode="tel" autoComplete="tel-national" required error={errors.numberPhone} />
       <div className="flex items-end sm:col-span-2">
-        <Button type="submit" className="h-11 px-5" disabled={save.pending}>
-          {save.pending ? 'Guardando…' : 'Guardar cambios'}
+        <Button type="submit" className="h-11 px-5" loading={save.pending}>
+          Guardar cambios
         </Button>
       </div>
     </form>

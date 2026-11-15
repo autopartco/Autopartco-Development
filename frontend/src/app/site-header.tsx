@@ -7,6 +7,7 @@ import { Logo } from '@/components/common/logo'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { cn } from '@/lib/utils'
+import { RouteProgress } from './route-progress'
 import { LocationPicker } from '@/features/location/components/location-picker'
 import { SearchBox } from '@/features/marketplace/components/search/search-box'
 import { CartIndicator } from '@/features/cart/components/cart-indicator'
@@ -161,6 +162,7 @@ export function SiteHeader() {
           <MobileMenu className="xl:hidden" />
         </div>
       </Container>
+      <RouteProgress />
     </header>
   )
 }

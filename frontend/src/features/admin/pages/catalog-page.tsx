@@ -7,6 +7,7 @@ import { TextField } from '@/components/common/form-fields'
 import { EmptyState } from '@/components/common/states'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { TabIndicator } from '@/components/common/tab-indicator'
 import { ConfirmDialog } from '@/features/portal/components/confirm-dialog'
 import { SelectField } from '@/features/portal/components/form-controls'
 import { ResultCount, SearchField } from '@/features/portal/components/search-field'
@@ -315,7 +316,8 @@ export default function AdminCatalogPage() {
 
   return (
     <AdminPage title="Catálogo" description="Categorías y fabricantes oficiales que usan todos los almacenes al publicar repuestos.">
-      <div role="tablist" aria-label="Datos del catálogo" className="-mt-2 mb-6 flex gap-1 overflow-x-auto overflow-y-hidden border-b border-ap-line">
+      <div role="tablist" aria-label="Datos del catálogo" className="relative -mt-2 mb-6 flex gap-1 overflow-x-auto overflow-y-hidden border-b border-ap-line">
+        <TabIndicator group="admin-catalog" />
         {tabs.map((item) => (
           <button
             key={item.id}
@@ -326,8 +328,8 @@ export default function AdminCatalogPage() {
             aria-controls={`panel-${item.id}`}
             onClick={() => setParams(item.id === 'categorias' ? {} : { vista: item.id }, { replace: true })}
             className={cn(
-              '-mb-px inline-flex min-h-11 items-center gap-2 border-b-2 px-3 text-sm font-semibold whitespace-nowrap transition-colors',
-              tab === item.id ? 'border-ap-red text-ap-ink' : 'border-transparent text-ap-muted hover:border-ap-line-strong hover:text-ap-ink',
+              '-mb-px inline-flex min-h-11 items-center gap-2 border-b-2 px-3 text-sm font-semibold whitespace-nowrap ap-transition-colors',
+              tab === item.id ? 'border-transparent text-ap-ink' : 'border-transparent text-ap-muted hover:border-ap-line-strong hover:text-ap-ink',
             )}
           >
             {item.label}
@@ -340,7 +342,7 @@ export default function AdminCatalogPage() {
           </button>
         ))}
       </div>
-      <div role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
+      <div key={tab} role="tabpanel" className="ap-fade-in" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
         {tab === 'categorias' ? <CategoriesTab /> : <ManufacturersTab />}
       </div>
     </AdminPage>

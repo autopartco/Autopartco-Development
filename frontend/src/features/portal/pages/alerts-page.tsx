@@ -3,6 +3,7 @@ import { BellOffIcon } from 'lucide-react'
 import { EmptyState } from '@/components/common/states'
 import { useAsync } from '@/lib/use-async'
 import { cn } from '@/lib/utils'
+import { TabIndicator } from '@/components/common/tab-indicator'
 import { getAlertService } from '../api/alert-service'
 import type { AlertStatusFilter } from '../api/alert-types'
 import { AlertCard } from '../components/alert-card'
@@ -53,8 +54,8 @@ export default function PortalAlertsPage() {
 
   const tabClass = (active: boolean) =>
     cn(
-      '-mb-px inline-flex min-h-11 items-center border-b-2 px-3 text-sm font-semibold whitespace-nowrap transition-colors',
-      active ? 'border-ap-red text-ap-ink' : 'border-transparent text-ap-muted hover:border-ap-line-strong hover:text-ap-ink',
+      '-mb-px inline-flex min-h-11 items-center border-b-2 px-3 text-sm font-semibold whitespace-nowrap ap-transition-colors',
+      active ? 'border-transparent text-ap-ink' : 'border-transparent text-ap-muted hover:border-ap-line-strong hover:text-ap-ink',
     )
 
   return (
@@ -62,7 +63,8 @@ export default function PortalAlertsPage() {
       <title>Alertas | Autopartco</title>
       <PageHeader title="Alertas" description="Avisos sobre ventas, existencias y clientes que conviene atender a tiempo." />
       {canManage ? (
-        <nav aria-label="Secciones de alertas" className="mb-6 flex gap-1 overflow-x-auto overflow-y-hidden border-b border-ap-line">
+        <nav aria-label="Secciones de alertas" className="relative mb-6 flex gap-1 overflow-x-auto overflow-y-hidden border-b border-ap-line">
+          <TabIndicator group="portal-alerts" />
           <Link to={base} className={tabClass(!preferences)} aria-current={!preferences ? 'page' : undefined}>
             Alertas
           </Link>
@@ -72,9 +74,11 @@ export default function PortalAlertsPage() {
         </nav>
       ) : null}
       {preferences ? (
-        <AlertPreferences />
+        <div key="preferencias" className="ap-fade-in">
+          <AlertPreferences />
+        </div>
       ) : (
-        <div className="flex flex-col gap-5">
+        <div key="alertas" className="ap-fade-in flex flex-col gap-5">
           <nav aria-label="Filtrar alertas" className={SEGMENT_GROUP_CLASS}>
             {FILTERS.map((item) => (
               <Link
