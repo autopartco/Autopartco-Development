@@ -295,7 +295,7 @@ export function SearchBox({ className, tone = 'light', autoFocus, shortcut, size
           autoCapitalize="off"
           spellCheck={false}
           enterKeyHint="search"
-          placeholder={shortcut ? 'Repuestos, servicios o tiendas' : 'Busca repuestos, servicios o tiendas'}
+          placeholder={shortcut ? 'Buscar' : 'Busca repuestos, servicios o tiendas'}
           className={cn(
             'h-full min-w-0 flex-1 appearance-none bg-transparent px-2.5 text-base text-ellipsis outline-none sm:text-sm',
             dark
