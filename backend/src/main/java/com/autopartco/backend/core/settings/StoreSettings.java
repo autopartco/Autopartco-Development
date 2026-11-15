@@ -34,17 +34,27 @@ public record StoreSettings(
     public record Catalog(boolean showExactStock) {
     }
 
-    /** {@code questions}: correo a los destinatarios por cada pregunta nueva sobre un producto del almacén. */
+    /**
+     * {@code questions}: correo a los destinatarios por cada pregunta nueva sobre un producto del almacén;
+     * {@code newBooking}: correo por cada solicitud de cita de servicio.
+     */
     public record Notifications(
             boolean newOrder,
             boolean lowStock,
             boolean newReview,
             boolean weeklyReport,
             boolean questions,
+            boolean newBooking,
             List<String> recipients
     ) {
         public Notifications {
             recipients = recipients == null ? List.of() : List.copyOf(recipients);
+        }
+
+        /** Con {@code newBooking} activo (valor por defecto). */
+        public Notifications(boolean newOrder, boolean lowStock, boolean newReview, boolean weeklyReport,
+                boolean questions, List<String> recipients) {
+            this(newOrder, lowStock, newReview, weeklyReport, questions, true, recipients);
         }
     }
 

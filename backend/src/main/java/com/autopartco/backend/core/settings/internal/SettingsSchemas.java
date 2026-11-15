@@ -54,6 +54,7 @@ public final class SettingsSchemas {
             .leaf("notifications.newReview", true, bool())
             .leaf("notifications.weeklyReport", true, bool())
             .leaf("notifications.questions", true, bool())
+            .leaf("notifications.newBooking", true, bool())
             .leaf("notifications.recipients", List.of(), emailList(5))
             .leaf("security.requireStaffTwoFactor", false, bool())
             .build();
@@ -113,6 +114,7 @@ public final class SettingsSchemas {
                         flag(notifications, "newReview"),
                         flag(notifications, "weeklyReport"),
                         flag(notifications, "questions"),
+                        flag(notifications, "newBooking"),
                         strings(notifications, "recipients")),
                 new StoreSettings.Security(flag(security, "requireStaffTwoFactor"))
         );

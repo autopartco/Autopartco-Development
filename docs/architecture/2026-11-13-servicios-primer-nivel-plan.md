@@ -247,7 +247,15 @@ Notas de implementación:
 - **Contexto:** contratos «API pública» (salvo home, availability y promociones) y «Sinónimos». Reindexar al crear/editar/desactivar servicio, cambiar sucursal o publicar/ocultar almacén; `reindexAll` incluye servicios. Precio con promoción se deja en `base_price_from` hasta T4 (`price_from = base`). Depende de T1.
 - **Aceptación:** `./mvnw -q test -Dtest=ServiceSearchSqlTest,ServiceSearchServiceTest,ServiceBrowseControllerTest,SearchControllerServicesTest,QueryParserServiceIntentTest` en verde: «alineacion bogota» devuelve servicios `ALIGNMENT_BALANCING` de Bogotá sin tildes; servicio inactivo o de almacén no publicado no aparece; un resultado por servicio con la sucursal más cercana; `/search?q=cambio de aceite` trae `services.items` y `interpreted.serviceCategory=LUBRICATION`; formato de `items` de productos sin cambios.
 
-### T3 — Agenda de citas
+### T3 — Agenda de citas ✅ (2026-11-15)
+
+Notas de implementación:
+- **Permisos en BD:** migración `booking_permissions` en Supabase: crea `BOOKING_READ`/`BOOKING_MANAGE` y los asigna a los roles `OWNER` existentes. Los roles `ADMIN`/`SALES` los toman al crearse (`StaffRoles.ensure`).
+- **`WebSecurityConfig`:** `GET /marketplace/services/*/availability` es pública (aprobada; límite de 60/min por IP). `/bookings` y `/stores/*/bookings` exigen sesión.
+- **Concurrencia:** el alta toma un advisory lock por comprador (límites 3 activas/almacén y 10/día) y las acciones del almacén usan `version`.
+- **Notificaciones:** `BookingChanged` → `BookingNotifications` (`AFTER_COMMIT`, asíncrono). El recordatorio de 24 h se envía una sola vez por cita (marca en auditoría `BOOKING_REMINDER_SENT`).
+- **Pendiente:** las citas aún no entran en la exportación/borrado de cuenta (Ley 1581); va con T9.
+- **Pruebas en verde:** las 6 clases del criterio, `ServiceAvailabilityControllerTest`, `SettingsServiceTest`, `ModularityTests`, `WebSecurityConfigTest` (209) y `StaffRolesTest`.
 - **Modelo:** Opus · **Agente:** backend
 - **Archivos:** nuevo módulo `core/booking/{Booking,BookingStatus,BookingService,BookingRules,AvailabilityService,BookingExpiryJob,BookingReminderJob,BookingNotifications}.java` (+ `internal/`), `marketplace/bookings/BuyerBookingController.java`, `marketplace/services/ServiceAvailabilityController.java`, `storesuite/bookings/StoreBookingController.java`, permisos `BOOKING_READ/BOOKING_MANAGE` en el catálogo de permisos y roles predefinidos, `core/notification` (plantillas), `core/settings` (`whatsappServiceMessage`, `newBooking`); `WebSecurityConfig` si hace falta ruta pública de availability (**requiere aprobación**); tests en `backend/src/test/java/com/autopartco/backend/core/booking/`.
 - **Contexto:** «Reglas de negocio → Agenda», «API del comprador», «API del portal → citas», «Configuración del almacén». Reloj inyectable, zona `America/Bogota`. Depende de T1.

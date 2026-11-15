@@ -30,6 +30,11 @@ public final class StorePermissionCodes {
     /** Configurar las alertas automáticas del almacén (canales y umbrales); recibir las alertas por correo. */
     public static final String ALERT_MANAGE = "ALERT_MANAGE";
 
+    /** Ver la bandeja de citas de servicio (incluye nombre y teléfono del comprador en citas no canceladas). */
+    public static final String BOOKING_READ = "BOOKING_READ";
+    /** Confirmar, proponer otra hora, rechazar, cancelar y cerrar citas de servicio. */
+    public static final String BOOKING_MANAGE = "BOOKING_MANAGE";
+
     private StorePermissionCodes() {
     }
 }
