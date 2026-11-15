@@ -197,7 +197,9 @@ public class BookingCatalog {
                 rs.getBigDecimal("latitude"),
                 rs.getBigDecimal("longitude"),
                 phone(rs.getString("number_phone")),
-                rs.getString("whatsapp"));
+                rs.getString("whatsapp") != null ? rs.getString("whatsapp")
+                        : com.autopartco.backend.core.organization.PublicBranches.mobileWhatsapp(
+                                rs.getString("number_phone")));
     }
 
     static Map<String, Object> hours(String json) {

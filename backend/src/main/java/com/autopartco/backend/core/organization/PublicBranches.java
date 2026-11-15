@@ -115,5 +115,25 @@ public class PublicBranches {
             return new PublicBranch(id, name, address, city, department, latitude, longitude, approximate, phone, value,
                     openingHours, openNow, serviceIds);
         }
+
+        /** Sin WhatsApp propio ni del almacén: el teléfono de la sede si es un celular colombiano. */
+        public PublicBranch withMobileFallback() {
+            return whatsapp != null ? this : withWhatsapp(mobileWhatsapp(phone));
+        }
+    }
+
+    /**
+     * {@code +573XXXXXXXXX} si {@code phone} es un celular colombiano (10 dígitos que empiezan por 3, con o sin
+     * {@code +57}); si no, {@code null}. Los fijos y los números de relleno no sirven para WhatsApp.
+     */
+    public static String mobileWhatsapp(String phone) {
+        if (phone == null) {
+            return null;
+        }
+        String digits = phone.replaceAll("\\D", "");
+        if (digits.length() == 12 && digits.startsWith("57")) {
+            digits = digits.substring(2);
+        }
+        return digits.matches("3\\d{9}") ? "+57" + digits : null;
     }
 }

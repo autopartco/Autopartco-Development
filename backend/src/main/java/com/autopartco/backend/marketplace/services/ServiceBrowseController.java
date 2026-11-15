@@ -215,6 +215,7 @@ public class ServiceBrowseController {
         String storeWhatsapp = publishedStores.publicWhatsapp(storeId);
         return branches.stream()
                 .map(branch -> branch.whatsapp() == null ? branch.withWhatsapp(storeWhatsapp) : branch)
+                .map(PublicBranch::withMobileFallback)
                 .toList();
     }
 
