@@ -49,6 +49,36 @@ public class StoreFileStorage {
         return new StoredFile(path, cleanFilename(file.getOriginalFilename()), contentType, content.length);
     }
 
+    /** Imagen de un servicio en el bucket público (validada como el logo: PNG, JPEG o WebP, hasta 5 MB). */
+    public String uploadServiceImage(UUID storeId, UUID serviceId, MultipartFile file) {
+        byte[] content = read(file, MAX_BRAND_ASSET_SIZE);
+        String contentType = detectContentType(content, true);
+        String path = "services/%s/%s/%s.%s".formatted(storeId, serviceId, UUID.randomUUID(), extension(contentType));
+        storageService.upload(path, content, contentType, false);
+        return path;
+    }
+
+    public String publicUrl(String path) {
+        return storageService.publicUrl(path);
+    }
+
+    public void deletePublicQuietly(String path) {
+        try {
+            storageService.delete(path);
+        } catch (RuntimeException ignored) {
+            // Best-effort: un objeto huérfano no rompe la operación.
+        }
+    }
+
+    /** Borra una imagen pública de servicio a partir de su URL (solo si es de este bucket y de servicios). */
+    public void deletePublicUrlQuietly(String url) {
+        String marker = storageService.publicUrl("services/_");
+        String prefix = marker.substring(0, marker.length() - "services/_".length());
+        if (url != null && url.startsWith(prefix) && url.substring(prefix.length()).startsWith("services/")) {
+            deletePublicQuietly(url.substring(prefix.length()));
+        }
+    }
+
     public void delete(String path) {
         storageService.deleteFromBucket(storageProperties.businessBucket(), path);
     }

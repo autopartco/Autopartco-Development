@@ -44,6 +44,24 @@ public record StoreServiceRequest(
 
         Integer sortOrder,
         Boolean active,
-        Long version
+        Long version,
+
+        /** Agenda en línea; si falta conserva el valor (alta: activa). */
+        Boolean bookingEnabled,
+
+        /** Duración de la franja de agenda (30, 60, 90, 120, 180 o 240); si falta conserva el valor (alta: 60). */
+        Integer slotMinutes
 ) {
+    public static final java.util.Set<Integer> SLOT_MINUTES = java.util.Set.of(30, 60, 90, 120, 180, 240);
+
+    public StoreServiceRequest(ServiceCategory category, String name, String description, BigDecimal priceFrom,
+            Integer durationMinutes, List<UUID> branchIds, Integer sortOrder, Boolean active, Long version) {
+        this(category, name, description, priceFrom, durationMinutes, branchIds, sortOrder, active, version, null,
+                null);
+    }
+
+    @jakarta.validation.constraints.AssertTrue(message = "La franja de agenda debe ser de 30, 60, 90, 120, 180 o 240 minutos.")
+    public boolean hasValidSlotMinutes() {
+        return slotMinutes == null || SLOT_MINUTES.contains(slotMinutes);
+    }
 }

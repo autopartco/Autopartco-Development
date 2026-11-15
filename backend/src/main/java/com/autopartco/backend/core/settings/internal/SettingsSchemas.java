@@ -20,6 +20,8 @@ import com.autopartco.backend.core.settings.StoreSettings;
 public final class SettingsSchemas {
     public static final String DEFAULT_WHATSAPP_MESSAGE =
             "Hola, vi {producto} en Autopartco y quiero cotizarlo: {enlace}";
+    public static final String DEFAULT_WHATSAPP_SERVICE_MESSAGE =
+            "Hola, vi el servicio {servicio} en Autopartco y quiero información para agendar: {enlace}";
     public static final String LINK_PLACEHOLDER = "{enlace}";
     public static final int MAX_FEATURED_PRODUCTS = 8;
 
@@ -42,6 +44,7 @@ public final class SettingsSchemas {
     public static final SettingsSchema STORE = SettingsSchema.builder()
             .leaf("contact.whatsappEnabled", true, bool())
             .leaf("contact.whatsappMessage", DEFAULT_WHATSAPP_MESSAGE, whatsappMessage())
+            .leaf("contact.whatsappServiceMessage", DEFAULT_WHATSAPP_SERVICE_MESSAGE, whatsappMessage())
             .leaf("profile.showBranchesMap", true, bool())
             .leaf("profile.featuredProductIds", List.of(), uuidList(MAX_FEATURED_PRODUCTS))
             .leaf("profile.tagline", null, optionalText(80))
@@ -51,6 +54,7 @@ public final class SettingsSchemas {
             .leaf("notifications.newReview", true, bool())
             .leaf("notifications.weeklyReport", true, bool())
             .leaf("notifications.questions", true, bool())
+            .leaf("notifications.newBooking", true, bool())
             .leaf("notifications.recipients", List.of(), emailList(5))
             .leaf("security.requireStaffTwoFactor", false, bool())
             .build();
@@ -97,7 +101,8 @@ public final class SettingsSchemas {
         Map<String, Object> notifications = section(effective, "notifications");
         Map<String, Object> security = section(effective, "security");
         return new StoreSettings(
-                new StoreSettings.Contact(flag(contact, "whatsappEnabled"), (String) contact.get("whatsappMessage")),
+                new StoreSettings.Contact(flag(contact, "whatsappEnabled"), (String) contact.get("whatsappMessage"),
+                        (String) contact.get("whatsappServiceMessage")),
                 new StoreSettings.Profile(
                         flag(profile, "showBranchesMap"),
                         strings(profile, "featuredProductIds").stream().map(UUID::fromString).toList(),
@@ -109,6 +114,7 @@ public final class SettingsSchemas {
                         flag(notifications, "newReview"),
                         flag(notifications, "weeklyReport"),
                         flag(notifications, "questions"),
+                        flag(notifications, "newBooking"),
                         strings(notifications, "recipients")),
                 new StoreSettings.Security(flag(security, "requireStaffTwoFactor"))
         );

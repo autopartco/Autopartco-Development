@@ -96,6 +96,10 @@ public class WebSecurityConfig {
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/stores/*/reviews"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/stores/*/reviews/summary"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/stores/*/branches"),
+                // Servicios: search, categories y detalle {serviceId}. Un solo segmento: no abre subrutas.
+                new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/services/*"),
+                // Franjas para agendar (orientativo; con límite por IP). Crear la cita sí exige sesión.
+                new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/services/*/availability"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/products"),
                 new PublicRoute(HttpMethod.GET, ApiPaths.MARKETPLACE + "/products/*"),
                 // marketplace.reviews: reseñas visibles de producto y su resumen (la elegibilidad exige sesión).

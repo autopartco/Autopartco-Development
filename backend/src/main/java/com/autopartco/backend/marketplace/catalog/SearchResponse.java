@@ -6,6 +6,8 @@ import java.util.List;
 import com.autopartco.backend.core.catalog.ProductResponse;
 import com.autopartco.backend.core.search.SearchInterpretation;
 import com.autopartco.backend.core.search.SearchResult;
+import com.autopartco.backend.marketplace.services.ServiceCard;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonUnwrapped;
 
 /**
@@ -21,8 +23,26 @@ public record SearchResponse(
         boolean fuzzy,
         SearchInterpretation interpreted,
         SearchResult.Facets facets,
-        List<Item> sponsored
+        List<Item> sponsored,
+        @JsonInclude(JsonInclude.Include.NON_NULL) Services services,
+        @JsonInclude(JsonInclude.Include.NON_NULL) String suggestedTab
 ) {
+    /** Franja de servicios de la búsqueda unificada: hasta 4 tarjetas y el total de servicios que coinciden. */
+    public record Services(List<ServiceCard> items, long total) {
+    }
+
+    /** Sin servicios (compatibilidad con quien construye la respuesta de productos). */
+    public SearchResponse(List<Item> items, int page, int size, long total, boolean fuzzy,
+            SearchInterpretation interpreted, SearchResult.Facets facets, List<Item> sponsored) {
+        this(items, page, size, total, fuzzy, interpreted, facets, sponsored, null, null);
+    }
+
+    /** Misma respuesta con la franja de servicios y la pestaña sugerida ({@code services}, o {@code null}). */
+    SearchResponse withServices(Services services, String suggestedTab) {
+        return new SearchResponse(items, page, size, total, fuzzy, interpreted, facets, sponsored, services,
+                suggestedTab);
+    }
+
     /** {@link ProductResponse} con sus campos al mismo nivel, más distancia y datos de anuncio. */
     public record Item(
             @JsonUnwrapped ProductResponse listing,

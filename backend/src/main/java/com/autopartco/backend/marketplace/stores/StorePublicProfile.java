@@ -4,7 +4,9 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+import com.autopartco.backend.core.organization.BusinessType;
 import com.autopartco.backend.core.organization.PublicStoreService;
+import com.autopartco.backend.core.pricing.ServicePricing;
 import com.autopartco.backend.core.organization.PublishedStoreProfile;
 import com.autopartco.backend.core.settings.StoreSettings;
 import com.autopartco.backend.marketplace.reviews.StoreRating;
@@ -30,9 +32,21 @@ public record StorePublicProfile(
         boolean verified,
         boolean whatsappEnabled,
         String whatsappMessage,
-        List<PublicStoreService> services,
-        List<UUID> featuredProductIds
+        List<StoreServiceItem> services,
+        List<UUID> featuredProductIds,
+        BusinessType businessType
 ) {
+    /** Mismo perfil con los precios de servicios recalculados (las promociones vencen sin invalidar la caché). */
+    StorePublicProfile withPricedServices(ServicePricing.Rules rules) {
+        if (services == null || services.isEmpty()) {
+            return this;
+        }
+        return new StorePublicProfile(id, name, description, logoUrl, bannerUrl, cities, branchCount, memberSince,
+                rating, publishedProducts, contact, tagline, verified, whatsappEnabled, whatsappMessage,
+                services.stream().map(service -> service.priced(id, rules)).toList(), featuredProductIds,
+                businessType);
+    }
+
     static StorePublicProfile of(
             PublishedStoreProfile store,
             StoreRating rating,
@@ -57,8 +71,9 @@ public record StorePublicProfile(
                 true,
                 settings.contact().whatsappEnabled(),
                 settings.contact().whatsappMessage(),
-                services,
-                featuredProductIds
+                services.stream().map(StoreServiceItem::of).toList(),
+                featuredProductIds,
+                store.businessType()
         );
     }
 }

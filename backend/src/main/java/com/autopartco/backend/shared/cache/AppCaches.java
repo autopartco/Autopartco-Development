@@ -16,6 +16,7 @@ public final class AppCaches {
     public static final String SETTINGS_STORE = "settings:store";
     public static final String HOME = "home";
     public static final String ADS_ACTIVE = "ads:active";
+    public static final String SERVICE_CATEGORIES = "service:categories";
 
     /** Nombre, caducidad y tope de entradas de la copia local (Caffeine). */
     public record Spec(String name, Duration ttl, long maxLocalEntries) {
@@ -29,7 +30,8 @@ public final class AppCaches {
             new Spec(STORE_BRANCHES, Duration.ofMinutes(5), 1_000),
             new Spec(SETTINGS_STORE, Duration.ofMinutes(5), 2_000),
             new Spec(HOME, Duration.ofSeconds(60), 500),
-            new Spec(ADS_ACTIVE, Duration.ofSeconds(60), 20));
+            new Spec(ADS_ACTIVE, Duration.ofSeconds(60), 20),
+            new Spec(SERVICE_CATEGORIES, Duration.ofMinutes(5), 100));
 
     private AppCaches() {
     }

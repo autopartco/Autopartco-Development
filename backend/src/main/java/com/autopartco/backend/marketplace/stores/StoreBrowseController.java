@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.autopartco.backend.core.catalog.ListingQueries;
@@ -19,7 +20,10 @@ import com.autopartco.backend.core.organization.PublicBranches.PublicBranch;
 import com.autopartco.backend.core.organization.PublishedStoreProfile;
 import com.autopartco.backend.core.organization.PublishedStores;
 import com.autopartco.backend.core.organization.StoreFiles;
+import com.autopartco.backend.core.organization.BusinessType;
+import com.autopartco.backend.core.organization.ServiceCategory;
 import com.autopartco.backend.core.organization.StoreService;
+import com.autopartco.backend.core.pricing.ServicePricing;
 import com.autopartco.backend.core.organization.StoreServices;
 import com.autopartco.backend.core.settings.SettingsQueries;
 import com.autopartco.backend.core.settings.StoreSettings;
@@ -40,11 +44,23 @@ public class StoreBrowseController {
     private final StoreServices storeServices;
     private final PublicBranches publicBranches;
     private final StorePublicCache cache;
+    /** Precio con promoción de los servicios del perfil; nulo en pruebas sin promociones. */
+    private final ServicePricing pricing;
 
     @Autowired
     public StoreBrowseController(StoreService storeService, StoreFiles storeFiles, PublishedStores publishedStores,
             StoreReviewService storeReviewService, ListingQueries listingQueries, SettingsQueries settingsQueries,
-            StoreServices storeServices, PublicBranches publicBranches, StorePublicCache cache) {
+            StoreServices storeServices, PublicBranches publicBranches, StorePublicCache cache,
+            ServicePricing pricing) {
+        this(storeService, storeFiles, publishedStores, storeReviewService, listingQueries, settingsQueries,
+                storeServices, publicBranches, cache, pricing, true);
+    }
+
+    private StoreBrowseController(StoreService storeService, StoreFiles storeFiles, PublishedStores publishedStores,
+            StoreReviewService storeReviewService, ListingQueries listingQueries, SettingsQueries settingsQueries,
+            StoreServices storeServices, PublicBranches publicBranches, StorePublicCache cache,
+            ServicePricing pricing, boolean ignored) {
+        this.pricing = pricing;
         this.storeService = storeService;
         this.storeFiles = storeFiles;
         this.publishedStores = publishedStores;
@@ -61,18 +77,31 @@ public class StoreBrowseController {
             StoreReviewService storeReviewService, ListingQueries listingQueries, SettingsQueries settingsQueries,
             StoreServices storeServices, PublicBranches publicBranches) {
         this(storeService, storeFiles, publishedStores, storeReviewService, listingQueries, settingsQueries,
-                storeServices, publicBranches, StorePublicCache.NONE);
+                storeServices, publicBranches, StorePublicCache.NONE, null, true);
     }
 
+    /**
+     * Almacenes publicados. {@code businessType} filtra por tipo declarado (un almacén {@code BOTH} aparece al pedir
+     * {@code PARTS} o {@code SERVICES}); {@code serviceCategory}, por almacenes con un servicio activo de esa categoría.
+     */
     @GetMapping
-    public List<PublicStoreSummary> published() {
-        return storeService.published().stream().map(PublicStoreSummary::of).toList();
+    public List<PublicStoreSummary> published(
+            @RequestParam(required = false) BusinessType businessType,
+            @RequestParam(required = false) ServiceCategory serviceCategory) {
+        Set<UUID> withServices = serviceCategory == null ? null : storeServices.storesWithActiveServices(serviceCategory);
+        return storeService.published().stream()
+                .map(PublicStoreSummary::of)
+                .filter(store -> businessType == null || store.businessType() == businessType
+                        || (store.businessType() == BusinessType.BOTH && businessType != BusinessType.BOTH))
+                .filter(store -> withServices == null || withServices.contains(store.id()))
+                .toList();
     }
 
     /** Perfil público (caché {@code store:profile}): 404 {@code STORE_NOT_FOUND} si el almacén no está publicado. */
     @GetMapping("/{storeId}")
     public StorePublicProfile profile(@PathVariable UUID storeId) {
-        return cache.profile(storeId, () -> loadProfile(storeId));
+        StorePublicProfile profile = cache.profile(storeId, () -> loadProfile(storeId));
+        return pricing == null ? profile : profile.withPricedServices(pricing.cached());
     }
 
     private StorePublicProfile loadProfile(UUID storeId) {

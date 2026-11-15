@@ -12,7 +12,11 @@ import org.hibernate.type.SqlTypes;
 import com.autopartco.backend.shared.persistence.BaseEntity;
 import com.autopartco.backend.shared.persistence.State;
 
+import com.autopartco.backend.core.organization.BusinessType;
+
 import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
@@ -59,6 +63,12 @@ public class Store extends BaseEntity {
 
     @Column(name = "banner_path", length = 500)
     private String bannerPath;
+
+    /** {@code PARTS}, {@code SERVICES} o {@code BOTH} (columna con valor por defecto {@code PARTS}). */
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "business_type", nullable = false, length = 10)
+    private BusinessType businessType = BusinessType.PARTS;
     
     @Builder.Default
     @OneToMany(mappedBy = "store")

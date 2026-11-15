@@ -20,8 +20,14 @@ public record PublishedStoreProfile(
         List<String> cities,
         int branchCount,
         LocalDate memberSince,
-        PublicContact contact
+        PublicContact contact,
+        BusinessType businessType
 ) {
+    public PublishedStoreProfile(UUID id, String name, String description, String logoUrl, String bannerUrl,
+            List<String> cities, int branchCount, LocalDate memberSince, PublicContact contact) {
+        this(id, name, description, logoUrl, bannerUrl, cities, branchCount, memberSince, contact, BusinessType.PARTS);
+    }
+
     /** Contacto público que el almacén decide mostrar (todos opcionales). */
     public record PublicContact(
             String whatsapp,

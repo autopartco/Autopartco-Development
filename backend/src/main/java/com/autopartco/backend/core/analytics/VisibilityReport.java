@@ -15,6 +15,9 @@ import java.util.UUID;
  * @param topProducts hasta {@value VisibilityQueries#TOP_PRODUCTS} publicaciones con más visitas
  * @param daily un elemento por día del rango, con ceros si no hubo visitas
  * @param byBranch sucursales con al menos un clic, de más a menos clics de WhatsApp
+ * @param serviceViews vistas del detalle de sus servicios
+ * @param topServices hasta {@value VisibilityQueries#TOP_SERVICES} servicios con vistas, clics o citas en el rango
+ * @param bookings citas solicitadas en el rango y su resultado
  */
 public record VisibilityReport(
         LocalDate from,
@@ -29,8 +32,27 @@ public record VisibilityReport(
         List<DayRow> daily,
         long whatsappClicks,
         long directionsClicks,
-        List<BranchRow> byBranch
+        List<BranchRow> byBranch,
+        long serviceViews,
+        List<ServiceRow> topServices,
+        Bookings bookings
 ) {
+    public VisibilityReport(LocalDate from, LocalDate to, long profileViews, long profileVisitors, long productViews,
+            long productVisitors, long shares, List<SourceRow> bySource, List<ProductRow> topProducts,
+            List<DayRow> daily, long whatsappClicks, long directionsClicks, List<BranchRow> byBranch) {
+        this(from, to, profileViews, profileVisitors, productViews, productVisitors, shares, bySource, topProducts,
+                daily, whatsappClicks, directionsClicks, byBranch, 0, List.of(), Bookings.NONE);
+    }
+
+    public record ServiceRow(UUID serviceId, String name, long views, long whatsappClicks, long directionsClicks,
+                             long bookings) {
+    }
+
+    /** {@code confirmed} incluye las que ya se completaron o en las que el comprador no llegó. */
+    public record Bookings(long requested, long confirmed, long completed, long noShow) {
+        public static final Bookings NONE = new Bookings(0, 0, 0, 0);
+    }
+
     public record SourceRow(TrafficSource source, long views, long visitors, long shares, long whatsappClicks) {
     }
 

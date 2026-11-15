@@ -3,6 +3,7 @@ package com.autopartco.backend.core.search;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.simple.JdbcClient;
@@ -10,6 +11,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.autopartco.backend.core.catalog.ProductResponse;
+import com.autopartco.backend.core.organization.ServiceCategory;
 import com.autopartco.backend.core.pricing.BuyerContext;
 import com.autopartco.backend.shared.cache.AppCaches;
 import com.autopartco.backend.shared.cache.ResilientCacheManager;
@@ -32,6 +34,8 @@ public class Suggestions {
     public static final int MIN_QUERY_LENGTH = 2;
     public static final int MAX_SUGGESTIONS = 8;
     public static final int MAX_PRODUCTS = 4;
+    public static final int MAX_SERVICES = 3;
+    public static final int MAX_SERVICE_CATEGORIES = 2;
     static final int MAX_TERM_LENGTH = 120;
     /**
      * Umbral de las búsquedas que pasan a sugerencia. {@code session_hash} sale de una cabecera que controla el
@@ -46,6 +50,21 @@ public class Suggestions {
             from search_suggestions
             where term like :prefix or term % :q
             order by (term like :prefix) desc, similarity(term, :q) desc, weight desc, term
+            limit :limit
+            """;
+
+    /** {@code search_text} ya viene en minúsculas y sin tildes; {@code normalized} solo trae {@code [a-z0-9 ]}. */
+    static final String SERVICES_SQL = """
+            select x.service_id, x.name, x.category, x.store_name
+            from (
+                select distinct on (ss.service_id) ss.service_id, ss.name, ss.category, st.business_name as store_name,
+                       word_similarity(:q, ss.search_text) as similarity
+                from search_services ss
+                join store st on st.id = ss.store_id
+                where ss.search_text like :contains
+                order by ss.service_id
+            ) x
+            order by x.similarity desc, x.name
             limit :limit
             """;
 
@@ -100,8 +119,26 @@ public class Suggestions {
     public record Suggestion(String term, String kind) {
     }
 
-    public record Result(List<Suggestion> suggestions, List<ProductResponse> products) {
+    /** Servicio sugerido: solo datos públicos para el autocompletado. */
+    public record ServiceSuggestion(UUID id, String name, ServiceCategory category, String storeName) {
+    }
+
+    /**
+     * {@code services} (hasta {@value #MAX_SERVICES}) y {@code serviceCategories} (hasta
+     * {@value #MAX_SERVICE_CATEGORIES}) son aditivos: nunca nulos.
+     */
+    public record Result(List<Suggestion> suggestions, List<ProductResponse> products, List<ServiceSuggestion> services,
+            List<ServiceCategory> serviceCategories) {
         public static final Result EMPTY = new Result(List.of(), List.of());
+
+        public Result {
+            services = services == null ? List.of() : List.copyOf(services);
+            serviceCategories = serviceCategories == null ? List.of() : List.copyOf(serviceCategories);
+        }
+
+        public Result(List<Suggestion> suggestions, List<ProductResponse> products) {
+            this(suggestions, products, List.of(), List.of());
+        }
     }
 
     private final JdbcClient jdbcClient;
@@ -158,7 +195,32 @@ public class Suggestions {
         List<ProductResponse> products = searchService.search(query, BuyerContext.anonymous()).items().stream()
                 .map(SearchResult.Hit::listing)
                 .toList();
-        return new Result(suggestions, products);
+        return new Result(suggestions, products, services(normalized), ServiceTerms.suggest(normalized,
+                MAX_SERVICE_CATEGORIES));
+    }
+
+    /** Servicios publicados cuyo nombre, categoría o almacén contiene el texto (una fila por servicio). */
+    private List<ServiceSuggestion> services(String normalized) {
+        try {
+            return jdbcClient.sql(SERVICES_SQL)
+                    .params(Map.of("contains", "%" + normalized + "%", "q", normalized, "limit", MAX_SERVICES))
+                    .query((rs, row) -> new ServiceSuggestion(rs.getObject("service_id", UUID.class),
+                            rs.getString("name"), serviceCategory(rs.getString("category")),
+                            rs.getString("store_name")))
+                    .list();
+        } catch (RuntimeException unavailable) {
+            // Las sugerencias de servicios nunca rompen el autocompletado de productos.
+            log.warn("Sugerencias de servicios no disponibles: {}", unavailable.getClass().getSimpleName());
+            return List.of();
+        }
+    }
+
+    private static ServiceCategory serviceCategory(String value) {
+        try {
+            return value == null ? null : ServiceCategory.valueOf(value);
+        } catch (IllegalArgumentException unknown) {
+            return null;
+        }
     }
 
     /** Reconstruye {@code search_suggestions} en una transacción (la tabla nunca queda vacía para los lectores). */

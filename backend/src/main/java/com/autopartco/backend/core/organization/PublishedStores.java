@@ -54,7 +54,8 @@ public class PublishedStores {
                 cities(branchCities),
                 branchCities.size(),
                 store.getCreatedAt() == null ? null : store.getCreatedAt().toLocalDate(),
-                contact(configuration.get(PUBLIC_PROFILE_KEY))
+                contact(configuration.get(PUBLIC_PROFILE_KEY)),
+                store.getBusinessType()
         );
     }
 

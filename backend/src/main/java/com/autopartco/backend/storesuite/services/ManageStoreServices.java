@@ -55,6 +55,15 @@ public class ManageStoreServices {
         return updated;
     }
 
+    /** Sube ({@code file} no nulo) o quita la imagen del servicio. Requiere {@code STORE_UPDATE}. */
+    public StoreServiceView replaceImage(UUID storeId, UUID serviceId, String email,
+            org.springframework.web.multipart.MultipartFile file) {
+        storeAccess.requirePermission(email, storeId, StorePermissionCodes.STORE_UPDATE);
+        StoreServiceView updated = storeServices.replaceImage(storeId, serviceId, file);
+        events.publishEvent(new StoreProfileChanged(storeId));
+        return updated;
+    }
+
     @Transactional
     public void deactivate(UUID storeId, UUID serviceId, String email) {
         storeAccess.requirePermission(email, storeId, StorePermissionCodes.STORE_UPDATE);

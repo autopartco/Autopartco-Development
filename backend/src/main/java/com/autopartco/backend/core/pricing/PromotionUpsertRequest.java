@@ -25,8 +25,19 @@ public record PromotionUpsertRequest(
         @NotNull OffsetDateTime endsAt,
         Boolean enabled,
         /** Opcional; sin valor, {@code ALL}. */
-        PromotionAudience audience
+        PromotionAudience audience,
+        /** Categoría de servicio ({@code ServiceCategory}) en {@code SERVICE_CATEGORY}; nula en los demás tipos. */
+        @Size(max = 30) String targetKey
 ) {
+    /** Sin {@code targetKey} (todos los destinos salvo {@code SERVICE_CATEGORY}). */
+    public PromotionUpsertRequest(String name, PromotionTargetType targetType, UUID targetId, String attributeKey,
+            String attributeValue, PromotionAttributeOperator attributeOperator, PromotionDiscountType discountType,
+            BigDecimal discountValue, OffsetDateTime startsAt, OffsetDateTime endsAt, Boolean enabled,
+            PromotionAudience audience) {
+        this(name, targetType, targetId, attributeKey, attributeValue, attributeOperator, discountType, discountValue,
+                startsAt, endsAt, enabled, audience, null);
+    }
+
     /** Audiencia efectiva: {@code ALL} si no se envía. */
     public PromotionAudience audienceOrDefault() {
         return audience == null ? PromotionAudience.ALL : audience;

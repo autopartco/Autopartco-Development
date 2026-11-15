@@ -108,7 +108,7 @@ class StorePublicProfileTest {
         assertThat(profile.verified()).isTrue();
         assertThat(profile.whatsappEnabled()).isFalse();
         assertThat(profile.whatsappMessage()).isEqualTo("Hola {producto} {enlace}");
-        assertThat(profile.services()).containsExactly(service);
+        assertThat(profile.services()).containsExactly(StoreServiceItem.of(service));
         assertThat(profile.contact().youtube()).isEqualTo("andes");
         assertThat(profile.contact().x()).isEqualTo("andes_x");
         assertThat(profile.contact().email()).isEqualTo("ventas@andes.co");

@@ -2,6 +2,8 @@ package com.autopartco.backend.core.organization;
 
 import static com.autopartco.backend.core.organization.StorePermissionCodes.ALERT_MANAGE;
 import static com.autopartco.backend.core.organization.StorePermissionCodes.ANALYTICS_READ;
+import static com.autopartco.backend.core.organization.StorePermissionCodes.BOOKING_MANAGE;
+import static com.autopartco.backend.core.organization.StorePermissionCodes.BOOKING_READ;
 import static com.autopartco.backend.core.organization.StorePermissionCodes.BRANCH_CREATE;
 import static com.autopartco.backend.core.organization.StorePermissionCodes.BRANCH_DELETE;
 import static com.autopartco.backend.core.organization.StorePermissionCodes.BRANCH_READ;
@@ -67,11 +69,11 @@ public class StaffRoles {
                             PRODUCT_IMAGE_MANAGE, INVENTORY_ADJUST, INVENTORY_TRANSFER,
                             PROMOTION_READ, PROMOTION_CREATE, PROMOTION_UPDATE, PROMOTION_DELETE,
                             ORDER_READ, ORDER_UPDATE, SHIPMENT_UPDATE, ANALYTICS_READ, ALERT_MANAGE,
-                            COLLABORATOR_READ, COLLABORATOR_MANAGE)),
+                            COLLABORATOR_READ, COLLABORATOR_MANAGE, BOOKING_READ, BOOKING_MANAGE)),
             new Definition("SALES", "Ventas y pedidos",
-                    "Atiende pedidos y envíos; consulta productos, existencias y promociones.",
+                    "Atiende pedidos, envíos y citas de servicio; consulta productos, existencias y promociones.",
                     List.of(STORE_READ, BRANCH_READ, PRODUCT_READ, PROMOTION_READ,
-                            ORDER_READ, ORDER_UPDATE, SHIPMENT_UPDATE)),
+                            ORDER_READ, ORDER_UPDATE, SHIPMENT_UPDATE, BOOKING_READ, BOOKING_MANAGE)),
             new Definition("INVENTORY", "Inventario y productos",
                     "Crea y publica productos, ajusta existencias y transfiere entre sucursales.",
                     List.of(STORE_READ, BRANCH_READ, PRODUCT_READ, PRODUCT_CREATE, PRODUCT_UPDATE,
