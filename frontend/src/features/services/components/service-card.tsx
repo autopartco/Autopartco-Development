@@ -153,7 +153,7 @@ export const ServiceCard = memo(function ServiceCard({ service, layout = 'card',
       <article
         data-branch-id={service.branch?.id}
         className={cn(
-          'grid grid-cols-[5rem_minmax(0,1fr)] gap-x-4 px-3 py-5 transition-colors sm:grid-cols-[7rem_minmax(0,1fr)_11.5rem] sm:gap-x-5',
+          'relative grid grid-cols-[5rem_minmax(0,1fr)] gap-x-4 px-3 py-5 transition-colors sm:grid-cols-[7rem_minmax(0,1fr)_11.5rem] sm:gap-x-5',
           active && 'bg-ap-paper shadow-[inset_3px_0_0_var(--ap-red)]',
           className,
         )}
@@ -183,7 +183,7 @@ export const ServiceCard = memo(function ServiceCard({ service, layout = 'card',
   }
 
   return (
-    <article className={cn('flex h-full flex-col overflow-hidden rounded-lg border border-ap-line bg-ap-white', className)}>
+    <article className={cn('relative flex h-full flex-col overflow-hidden rounded-lg border border-ap-line bg-ap-white', className)}>
       <Link to={href} tabIndex={-1} aria-hidden>
         <ServiceThumb service={service} eager={eager} className="aspect-[16/10] w-full border-0 border-b" />
       </Link>
