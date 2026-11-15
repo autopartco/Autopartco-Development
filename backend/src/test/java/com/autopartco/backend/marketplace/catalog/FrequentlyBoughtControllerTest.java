@@ -18,7 +18,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 import com.autopartco.backend.core.analytics.ProductAssociations;
-import com.autopartco.backend.core.catalog.ListingQueries;
+import com.autopartco.backend.core.catalog.ListingCache;
 import com.autopartco.backend.core.catalog.ProductImageResponse;
 import com.autopartco.backend.core.catalog.ProductResponse;
 import com.autopartco.backend.core.pricing.BuyerContext;
@@ -27,7 +27,7 @@ import com.autopartco.backend.shared.error.NotFoundException;
 
 class FrequentlyBoughtControllerTest {
     private final ProductAssociations associations = mock(ProductAssociations.class);
-    private final ListingQueries listingQueries = mock(ListingQueries.class);
+    private final ListingCache listingQueries = mock(ListingCache.class);
     private final BuyerContexts buyerContexts = mock(BuyerContexts.class);
     private final FrequentlyBoughtController controller =
             new FrequentlyBoughtController(associations, listingQueries, buyerContexts);
@@ -52,9 +52,9 @@ class FrequentlyBoughtControllerTest {
         when(buyerContexts.forBrowsing(any())).thenReturn(buyer);
         when(associations.related(product, 6)).thenReturn(List.of(
                 new ProductAssociations.Related(brakes, "ORDERS"), new ProductAssociations.Related(oil, "CATEGORY")));
-        when(listingQueries.publishedListing(brakes, buyer)).thenReturn(listing(brakes, "Pastillas", "85000",
+        when(listingQueries.detail(brakes, buyer)).thenReturn(listing(brakes, "Pastillas", "85000",
                 List.of(image("secundaria", false, 1), image("principal", true, 0))));
-        when(listingQueries.publishedListing(oil, buyer)).thenReturn(listing(oil, "Aceite", "40000", List.of()));
+        when(listingQueries.detail(oil, buyer)).thenReturn(listing(oil, "Aceite", "40000", List.of()));
 
         List<FrequentlyBoughtController.FrequentlyBoughtItem> result = controller.frequentlyBought(product, null);
 
@@ -72,9 +72,9 @@ class FrequentlyBoughtControllerTest {
         when(buyerContexts.forBrowsing(any())).thenReturn(BuyerContext.anonymous());
         when(associations.related(product, 6)).thenReturn(List.of(
                 new ProductAssociations.Related(gone, "ORDERS"), new ProductAssociations.Related(kept, "ORDERS")));
-        when(listingQueries.publishedListing(eq(gone), any()))
+        when(listingQueries.detail(eq(gone), any()))
                 .thenThrow(new NotFoundException("PRODUCT_NOT_FOUND", "No se encontró el repuesto."));
-        when(listingQueries.publishedListing(eq(kept), any())).thenReturn(listing(kept, "Filtro", "30000", List.of()));
+        when(listingQueries.detail(eq(kept), any())).thenReturn(listing(kept, "Filtro", "30000", List.of()));
 
         assertThat(controller.frequentlyBought(product, null)).extracting("productId").containsExactly(kept);
     }
@@ -84,6 +84,6 @@ class FrequentlyBoughtControllerTest {
         when(associations.related(product, 6)).thenReturn(List.of());
 
         assertThat(controller.frequentlyBought(product, null)).isEmpty();
-        verify(listingQueries, never()).publishedListing(any(), any());
+        verify(listingQueries, never()).detail(any(), any());
     }
 }

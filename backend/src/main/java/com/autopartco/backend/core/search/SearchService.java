@@ -86,6 +86,7 @@ public class SearchService {
     private final ListingQueries listingQueries;
     private final AdServer adServer;
     private final SearchResultCache resultCache;
+    private HomeFacts homeFacts;
     private final AtomicBoolean ready = new AtomicBoolean();
     private final AtomicLong lastReadyCheck = new AtomicLong(Long.MIN_VALUE);
 
@@ -216,6 +217,15 @@ public class SearchService {
     /** Sube {@code catalogVersion} de {@code search:results} (tras escribir en {@code search_listings}). */
     void catalogChanged() {
         resultCache.catalogChanged();
+        if (homeFacts != null) {
+            homeFacts.invalidate();
+        }
+    }
+
+    /** Cifras del inicio que dependen del índice; se vacían en {@link #catalogChanged()}. */
+    @Autowired(required = false)
+    void setHomeFacts(HomeFacts homeFacts) {
+        this.homeFacts = homeFacts;
     }
 
     /**
