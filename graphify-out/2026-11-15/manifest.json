@@ -11268,15 +11268,15 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/search/QueryLearning.java": {
-    "mtime": 1794776909.8833716,
-    "seen": 1794778673.193746,
-    "ast_hash": "6de778df02398f9d3d96692880c395fa",
+    "mtime": 1794779092.4071321,
+    "seen": 1794779633.8131974,
+    "ast_hash": "1bd57548d5d63b5202f3db4cf3df5b90",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/search/QueryLearningJob.java": {
-    "mtime": 1794776903.2569327,
-    "seen": 1794778673.1937494,
-    "ast_hash": "9cfc56f5a8c9010e6b55fc0dd35fca52",
+    "mtime": 1794779085.4528825,
+    "seen": 1794779633.8132026,
+    "ast_hash": "6dde2f507b0e8a9a4d7c7c2825e14b01",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/marketplace/catalog/SearchClickController.java": {
@@ -11292,15 +11292,21 @@
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/core/search/QueryLearningTest.java": {
-    "mtime": 1794777399.6583343,
-    "seen": 1794778673.3696473,
-    "ast_hash": "1477e2ab2ffcc73fe6ce15ffc191112d",
+    "mtime": 1794779100.2212844,
+    "seen": 1794779634.0968673,
+    "ast_hash": "daff080179b862619d71e234fe3ac6bc",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/marketplace/catalog/SearchClickControllerTest.java": {
     "mtime": 1794777309.1218984,
     "seen": 1794778673.3786974,
     "ast_hash": "92d64c8232959e7e6d66bcb724ff6098",
+    "semantic_hash": ""
+  },
+  "docs/architecture/2026-11-15-busqueda-inteligente-contrato-frontend.md": {
+    "mtime": 1794778791.0849879,
+    "seen": 1794779634.6657321,
+    "ast_hash": "a200d30003907903fbe9e4c53bc94a4a",
     "semantic_hash": ""
   }
 }
