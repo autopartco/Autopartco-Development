@@ -9,9 +9,10 @@ import type { StoreApplication } from './api/types'
 /** Prefijo de caché del servicio de administración. */
 export const ADMIN_CACHE_PREFIX = 'admin:'
 
-export function usePendingApplications() {
-  return useAsync<StoreApplication[]>(`${ADMIN_CACHE_PREFIX}applications:pending`, async () =>
-    (await getAdminApplicationService()).pending(),
+/** `enabled = false` (cuenta sin el permiso) no llama al servidor y devuelve una lista vacía. */
+export function usePendingApplications(enabled = true) {
+  return useAsync<StoreApplication[]>(`${ADMIN_CACHE_PREFIX}applications:pending${enabled ? '' : ':off'}`, async () =>
+    enabled ? (await getAdminApplicationService()).pending() : [],
   )
 }
 
@@ -28,21 +29,23 @@ export function reloadPendingApplications() {
 }
 
 /** Consultas de la consola ROOT. Todas cuelgan de `ADMIN_CACHE_PREFIX` para recargar tras una mutación. */
-export function useAdminPlans() {
-  return useAsync(`${ADMIN_CACHE_PREFIX}plans`, async () => (await getAdminOpsService()).plans())
+export function useAdminPlans(enabled = true) {
+  return useAsync(`${ADMIN_CACHE_PREFIX}plans${enabled ? '' : ':off'}`, async () => (enabled ? (await getAdminOpsService()).plans() : []))
 }
 
 /** Misma clave que `/admin/promociones`, así el resumen se actualiza tras crear o editar allí. */
-export function useAdminPromotions() {
-  return useAsync(`${ADMIN_CACHE_PREFIX}promotions`, async () => (await getAdminPromotionService()).list(''))
+export function useAdminPromotions(enabled = true) {
+  return useAsync(`${ADMIN_CACHE_PREFIX}promotions${enabled ? '' : ':off'}`, async () => (enabled ? (await getAdminPromotionService()).list('') : []))
 }
 
 export function useAdminCategories() {
   return useAsync(`${ADMIN_CACHE_PREFIX}catalog:categories`, async () => (await getAdminOpsService()).categories())
 }
 
-export function useAdminManufacturers() {
-  return useAsync(`${ADMIN_CACHE_PREFIX}catalog:manufacturers`, async () => (await getAdminOpsService()).manufacturers())
+export function useAdminManufacturers(enabled = true) {
+  return useAsync(`${ADMIN_CACHE_PREFIX}catalog:manufacturers${enabled ? '' : ':off'}`, async () =>
+    enabled ? (await getAdminOpsService()).manufacturers() : [],
+  )
 }
 
 /** Recarga una parte de la consola (`plans`, `catalog:`) tras crear, editar o desactivar. */

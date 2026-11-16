@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.autopartco.backend.core.billing.PlanRequest;
 import com.autopartco.backend.core.billing.PlanResponse;
 import com.autopartco.backend.core.billing.PlanService;
+import com.autopartco.backend.shared.security.PlatformAccess;
 import com.autopartco.backend.shared.web.ApiPaths;
 
 import jakarta.validation.Valid;
@@ -38,14 +39,14 @@ public class PlanAdminController {
     private final AdminAudit adminAudit;
 
     @GetMapping
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.PLANS)
     public List<PlanResponse> allPlans() {
         return planService.allPlans();
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.PLANS)
     public PlanResponse create(@Valid @RequestBody PlanRequest request, Authentication authentication) {
         PlanResponse plan = planService.create(request);
         adminAudit.record(authentication, "PLAN_CREATED", "PLAN", plan.id(), Map.of("code", plan.code(), "name", plan.name()));
@@ -53,7 +54,7 @@ public class PlanAdminController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.PLANS)
     public PlanResponse update(
             @PathVariable UUID id,
             @Valid @RequestBody PlanRequest request,
@@ -67,7 +68,7 @@ public class PlanAdminController {
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.PLANS)
     public void disable(@PathVariable UUID id, Authentication authentication) {
         planService.disable(id);
         adminAudit.record(authentication, "PLAN_DISABLED", "PLAN", id, Map.of());

@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.autopartco.backend.core.organization.StoreApplicationReviewRequest;
 import com.autopartco.backend.core.organization.StoreApplications;
+import com.autopartco.backend.shared.security.PlatformAccess;
 import com.autopartco.backend.shared.web.ApiPaths;
 import com.autopartco.backend.shared.web.PageResponse;
 
@@ -47,7 +48,7 @@ public class StoreVerificationController {
      * Página desde 1; tamaño por defecto 20, máximo 100.
      */
     @GetMapping
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.APPLICATIONS)
     public PageResponse<StoreApplicationResponse> applications(
             @RequestParam(required = false) String status,
             @RequestParam(defaultValue = "1") int page,
@@ -57,13 +58,13 @@ public class StoreVerificationController {
     }
 
     @GetMapping("/pending")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.APPLICATIONS)
     public List<StoreApplicationResponse> pendingApplications() {
         return listPendingApplications.execute();
     }
 
     @PatchMapping("/{applicationId}/review")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.APPLICATIONS)
     public StoreApplicationResponse review(
             @PathVariable UUID applicationId,
             @Valid @RequestBody StoreApplicationReviewRequest request,
@@ -78,7 +79,7 @@ public class StoreVerificationController {
     }
 
     @GetMapping("/{applicationId}/documents/{documentId}")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.APPLICATIONS)
     public ResponseEntity<byte[]> downloadDocument(
             @PathVariable UUID applicationId,
             @PathVariable UUID documentId

@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.autopartco.backend.core.questions.AdminQuestion;
 import com.autopartco.backend.core.questions.QuestionModeration;
 import com.autopartco.backend.operations.auditlog.AdminAudit;
+import com.autopartco.backend.shared.security.PlatformAccess;
 import com.autopartco.backend.shared.web.ApiPaths;
 import com.autopartco.backend.shared.web.PageResponse;
 
@@ -35,7 +36,7 @@ public class QuestionAdminController {
     private final AdminAudit adminAudit;
 
     @GetMapping
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.MODERATION)
     public PageResponse<AdminQuestion> list(
             @RequestParam(required = false) Boolean hidden,
             @RequestParam(required = false) Integer page,
@@ -45,7 +46,7 @@ public class QuestionAdminController {
     }
 
     @PostMapping("/{questionId}/hide")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.MODERATION)
     public AdminQuestion hide(
             @PathVariable UUID questionId,
             @Valid @RequestBody HideQuestionRequest request,
@@ -58,7 +59,7 @@ public class QuestionAdminController {
     }
 
     @PostMapping("/{questionId}/unhide")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.MODERATION)
     public AdminQuestion unhide(@PathVariable UUID questionId, Authentication authentication) {
         AdminQuestion question = moderation.unhide(questionId);
         adminAudit.record(authentication, UNHIDDEN_ACTION, ENTITY_TYPE, questionId,

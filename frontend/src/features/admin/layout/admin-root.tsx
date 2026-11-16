@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
-import { Link, NavLink, Outlet, ScrollRestoration, useLocation } from 'react-router'
+import { Link, Navigate, NavLink, Outlet, ScrollRestoration, useLocation } from 'react-router'
 import { MenuIcon, ShieldAlertIcon, XIcon } from 'lucide-react'
 import { Logo } from '@/components/common/logo'
 import { Button } from '@/components/ui/button'
@@ -12,7 +12,11 @@ import { HeaderAccount } from '@/features/auth/components/account-menu'
 import { useSession } from '@/features/auth/hooks'
 import { ListSkeleton } from '@/features/portal/components/list-skeleton'
 import { usePendingApplications } from '../hooks'
-import { ADMIN_SECTION_GROUPS } from '../lib/sections'
+import { useAsync } from '@/lib/use-async'
+import { getAdminConsoleService } from '../api/admin-console-service'
+import { ADMIN_CACHE_PREFIX } from '../hooks'
+import { useAdminAccess } from '../lib/access'
+import { ADMIN_SECTION_GROUPS, sectionOf, visibleSectionGroups } from '../lib/sections'
 
 function AdminLoading() {
   return (
@@ -42,10 +46,11 @@ function AdminBrand({ className }: { className?: string }) {
  * «Solicitudes» muestra cuántas esperan revisión (dato del servidor, en texto).
  */
 function AdminNav({ onNavigate }: { onNavigate?: () => void }) {
-  const pending = usePendingApplications().data?.length ?? 0
+  const access = useAdminAccess()
+  const pending = usePendingApplications(access.can('PLATFORM_APPLICATIONS_REVIEW')).data?.length ?? 0
   return (
     <nav aria-label="Administración" className="flex flex-col gap-5 px-3">
-      {ADMIN_SECTION_GROUPS.map((group) => {
+      {visibleSectionGroups(access.can).map((group) => {
         const headingId = `admin-nav-${group.label}`
         return (
           <div key={group.label} className="flex flex-col gap-1">
@@ -159,7 +164,45 @@ function useFocusMainOnNavigate(mainRef: RefObject<HTMLElement | null>) {
   }, [pathname, mainRef])
 }
 
-/** Quien no es ROOT ve esto: la interfaz solo oculta; el servidor responde 403 igualmente. */
+/** Sección sin permiso para esta cuenta del equipo (el servidor respondería 403 igualmente). */
+function NoSectionAccess({ label }: { label: string }) {
+  return (
+    <div className="mx-auto flex w-full max-w-xl flex-col items-start gap-4 px-4 py-16">
+      <div className="flex items-center gap-2 text-ap-ink">
+        <ShieldAlertIcon className="size-5 text-ap-warning" aria-hidden />
+        <h1 className="text-block-title">Tu rol no incluye {label}</h1>
+      </div>
+      <p className="text-ap-muted">Pídele a root que agregue este permiso a tu rol. Los cambios aplican la próxima vez que ingreses.</p>
+    </div>
+  )
+}
+
+/**
+ * Bloquea en pantalla las secciones que el rol no incluye y lleva el índice (`/admin`, `/admin/resumen`) a la
+ * primera sección permitida.
+ */
+function SectionGate() {
+  const { pathname } = useLocation()
+  const access = useAdminAccess()
+  const segment = pathname.split('/')[2] ?? ''
+  const section = sectionOf(segment)
+  if (section && !access.can(section.access)) {
+    const first = visibleSectionGroups(access.can)[0]?.items[0]
+    if (segment === 'resumen' && first) return <Navigate to={`/admin/${first.to}`} replace />
+    return <NoSectionAccess label={section.label.toLowerCase()} />
+  }
+  return <Outlet />
+}
+
+/** Rol que se muestra junto al correo: «Root» o el nombre del rol de plataforma (`GET /admin/me`). */
+function RoleBadge() {
+  const access = useAdminAccess()
+  const me = useAsync(`${ADMIN_CACHE_PREFIX}me`, () => getAdminConsoleService().me())
+  const label = access.root ? 'Root' : ((me.data && !me.data.root ? me.data.roleName : null) ?? 'Equipo')
+  return <span className="ap-index shrink-0 rounded-sm border border-ap-line-strong px-1.5 py-0.5 text-ap-ink">{label}</span>
+}
+
+/** Quien no es ROOT ni del equipo ve esto: la interfaz solo oculta; el servidor responde 403 igualmente. */
 function NoAccess() {
   return (
     <main className="mx-auto flex w-full max-w-xl flex-col items-start gap-4 px-4 py-16">
@@ -168,7 +211,7 @@ function NoAccess() {
         <h1 className="text-block-title">Esta sección es solo para administración</h1>
       </div>
       <p className="text-ap-muted">
-        Tu cuenta no tiene el rol necesario para administrar la plataforma. Si crees que es un error, ingresa con otra cuenta.
+        Tu cuenta no es de root ni del equipo de la plataforma. Si crees que es un error, ingresa con otra cuenta.
       </p>
       <Button className="h-11 px-5" nativeButton={false} render={<Link to="/" />}>
         Volver al marketplace
@@ -216,12 +259,12 @@ function AdminShell({ email }: { email: string }) {
             <p className="flex min-w-0 items-center gap-2 text-sm">
               <span className="sr-only">Sesión de </span>
               <span className="truncate font-medium text-ap-ink">{email}</span>
-              <span className="ap-index shrink-0 rounded-sm border border-ap-line-strong px-1.5 py-0.5 text-ap-ink">Root</span>
+              <RoleBadge />
             </p>
           </div>
           <main id="contenido" ref={mainRef} tabIndex={-1} className="w-full flex-1 outline-none">
             <Suspense fallback={<AdminLoading />}>
-              <Outlet />
+              <SectionGate />
             </Suspense>
           </main>
         </div>
@@ -230,10 +273,13 @@ function AdminShell({ email }: { email: string }) {
   )
 }
 
-/** Raíz de `/admin`: exige sesión, muestra la carcasa de la consola y (solo en pantalla) limita el contenido al rol ROOT. */
+/**
+ * Raíz de `/admin`: exige sesión, muestra la carcasa de la consola y (solo en pantalla) limita el contenido a ROOT y
+ * al equipo de la plataforma, cada uno con sus secciones.
+ */
 export function AdminRoot() {
   const session = useSession()
-  const isRoot = session?.roles.includes('ROLE_ROOT') ?? false
+  const isRoot = useAdminAccess().allowed
   return (
     <>
       <RequireSession fallback={<AdminLoading />}>

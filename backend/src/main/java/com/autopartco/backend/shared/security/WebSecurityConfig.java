@@ -38,8 +38,8 @@ import org.springframework.security.web.SecurityFilterChain;
  * <ol>
  *   <li>Rutas públicas: lista explícita (método + ruta) en {@link #PUBLIC_ROUTES}. Son exactamente las que
  *       eran públicas antes del refactor modular, con su ruta nueva.</li>
- *   <li>{@code /api/v1/admin/**}: solo {@code ROLE_ROOT}, además de los {@code @PreAuthorize} de cada
- *       controlador (defensa en profundidad).</li>
+ *   <li>{@code /api/v1/admin/**}: {@code ROLE_ROOT} o {@code ROLE_STAFF}, además del {@code @PreAuthorize} de
+ *       cada controlador con el permiso de la sección ({@link PlatformAccess}; defensa en profundidad).</li>
  *   <li>Todo lo demás: autenticado. La autorización por almacén o recurso la resuelven los casos de uso.</li>
  * </ol>
  */
@@ -55,6 +55,7 @@ public class WebSecurityConfig {
 
         public static final String ADMIN_MATCHER = ApiPaths.ADMIN + "/**";
         public static final String ROOT_AUTHORITY = "ROLE_ROOT";
+        public static final String STAFF_AUTHORITY = "ROLE_STAFF";
         public static final String HEALTH_ENDPOINT = "/actuator/health";
 
         public static final List<PublicRoute> PUBLIC_ROUTES = List.of(
@@ -144,7 +145,7 @@ public class WebSecurityConfig {
                         .authorizeHttpRequests(auth -> {
                                 PUBLIC_ROUTES.forEach(route ->
                                         auth.requestMatchers(route.method(), route.pattern()).permitAll());
-                                auth.requestMatchers(ADMIN_MATCHER).hasAuthority(ROOT_AUTHORITY)
+                                auth.requestMatchers(ADMIN_MATCHER).hasAnyAuthority(ROOT_AUTHORITY, STAFF_AUTHORITY)
                                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                                         .requestMatchers(HEALTH_ENDPOINT).permitAll()
                                         .anyRequest().authenticated();
