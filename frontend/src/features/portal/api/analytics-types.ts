@@ -241,3 +241,58 @@ export interface ServiceVisibilityRow {
   directionsClicks: number
   bookings: number
 }
+
+/**
+ * `GET /stores/{id}/analytics/demand-forecast?branchId=`. Modelo LightGBM (regresión Poisson) que se puntúa cada
+ * noche: unidades esperadas por sucursal y categoría en los próximos `horizonDays` días, con rango probable del
+ * 80 % (`low`–`high`). Sin lote calculado, `modelVersion` y `generatedAt` llegan `null` y `items` vacío.
+ */
+export interface DemandForecastReport {
+  modelVersion: string | null
+  algorithm: string | null
+  generatedAt: string | null
+  horizonDays: number
+  items: DemandForecastItem[]
+}
+
+export interface DemandForecastItem {
+  branchId: string
+  branchName: string
+  categoryId: string
+  categoryCode: string
+  expectedUnits: number
+  low: number
+  high: number
+}
+
+export type StockoutLevel = 'HIGH' | 'MEDIUM' | 'LOW'
+
+/**
+ * `GET /stores/{id}/analytics/stockout-risk`. Modelo Random Forest calibrado que se puntúa cada noche: inventarios
+ * con probabilidad de llegar a 0 en los próximos `horizonDays` días (solo ≥ `minProbability`; máx. 100, de mayor a
+ * menor). `baseRate` es la probabilidad media de agotarse en ese horizonte, como referencia.
+ */
+export interface StockoutRiskReport {
+  modelVersion: string | null
+  algorithm: string | null
+  generatedAt: string | null
+  horizonDays: number
+  minProbability: number
+  baseRate: number | null
+  items: StockoutRiskItem[]
+}
+
+export interface StockoutRiskItem {
+  inventoryId: string
+  productId: string
+  productName: string
+  sku: string | null
+  branchId: string
+  branchName: string
+  /** Fracción 0..1. */
+  probability: number
+  level: StockoutLevel
+  stock: number
+  /** Días que cubre el stock al ritmo de venta de los últimos 91 días (9999 = sin ventas). */
+  coverDays: number
+}

@@ -398,6 +398,20 @@ export function createMockAnalyticsService(): AnalyticsService {
       return associationsOf(datasetFor(store))
     },
 
+    // Los modelos se entrenan con datos reales del servidor: el modo mock no inventa predicciones y responde como un
+    // almacén sin lote calculado.
+    async demandForecast(storeId) {
+      await simulateNetwork(400)
+      guard(storeId)
+      return { modelVersion: null, algorithm: null, generatedAt: null, horizonDays: 28, items: [] }
+    },
+
+    async stockoutRisk(storeId) {
+      await simulateNetwork(400)
+      guard(storeId)
+      return { modelVersion: null, algorithm: null, generatedAt: null, horizonDays: 14, minProbability: 0.05, baseRate: null, items: [] }
+    },
+
     async visibility(storeId, range) {
       await simulateNetwork(450)
       // Como el servidor: solo `ANALYTICS_READ`, sin la capability del plan.

@@ -9,16 +9,22 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.MissingNode;
+
 import lombok.AllArgsConstructor;
 
-/** Lecturas del último lote puntuado. Sin lote, {@code modelVersion} es nulo y la lista está vacía. */
+/**
+ * Lecturas del último lote puntuado. Sin lote, {@code modelVersion} es nulo y la lista está vacía. El nivel de riesgo
+ * de agotamiento se deriva al leer con los umbrales del modelo cargado ({@code thresholds} de {@code model.json}).
+ */
 @Service
 @AllArgsConstructor
 public class MlPredictions {
-    static final double STOCKOUT_MIN_PROBABILITY = 0.2;
     static final int STOCKOUT_LIMIT = 100;
 
     private final MlQueries queries;
+    private final ModelRegistry registry;
 
     public record DemandItem(UUID branchId, String branchName, UUID categoryId, String categoryCode,
             BigDecimal expectedUnits, int low, int high) {
@@ -32,8 +38,12 @@ public class MlPredictions {
             String branchName, BigDecimal probability, String level, int stock, BigDecimal coverDays) {
     }
 
+    /**
+     * @param minProbability probabilidad mínima para aparecer en la lista (umbral de riesgo medio)
+     * @param baseRate probabilidad media de agotarse en el horizonte, como referencia
+     */
     public record StockoutRisk(String modelVersion, String algorithm, OffsetDateTime generatedAt, int horizonDays,
-            List<StockoutItem> items) {
+            BigDecimal minProbability, BigDecimal baseRate, List<StockoutItem> items) {
     }
 
     @Transactional(readOnly = true)
@@ -50,14 +60,22 @@ public class MlPredictions {
 
     @Transactional(readOnly = true)
     public StockoutRisk stockout(UUID storeId) {
+        JsonNode thresholds = registry.model(ModelRegistry.STOCKOUT)
+                .map(model -> model.metadata().path("thresholds"))
+                .orElse(MissingNode.getInstance());
+        double high = thresholds.path("high").asDouble(0.10);
+        double medium = thresholds.path("medium").asDouble(0.05);
+        BigDecimal min = decimal(medium, 3);
+        BigDecimal baseRate = thresholds.has("baseRate") ? decimal(thresholds.path("baseRate").asDouble(), 4) : null;
         return queries.latestRun(ModelRegistry.STOCKOUT)
-                .map(run -> new StockoutRisk(run.version(), run.algorithm(), run.finishedAt(), 14,
-                        queries.stockout(run.runId(), storeId, STOCKOUT_MIN_PROBABILITY, STOCKOUT_LIMIT).stream()
+                .map(run -> new StockoutRisk(run.version(), run.algorithm(), run.finishedAt(), 14, min, baseRate,
+                        queries.stockout(run.runId(), storeId, medium, STOCKOUT_LIMIT).stream()
                                 .map(r -> new StockoutItem(r.inventoryId(), r.productId(), r.productName(), r.sku(),
-                                        r.branchId(), r.branchName(), decimal(r.probability(), 3), r.level(),
-                                        r.stock(), decimal(r.coverDays(), 1)))
+                                        r.branchId(), r.branchName(), decimal(r.probability(), 3),
+                                        r.probability() >= high ? "HIGH" : "MEDIUM", r.stock(),
+                                        decimal(r.coverDays(), 1)))
                                 .toList()))
-                .orElseGet(() -> new StockoutRisk(null, null, null, 14, List.of()));
+                .orElseGet(() -> new StockoutRisk(null, null, null, 14, min, baseRate, List.of()));
     }
 
     private static BigDecimal decimal(double value, int scale) {

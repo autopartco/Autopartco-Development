@@ -6,12 +6,13 @@ import { EmptyState } from '@/components/common/states'
 import { Progress } from '@/components/ui/progress'
 import { formatCOP, formatNumber } from '@/lib/format'
 import { getAnalyticsService } from '../api/analytics-service'
-import type { Forecast, ForecastProduct } from '../api/analytics-types'
+import type { DemandForecastItem, DemandForecastReport, Forecast, ForecastProduct } from '../api/analytics-types'
 import { AnalyticsChart, type ChartPoint } from '../components/analytics-chart'
 import { ChartEmpty, ChartSection, ChartSkeleton, LegendItem } from '../components/chart-section'
 import { AnalyticsBoundary, BranchSelect, IntelligencePage } from '../components/intelligence-shell'
-import { branchParamValue, useBranchSearchParam, useStoreQuery } from '../hooks'
+import { branchParamValue, useActiveBranches, useBranchSearchParam, useStoreQuery } from '../hooks'
 import { monthLabel, periodLabel } from '../lib/analytics'
+import { formatDateTime, humanizeCode } from '../lib/labels'
 import { CHART_COLOR } from '../lib/chart-palette'
 
 const compactCOP = new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', notation: 'compact', maximumFractionDigits: 1 })
@@ -21,6 +22,83 @@ const PRODUCT_COLUMNS: DataColumn<ForecastProduct>[] = [
   { id: 'unidades', header: 'Unidades estimadas', align: 'end', sortValue: (row) => row.expectedUnits, cell: (row) => formatNumber(row.expectedUnits) },
   { id: 'ingresos', header: 'Ingresos estimados', align: 'end', sortValue: (row) => row.expectedRevenue, cell: (row) => formatCOP(row.expectedRevenue) },
 ]
+
+const DEMAND_COLUMNS: DataColumn<DemandForecastItem>[] = [
+  {
+    id: 'categoria',
+    header: 'Categoría',
+    rowHeader: true,
+    sortValue: (row) => humanizeCode(row.categoryCode),
+    cell: (row) => <span className="font-semibold text-ap-ink">{humanizeCode(row.categoryCode)}</span>,
+  },
+  { id: 'sucursal', header: 'Sucursal', sortValue: (row) => row.branchName, cell: (row) => row.branchName },
+  {
+    id: 'unidades',
+    header: 'Unidades estimadas',
+    align: 'end',
+    sortValue: (row) => row.expectedUnits,
+    cell: (row) => <span className="font-semibold text-ap-ink tabular-nums">{formatNumber(row.expectedUnits)}</span>,
+  },
+  {
+    id: 'rango',
+    header: 'Rango probable',
+    align: 'end',
+    sortValue: (row) => row.high,
+    cell: (row) => (
+      <span className="tabular-nums">
+        {formatNumber(row.low)} a {formatNumber(row.high)}
+      </span>
+    ),
+  },
+]
+
+/**
+ * Demanda por categoría (modelo LightGBM, cálculo nocturno). Pregunta: «¿qué categorías debo tener abastecidas las
+ * próximas semanas?». Tabla ordenable porque se comparan pocas filas exactas (§20.15.10); se rotula como estimación.
+ */
+function DemandSection({ report, multiBranch }: { report: DemandForecastReport; multiBranch: boolean }) {
+  const weeks = Math.round(report.horizonDays / 7)
+  const columns = multiBranch ? DEMAND_COLUMNS : DEMAND_COLUMNS.filter((column) => column.id !== 'sucursal')
+  return (
+    <section aria-labelledby="proy-demanda" className="flex flex-col gap-3 border-t border-ap-line-strong pt-4">
+      <div className="flex flex-col gap-1">
+        <h2 id="proy-demanda" className="text-base font-semibold text-ap-ink">
+          ¿Qué categorías venderás en las próximas {weeks} semanas?
+        </h2>
+        {report.generatedAt ? (
+          <p className="ap-ref text-ap-muted">
+            Estimación · actualizada {formatDateTime(report.generatedAt)} · se recalcula cada noche
+          </p>
+        ) : null}
+      </div>
+      {report.items.length === 0 ? (
+        <ChartEmpty>
+          {report.generatedAt
+            ? 'Todavía no hay categorías con ventas suficientes para estimar su demanda.'
+            : 'La estimación por categoría se calcula cada noche con las ventas de los últimos 6 meses. Vuelve mañana para verla.'}
+        </ChartEmpty>
+      ) : (
+        <>
+          <p className="max-w-prose text-sm text-ap-muted">
+            Unidades que se espera vender por categoría. El rango probable es el intervalo del 80 % que estima el modelo. Úsala para decidir qué
+            reponer, no como una cifra exacta.
+          </p>
+          <DataTable
+            caption={`Unidades estimadas por categoría en los próximos ${report.horizonDays} días`}
+            columns={columns}
+            rows={report.items}
+            getRowId={(row) => `${row.branchId}:${row.categoryId}`}
+            defaultSort={{ columnId: 'unidades', direction: 'desc' }}
+            pageSize={12}
+          />
+          <p className="text-xs text-ap-muted">
+            Modelo {report.algorithm} · versión {report.modelVersion}. Fuente: ventas confirmadas de tu almacén en Autopartco.
+          </p>
+        </>
+      )}
+    </section>
+  )
+}
 
 function ForecastSkeleton() {
   return (
@@ -134,8 +212,10 @@ export default function IntelligenceForecastPage() {
   const [, setParams] = useSearchParams()
   const branchId = useBranchSearchParam()
   const result = useStoreQuery(`analytics:forecast:${branchId}`, async (id) => (await getAnalyticsService()).forecast(id, branchId || undefined))
+  const demand = useStoreQuery(`analytics:demand-forecast:${branchId}`, async (id) => (await getAnalyticsService()).demandForecast(id, branchId || undefined))
+  const { branches } = useActiveBranches()
   return (
-    <IntelligencePage title="Proyección" description="Cuánto podrías vender el próximo mes según el ritmo de tus ventas recientes.">
+    <IntelligencePage title="Proyección" description="Cuánto podrías vender el próximo mes y qué categorías tendrán más demanda.">
       <div className="flex flex-col gap-5">
         <form role="search" aria-label="Filtros de la proyección" className="flex flex-col gap-3 sm:flex-row sm:items-end" onSubmit={(event) => event.preventDefault()}>
           <BranchSelect
@@ -154,6 +234,9 @@ export default function IntelligenceForecastPage() {
         </form>
         <AnalyticsBoundary result={result} what="la proyección" keepPrevious skeleton={<ForecastSkeleton />}>
           {(forecast) => <ForecastView forecast={forecast} />}
+        </AnalyticsBoundary>
+        <AnalyticsBoundary result={demand} what="la demanda por categoría" keepPrevious skeleton={<ChartSkeleton kind="list" label="Cargando la demanda por categoría" />}>
+          {(report) => <DemandSection report={report} multiBranch={!branchId && branches.length > 1} />}
         </AnalyticsBoundary>
       </div>
     </IntelligencePage>

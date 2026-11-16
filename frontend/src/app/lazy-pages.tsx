@@ -73,6 +73,7 @@ export const PortalIntelligenceReportsPage = lazy(() => import('@/features/porta
 export const PortalIntelligenceCustomersPage = lazy(() => import('@/features/portal/pages/intelligence-customers-page'))
 export const PortalIntelligenceProductsPage = lazy(() => import('@/features/portal/pages/intelligence-products-page'))
 export const PortalIntelligenceForecastPage = lazy(() => import('@/features/portal/pages/intelligence-forecast-page'))
+export const PortalIntelligenceStockoutPage = lazy(() => import('@/features/portal/pages/intelligence-stockout-page'))
 export const PortalIntelligenceVisibilityPage = lazy(() => import('@/features/portal/pages/intelligence-visibility-page'))
 export const PortalIntelligenceAssociationsPage = lazy(() => import('@/features/portal/pages/intelligence-associations-page'))
 export const PortalPromotionsPage = lazy(() => import('@/features/portal/pages/promotions-page'))
