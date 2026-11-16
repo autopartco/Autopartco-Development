@@ -51,6 +51,13 @@ export const PortalReviewsPage = lazy(() => import('@/features/portal/pages/revi
 export const AdminReviewsPage = lazy(() => import('@/features/admin/pages/reviews-page'))
 export const PortalQuestionsPage = lazy(() => import('@/features/portal/pages/questions-page'))
 export const AdminQuestionsPage = lazy(() => import('@/features/admin/pages/questions-page'))
+export const AdminPaymentRiskPage = lazy(() => import('@/features/admin/pages/payment-risk-page'))
+export const AdminModelsPage = lazy(() => import('@/features/admin/pages/models-page'))
+export const AdminStoresPage = lazy(() => import('@/features/admin/pages/stores-page'))
+export const AdminAccountsPage = lazy(() => import('@/features/admin/pages/accounts-page'))
+export const AdminOrdersPage = lazy(() => import('@/features/admin/pages/orders-page'))
+export const AdminPaymentsPage = lazy(() => import('@/features/admin/pages/payments-page'))
+export const AdminStaffPage = lazy(() => import('@/features/admin/pages/staff-page'))
 
 // Portal del almacén (SaaS vendedores): cada pantalla se descarga al visitarla.
 export const PortalRoot = lazy(() => import('@/features/portal/layout/portal-root').then((module) => ({ default: module.PortalRoot })))

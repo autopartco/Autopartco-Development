@@ -23,6 +23,7 @@ import com.autopartco.backend.core.advertising.AdPriceUpdate;
 import com.autopartco.backend.core.advertising.AdPriceView;
 import com.autopartco.backend.operations.auditlog.AdminAudit;
 import com.autopartco.backend.shared.error.BadRequestException;
+import com.autopartco.backend.shared.security.PlatformAccess;
 import com.autopartco.backend.shared.web.ApiPaths;
 
 import jakarta.validation.Valid;
@@ -47,7 +48,7 @@ public class AdAdminController {
 
     /** Las {@value AdCampaigns#ADMIN_LIST_LIMIT} campañas más recientes, con filtros opcionales. */
     @GetMapping("/campaigns")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.ADS)
     public List<AdCampaignView> campaigns(@RequestParam(required = false) String status,
             @RequestParam(required = false) UUID storeId) {
         AdCampaignStatus parsed = null;
@@ -60,7 +61,7 @@ public class AdAdminController {
 
     /** Rechaza; si estaba pagada y no había empezado, queda con reembolso manual pendiente. */
     @PostMapping("/campaigns/{id}/reject")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.ADS)
     public AdCampaignView reject(@PathVariable UUID id, @Valid @RequestBody RejectRequest request,
             Authentication authentication) {
         AdCampaignView campaign = campaigns.reject(id, request.reason());
@@ -72,7 +73,7 @@ public class AdAdminController {
     }
 
     @PostMapping("/campaigns/{id}/pause")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.ADS)
     public AdCampaignView pause(@PathVariable UUID id, Authentication authentication) {
         AdCampaignView campaign = campaigns.adminPause(id);
         adminAudit.record(authentication, "AD_CAMPAIGN_PAUSED", "AD_CAMPAIGN", id,
@@ -82,7 +83,7 @@ public class AdAdminController {
 
     /** Reanuda cualquier pausa (también la del admin, que el almacén no puede levantar), según las fechas. */
     @PostMapping("/campaigns/{id}/resume")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.ADS)
     public AdCampaignView resume(@PathVariable UUID id, Authentication authentication) {
         AdCampaignView campaign = campaigns.adminResume(id);
         adminAudit.record(authentication, "AD_CAMPAIGN_RESUMED", "AD_CAMPAIGN", id,
@@ -91,14 +92,14 @@ public class AdAdminController {
     }
 
     @GetMapping("/prices")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.ADS)
     public List<AdPriceView> prices() {
         return campaigns.prices(false);
     }
 
     /** Fija tarifas diarias (COP, IVA incluido). Body: {@code {"prices":[{placement, dailyPrice, active}]}}. */
     @PutMapping("/prices")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.ADS)
     public List<AdPriceView> updatePrices(@Valid @RequestBody PricesRequest request, Authentication authentication) {
         List<AdPriceView> prices = campaigns.updatePrices(request.prices());
         Map<String, Object> metadata = new LinkedHashMap<>();

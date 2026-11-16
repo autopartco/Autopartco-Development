@@ -24,6 +24,7 @@ import com.autopartco.backend.core.catalog.CategoryResponse;
 import com.autopartco.backend.core.catalog.ManufacturerRequest;
 import com.autopartco.backend.core.catalog.ManufacturerResponse;
 import com.autopartco.backend.core.catalog.MasterDataService;
+import com.autopartco.backend.shared.security.PlatformAccess;
 import com.autopartco.backend.shared.web.ApiPaths;
 
 import jakarta.validation.Valid;
@@ -38,13 +39,13 @@ public class CatalogAdminController {
     private final AdminAudit adminAudit;
 
     @GetMapping("/categories")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.CATALOG)
     public List<CategoryResponse> categories() {
         return masterDataService.categories();
     }
 
     @PostMapping("/categories")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.CATALOG)
     public ResponseEntity<CategoryResponse> createCategory(@Valid @RequestBody CategoryRequest request, Authentication authentication) {
         CategoryResponse category = masterDataService.createCategory(request);
         adminAudit.record(authentication, "CATEGORY_CREATED", "CATEGORY", category.id(), Map.of("code", category.code()));
@@ -52,7 +53,7 @@ public class CatalogAdminController {
     }
 
     @PatchMapping("/categories/{id}")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.CATALOG)
     public CategoryResponse updateCategory(
             @PathVariable UUID id,
             @Valid @RequestBody CategoryRequest request,
@@ -64,7 +65,7 @@ public class CatalogAdminController {
     }
 
     @DeleteMapping("/categories/{id}")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.CATALOG)
     public ResponseEntity<Void> deactivateCategory(@PathVariable UUID id, Authentication authentication) {
         masterDataService.deactivateCategory(id);
         adminAudit.record(authentication, "CATEGORY_DEACTIVATED", "CATEGORY", id, Map.of());
@@ -72,13 +73,13 @@ public class CatalogAdminController {
     }
 
     @GetMapping("/manufacturers")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.CATALOG)
     public List<ManufacturerResponse> manufacturers() {
         return masterDataService.manufacturers();
     }
 
     @PostMapping("/manufacturers")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.CATALOG)
     public ResponseEntity<ManufacturerResponse> createManufacturer(@Valid @RequestBody ManufacturerRequest request, Authentication authentication) {
         ManufacturerResponse manufacturer = masterDataService.createManufacturer(request);
         adminAudit.record(authentication, "MANUFACTURER_CREATED", "MANUFACTURER", manufacturer.id(), Map.of("name", manufacturer.name()));
@@ -86,7 +87,7 @@ public class CatalogAdminController {
     }
 
     @PatchMapping("/manufacturers/{id}")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.CATALOG)
     public ManufacturerResponse updateManufacturer(
             @PathVariable UUID id,
             @Valid @RequestBody ManufacturerRequest request,
@@ -99,7 +100,7 @@ public class CatalogAdminController {
     }
 
     @DeleteMapping("/manufacturers/{id}")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.CATALOG)
     public ResponseEntity<Void> deactivateManufacturer(@PathVariable UUID id, Authentication authentication) {
         masterDataService.deactivateManufacturer(id);
         adminAudit.record(authentication, "MANUFACTURER_DEACTIVATED", "MANUFACTURER", id, Map.of());

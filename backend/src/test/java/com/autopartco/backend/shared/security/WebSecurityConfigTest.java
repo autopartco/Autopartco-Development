@@ -314,6 +314,14 @@ class WebSecurityConfigTest {
         mockMvc.perform(withToken(request(method, path), "ROLE_ROOT")).andExpect(status().isOk());
     }
 
+    /** El filtro deja pasar al equipo; el permiso de cada sección lo exige el {@code @PreAuthorize} del controlador. */
+    @ParameterizedTest(name = "{0} {1}")
+    @MethodSource("adminRoutes")
+    void adminRoutesPassTheFilterForStaff(HttpMethod method, String path) throws Exception {
+        mockMvc.perform(withToken(request(method, path), "ROLE_STAFF", "PLATFORM_DASHBOARD_READ"))
+                .andExpect(status().isOk());
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"not-a-jwt", "eyJhbGciOiJub25lIn0.eyJzdWIiOiJ4In0."})
     void invalidTokensAreRejected(String token) throws Exception {

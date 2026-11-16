@@ -24,6 +24,7 @@ import com.autopartco.backend.core.questions.QuestionModeration;
 import com.autopartco.backend.operations.auditlog.AdminAudit;
 import com.autopartco.backend.shared.error.ConflictException;
 import com.autopartco.backend.shared.web.PageResponse;
+import com.autopartco.backend.shared.security.PlatformAccess;
 
 import jakarta.validation.Validation;
 
@@ -45,7 +46,7 @@ class AdminQuestionsTest {
         for (Method method : QuestionAdminController.class.getDeclaredMethods()) {
             if (Modifier.isPublic(method.getModifiers())) {
                 assertThat(method.getAnnotation(PreAuthorize.class)).as(method.getName()).isNotNull();
-                assertThat(method.getAnnotation(PreAuthorize.class).value()).isEqualTo("hasAuthority('ROLE_ROOT')");
+                assertThat(method.getAnnotation(PreAuthorize.class).value()).isEqualTo(PlatformAccess.MODERATION);
             }
         }
     }

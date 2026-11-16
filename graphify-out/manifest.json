@@ -972,9 +972,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/operations/package-info.java": {
-    "mtime": 1794471396.4987607,
-    "seen": 1794788265.655883,
-    "ast_hash": "24bf59ae3cdf08fdd3782d45b497a67d",
+    "mtime": 1794791850.9130795,
+    "seen": 1794793685.016027,
+    "ast_hash": "ef21cd4eeb4e6243245ee302a3b907e6",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/shared/config/AppProperties.java": {
@@ -1086,9 +1086,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/shared/security/WebSecurityConfig.java": {
-    "mtime": 1794788574.5032094,
-    "seen": 1794790613.2606313,
-    "ast_hash": "fb2ce6da2108f4e223f349ab8d45298e",
+    "mtime": 1794791471.0472884,
+    "seen": 1794793685.0325,
+    "ast_hash": "93d580d0e8a3b334dd068638085d6671",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/shared/storage/StorageException.java": {
@@ -1320,9 +1320,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/identity/internal/AuthTokenService.java": {
-    "mtime": 1791974616.8290622,
-    "seen": 1794788265.6551569,
-    "ast_hash": "106df385afa2139bf3b37d13df13f24d",
+    "mtime": 1794791393.1570191,
+    "seen": 1794793684.8479247,
+    "ast_hash": "3d3444a9fc81147875b4bdedefdc22f0",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/identity/internal/EmailVerificationService.java": {
@@ -1980,9 +1980,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/operations/plans/PlanAdminController.java": {
-    "mtime": 1794145342.828481,
-    "seen": 1794788265.6558864,
-    "ast_hash": "e0cf7599ee7c808e844284117b7127e7",
+    "mtime": 1794791460.110545,
+    "seen": 1794793685.0160372,
+    "ast_hash": "359a45161dc3e46027dd328b7c999eba",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/storesuite/subscription/PlanCatalogController.java": {
@@ -2394,15 +2394,15 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/operations/catalogadmin/CatalogAdminController.java": {
-    "mtime": 1794145342.8082163,
-    "seen": 1794788265.6558726,
-    "ast_hash": "82e25cc6cdb07233a40dc328523f70a9",
+    "mtime": 1794791460.1061058,
+    "seen": 1794793685.01488,
+    "ast_hash": "dad285769ded633b3fe851feafa2aac0",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/operations/promotions/PlatformPromotionController.java": {
-    "mtime": 1794145342.8337598,
-    "seen": 1794788265.6558886,
-    "ast_hash": "bc7181124e66900966b49029b9481b26",
+    "mtime": 1794791460.111199,
+    "seen": 1794793685.016039,
+    "ast_hash": "6055c7534cc460e387a87b9249d72a2e",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/storesuite/products/CreateProduct.java": {
@@ -2670,9 +2670,9 @@
     "semantic_hash": ""
   },
   "frontend/src/app/lazy-pages.tsx": {
-    "mtime": 1794788882.4524074,
-    "seen": 1794790613.393005,
-    "ast_hash": "49bc48b9e6140b1b6a871b13a44bc892",
+    "mtime": 1794793019.5061603,
+    "seen": 1794793685.1800442,
+    "ast_hash": "866c08207466759c1db2cf9f58b9131e",
     "semantic_hash": ""
   },
   "frontend/src/app/page-fallback.tsx": {
@@ -2694,9 +2694,9 @@
     "semantic_hash": ""
   },
   "frontend/src/app/router.tsx": {
-    "mtime": 1794788882.4575386,
-    "seen": 1794790613.39435,
-    "ast_hash": "fbdda674feef47da835ded0b16fe8172",
+    "mtime": 1794793019.508178,
+    "seen": 1794793685.181486,
+    "ast_hash": "69709983447aca791dddad6b927b6f38",
     "semantic_hash": ""
   },
   "frontend/src/app/site-footer.tsx": {
@@ -3054,9 +3054,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/operations/storeverification/StoreVerificationController.java": {
-    "mtime": 1794148358.627249,
-    "seen": 1794788265.6559086,
-    "ast_hash": "82a85acaf833f9d1c6276a900a652c9d",
+    "mtime": 1794791460.1168957,
+    "seen": 1794793685.0180671,
+    "ast_hash": "5241f53f31478144cf2b64063ebaf87d",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/storesuite/onboarding/CompleteStoreSetup.java": {
@@ -3414,9 +3414,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/operations/anomalies/package-info.java": {
-    "mtime": 1791974616.997016,
-    "seen": 1794788265.6558645,
-    "ast_hash": "530c62942de9ce4c017a122282098069",
+    "mtime": 1794791608.2219949,
+    "seen": 1794793685.0143092,
+    "ast_hash": "979ba55a750dc8dcee18530d2ddcea96",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/operations/auditlog/package-info.java": {
@@ -3444,15 +3444,15 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/operations/payments/package-info.java": {
-    "mtime": 1791974617.0046766,
-    "seen": 1794788265.6558847,
-    "ast_hash": "fb95d2a2a306d0c06d9a191febfba1c7",
+    "mtime": 1794791658.507748,
+    "seen": 1794793685.0160344,
+    "ast_hash": "aca517151c37bc1ac562898196788966",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/operations/support/package-info.java": {
-    "mtime": 1791974617.01349,
-    "seen": 1794788265.6559098,
-    "ast_hash": "94c98d1a363ea07e9763caf4d800a755",
+    "mtime": 1794791768.1492455,
+    "seen": 1794793685.0180764,
+    "ast_hash": "72d31476c534dc05001d9f824eea826e",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/storesuite/analytics/package-info.java": {
@@ -3498,9 +3498,9 @@
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/shared/security/WebSecurityConfigTest.java": {
-    "mtime": 1794788574.546214,
-    "seen": 1794790613.377169,
-    "ast_hash": "c307574c9bc08b097c6709de4c332d50",
+    "mtime": 1794792163.581707,
+    "seen": 1794793685.160998,
+    "ast_hash": "8bee5795cff1ddff1d68d41dfd8773fe",
     "semantic_hash": ""
   },
   "frontend/public/logo.svg": {
@@ -3564,9 +3564,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/auth/api/mock/mock-auth-service.ts": {
-    "mtime": 1794558910.7898412,
-    "seen": 1794788265.6568673,
-    "ast_hash": "5f5c7e05a04f6162f7cfd74f5127baa1",
+    "mtime": 1794792564.0847814,
+    "seen": 1794793685.2172818,
+    "ast_hash": "f7abf8178f02aec25b651a143d64da8a",
     "semantic_hash": ""
   },
   "frontend/src/features/auth/api/types.ts": {
@@ -3582,9 +3582,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/auth/components/account-menu.tsx": {
-    "mtime": 1794749232.2543948,
-    "seen": 1794788265.656872,
-    "ast_hash": "865d1b102267aaf773a872602f281347",
+    "mtime": 1794792564.0817842,
+    "seen": 1794793685.2179592,
+    "ast_hash": "6731719f3f79f86c72aa13deee026d7c",
     "semantic_hash": ""
   },
   "frontend/src/features/auth/components/auth-shell.tsx": {
@@ -4650,9 +4650,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/auth/lib/account-menu-items.ts": {
-    "mtime": 1794733198.2428465,
-    "seen": 1794788265.6568875,
-    "ast_hash": "2bee77fc1f16c1a4092a9fa53e34ec5e",
+    "mtime": 1794792564.0718155,
+    "seen": 1794793685.221932,
+    "ast_hash": "b8e6fab30c848c55ca106c5ca47d4205",
     "semantic_hash": ""
   },
   "frontend/src/features/auth/lib/jwt.ts": {
@@ -4938,15 +4938,15 @@
     "semantic_hash": ""
   },
   "frontend/src/features/admin/hooks.ts": {
-    "mtime": 1794148358.7065976,
-    "seen": 1794788265.6568358,
-    "ast_hash": "081646e358e2fe969a5a6b04cc4466ee",
+    "mtime": 1794792637.2723444,
+    "seen": 1794793685.212669,
+    "ast_hash": "6ede99fe1b0a17799a0a6a0a96842e7f",
     "semantic_hash": ""
   },
   "frontend/src/features/admin/layout/admin-root.tsx": {
-    "mtime": 1794788574.5935366,
-    "seen": 1794790613.4191067,
-    "ast_hash": "cbd69b1139808c232281c1f5107a6c0f",
+    "mtime": 1794793284.1877728,
+    "seen": 1794793685.2126725,
+    "ast_hash": "3b366eaf982d47402619b1deead5f2ca",
     "semantic_hash": ""
   },
   "frontend/src/features/admin/lib/labels.ts": {
@@ -6552,20 +6552,20 @@
     "semantic_hash": ""
   },
   "frontend/src/features/portal/api/analytics-service.ts": {
-    "mtime": 1794788792.9087355,
-    "seen": 1794790613.470887,
+    "mtime": 1794790645.8732474,
+    "seen": 1794793685.2669044,
     "ast_hash": "ee6bbbe840cfa7744a2d0c074cad6917",
     "semantic_hash": ""
   },
   "frontend/src/features/portal/api/analytics-types.ts": {
-    "mtime": 1794789859.8136497,
-    "seen": 1794790613.47089,
+    "mtime": 1794790645.8772976,
+    "seen": 1794793685.266908,
     "ast_hash": "082ee593c4f68f4a8b48fbc7b5b71f0f",
     "semantic_hash": ""
   },
   "frontend/src/features/portal/api/http/http-analytics-service.ts": {
-    "mtime": 1794788792.9217489,
-    "seen": 1794790613.4717262,
+    "mtime": 1794790645.8800037,
+    "seen": 1794793685.2679732,
     "ast_hash": "42954e9a774b124d6b1556c1b4ea6c92",
     "semantic_hash": ""
   },
@@ -6576,8 +6576,8 @@
     "semantic_hash": ""
   },
   "frontend/src/features/portal/api/mock/mock-analytics-service.ts": {
-    "mtime": 1794790318.109478,
-    "seen": 1794790613.4802547,
+    "mtime": 1794790645.8840432,
+    "seen": 1794793685.2761223,
     "ast_hash": "8b565b9fdd3e8ed9b318534fad7db031",
     "semantic_hash": ""
   },
@@ -6588,8 +6588,8 @@
     "semantic_hash": ""
   },
   "frontend/src/features/portal/components/intelligence-shell.tsx": {
-    "mtime": 1794788882.4615755,
-    "seen": 1794790613.4982102,
+    "mtime": 1794790645.8901,
+    "seen": 1794793685.2915711,
     "ast_hash": "225483929455236ee7209b6552b0d1dc",
     "semantic_hash": ""
   },
@@ -6606,8 +6606,8 @@
     "semantic_hash": ""
   },
   "frontend/src/features/portal/pages/intelligence-forecast-page.tsx": {
-    "mtime": 1794790302.5258882,
-    "seen": 1794790613.525632,
+    "mtime": 1794790645.89414,
+    "seen": 1794793685.3258753,
     "ast_hash": "303473e8db910236fc617f3194a93189",
     "semantic_hash": ""
   },
@@ -6630,9 +6630,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/operations/metrics/PlatformAnalyticsController.java": {
-    "mtime": 1794145342.8132644,
-    "seen": 1794788265.6558762,
-    "ast_hash": "6c67946b271d343e121c197ed1cb501c",
+    "mtime": 1794791460.1419814,
+    "seen": 1794793685.015167,
+    "ast_hash": "9c8bbc2d810ed0e9d886c1f78daad100",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/storesuite/analytics/AnalyticsController.java": {
@@ -7266,9 +7266,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/operations/auditlog/AuditAdminController.java": {
-    "mtime": 1794145342.8005266,
-    "seen": 1794788265.655869,
-    "ast_hash": "1f84eb192a2e10104ce191e1a5baae5f",
+    "mtime": 1794791460.0910673,
+    "seen": 1794793685.014596,
+    "ast_hash": "849c412df2f9189cdf72ea77cba71aa5",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/operations/metrics/TrafficController.java": {
@@ -7368,9 +7368,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/admin/lib/sections.ts": {
-    "mtime": 1794471396.7958076,
-    "seen": 1794788265.6568427,
-    "ast_hash": "0079456cf3ff4a8170cf7d812d3d43f4",
+    "mtime": 1794792594.7003243,
+    "seen": 1794793685.213224,
+    "ast_hash": "f421ed597e9dc9afb26406faca25fce7",
     "semantic_hash": ""
   },
   "frontend/src/features/admin/pages/audit-page.tsx": {
@@ -7386,9 +7386,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/admin/pages/overview-page.tsx": {
-    "mtime": 1794145343.8167255,
-    "seen": 1794788265.6568534,
-    "ast_hash": "260a8c52881ff47dba2dfe761ddac122",
+    "mtime": 1794792637.278922,
+    "seen": 1794793685.214902,
+    "ast_hash": "73df8db0c194aa513303092690d189c2",
     "semantic_hash": ""
   },
   "frontend/src/features/admin/pages/plans-page.tsx": {
@@ -8232,9 +8232,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/operations/searchadmin/SearchAdminController.java": {
-    "mtime": 1794426880.5939076,
-    "seen": 1794788265.6558983,
-    "ast_hash": "8c743e947a2060feffa003f5721d3a94",
+    "mtime": 1794791460.1168957,
+    "seen": 1794793685.016614,
+    "ast_hash": "016c263e6b04ee9d6f43675094ae3d72",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/shared/events/ListingsChanged.java": {
@@ -8592,9 +8592,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/operations/ads/AdAdminController.java": {
-    "mtime": 1794426880.581784,
-    "seen": 1794788265.6558628,
-    "ast_hash": "e44fc2f6f921b78951520afa3cdadc68",
+    "mtime": 1794791460.0910673,
+    "seen": 1794793685.0143006,
+    "ast_hash": "be48c9c4e3df1657bd5e25434348ea96",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/shared/events/OrderPaid.java": {
@@ -9372,9 +9372,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/operations/reviews/ReviewAdminController.java": {
-    "mtime": 1794471396.506903,
-    "seen": 1794788265.655896,
-    "ast_hash": "2b1d33ea3fca0bbf2cb0a44300fe2675",
+    "mtime": 1794791460.1168957,
+    "seen": 1794793685.016611,
+    "ast_hash": "a38cf483efca9bc69d601f00a6626f75",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/shared/events/SaleDelivered.java": {
@@ -9432,9 +9432,9 @@
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/operations/reviews/AdminReviewsTest.java": {
-    "mtime": 1794471396.6870532,
-    "seen": 1794788265.6565814,
-    "ast_hash": "9146c2791a3d0a98152107bbe251a525",
+    "mtime": 1794792191.966931,
+    "seen": 1794793685.158888,
+    "ast_hash": "19a03d8dc34074e201649454b4ad3779",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/storesuite/reviews/StoreReviewsPortalTest.java": {
@@ -9690,9 +9690,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/operations/questions/QuestionAdminController.java": {
-    "mtime": 1794471396.503626,
-    "seen": 1794788265.655892,
-    "ast_hash": "b8b7d9fb1743fa03f283ed959d36e0cc",
+    "mtime": 1794791460.111199,
+    "seen": 1794793685.016328,
+    "ast_hash": "dcaf2425b2b702e1a82ae972a8c11bba",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/storesuite/questions/QuestionAnswerRequest.java": {
@@ -9744,9 +9744,9 @@
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/operations/questions/AdminQuestionsTest.java": {
-    "mtime": 1794471396.6830142,
-    "seen": 1794788265.6565797,
-    "ast_hash": "f80886cdce4c2691c985585a7c824e60",
+    "mtime": 1794792191.966931,
+    "seen": 1794793685.1588845,
+    "ast_hash": "3489466d6e458f50521c0b8e3eaaae25",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/storesuite/questions/StoreQuestionsPortalTest.java": {
@@ -11316,8 +11316,8 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/ml/MlPredictions.java": {
-    "mtime": 1794789829.881649,
-    "seen": 1794790613.072449,
+    "mtime": 1794790645.8413653,
+    "seen": 1794793684.8743908,
     "ast_hash": "afb039c25f1378ce94e0c01b26f98248",
     "semantic_hash": ""
   },
@@ -11328,8 +11328,8 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/ml/MlScoringJobs.java": {
-    "mtime": 1794789845.146988,
-    "seen": 1794790613.0724566,
+    "mtime": 1794790645.847837,
+    "seen": 1794793684.874682,
     "ast_hash": "1aa39d18a937d2ee3e5382ebb6474cc0",
     "semantic_hash": ""
   },
@@ -11376,8 +11376,8 @@
     "semantic_hash": ""
   },
   "backend/src/main/resources/ml/stockout_14d/model.json": {
-    "mtime": 1794789797.054732,
-    "seen": 1794790613.312282,
+    "mtime": 1794790645.857978,
+    "seen": 1794793685.0965347,
     "ast_hash": "4c626bb621599075990f5417f1adad0b",
     "semantic_hash": ""
   },
@@ -11460,8 +11460,8 @@
     "semantic_hash": ""
   },
   "ml/autopartco_ml/models/stockout.py": {
-    "mtime": 1794789797.0588484,
-    "seen": 1794790613.5587473,
+    "mtime": 1794790646.5946984,
+    "seen": 1794793685.3683445,
     "ast_hash": "0c41032690d34b68300009031e0387d0",
     "semantic_hash": ""
   },
@@ -11496,9 +11496,219 @@
     "semantic_hash": ""
   },
   "frontend/src/features/portal/pages/intelligence-stockout-page.tsx": {
-    "mtime": 1794789859.8206563,
-    "seen": 1794790613.5262082,
+    "mtime": 1794790645.8951602,
+    "seen": 1794793685.3265533,
     "ast_hash": "10a67f321e82361458cd287c912cab1a",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/AccountAdministration.java": {
+    "mtime": 1794791424.9656,
+    "seen": 1794793684.8405101,
+    "ast_hash": "fee622a6a1dc334a5ff74e716f497ac2",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/StaffAccountDetails.java": {
+    "mtime": 1794791423.0460804,
+    "seen": 1794793684.8439436,
+    "ast_hash": "99fcb96a0bf9f7e4786250209adaf719",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/core/identity/internal/StaffAuthorities.java": {
+    "mtime": 1794791389.7457218,
+    "seen": 1794793684.855853,
+    "ast_hash": "ab5ca8552ab4de2bae6c1cd6cc348b20",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/operations/AdminActor.java": {
+    "mtime": 1794791570.9279823,
+    "seen": 1794793685.0142946,
+    "ast_hash": "8763574e2b36974cf1f9fda77d2e82e6",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/operations/AdminPaging.java": {
+    "mtime": 1794791538.9771018,
+    "seen": 1794793685.0142972,
+    "ast_hash": "c72469ec6da7753467756d7ff94c25aa",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/operations/anomalies/AnomaliesAdminController.java": {
+    "mtime": 1794791604.708226,
+    "seen": 1794793685.0143027,
+    "ast_hash": "9e7d8ec9c03e7993b3673854ea0405d9",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/operations/anomalies/MlModelsAdmin.java": {
+    "mtime": 1794792102.8954346,
+    "seen": 1794793685.0143044,
+    "ast_hash": "baca1c341350e69c05f7ea683b59da48",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/operations/anomalies/PaymentRiskAdmin.java": {
+    "mtime": 1794791572.8938565,
+    "seen": 1794793685.0143063,
+    "ast_hash": "85db587f5c1be4107dbd555f6170fc6a",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/operations/console/AdminMeController.java": {
+    "mtime": 1794791535.22887,
+    "seen": 1794793685.0148828,
+    "ast_hash": "eed563d3e4ecc833cdb2049940f5f41b",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/operations/console/package-info.java": {
+    "mtime": 1794791537.176575,
+    "seen": 1794793685.0148857,
+    "ast_hash": "9c96300213a49a80ceb8fcf79f40fcde",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/operations/payments/OrdersAdmin.java": {
+    "mtime": 1794791653.9590096,
+    "seen": 1794793685.0160296,
+    "ast_hash": "3766f82a4868efa8bfbffb9c7b3923a7",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/operations/payments/OrdersAdminController.java": {
+    "mtime": 1794791655.9105225,
+    "seen": 1794793685.0160322,
+    "ast_hash": "ba85afeb8240b6b610162f2dc434fa9b",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/operations/staff/PlatformStaff.java": {
+    "mtime": 1794791824.3525107,
+    "seen": 1794793685.0166156,
+    "ast_hash": "909343dd121bc90f708b879a4777defa",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/operations/staff/StaffAdminController.java": {
+    "mtime": 1794791847.5437088,
+    "seen": 1794793685.0166175,
+    "ast_hash": "af219ab6f101738c5a4e278a81744040",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/operations/staff/package-info.java": {
+    "mtime": 1794791850.8112073,
+    "seen": 1794793685.016619,
+    "ast_hash": "11133247784e1ef51336b83431c53f1e",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/operations/support/AccountsAdmin.java": {
+    "mtime": 1794792212.4536052,
+    "seen": 1794793685.0180697,
+    "ast_hash": "fb3233033e79b99a3f8f06d81dbd8dcf",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/operations/support/StoresAdmin.java": {
+    "mtime": 1794791708.3896773,
+    "seen": 1794793685.0180721,
+    "ast_hash": "df8d9786905d9322a2bff4fa6b13295e",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/operations/support/SupportAdminController.java": {
+    "mtime": 1794791765.2104394,
+    "seen": 1794793685.0180743,
+    "ast_hash": "2663f57bd01d787b853ea458cd01be60",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/shared/security/PlatformAccess.java": {
+    "mtime": 1794791456.619685,
+    "seen": 1794793685.0313795,
+    "ast_hash": "2b631c123160f02d775c1989cc9ef935",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/operations/AdminAccessTest.java": {
+    "mtime": 1794792212.4593704,
+    "seen": 1794793685.1581588,
+    "ast_hash": "4294ec4b5b28558253f858c0490146a1",
+    "semantic_hash": ""
+  },
+  "backend/src/test/java/com/autopartco/backend/operations/staff/PlatformStaffTest.java": {
+    "mtime": 1794792359.9491436,
+    "seen": 1794793685.158891,
+    "ast_hash": "c58d255de4c1d1d232b15b186f0c75d7",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/admin/api/admin-console-service.ts": {
+    "mtime": 1794793442.7918205,
+    "seen": 1794793685.2016935,
+    "ast_hash": "089d55ea6a39093ee673dd91c93fe3fc",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/admin/api/console-types.ts": {
+    "mtime": 1794792527.0733316,
+    "seen": 1794793685.205431,
+    "ast_hash": "3cae60fc85a285b0c33e0c955ac2ff79",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/admin/components/console-kit.tsx": {
+    "mtime": 1794793134.264296,
+    "seen": 1794793685.212112,
+    "ast_hash": "0d13b617305e208a521677ed3a6fe782",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/admin/lib/access.ts": {
+    "mtime": 1794792591.5435662,
+    "seen": 1794793685.212675,
+    "ast_hash": "89b83c9023adb9218d1463df68fb5a48",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/admin/lib/console-labels.ts": {
+    "mtime": 1794792684.0993686,
+    "seen": 1794793685.212952,
+    "ast_hash": "ba544a1de35857122a7ff20ce81857df",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/admin/lib/use-url-filters.ts": {
+    "mtime": 1794793134.2663126,
+    "seen": 1794793685.2134948,
+    "ast_hash": "4dbc78e85805fc5ad3c8542ecc1b34ae",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/admin/pages/accounts-page.tsx": {
+    "mtime": 1794793134.3435571,
+    "seen": 1794793685.2134972,
+    "ast_hash": "eb28821663a3456bdc43dca2b3af8e7e",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/admin/pages/models-page.tsx": {
+    "mtime": 1794793134.2602649,
+    "seen": 1794793685.2148962,
+    "ast_hash": "39edef9809e892e46eab191c6fbcb784",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/admin/pages/orders-page.tsx": {
+    "mtime": 1794793134.3647652,
+    "seen": 1794793685.2148998,
+    "ast_hash": "d404246041ec27dbb3214e036cd7f985",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/admin/pages/payment-risk-page.tsx": {
+    "mtime": 1794793134.3647652,
+    "seen": 1794793685.2149036,
+    "ast_hash": "2f010474dab507c2acf42eb3020cf47e",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/admin/pages/payments-page.tsx": {
+    "mtime": 1794793134.374805,
+    "seen": 1794793685.2149055,
+    "ast_hash": "77d1a15cd9140e9c3c16393612a1126e",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/admin/pages/staff-page.tsx": {
+    "mtime": 1794793078.0046597,
+    "seen": 1794793685.2163332,
+    "ast_hash": "1516d7a5e5ab20f32a31e2cd6d6ec44a",
+    "semantic_hash": ""
+  },
+  "frontend/src/features/admin/pages/stores-page.tsx": {
+    "mtime": 1794793134.3788288,
+    "seen": 1794793685.2166345,
+    "ast_hash": "de4e9263648876e3802ac537d8bdcd47",
+    "semantic_hash": ""
+  },
+  "docs/backlog/PLAN-consola-admin.md": {
+    "mtime": 1794791310.1322846,
+    "seen": 1794793685.4277248,
+    "ast_hash": "1bd34ec4dc2c06a0e308924302ca9445",
     "semantic_hash": ""
   }
 }

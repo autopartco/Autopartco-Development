@@ -17,6 +17,7 @@ import com.autopartco.backend.core.reviews.AdminReview;
 import com.autopartco.backend.core.reviews.ReviewModeration;
 import com.autopartco.backend.core.reviews.ReviewType;
 import com.autopartco.backend.operations.auditlog.AdminAudit;
+import com.autopartco.backend.shared.security.PlatformAccess;
 import com.autopartco.backend.shared.web.ApiPaths;
 import com.autopartco.backend.shared.web.PageResponse;
 
@@ -35,7 +36,7 @@ public class ReviewAdminController {
     private final AdminAudit adminAudit;
 
     @GetMapping
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.MODERATION)
     public PageResponse<AdminReview> list(
             @RequestParam(required = false) Boolean hidden,
             @RequestParam(required = false) String type,
@@ -46,7 +47,7 @@ public class ReviewAdminController {
     }
 
     @PostMapping("/{type}/{reviewId}/hide")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.MODERATION)
     public AdminReview hide(
             @PathVariable String type,
             @PathVariable UUID reviewId,
@@ -61,7 +62,7 @@ public class ReviewAdminController {
     }
 
     @PostMapping("/{type}/{reviewId}/unhide")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.MODERATION)
     public AdminReview unhide(@PathVariable String type, @PathVariable UUID reviewId, Authentication authentication) {
         ReviewType reviewType = ReviewType.parse(type);
         AdminReview review = moderation.unhide(reviewType, reviewId);
