@@ -3,10 +3,12 @@ import type {
   AssociationReport,
   CustomerReport,
   CustomerSegmentCode,
+  DemandForecastReport,
   Forecast,
   ProductReport,
   ReportQuery,
   SalesReport,
+  StockoutRiskReport,
   VisibilityReport,
 } from './analytics-types'
 
@@ -30,6 +32,10 @@ export interface AnalyticsService {
    * `ANALYTICS_READ` (está en todos los planes, sin `ADVANCED_REPORTS`).
    */
   visibility(storeId: string, range: { from: string; to: string }): Promise<VisibilityReport>
+  /** `GET /demand-forecast?branchId?`: demanda por categoría en 28 días (modelo LightGBM, cálculo nocturno). */
+  demandForecast(storeId: string, branchId?: string): Promise<DemandForecastReport>
+  /** `GET /stockout-risk`: inventarios con riesgo de agotarse en 14 días (Random Forest, cálculo nocturno). */
+  stockoutRisk(storeId: string): Promise<StockoutRiskReport>
 }
 
 let servicePromise: Promise<AnalyticsService> | undefined
