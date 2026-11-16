@@ -90,9 +90,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/resources/application.yaml": {
-    "mtime": 1794751606.3268275,
-    "seen": 1794755530.449697,
-    "ast_hash": "e4cf16fe79729d66dc93ead3dd99c538",
+    "mtime": 1794782988.5594897,
+    "seen": 1794783286.1437824,
+    "ast_hash": "bceb888b28d1840e6a5a57e03be66e9c",
     "semantic_hash": ""
   },
   "docs/AUTOPARTCO_AGENT_CONTEXT.md": {
@@ -1392,9 +1392,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/identity/internal/PersonAddressService.java": {
-    "mtime": 1794751605.2583325,
-    "seen": 1794755530.4461029,
-    "ast_hash": "f60a6781a56674b3e2e495a829fc71c8",
+    "mtime": 1794781421.3640637,
+    "seen": 1794783285.6246185,
+    "ast_hash": "3c3d4d52ba60c57b9537b5ed159fc917",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/identity/internal/PersonRepository.java": {
@@ -1614,9 +1614,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/organization/BranchService.java": {
-    "mtime": 1794751605.407941,
-    "seen": 1794755530.4463336,
-    "ast_hash": "91d21eb91b7cabeab5d67ed3ce3367c6",
+    "mtime": 1794781421.3640637,
+    "seen": 1794783285.6594355,
+    "ast_hash": "6208e03a64c444a22863fb7bcafb2705",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/core/organization/BranchUpdateRequest.java": {
@@ -1800,15 +1800,15 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/shared/location/Location.java": {
-    "mtime": 1794751605.9937828,
-    "seen": 1794755530.4471133,
-    "ast_hash": "bd034070283c19e6cbbb7026a17bf99a",
+    "mtime": 1794781421.3702157,
+    "seen": 1794783285.776703,
+    "ast_hash": "74e3d67542201f5a21deb954d6714d4a",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/shared/location/LocationRepository.java": {
-    "mtime": 1794751606.0075305,
-    "seen": 1794755530.4471154,
-    "ast_hash": "f5d4bd28ae091ea5091157b4853ebaf4",
+    "mtime": 1794781421.3723774,
+    "seen": 1794783285.776706,
+    "ast_hash": "6e65584c19427e95d496ef0eda24d4cb",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/storesuite/branches/BranchController.java": {
@@ -2520,9 +2520,9 @@
     "semantic_hash": ""
   },
   "frontend/src/components/ui/button.tsx": {
-    "mtime": 1794751607.2997375,
-    "seen": 1794755530.4482105,
-    "ast_hash": "1e85dd8214544f565ceba6e3b1532637",
+    "mtime": 1794781421.3960843,
+    "seen": 1794783285.922384,
+    "ast_hash": "1e36c8a7db4c9151c2a86239f0501450",
     "semantic_hash": ""
   },
   "frontend/src/components/ui/card.tsx": {
@@ -4296,9 +4296,9 @@
     "semantic_hash": ""
   },
   "frontend/src/features/portal/hooks.ts": {
-    "mtime": 1794751608.0857978,
-    "seen": 1794755530.4490542,
-    "ast_hash": "14d7119dc10c331c78e08e722fbf34d2",
+    "mtime": 1794781421.3981068,
+    "seen": 1794783286.03926,
+    "ast_hash": "6e753958c9de374d50ad3723c6e121da",
     "semantic_hash": ""
   },
   "frontend/src/features/portal/lib/errors.ts": {
@@ -4812,9 +4812,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/resources/application-prod.yaml": {
-    "mtime": 1794751606.3268275,
-    "seen": 1794755530.4496946,
-    "ast_hash": "e20953a9b60336a1d7b08751437b83dd",
+    "mtime": 1794781421.3838987,
+    "seen": 1794783286.1437793,
+    "ast_hash": "5c7e423b493aa94cd7bf7ad4a315f858",
     "semantic_hash": ""
   },
   "docs/architecture/2026-10-14-marketplace-frontend-plan.md": {
@@ -8088,9 +8088,9 @@
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/core/organization/BranchPortalFieldsTest.java": {
-    "mtime": 1794751606.5194454,
-    "seen": 1794755530.4477654,
-    "ast_hash": "444fb27b056a3564e9000b7046b73591",
+    "mtime": 1794781421.38951,
+    "seen": 1794783285.8638742,
+    "ast_hash": "9e183437303e01b4c89c0bfbc1d5cf6b",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/core/organization/OpeningHoursTest.java": {
@@ -8946,9 +8946,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/shared/cache/RedisConfig.java": {
-    "mtime": 1794751605.9670992,
-    "seen": 1794755530.4470527,
-    "ast_hash": "00395b2e0622e92b8a3ab1518f333a02",
+    "mtime": 1794783002.0572152,
+    "seen": 1794783285.7688732,
+    "ast_hash": "46351fcb14efcd569ef6013331dc9812",
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/shared/cache/RedisGuard.java": {
@@ -9114,9 +9114,9 @@
     "semantic_hash": ""
   },
   "backend/src/main/java/com/autopartco/backend/shared/web/ClientIp.java": {
-    "mtime": 1794751606.0519037,
-    "seen": 1794755530.4471636,
-    "ast_hash": "16e61e4afb883ab4dfb77cd3c3eac383",
+    "mtime": 1794781421.3723774,
+    "seen": 1794783285.783772,
+    "ast_hash": "1de7d9e8d2db92a23eca7f8563e74ca6",
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/shared/cache/RedisUrlConditionTest.java": {
@@ -9126,9 +9126,9 @@
     "semantic_hash": ""
   },
   "backend/src/test/java/com/autopartco/backend/shared/web/ClientIpTest.java": {
-    "mtime": 1794751606.7211845,
-    "seen": 1794755530.4480166,
-    "ast_hash": "562df6530e7edfd3a1278174272d378e",
+    "mtime": 1794781421.38951,
+    "seen": 1794783285.8981023,
+    "ast_hash": "4c18d1ec7aea0c67b90885e25955a6dc",
     "semantic_hash": ""
   },
   "CHANGELOG.md": {
@@ -11307,6 +11307,12 @@
     "mtime": 1794778791.0849879,
     "seen": 1794779634.6657321,
     "ast_hash": "a200d30003907903fbe9e4c53bc94a4a",
+    "semantic_hash": ""
+  },
+  "backend/src/main/java/com/autopartco/backend/shared/web/ClientIpConfig.java": {
+    "mtime": 1794781421.3723774,
+    "seen": 1794783285.7837756,
+    "ast_hash": "66f342bbd791ecbc98a1be2a07253283",
     "semantic_hash": ""
   }
 }

@@ -26,3 +26,7 @@ graphify-out/.graphify_analysis.json
 *.jks
 # Salida del generador de datos sintéticos
 tools/seed/out/
+
+# Entorno de entrenamiento de modelos
+ml/.venv/
+**/__pycache__/
