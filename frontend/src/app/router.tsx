@@ -13,6 +13,13 @@ import {
   AdminSearchesPage,
   AdminStatsPage,
   AdminQuestionsPage,
+  AdminPaymentRiskPage,
+  AdminModelsPage,
+  AdminStoresPage,
+  AdminAccountsPage,
+  AdminOrdersPage,
+  AdminPaymentsPage,
+  AdminStaffPage,
   AdminReviewsPage,
   AdminRoot,
   BenefitsPage,
@@ -238,7 +245,7 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    // Administración: solo ROLE_ROOT (la interfaz oculta; el servidor responde 403 a cualquier otro rol).
+    // Administración: ROLE_ROOT y el equipo (ROLE_STAFF) según sus permisos PLATFORM_* (la interfaz oculta; el servidor decide).
     path: 'admin',
     element: (
       <Suspense fallback={<PageFallback />}>
@@ -260,6 +267,13 @@ export const router = createBrowserRouter([
       { path: 'busquedas', element: <AdminSearchesPage /> },
       { path: 'resenas', element: <AdminReviewsPage /> },
       { path: 'preguntas', element: <AdminQuestionsPage /> },
+      { path: 'pagos-atipicos', element: <AdminPaymentRiskPage /> },
+      { path: 'modelos', element: <AdminModelsPage /> },
+      { path: 'almacenes', element: <AdminStoresPage /> },
+      { path: 'cuentas', element: <AdminAccountsPage /> },
+      { path: 'pedidos', element: <AdminOrdersPage /> },
+      { path: 'pagos', element: <AdminPaymentsPage /> },
+      { path: 'equipo', element: <AdminStaffPage /> },
       { path: '*', element: <Navigate to="resumen" replace /> },
     ],
   },

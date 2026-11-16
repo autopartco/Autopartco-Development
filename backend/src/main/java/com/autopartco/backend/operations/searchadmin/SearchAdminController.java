@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.autopartco.backend.core.search.SearchIndexJobs;
 import com.autopartco.backend.operations.auditlog.AdminAudit;
+import com.autopartco.backend.shared.security.PlatformAccess;
 import com.autopartco.backend.shared.web.ApiPaths;
 
 import lombok.AllArgsConstructor;
@@ -25,7 +26,7 @@ public class SearchAdminController {
 
     /** Encola una reconstrucción completa de {@code search_listings} y responde 202 sin esperar. */
     @PostMapping("/reindex")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.CATALOG)
     public ResponseEntity<Void> reindex(Authentication authentication) {
         searchIndexJobs.requestFullReindex();
         adminAudit.record(authentication, "SEARCH_REINDEX_REQUESTED", "SEARCH_INDEX", null, Map.of());

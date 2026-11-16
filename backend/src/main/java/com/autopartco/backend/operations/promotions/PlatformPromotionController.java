@@ -24,6 +24,7 @@ import com.autopartco.backend.core.analytics.PromotionResults;
 import com.autopartco.backend.core.pricing.PromotionResponse;
 import com.autopartco.backend.core.pricing.PromotionService;
 import com.autopartco.backend.core.pricing.PromotionUpsertRequest;
+import com.autopartco.backend.shared.security.PlatformAccess;
 import com.autopartco.backend.shared.web.ApiPaths;
 
 import jakarta.validation.Valid;
@@ -43,14 +44,14 @@ public class PlatformPromotionController {
     private final AdminAudit adminAudit;
 
     @GetMapping
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.PROMOTIONS)
     public List<PromotionResponse> list() {
         return promotionService.listForPlatform();
     }
 
     /** Resultados agregados de la promoción de plataforma (alcance, ventas atribuidas, efecto frente al control). */
     @GetMapping("/{promotionId}/results")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.PROMOTIONS)
     public PromotionResult results(@PathVariable UUID promotionId) {
         PromotionResponse promotion = promotionService.getForPlatform(promotionId);
         return promotionResults.results(
@@ -58,7 +59,7 @@ public class PlatformPromotionController {
     }
 
     @PostMapping
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.PROMOTIONS)
     public ResponseEntity<PromotionResponse> create(@Valid @RequestBody PromotionUpsertRequest request, Authentication authentication) {
         PromotionResponse promotion = promotionService.createForPlatform(request);
         adminAudit.record(authentication, "PLATFORM_PROMOTION_CREATED", "PROMOTION", promotion.id(), summary(promotion));
@@ -66,7 +67,7 @@ public class PlatformPromotionController {
     }
 
     @PutMapping("/{promotionId}")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.PROMOTIONS)
     public PromotionResponse update(
             @PathVariable UUID promotionId,
             @Valid @RequestBody PromotionUpsertRequest request,
@@ -78,7 +79,7 @@ public class PlatformPromotionController {
     }
 
     @DeleteMapping("/{promotionId}")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.PROMOTIONS)
     public ResponseEntity<Void> delete(@PathVariable UUID promotionId, Authentication authentication) {
         promotionService.deleteForPlatform(promotionId);
         adminAudit.record(authentication, "PLATFORM_PROMOTION_DELETED", "PROMOTION", promotionId, Map.of());

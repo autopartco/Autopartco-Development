@@ -12,6 +12,7 @@ import { TwoFactorRequiredError, type AuthService, type Session } from '../types
  * - `cliente...` -> `["ROLE_CUSTOMER"]` (cliente del marketplace).
  * - `colaborador...` / `equipo...` -> cuenta de almacén invitada a dos almacenes con roles predefinidos (ver `portal/api/mock`).
  * - `root...` -> `["ROLE_ROOT"]` (servicio de administración `/admin`).
+ * - `soporte...` -> `["ROLE_STAFF", ...]` con los permisos del rol «Soporte técnico» (consola acotada).
  * - `admin...` -> `["ROLE_ADMIN"]` (rol sin menú propio: se degrada a datos y salir).
  * - `pendiente...` -> `["ROLE_CUSTOMER"]` con una solicitud de almacén `CONFIGURATION_PENDING` (ver
  *   `seller/api/mock`): sirve para probar «Terminar configuración». Al configurar pasa a gerente.
@@ -58,6 +59,7 @@ export function mockRolesFor(email: string): string[] {
   // Colaboradores invitados: al aceptar, la cuenta pasa a cuenta de almacén (ver `portal/api/mock`).
   if (clean.startsWith('colaborador') || clean.startsWith('equipo')) return ['ROLE_CUSTOMER', 'ROLE_STORE_MANAGER']
   if (clean.startsWith('root')) return ['ROLE_ROOT']
+  if (clean.startsWith('soporte')) return ['ROLE_STAFF', 'PLATFORM_DASHBOARD_READ', 'PLATFORM_STORES_READ', 'PLATFORM_ACCOUNTS_READ', 'PLATFORM_ACCOUNTS_MANAGE', 'PLATFORM_ORDERS_READ', 'PLATFORM_APPLICATIONS_REVIEW', 'PLATFORM_MODERATION']
   if (clean.startsWith('admin')) return ['ROLE_ADMIN']
   return ['ROLE_CUSTOMER', 'ROLE_STORE_MANAGER']
 }

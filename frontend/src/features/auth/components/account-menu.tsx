@@ -52,7 +52,7 @@ function groupsFor(
   return accountMenuGroups({
     sellerApplicationTo: seller?.state === 'review' ? seller.to : undefined,
     sellerSetupTo: seller?.application?.status === 'CONFIGURATION_PENDING' ? SELLER_SETUP_PATH : undefined,
-    root: session.roles.includes('ROLE_ROOT'),
+    root: session.roles.includes('ROLE_ROOT') || session.roles.includes('ROLE_STAFF'),
     hasStore: seller?.state === 'manage',
     kind: accountKindOf(session.roles),
     area,

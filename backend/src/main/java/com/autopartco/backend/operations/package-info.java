@@ -1,6 +1,6 @@
 /**
- * Producto D: operaciones internas de la plataforma (verificación de almacenes, administración de catálogo,
- * promociones de plataforma y planes). Nadie importa este paquete; todo su contenido es interno.
+ * Producto D: operaciones internas de la plataforma (verificación de almacenes, administración de catálogo, soporte,
+ * pedidos y pagos, pagos atípicos, equipo de plataforma, promociones y planes). Nadie importa este paquete.
  */
 @ApplicationModule(
         displayName = "Operations",

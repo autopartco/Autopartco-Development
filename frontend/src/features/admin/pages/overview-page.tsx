@@ -10,6 +10,7 @@ import { formatDate, type Tone } from '@/features/portal/lib/labels'
 import type { StoreApplication } from '../api/types'
 import { AdminPage, AdminQueryError, AdminSection } from '../components/admin-kit'
 import { useAdminManufacturers, useAdminPlans, useAdminPromotions, usePendingApplications } from '../hooks'
+import { useAdminAccess } from '../lib/access'
 import { DAY_MS, startOfDay, timeOf } from '../lib/labels'
 
 const TONE_TEXT: Record<Tone, string> = {
@@ -195,10 +196,15 @@ function SideList<T>({ id, title, result, what, empty, to, linkLabel, children }
 
 /** `/admin/resumen`: qué espera revisión (solicitudes, fabricantes, planes) y, al lado, la oferta comercial vigente. */
 export default function AdminOverviewPage() {
-  const applications = usePendingApplications()
-  const plans = useAdminPlans()
-  const promotions = useAdminPromotions()
-  const manufacturers = useAdminManufacturers()
+  const access = useAdminAccess()
+  const canApplications = access.can('PLATFORM_APPLICATIONS_REVIEW')
+  const canPlans = access.can('PLATFORM_PLANS_MANAGE')
+  const canPromotions = access.can('PLATFORM_PROMOTIONS_MANAGE')
+  const canCatalog = access.can('PLATFORM_CATALOG_MANAGE')
+  const applications = usePendingApplications(canApplications)
+  const plans = useAdminPlans(canPlans)
+  const promotions = useAdminPromotions(canPromotions)
+  const manufacturers = useAdminManufacturers(canCatalog)
 
   const pendingApplications = applications.data ?? []
   const oldestDays = pendingApplications.length > 0 ? Math.max(...pendingApplications.map((item) => daysWaiting(item.createdAt))) : 0
@@ -218,7 +224,7 @@ export default function AdminOverviewPage() {
       tone: oldestDays >= 3 ? 'warning' : 'info',
       to: '/admin/solicitudes',
       cta: 'Revisar solicitudes',
-      show: applications.data === undefined || pendingApplications.length > 0,
+      show: canApplications && (applications.data === undefined || pendingApplications.length > 0),
     },
     {
       key: 'manufacturers',
@@ -230,7 +236,7 @@ export default function AdminOverviewPage() {
       tone: 'warning',
       to: '/admin/catalogo?vista=fabricantes',
       cta: 'Revisar fabricantes',
-      show: manufacturers.data === undefined || suggested.length > 0,
+      show: canCatalog && (manufacturers.data === undefined || suggested.length > 0),
     },
     {
       key: 'plans',
@@ -241,7 +247,7 @@ export default function AdminOverviewPage() {
       tone: 'danger',
       to: '/admin/planes',
       cta: 'Ir a planes',
-      show: plans.data === undefined || enabledPlans.length === 0,
+      show: canPlans && (plans.data === undefined || enabledPlans.length === 0),
     },
   ]
   const items = candidates.filter((item) => item.show)
@@ -262,9 +268,10 @@ export default function AdminOverviewPage() {
       <div className="grid gap-8 xl:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="flex min-w-0 flex-col gap-8">
           <ReviewQueue items={items} settled={settled} />
-          <OldestApplications result={applications} />
+          {canApplications ? <OldestApplications result={applications} /> : null}
         </div>
         <aside aria-label="Oferta comercial vigente" className="flex flex-col gap-6">
+          {canPromotions ? (
           <SideList
             id="promos-titulo"
             title="Promociones vigentes"
@@ -290,6 +297,8 @@ export default function AdminOverviewPage() {
               </ul>
             )}
           </SideList>
+          ) : null}
+          {canPlans ? (
           <SideList id="planes-titulo" title="Planes" result={plans} what="los planes" empty="Aún no hay planes creados." to="/admin/planes" linkLabel="Editar planes">
             {(rows) => (
               <ul className="divide-y divide-ap-line border-y border-ap-line">
@@ -305,6 +314,7 @@ export default function AdminOverviewPage() {
               </ul>
             )}
           </SideList>
+          ) : null}
         </aside>
       </div>
     </AdminPage>

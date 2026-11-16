@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.autopartco.backend.core.analytics.Analytics;
 import com.autopartco.backend.core.analytics.DateRange;
 import com.autopartco.backend.core.audit.AuditQueries;
+import com.autopartco.backend.shared.security.PlatformAccess;
 import com.autopartco.backend.shared.web.ApiPaths;
 
 import lombok.AllArgsConstructor;
@@ -24,7 +25,7 @@ public class AuditAdminController {
 
     /** Rango por defecto: últimos 30 días (máx. 366, si no 400 {@code INVALID_RANGE}). Página desde 1; tamaño máx. 200. */
     @GetMapping
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.AUDIT)
     public AuditQueries.Report search(
             @RequestParam(required = false) String from,
             @RequestParam(required = false) String to,
@@ -40,7 +41,7 @@ public class AuditAdminController {
     }
 
     @GetMapping("/actions")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.AUDIT)
     public List<AuditQueries.ActionOption> actions() {
         return auditQueries.actions();
     }

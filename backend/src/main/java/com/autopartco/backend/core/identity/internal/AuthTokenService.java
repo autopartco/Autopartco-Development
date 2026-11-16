@@ -4,6 +4,7 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
@@ -23,6 +24,7 @@ import lombok.AllArgsConstructor;
 public class AuthTokenService {
     private final JwtEncoder jwtEncoder;
     private final AppProperties appProperties;
+    private final StaffAuthorities staffAuthorities;
     private final SecureRandom secureRandom = new SecureRandom();
 
     public TokenPair issue(Account account) {
@@ -35,9 +37,7 @@ public class AuthTokenService {
         long refreshTokenDays = appProperties.tokens().refreshExpiresDays();
         Instant expiresAt = issuedAt.plus(accessTokenMinutes, ChronoUnit.MINUTES);
         String authority = account.getAccountType().getAuthority();
-        List<String> roles = "STORE_MANAGER".equals(authority)
-                ? List.of("ROLE_CUSTOMER", "ROLE_STORE_MANAGER")
-                : List.of("ROLE_" + authority);
+        List<String> roles = rolesOf(account, authority);
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .subject(account.getEmail())
@@ -59,6 +59,23 @@ public class AuthTokenService {
                 refreshExpiresAt,
                 sessionId
         );
+    }
+
+    /**
+     * Claim {@code roles}: {@code STORE_MANAGER} también es cliente; {@code STAFF} lleva además los códigos
+     * {@code PLATFORM_*} de su rol de plataforma (cambian al renovar el token).
+     */
+    private List<String> rolesOf(Account account, String authority) {
+        if ("STORE_MANAGER".equals(authority)) {
+            return List.of("ROLE_CUSTOMER", "ROLE_STORE_MANAGER");
+        }
+        if ("STAFF".equals(authority)) {
+            List<String> roles = new ArrayList<>();
+            roles.add("ROLE_STAFF");
+            roles.addAll(staffAuthorities.permissionsOf(account.getId()));
+            return List.copyOf(roles);
+        }
+        return List.of("ROLE_" + authority);
     }
 
     private String generateRefreshToken() {

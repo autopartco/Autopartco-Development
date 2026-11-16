@@ -50,7 +50,7 @@ export const ACCOUNT_KIND_LABEL: Record<AccountKind, string> = {
 
 export function accountKindOf(roles: readonly string[]): AccountKind {
   if (roles.includes('ROLE_STORE_MANAGER')) return 'store'
-  if (roles.includes('ROLE_ADMIN') || roles.includes('ROLE_ROOT')) return 'admin'
+  if (roles.includes('ROLE_ADMIN') || roles.includes('ROLE_ROOT') || roles.includes('ROLE_STAFF')) return 'admin'
   if (roles.includes('ROLE_CUSTOMER')) return 'customer'
   return 'unknown'
 }
@@ -66,7 +66,7 @@ interface MenuOptions {
   sellerApplicationTo?: string
   /** Ruta para terminar la configuración de una solicitud aprobada (`CONFIGURATION_PENDING`); sin ella no se muestra. */
   sellerSetupTo?: string
-  /** Cuenta ROOT: ofrece el servicio de administración (`/admin`). El servidor sigue decidiendo. */
+  /** Cuenta ROOT o del equipo (STAFF): ofrece la consola de administración (`/admin`). El servidor sigue decidiendo. */
   root?: boolean
   /** Cliente con almacén activo (solicitud propia o colaborador invitado): ofrece el portal. */
   hasStore?: boolean

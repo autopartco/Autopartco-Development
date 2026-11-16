@@ -15,6 +15,7 @@ import com.autopartco.backend.core.analytics.PlatformStats;
 import com.autopartco.backend.core.analytics.PlatformCustomerReport;
 import com.autopartco.backend.core.analytics.SearchInsights;
 import com.autopartco.backend.core.analytics.SearchReport;
+import com.autopartco.backend.shared.security.PlatformAccess;
 import com.autopartco.backend.shared.web.ApiPaths;
 
 import lombok.AllArgsConstructor;
@@ -33,7 +34,7 @@ public class PlatformAnalyticsController {
 
     /** Página desde 1; tamaño por defecto 50 y como máximo 200. Segmento desconocido: 400 {@code INVALID_SEGMENT}. */
     @GetMapping("/customers")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.ANALYTICS)
     public PlatformCustomerReport customers(
             @RequestParam(required = false) String segment,
             @RequestParam(defaultValue = "1") int page,
@@ -44,7 +45,7 @@ public class PlatformAnalyticsController {
 
     /** Rango por defecto: últimos 30 días; máximo 366 (si no, 400 {@code INVALID_RANGE}). */
     @GetMapping("/searches")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.ANALYTICS)
     public SearchReport searches(
             @RequestParam(required = false) String from,
             @RequestParam(required = false) String to
@@ -54,7 +55,7 @@ public class PlatformAnalyticsController {
 
     /** Tráfico, cuentas, accesos y comercio. Rango por defecto: últimos 30 días; {@code granularity} DAY|WEEK|MONTH. */
     @GetMapping("/platform")
-    @PreAuthorize("hasAuthority('ROLE_ROOT')")
+    @PreAuthorize(PlatformAccess.ANALYTICS_OR_DASHBOARD)
     public PlatformStats.Report platform(
             @RequestParam(required = false) String from,
             @RequestParam(required = false) String to,
