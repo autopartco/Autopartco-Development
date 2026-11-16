@@ -100,7 +100,8 @@ def train(conn) -> None:
         "algorithm": "Random Forest con calibración isotónica", "library": f"scikit-learn {sklearn.__version__}",
         "task": "CLASSIFICATION", "targetEntity": "PRODUCT_BRANCH", "horizonDays": HORIZON_DAYS,
         "features": FEATURES, "output": "PROBABILITY_MEAN", "trees": trees, "calibration": calibration,
-        "thresholds": {"high": 0.5, "medium": 0.2},
+        # Umbrales relativos a la tasa base (~0,4 % en 14 días): medio ≈ 12× y alto ≈ 25× la tasa base.
+        "thresholds": {"high": 0.10, "medium": 0.05, "baseRate": round(float(te.target.mean()), 4)},
         "hyperparameters": PARAMS,
         "metrics": results["random_forest_isotonic"],
         "baselineMetrics": {"ruleCoverDays": results["rule_cover_days"],

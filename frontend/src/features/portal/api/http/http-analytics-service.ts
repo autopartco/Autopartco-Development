@@ -1,4 +1,13 @@
-import type { AssociationReport, CustomerReport, Forecast, ProductReport, SalesReport, VisibilityReport } from '../analytics-types'
+import type {
+  AssociationReport,
+  CustomerReport,
+  DemandForecastReport,
+  Forecast,
+  ProductReport,
+  SalesReport,
+  StockoutRiskReport,
+  VisibilityReport,
+} from '../analytics-types'
 import type { AnalyticsService } from '../analytics-service'
 import { portalRequest, storePath } from './portal-http'
 
@@ -21,5 +30,7 @@ export function createHttpAnalyticsService(): AnalyticsService {
     forecast: (storeId, branchId) => portalRequest<Forecast>(base(storeId, `/forecast${query({ branchId })}`)),
     associations: (storeId) => portalRequest<AssociationReport>(base(storeId, '/associations')),
     visibility: (storeId, { from, to }) => portalRequest<VisibilityReport>(base(storeId, `/visibility${query({ from, to })}`)),
+    demandForecast: (storeId, branchId) => portalRequest<DemandForecastReport>(base(storeId, `/demand-forecast${query({ branchId })}`)),
+    stockoutRisk: (storeId) => portalRequest<StockoutRiskReport>(base(storeId, '/stockout-risk')),
   }
 }

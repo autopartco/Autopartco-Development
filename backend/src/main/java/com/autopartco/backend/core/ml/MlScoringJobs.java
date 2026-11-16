@@ -21,8 +21,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Puntuación en lote. Demanda y agotamiento: cada noche a las 02:30 (America/Bogota) con fecha de corte hoy, un lote
- * por modelo y día ({@code ml.batch_runs.idempotency_key} evita repetirlo y que dos instancias lo corran a la vez).
+ * Puntuación en lote. Demanda y agotamiento: cada noche a las 02:30 (America/Bogota; configurable con
+ * {@code ml.scoring.nightly-cron}) con fecha de corte hoy, un lote por modelo y día
+ * ({@code ml.batch_runs.idempotency_key} evita repetirlo y que dos instancias lo corran a la vez).
  * Pagos: cada 15 minutos puntúa los pagos de las últimas 2 horas aún sin evaluar por la versión vigente y guarda la
  * evaluación en {@code payment_risk_assessments} ({@code REVIEW} si supera el umbral). Un fallo se registra en el lote
  * y no afecta a los demás; las pantallas siguen leyendo el último lote correcto.
@@ -49,7 +50,7 @@ public class MlScoringJobs {
         this.clock = clock;
     }
 
-    @Scheduled(cron = "0 30 2 * * *", zone = "America/Bogota")
+    @Scheduled(cron = "${ml.scoring.nightly-cron:0 30 2 * * *}", zone = "America/Bogota")
     public void scoreNightly() {
         LocalDate cutoff = LocalDate.now(clock.withZone(ZONE));
         safely(ModelRegistry.DEMAND, () -> scoreDemand(cutoff));
@@ -86,8 +87,8 @@ public class MlScoringJobs {
         return runDaily(ModelRegistry.STOCKOUT, cutoff, (loaded, rows) -> {
             TreeEnsemble model = loaded.model();
             int horizon = model.metadata().path("horizonDays").asInt(14);
-            double high = model.metadata().path("thresholds").path("high").asDouble(0.5);
-            double medium = model.metadata().path("thresholds").path("medium").asDouble(0.2);
+            double high = model.metadata().path("thresholds").path("high").asDouble(0.10);
+            double medium = model.metadata().path("thresholds").path("medium").asDouble(0.05);
             List<MlQueries.Prediction> out = new ArrayList<>(rows.size());
             for (Map<String, Object> row : rows) {
                 double p = model.predict(model.vector(row));

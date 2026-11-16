@@ -28,6 +28,7 @@ export function IntelligenceTabs() {
     { to: `${base}/productos`, label: 'Productos', end: false },
     { to: `${base}/se-compran-juntos`, label: 'Se compran juntos', end: false },
     { to: `${base}/proyeccion`, label: 'Proyección', end: false },
+    { to: `${base}/riesgo-agotamiento`, label: 'Riesgo de agotamiento', end: false },
   ]
   return (
     // Pestañas subrayadas en una fila; en móvil la fila se desplaza en horizontal (sin píldoras). La activa lleva
@@ -72,7 +73,8 @@ export function EnterpriseRequired() {
         <li>Reportes por rango, sucursal y categoría, con exportación a CSV.</li>
         <li>Segmentos de clientes con una acción sugerida para cada uno.</li>
         <li>Clasificación ABC/XYZ de productos y stock mínimo sugerido.</li>
-        <li>Proyección de ventas del próximo mes.</li>
+        <li>Proyección de ventas del próximo mes y demanda por categoría.</li>
+        <li>Productos con riesgo de agotarse en las próximas dos semanas.</li>
       </ul>
       {canSeePlan ? (
         <Button className="h-11 px-5" nativeButton={false} render={<Link to={`/portal/${encodeURIComponent(storeId)}/plan`} />}>
