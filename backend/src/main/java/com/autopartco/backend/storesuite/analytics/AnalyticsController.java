@@ -15,6 +15,7 @@ import com.autopartco.backend.core.analytics.ProductReport;
 import com.autopartco.backend.core.analytics.SalesForecast;
 import com.autopartco.backend.core.analytics.SalesReport;
 import com.autopartco.backend.core.analytics.VisibilityReport;
+import com.autopartco.backend.core.ml.MlPredictions;
 import com.autopartco.backend.shared.web.ApiPaths;
 
 import lombok.AllArgsConstructor;
@@ -33,6 +34,7 @@ public class AnalyticsController {
     private final GetSalesForecast getSalesForecast;
     private final GetProductAssociations getProductAssociations;
     private final GetStoreVisibility getStoreVisibility;
+    private final GetPredictions getPredictions;
 
     @GetMapping("/report")
     public SalesReport report(
@@ -87,5 +89,21 @@ public class AnalyticsController {
             Authentication authentication
     ) {
         return getSalesForecast.execute(storeId, authentication.getName(), branchId);
+    }
+
+    /** Demanda esperada por sucursal y categoría en los próximos 28 días (LightGBM). */
+    @GetMapping("/demand-forecast")
+    public MlPredictions.DemandForecast demandForecast(
+            @PathVariable UUID storeId,
+            @RequestParam(required = false) UUID branchId,
+            Authentication authentication
+    ) {
+        return getPredictions.demand(storeId, authentication.getName(), branchId);
+    }
+
+    /** Inventarios con riesgo de agotarse en los próximos 14 días (Random Forest calibrado). */
+    @GetMapping("/stockout-risk")
+    public MlPredictions.StockoutRisk stockoutRisk(@PathVariable UUID storeId, Authentication authentication) {
+        return getPredictions.stockout(storeId, authentication.getName());
     }
 }
