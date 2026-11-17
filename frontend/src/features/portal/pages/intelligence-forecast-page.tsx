@@ -37,7 +37,17 @@ const DEMAND_COLUMNS: DataColumn<DemandForecastItem>[] = [
     header: 'Unidades estimadas',
     align: 'end',
     sortValue: (row) => row.expectedUnits,
-    cell: (row) => <span className="font-semibold text-ap-ink tabular-nums">{formatNumber(row.expectedUnits)}</span>,
+    cell: (row) => (
+      <span className="font-semibold text-ap-ink tabular-nums">
+        {formatNumber(row.expectedUnits)}
+        {row.method === 'RECENT_RATE' ? (
+          <>
+            <span aria-hidden> *</span>
+            <span className="sr-only"> (estimada con tu ritmo de ventas reciente)</span>
+          </>
+        ) : null}
+      </span>
+    ),
   },
   {
     id: 'rango',
@@ -58,6 +68,7 @@ const DEMAND_COLUMNS: DataColumn<DemandForecastItem>[] = [
  */
 function DemandSection({ report, multiBranch }: { report: DemandForecastReport; multiBranch: boolean }) {
   const weeks = Math.round(report.horizonDays / 7)
+  const byRecentRate = report.items.some((item) => item.method === 'RECENT_RATE')
   const columns = multiBranch ? DEMAND_COLUMNS : DEMAND_COLUMNS.filter((column) => column.id !== 'sucursal')
   return (
     <section aria-labelledby="proy-demanda" className="flex flex-col gap-3 border-t border-ap-line-strong pt-4">
@@ -91,6 +102,11 @@ function DemandSection({ report, multiBranch }: { report: DemandForecastReport; 
             defaultSort={{ columnId: 'unidades', direction: 'desc' }}
             pageSize={12}
           />
+          {byRecentRate ? (
+            <p className="text-xs text-ap-muted">
+              * Estas categorías venden más de lo que el modelo conoce; se estiman con tu ritmo de ventas de las últimas semanas.
+            </p>
+          ) : null}
           <p className="text-xs text-ap-muted">
             Modelo {report.algorithm} · versión {report.modelVersion}. Fuente: ventas confirmadas de tu almacén en Autopartco.
           </p>

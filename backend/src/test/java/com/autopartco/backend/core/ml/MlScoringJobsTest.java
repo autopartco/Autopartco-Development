@@ -2,6 +2,7 @@ package com.autopartco.backend.core.ml;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.within;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -69,6 +70,40 @@ class MlScoringJobsTest {
         assertThat(p.lowerBound()).isLessThanOrEqualTo(p.value()).isLessThanOrEqualTo(p.upperBound() + 1);
         assertThat(p.explanationJson()).contains(row.get("category_id").toString());
         verify(queries).finishRun(RUN, true, 1, null);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    void demandAboveTrainingVolumeUsesRecentRateInsteadOfFlatModel() {
+        when(queries.startRun(eq(VERSION), anyString(), anyString())).thenReturn(Optional.of(RUN));
+        Map<String, Object> busy = row(ModelRegistry.DEMAND, 2);
+        busy.put("store_id", UUID.randomUUID());
+        busy.put("branch_id", UUID.randomUUID());
+        busy.put("category_id", UUID.randomUUID());
+        busy.put("sum4", 579L);
+        busy.put("sum13", 1800L);
+        Map<String, Object> small = new HashMap<>(busy);
+        small.put("sum4", 2L);
+        small.put("sum13", 2L);
+        when(queries.features(anyString(), anyMap())).thenReturn(List.of(busy, small));
+
+        jobs.scoreDemand(CUTOFF);
+
+        ArgumentCaptor<List<MlQueries.Prediction>> written = ArgumentCaptor.forClass(List.class);
+        verify(queries).insertPredictions(eq(VERSION), eq(RUN), written.capture());
+        MlQueries.Prediction high = written.getValue().get(0);
+        assertThat(high.value()).isCloseTo(MlScoringJobs.recentRate(579, 1800, 28), within(1e-3))
+                .isGreaterThan(500);
+        assertThat(high.explanationJson()).contains("\"method\":\"RECENT_RATE\"");
+        assertThat(high.lowerBound()).isLessThan(high.value()).isLessThan(high.upperBound());
+        assertThat(written.getValue().get(1).explanationJson()).contains("\"method\":\"MODEL\"");
+    }
+
+    @Test
+    void splitMaxIsTheLargestLearnedCut() {
+        TreeEnsemble demand = REGISTRY.model(ModelRegistry.DEMAND).orElseThrow();
+        assertThat(demand.splitMax("sum4")).isPositive().isLessThan(579);
+        assertThat(demand.splitMax("nope")).isEqualTo(Double.NEGATIVE_INFINITY);
     }
 
     @Test

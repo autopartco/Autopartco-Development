@@ -203,12 +203,13 @@ class MlQueries {
     }
 
     record DemandRow(UUID branchId, String branchName, UUID categoryId, String categoryCode, double expectedUnits,
-            double low, double high) {
+            double low, double high, String method) {
     }
 
     List<DemandRow> demand(UUID runId, UUID storeId, UUID branchId) {
         return jdbc.sql("""
-                SELECT p.branch_id, b.name, c.id, c.code, p.value, p.lower_bound, p.upper_bound
+                SELECT p.branch_id, b.name, c.id, c.code, p.value, p.lower_bound, p.upper_bound,
+                    COALESCE(p.explanation ->> 'method', 'MODEL')
                 FROM ml.predictions p
                 JOIN branches b ON b.id = p.branch_id
                 JOIN categories c ON c.id = CAST(p.explanation ->> 'categoryId' AS uuid)
@@ -221,7 +222,7 @@ class MlQueries {
                 .param("branch", branchId, Types.OTHER)
                 .query((rs, n) -> new DemandRow(rs.getObject(1, UUID.class), rs.getString(2),
                         rs.getObject(3, UUID.class), rs.getString(4), rs.getDouble(5), rs.getDouble(6),
-                        rs.getDouble(7)))
+                        rs.getDouble(7), rs.getString(8)))
                 .list();
     }
 

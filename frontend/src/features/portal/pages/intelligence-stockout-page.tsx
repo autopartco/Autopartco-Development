@@ -86,7 +86,7 @@ function StockoutView({ report }: { report: StockoutRiskReport }) {
       <EmptyState
         icon={<PackageCheckIcon />}
         title="Ningún producto tiene riesgo de agotarse"
-        description={`Con el ritmo de venta actual, ningún inventario tiene al menos un ${formatFraction(report.minProbability)} de probabilidad de llegar a 0 en los próximos ${report.horizonDays} días. Actualizado ${formatDateTime(report.generatedAt)}.`}
+        description={`Con el ritmo de venta actual, ningún inventario tiene al menos un ${formatFraction(report.minProbability)} de probabilidad de llegar a 0 en los próximos ${report.horizonDays} días. Actualizado ${formatDateTime(report.generatedAt).replace(/\.$/, '')}.`}
       />
     )
   }

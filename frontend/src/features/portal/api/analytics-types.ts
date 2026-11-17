@@ -263,6 +263,8 @@ export interface DemandForecastItem {
   expectedUnits: number
   low: number
   high: number
+  /** `RECENT_RATE`: la categoría vende más de lo que el modelo vio al entrenarse; se estima con el ritmo reciente. */
+  method: 'MODEL' | 'RECENT_RATE'
 }
 
 export type StockoutLevel = 'HIGH' | 'MEDIUM' | 'LOW'
