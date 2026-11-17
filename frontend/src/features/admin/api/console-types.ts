@@ -106,6 +106,13 @@ export interface MlModel {
   failedRunsLast7Days: number
 }
 
+/** `POST /admin/ml/models/{code}/score` (solo root): recálculo inmediato de un modelo. */
+export interface MlRescore {
+  model: string
+  status: 'SUCCEEDED' | 'FAILED'
+  rows: number
+}
+
 // ---- Almacenes ---------------------------------------------------------------------------------------------------
 
 export interface AdminStoreRow {
@@ -264,6 +271,7 @@ export interface AdminConsoleService {
   paymentRiskSummary(): Promise<RiskSummary>
   markRiskOutcome(id: number, outcome: RiskOutcome): Promise<void>
   models(): Promise<MlModel[]>
+  rescoreModel(code: string): Promise<MlRescore>
   stores(query: ListQuery & { state?: string }): Promise<Page<AdminStoreRow>>
   store(storeId: string): Promise<AdminStoreDetail>
   accounts(query: ListQuery & { type?: string; state?: string }): Promise<Page<AdminAccountRow>>
