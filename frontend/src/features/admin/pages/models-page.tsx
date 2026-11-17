@@ -1,15 +1,22 @@
-import { BrainCircuitIcon } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
+import { BrainCircuitIcon, RefreshCwIcon } from 'lucide-react'
 import { EmptyState } from '@/components/common/states'
+import { Button } from '@/components/ui/button'
 import { formatNumber } from '@/lib/format'
-import { useAsync } from '@/lib/use-async'
+import { invalidateAsync, useAsync } from '@/lib/use-async'
 import { ListSkeleton } from '@/features/portal/components/list-skeleton'
 import { StatusBadge } from '@/features/portal/components/status-badge'
+import { actionErrorMessage } from '@/features/portal/lib/errors'
 import { formatDate, formatDateTime } from '@/features/portal/lib/labels'
 import { getAdminConsoleService } from '../api/admin-console-service'
 import type { MlModel } from '../api/console-types'
 import { AdminBoundary, AdminPage, AdminSection } from '../components/admin-kit'
 import { KeyValues } from '../components/console-kit'
 import { ADMIN_CACHE_PREFIX } from '../hooks'
+import { useAdminAccess } from '../lib/access'
+
+const KEY = `${ADMIN_CACHE_PREFIX}ml-models`
 
 const METRIC_LABEL: Record<string, string> = {
   mae: 'Error absoluto medio (MAE)',
@@ -27,6 +34,9 @@ const METRIC_LABEL: Record<string, string> = {
   mae_14d: 'MAE a 14 días',
   mape_positive_targets: 'MAPE (ventas > 0)',
 }
+
+/** Modelos que el backend puntúa y puede recalcular a demanda (los demás solo se registran). */
+const RESCORABLE = new Set(['demand_category_28d', 'stockout_14d', 'payment_anomaly'])
 
 /** En estas métricas un valor mayor es mejor; en el resto, menor. */
 const HIGHER_IS_BETTER = new Set(['aucRoc', 'aucPr', 'injectedRecall', 'injectedAucRoc', 'declinedAucRoc'])
@@ -95,7 +105,34 @@ function MetricsTable({ model }: { model: MlModel }) {
   )
 }
 
-function ModelBlock({ model }: { model: MlModel }) {
+/** Solo root: recalcula el modelo ya, con los datos actuales, sin esperar al lote nocturno. */
+function RescoreButton({ model }: { model: MlModel }) {
+  const [busy, setBusy] = useState(false)
+  async function rescore() {
+    setBusy(true)
+    try {
+      const result = await getAdminConsoleService().rescoreModel(model.code)
+      if (result.status === 'SUCCEEDED') {
+        toast.success(`${model.algorithm}: recalculado, ${formatNumber(result.rows)} ${result.rows === 1 ? 'fila' : 'filas'}.`)
+      } else {
+        toast.error(`${model.algorithm}: el recálculo falló. Se sigue mostrando el último cálculo correcto.`)
+      }
+      invalidateAsync(KEY)
+    } catch (error) {
+      toast.error(actionErrorMessage(error, 'No pudimos recalcular el modelo. Inténtalo de nuevo.'))
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <Button variant="outline" className="h-11 px-4" loading={busy} loadingText="Recalculando…" onClick={() => void rescore()} aria-label={`Recalcular ahora ${model.algorithm}`}>
+      <RefreshCwIcon aria-hidden />
+      Recalcular ahora
+    </Button>
+  )
+}
+
+function ModelBlock({ model, canRescore }: { model: MlModel; canRescore: boolean }) {
   const failed = model.failedRunsLast7Days > 0 || model.lastRunStatus === 'FAILED'
   return (
     <AdminSection
@@ -108,6 +145,7 @@ function ModelBlock({ model }: { model: MlModel }) {
         </span>
       }
       meta={`${model.code} · versión ${model.version} · ${TASK_LABEL[model.task] ?? model.task}`}
+      actions={canRescore ? <RescoreButton model={model} /> : undefined}
     >
       <p className="max-w-prose text-sm text-ap-ink">{model.description}</p>
       <KeyValues
@@ -128,7 +166,8 @@ function ModelBlock({ model }: { model: MlModel }) {
 
 /** `/admin/modelos`: modelos predictivos en uso, sus métricas frente a la línea base y la salud de sus ejecuciones. */
 export default function AdminModelsPage() {
-  const models = useAsync(`${ADMIN_CACHE_PREFIX}ml-models`, () => getAdminConsoleService().models())
+  const models = useAsync(KEY, () => getAdminConsoleService().models())
+  const { root } = useAdminAccess()
   return (
     <AdminPage title="Modelos predictivos" description="Qué modelos usa la plataforma, cómo se compararon con su línea base y si se están ejecutando.">
       <AdminBoundary result={models} what="los modelos" skeleton={<ListSkeleton rows={6} label="Cargando los modelos" />}>
@@ -138,7 +177,7 @@ export default function AdminModelsPage() {
           ) : (
             <div className="flex flex-col gap-10">
               {rows.map((model) => (
-                <ModelBlock key={model.code} model={model} />
+                <ModelBlock key={model.code} model={model} canRescore={root && RESCORABLE.has(model.code)} />
               ))}
             </div>
           )

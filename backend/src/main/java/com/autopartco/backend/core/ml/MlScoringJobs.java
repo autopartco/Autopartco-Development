@@ -10,10 +10,14 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+
+import com.autopartco.backend.shared.error.ConflictException;
+import com.autopartco.backend.shared.error.NotFoundException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -27,6 +31,10 @@ import lombok.extern.slf4j.Slf4j;
  * Pagos: cada 15 minutos puntúa los pagos de las últimas 2 horas aún sin evaluar por la versión vigente y guarda la
  * evaluación en {@code payment_risk_assessments} ({@code REVIEW} si supera el umbral). Un fallo se registra en el lote
  * y no afecta a los demás; las pantallas siguen leyendo el último lote correcto.
+ *
+ * <p>{@link #rescore(String)} recalcula un modelo a demanda (consola de administración) con una clave de lote propia,
+ * así no choca con el lote nocturno del día. Un cerrojo impide que dos puntuaciones corran a la vez en la instancia:
+ * los trabajos programados esperan su turno y el recálculo manual se rechaza si hay otra en curso.</p>
  */
 @Slf4j
 @Service
@@ -38,6 +46,11 @@ public class MlScoringJobs {
     private final MlQueries queries;
     private final Clock clock;
     private final ObjectMapper mapper = new ObjectMapper();
+    private final ReentrantLock running = new ReentrantLock();
+
+    /** Resultado de un recálculo manual: {@code SUCCEEDED} o {@code FAILED} y las filas escritas. */
+    public record Rescore(String model, String status, long rows) {
+    }
 
     @Autowired
     public MlScoringJobs(ModelRegistry registry, MlQueries queries) {
@@ -53,19 +66,60 @@ public class MlScoringJobs {
     @Scheduled(cron = "${ml.scoring.nightly-cron:0 30 2 * * *}", zone = "America/Bogota")
     public void scoreNightly() {
         LocalDate cutoff = LocalDate.now(clock.withZone(ZONE));
-        safely(ModelRegistry.DEMAND, () -> scoreDemand(cutoff));
-        safely(ModelRegistry.STOCKOUT, () -> scoreStockout(cutoff));
+        exclusively(() -> {
+            safely(ModelRegistry.DEMAND, () -> scoreDemand(cutoff));
+            safely(ModelRegistry.STOCKOUT, () -> scoreStockout(cutoff));
+        });
     }
 
     @Scheduled(cron = "0 */15 * * * *", zone = "America/Bogota")
     public void scorePaymentsRecent() {
-        safely(ModelRegistry.PAYMENT_ANOMALY, this::scorePayments);
+        exclusively(() -> safely(ModelRegistry.PAYMENT_ANOMALY, this::scorePayments));
+    }
+
+    /**
+     * Recalcula ya el modelo {@code key} con fecha de corte hoy (pagos: los de las últimas 2 horas sin evaluar). Las
+     * pantallas pasan a leer este lote en cuanto termina.
+     *
+     * @throws NotFoundException si el modelo no existe
+     * @throws ConflictException si el modelo no está cargado o hay otra puntuación en curso
+     */
+    public Rescore rescore(String key) {
+        if (!ModelRegistry.KEYS.contains(key)) {
+            throw new NotFoundException("ML_MODEL_NOT_FOUND", "El modelo no existe");
+        }
+        if (registry.loaded(key).isEmpty()) {
+            throw new ConflictException("ML_MODEL_NOT_LOADED", "El modelo no está cargado en el backend");
+        }
+        if (!running.tryLock()) {
+            throw new ConflictException("ML_SCORING_RUNNING", "Hay otra puntuación en curso; inténtalo en unos minutos");
+        }
+        try {
+            LocalDate cutoff = LocalDate.now(clock.withZone(ZONE));
+            String suffix = ":manual:" + clock.millis();
+            long rows = switch (key) {
+                case ModelRegistry.DEMAND -> scoreDemand(cutoff, suffix);
+                case ModelRegistry.STOCKOUT -> scoreStockout(cutoff, suffix);
+                default -> scorePayments();
+            };
+            log.info("Recálculo manual del modelo {}: {} filas", key, rows);
+            return new Rescore(key, "SUCCEEDED", rows);
+        } catch (RuntimeException failure) {
+            log.warn("Falló el recálculo manual del modelo {}: {}", key, failure.getClass().getSimpleName());
+            return new Rescore(key, "FAILED", 0);
+        } finally {
+            running.unlock();
+        }
     }
 
     // ---- Demanda ------------------------------------------------------------------------------------------------
 
     long scoreDemand(LocalDate cutoff) {
-        return runDaily(ModelRegistry.DEMAND, cutoff, (loaded, rows) -> {
+        return scoreDemand(cutoff, "");
+    }
+
+    long scoreDemand(LocalDate cutoff, String runSuffix) {
+        return runDaily(ModelRegistry.DEMAND, cutoff, runSuffix, (loaded, rows) -> {
             TreeEnsemble model = loaded.model();
             int horizon = model.metadata().path("horizonDays").asInt(28);
             List<MlQueries.Prediction> out = new ArrayList<>(rows.size());
@@ -84,7 +138,11 @@ public class MlScoringJobs {
     // ---- Agotamiento --------------------------------------------------------------------------------------------
 
     long scoreStockout(LocalDate cutoff) {
-        return runDaily(ModelRegistry.STOCKOUT, cutoff, (loaded, rows) -> {
+        return scoreStockout(cutoff, "");
+    }
+
+    long scoreStockout(LocalDate cutoff, String runSuffix) {
+        return runDaily(ModelRegistry.STOCKOUT, cutoff, runSuffix, (loaded, rows) -> {
             TreeEnsemble model = loaded.model();
             int horizon = model.metadata().path("horizonDays").asInt(14);
             double high = model.metadata().path("thresholds").path("high").asDouble(0.10);
@@ -149,7 +207,7 @@ public class MlScoringJobs {
         List<MlQueries.Prediction> score(ModelRegistry.Loaded loaded, List<Map<String, Object>> rows);
     }
 
-    private long runDaily(String key, LocalDate cutoff, Scorer scorer) {
+    private long runDaily(String key, LocalDate cutoff, String runSuffix, Scorer scorer) {
         Optional<ModelRegistry.Loaded> loaded = registry.loaded(key);
         if (loaded.isEmpty()) {
             return 0;
@@ -157,7 +215,8 @@ public class MlScoringJobs {
         TreeEnsemble model = loaded.get().model();
         UUID versionId = queries.ensureVersion(model);
         String params = mapper.createObjectNode().put("cutoff", cutoff.toString()).toString();
-        Optional<UUID> run = queries.startRun(versionId, key + ":" + model.version() + ":" + cutoff, params);
+        Optional<UUID> run = queries.startRun(versionId, key + ":" + model.version() + ":" + cutoff + runSuffix,
+                params);
         if (run.isEmpty()) {
             return 0;
         }
@@ -173,6 +232,15 @@ public class MlScoringJobs {
         } catch (RuntimeException failure) {
             queries.finishRun(run.get(), false, 0, failure.getClass().getSimpleName());
             throw failure;
+        }
+    }
+
+    private void exclusively(Runnable job) {
+        running.lock();
+        try {
+            job.run();
+        } finally {
+            running.unlock();
         }
     }
 
