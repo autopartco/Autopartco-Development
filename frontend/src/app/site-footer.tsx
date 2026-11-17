@@ -9,6 +9,7 @@ const LINKS = [
   { to: '/buscar', label: 'Buscar repuestos y servicios' },
   { to: '/categorias', label: 'Categorías' },
   { to: '/tiendas', label: 'Tiendas' },
+  { to: '/somos', label: 'Somos Autopartco' },
 ]
 
 /** Compra en línea: carrito, pedidos con seguimiento, calificaciones y avisos (las de cuenta piden ingresar). */

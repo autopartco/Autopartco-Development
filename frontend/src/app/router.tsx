@@ -22,6 +22,7 @@ import {
   AdminStaffPage,
   AdminReviewsPage,
   AdminRoot,
+  AboutPage,
   BenefitsPage,
   BookingDetailPage,
   BookingsPage,
@@ -160,6 +161,7 @@ export const router = createBrowserRouter([
           { path: 'cuenta/notificaciones', element: <RequireSession fallback={<PageFallback />}><NotificationsPage /></RequireSession> },
           { path: 'cuenta/calificar', element: <RequireSession fallback={<PageFallback />}><RatePage /></RequireSession> },
           // Almacenes: landing y solicitud (POST /store-applications).
+          { path: 'somos', element: <AboutPage /> },
           { path: 'privacidad', element: <PrivacyPage /> },
           { path: 'vender', element: <SellPage /> },
           { path: 'vender/registro', element: <SellerRegisterPage /> },

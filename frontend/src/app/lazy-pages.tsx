@@ -12,6 +12,7 @@ export const ServicesPage = lazy(() => import('@/features/services/pages/service
 export const ServicePage = lazy(() => import('@/features/services/pages/service-page'))
 export const PrivacyPage = lazy(() => import('@/features/marketplace/pages/privacy-page'))
 export const SellPage =lazy(() => import('@/features/marketplace/pages/sell-page'))
+export const AboutPage = lazy(() => import('@/features/marketplace/pages/about-page'))
 
 // Cuentas y solicitud de almacén.
 export const LoginPage = lazy(() => import('@/features/auth/pages/login-page'))
