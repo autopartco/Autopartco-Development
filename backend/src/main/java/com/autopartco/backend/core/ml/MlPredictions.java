@@ -26,8 +26,9 @@ public class MlPredictions {
     private final MlQueries queries;
     private final ModelRegistry registry;
 
+    /** @param method {@code MODEL} o {@code RECENT_RATE} (fila fuera del volumen de entrenamiento: ritmo reciente) */
     public record DemandItem(UUID branchId, String branchName, UUID categoryId, String categoryCode,
-            BigDecimal expectedUnits, int low, int high) {
+            BigDecimal expectedUnits, int low, int high, String method) {
     }
 
     public record DemandForecast(String modelVersion, String algorithm, OffsetDateTime generatedAt, int horizonDays,
@@ -53,7 +54,7 @@ public class MlPredictions {
                         queries.demand(run.runId(), storeId, branchId).stream()
                                 .map(r -> new DemandItem(r.branchId(), r.branchName(), r.categoryId(),
                                         r.categoryCode(), decimal(r.expectedUnits(), 1), (int) r.low(),
-                                        (int) r.high()))
+                                        (int) r.high(), r.method()))
                                 .toList()))
                 .orElseGet(() -> new DemandForecast(null, null, null, 28, List.of()));
     }

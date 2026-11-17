@@ -82,6 +82,23 @@ public final class TreeEnsemble {
     }
 
     /** Vector de variables en el orden del modelo; falla si falta una columna o es nula. */
+    /**
+     * Mayor umbral con el que algún árbol divide por {@code name}: por encima de ese valor el modelo ya no distingue y
+     * su respuesta queda plana. {@link Double#NEGATIVE_INFINITY} si ningún árbol usa la variable.
+     */
+    public double splitMax(String name) {
+        int index = features.indexOf(name);
+        double max = Double.NEGATIVE_INFINITY;
+        for (int t = 0; index >= 0 && t < feature.length; t++) {
+            for (int n = 0; n < feature[t].length; n++) {
+                if (feature[t][n] == index) {
+                    max = Math.max(max, threshold[t][n]);
+                }
+            }
+        }
+        return max;
+    }
+
     public double[] vector(Map<String, Object> row) {
         double[] x = new double[features.size()];
         for (int i = 0; i < x.length; i++) {
