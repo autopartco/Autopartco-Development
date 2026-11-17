@@ -21,10 +21,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+
+import com.autopartco.backend.shared.error.ConflictException;
+import com.autopartco.backend.shared.error.NotFoundException;
 
 class MlScoringJobsTest {
     private static final ModelRegistry REGISTRY = new ModelRegistry();
@@ -97,6 +102,55 @@ class MlScoringJobsTest {
         verify(queries).insertAssessments(eq(VERSION), written.capture());
         assertThat(written.getValue()).extracting(MlQueries.Assessment::decision).containsExactly("ALLOW", "REVIEW");
         assertThat(written.getValue()).allSatisfy(a -> assertThat(a.riskScore()).isBetween(0.0, 1.0));
+    }
+
+    @Test
+    void manualRescoreUsesItsOwnRunKeySoTheNightlyRunDoesNotBlockIt() {
+        when(queries.startRun(eq(VERSION), anyString(), anyString())).thenReturn(Optional.of(RUN));
+        when(queries.features(anyString(), anyMap())).thenReturn(List.of());
+
+        MlScoringJobs.Rescore result = jobs.rescore(ModelRegistry.STOCKOUT);
+
+        assertThat(result.status()).isEqualTo("SUCCEEDED");
+        ArgumentCaptor<String> key = ArgumentCaptor.forClass(String.class);
+        verify(queries).startRun(eq(VERSION), key.capture(), anyString());
+        assertThat(key.getValue()).startsWith(ModelRegistry.STOCKOUT + ":").contains(":" + CUTOFF + ":manual:");
+        assertThat(key.getValue().length()).isLessThanOrEqualTo(120);
+        verify(queries).finishRun(RUN, true, 0, null);
+    }
+
+    @Test
+    void manualRescoreReportsFailureWithoutThrowing() {
+        when(queries.startRun(eq(VERSION), anyString(), anyString())).thenReturn(Optional.of(RUN));
+        when(queries.features(anyString(), anyMap())).thenReturn(List.of(new HashMap<>()));
+
+        assertThat(jobs.rescore(ModelRegistry.DEMAND)).isEqualTo(
+                new MlScoringJobs.Rescore(ModelRegistry.DEMAND, "FAILED", 0));
+        verify(queries).finishRun(RUN, false, 0, "IllegalArgumentException");
+    }
+
+    @Test
+    void unknownModelIsNotFound() {
+        assertThatThrownBy(() -> jobs.rescore("nope")).isInstanceOf(NotFoundException.class);
+    }
+
+    @Test
+    void manualRescoreIsRejectedWhileAnotherScoringRuns() {
+        when(queries.startRun(eq(VERSION), anyString(), anyString())).thenReturn(Optional.of(RUN));
+        AtomicReference<Throwable> concurrent = new AtomicReference<>();
+        when(queries.features(anyString(), anyMap())).thenAnswer(invocation -> {
+            CompletableFuture.runAsync(() -> jobs.rescore(ModelRegistry.DEMAND))
+                    .exceptionally(failure -> {
+                        concurrent.set(failure.getCause());
+                        return null;
+                    })
+                    .join();
+            return List.of();
+        });
+
+        jobs.scoreNightly();
+
+        assertThat(concurrent.get()).isInstanceOf(ConflictException.class);
     }
 
     private static Map<String, Object> row(String key, long value) {

@@ -6,7 +6,8 @@
         displayName = "Operations",
         allowedDependencies = {"shared", "core.audit", "core.notification", "core.identity", "core.organization",
                 "core.vehicle", "core.inventory", "core.pricing", "core.catalog", "core.billing", "core.order",
-                "core.analytics", "core.search", "core.advertising", "core.reviews", "core.questions"})
+                "core.analytics", "core.search", "core.advertising", "core.reviews", "core.questions",
+                "core.ml"})
 package com.autopartco.backend.operations;
 
 import org.springframework.modulith.ApplicationModule;
