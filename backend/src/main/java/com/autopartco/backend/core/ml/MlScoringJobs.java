@@ -41,6 +41,10 @@ import lombok.extern.slf4j.Slf4j;
 public class MlScoringJobs {
     static final ZoneId ZONE = ZoneId.of("America/Bogota");
     static final int PAYMENT_WINDOW_HOURS = 2;
+    /** Demanda estimada por el modelo. */
+    public static final String METHOD_MODEL = "MODEL";
+    /** Demanda estimada con el ritmo reciente porque la fila supera el volumen con el que se entrenó el modelo. */
+    public static final String METHOD_RECENT_RATE = "RECENT_RATE";
 
     private final ModelRegistry registry;
     private final MlQueries queries;
@@ -122,10 +126,22 @@ public class MlScoringJobs {
         return runDaily(ModelRegistry.DEMAND, cutoff, runSuffix, (loaded, rows) -> {
             TreeEnsemble model = loaded.model();
             int horizon = model.metadata().path("horizonDays").asInt(28);
+            double sum4Max = model.splitMax("sum4");
+            double sum13Max = model.splitMax("sum13");
+            int sum4At = model.features().indexOf("sum4");
+            int sum13At = model.features().indexOf("sum13");
             List<MlQueries.Prediction> out = new ArrayList<>(rows.size());
             for (Map<String, Object> row : rows) {
-                double expected = model.predict(model.vector(row));
-                ObjectNode explanation = mapper.createObjectNode().put("categoryId", row.get("category_id").toString());
+                double[] x = model.vector(row);
+                double sum4 = x[sum4At];
+                double sum13 = x[sum13At];
+                // Los árboles no extrapolan: más allá del mayor corte aprendido su respuesta es plana y subestima a
+                // los almacenes con mucho más volumen que los datos de entrenamiento.
+                boolean outside = sum4 > sum4Max || sum13 > sum13Max;
+                double expected = outside ? recentRate(sum4, sum13, horizon) : model.predict(x);
+                ObjectNode explanation = mapper.createObjectNode()
+                        .put("categoryId", row.get("category_id").toString())
+                        .put("method", outside ? METHOD_RECENT_RATE : METHOD_MODEL);
                 out.add(new MlQueries.Prediction("BRANCH", (UUID) row.get("store_id"), (UUID) row.get("branch_id"),
                         null, cutoff, cutoff.plusDays(horizon - 1L), horizon, round(expected),
                         (double) Poisson.quantile(expected, 0.1), (double) Poisson.quantile(expected, 0.9), null,
@@ -133,6 +149,15 @@ public class MlScoringJobs {
             }
             return out;
         });
+    }
+
+    /**
+     * Unidades esperadas en {@code horizonDays} con el ritmo reciente: media entre las últimas 4 semanas y el promedio
+     * semanal de las últimas 13, escalada al horizonte.
+     */
+    static double recentRate(double sum4, double sum13, int horizonDays) {
+        double weekly = 0.5 * (sum4 / 4.0) + 0.5 * (sum13 / 13.0);
+        return weekly * horizonDays / 7.0;
     }
 
     // ---- Agotamiento --------------------------------------------------------------------------------------------
